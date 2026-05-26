@@ -1,0 +1,21 @@
+<!--
+  @desc Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or rely on defaults.
+  @attr path Canonical path. Defaults to current route.
+  @attr title Page title.
+  @attr description Meta description.
+  @attr ogImage Override og:image path.
+-->
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="{{canonical}}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{siteName}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="{{canonical}}">
+<meta property="og:image" content="{{ogImage}}">
+<meta property="og:locale" content="{{locale}}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{title}}">
+<meta name="twitter:description" content="{{description}}">
+<script type="application/ld+json">{{schemaJson}}</script>

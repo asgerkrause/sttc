@@ -1,0 +1,19 @@
+<!--
+  @desc Inline markdown rendered at build time. Put markdown source in the default slot.
+-->
+<div class="md">{{rendered}}</div>
+
+<style>
+  .md {
+    line-height: 1.6;
+
+    h2, h3, h4 { text-wrap: balance; margin-top: 1.5em; margin-bottom: .5em; }
+    p { margin: 0 0 1em; text-wrap: pretty; }
+    ul, ol { margin: 0 0 1em; padding-left: 1.5em; }
+    li + li { margin-top: .25em; }
+    code { padding: .125em .25em; font-size: .9em; background: color-mix(in oklab, var(--fg) 6%, transparent); border-radius: .25em; }
+    pre code { padding: 0; background: none; }
+    a { color: inherit; text-decoration: underline; text-underline-offset: .2em; }
+    blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 2px solid currentColor; opacity: .8; }
+  }
+</style>

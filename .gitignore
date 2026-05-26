@@ -1,0 +1,7 @@
+dist/
+
+# Pi agent (SANITIZE)
+.pi/scratch/
+.pi/shape/
+.pi/init-auto/
+.pi/brand-auto/

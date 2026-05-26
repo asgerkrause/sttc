@@ -1,0 +1,160 @@
+<!--
+  @desc Site header. Pulls siteName from site.json by default.
+  @attr siteName Override site name. Defaults to site.json name.
+-->
+<header>
+  <div class="c">
+    <a href="/">{{siteName}}</a>
+    <button
+      type="button"
+      class="burger"
+      aria-expanded="false"
+      aria-controls="nav"
+      aria-label="Menu"
+    ></button>
+    <nav id="nav">
+      <ul>
+        <li><a class="lnk" href="/">Home</a></li>
+        <li><a class="lnk" href="/about/">About</a></li>
+        <li><a class="lnk" href="/contact/">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  body>header {
+  background: var(--s);
+  border-bottom: var(--bw) var(--b) solid;
+  padding: var(--pd) var(--bx);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  .c {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  nav ul {
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    gap: var(--gp-lg);
+  }
+
+  .burger {
+    position: relative;
+    background: var(--t);
+    color: var(--i);
+    z-index: 1000;
+    width: 4em;
+    height: 2em;
+    margin-left: auto;
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100vw;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(2rem);
+
+    &::before,
+    &::after {
+      content: "";
+      width: 33%;
+      height: var(--bw);
+      background: currentColor;
+      position: absolute;
+      border-radius: 100vw;
+      transition-property: color, background, transform;
+      transition-timing-function: var(--tf-s);
+      transition-duration: var(--td-s);
+    }
+
+    &::after {
+      transform: translateY(-0.2em);
+    }
+
+    &::before {
+      transform: translateY(0.2em);
+    }
+
+    &:hover {
+      background: var(--n10);
+    }
+
+    &[aria-expanded="true"] {
+      background: var(--n10);
+
+      &::after {
+        transform: rotate(45deg);
+      }
+
+      &::before {
+        transform: rotate(135deg);
+      }
+    }
+  }
+
+  @media (width > 60rem) {
+    .burger {
+      display: none !important;
+    }
+
+    nav {
+      display: flex;
+      margin-left: auto;
+    }
+  }
+
+  @media (width <=60rem) {
+    nav {
+      display: none;
+      position: fixed;
+      inset: 0;
+    }
+
+    &:has([aria-expanded="true"]) nav {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      height: 100vh;
+      width: 100vw;
+      padding: var(--bx);
+      align-items: end;
+
+      ul {
+        flex-direction: column;
+        gap: 0;
+        width: 100%;
+
+        a {
+          font-size: var(--h2-fs);
+        }
+      }
+    }
+  }
+}
+
+@media (width <=60rem) {
+  body:has(header [aria-expanded="true"]) :is(main, footer) {
+    pointer-events: none;
+    user-select: none;
+  }
+
+  body:has(header [aria-expanded="true"]) main::after {
+    content: "";
+    background: color-mix(in srgb, var(--s) 90%, transparent);
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+  }
+}
+</style>
