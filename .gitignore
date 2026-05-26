@@ -5,3 +5,9 @@ dist/
 .pi/shape/
 .pi/init-auto/
 .pi/brand-auto/
+
+# macOS
+.DS_Store
+
+# Pi session exports
+pi-session-*.html
