@@ -1,6 +1,8 @@
-# snz-renderer
+# SANITIZE Boilerplate
 
-HTML-first, Bun-native static site builder. Author HTML; ship a site with structured data, llms.txt, and a machine-readable manifest. Zero npm dependencies.
+`@snz/bp` — HTML-first, Bun-native static site builder. Author HTML; ship a site with structured data, llms.txt, and a machine-readable manifest. Zero npm dependencies.
+
+Repo: `sanitizestudio/snz-bp`.
 
 ## Stack
 

@@ -1,6 +1,6 @@
-# AGENTS.md — snz-renderer
+# AGENTS.md — SANITIZE Boilerplate
 
-Static site builder. Edit `src/`. Build writes `dist/` (gitignored). Never edit `dist/`. Loud errors with file/line/hint.
+SANITIZE Boilerplate (`@snz/bp`) static site builder. Repo: `sanitizestudio/snz-bp`. Edit `src/`. Build writes `dist/` (gitignored). Never edit `dist/`. Loud errors with file/line/hint.
 
 Need quick framework mental model? Read `docs/agent-guide.md` first, then `docs/components.md` for component work.
 

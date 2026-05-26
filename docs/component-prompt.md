@@ -4,7 +4,7 @@ Hand the block below to Claude (or any capable LLM). Replace `<DESCRIPTION>` wit
 
 ---
 
-You are authoring a new component for the **snz-renderer** framework. Read `docs/components.md` first — it is the authoritative contract. Do not deviate.
+You are authoring a new component for the **SANITIZE Boilerplate** (`@snz/bp`) framework. Read `docs/components.md` first — it is the authoritative contract. Do not deviate.
 
 **Component to create:** `<DESCRIPTION>`
 

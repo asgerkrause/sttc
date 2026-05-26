@@ -1,10 +1,10 @@
 # Agent Guide
 
-Fast orientation for LLMs working in `snz-renderer`.
+Fast orientation for LLMs working in SANITIZE Boilerplate (`@snz/bp`).
 
 ## Mental model
 
-`snz-renderer` is an HTML-first, Bun-native static site builder.
+SANITIZE Boilerplate (`@snz/bp`) is an HTML-first, Bun-native static site builder.
 
 ```txt
 src/shell.html          app shell, loaded once

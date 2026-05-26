@@ -1,5 +1,5 @@
 {
-  "name": "snz-renderer",
+  "name": "@snz/bp",
   "private": true,
   "engines": {
     "bun": ">=1.3.14"
