@@ -1,10 +1,7 @@
 import { mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { BuildError } from './errors'
-
-export function shortHash(s: string) {
-  return Bun.hash(s).toString(16).slice(0, 8)
-}
+import { assetHash } from './hash'
 
 const INLINE_SCRIPT_RE =
   /<script(?![^>]*\bsrc=)(?![^>]*type=["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>/gi
@@ -166,7 +163,7 @@ export async function writeAppJs(
   let out = appCode.endsWith('\n') ? appCode : `${appCode}\n`
   out += generatedScriptCode(blocks)
 
-  const hash = shortHash(out)
+  const hash = assetHash(out)
   const filename = `app.${hash}.js`
   await writeFile(join(distAppDir, filename), out)
   await removeOldAppBundles(distAppDir, filename)

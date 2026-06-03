@@ -3,10 +3,7 @@ import { dirname, join } from 'path'
 import { BuildError } from './errors'
 import type { ComponentSchema } from './compose'
 import { parseInlineSchema } from './component-meta'
-
-function shortHash(s: string) {
-  return Bun.hash(s).toString(16).slice(0, 8)
-}
+import { assetHash } from './hash'
 
 const STYLE_RE = /<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi
 const STYLES_LINK = '<link rel="stylesheet" href="/assets/css/styles.css">'
@@ -135,7 +132,7 @@ export async function bundleComponentCss(
 
   const parts = blocks.map(({ source, css }) => `/* ${source} */\n${css}\n`)
   const minified = minifyCss(parts.join('\n'))
-  const hash = shortHash(minified)
+  const hash = assetHash(minified)
   const filename = `components.${hash}.css`
   await mkdir(distCssDir, { recursive: true })
   await writeFile(join(distCssDir, filename), minified)
