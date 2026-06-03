@@ -18,6 +18,7 @@
     "css:audit": "bun bin/snz-bp.ts css:audit",
     "dev": "bun bin/snz-bp.ts dev",
     "doctor": "bun bin/snz-bp.ts doctor",
+    "test": "bun test",
     "new": "bun bin/snz-bp.ts new",
     "migrate": "bun bin/snz-bp.ts migrate"
   }
