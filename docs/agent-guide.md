@@ -8,7 +8,7 @@ SANITIZE Boilerplate (`@snz/bp`) is an HTML-first, Bun-native static site builde
 
 ```txt
 src/shell.html          app shell, loaded once
-src/routes/*.html       route bodies, fetched by router
+src/pages/**/*.html       route bodies, fetched by router
 src/components/*.html   build-time components with inline schema
 content/**/*.md         CMS content, rendered through templates
 dist/                   generated static site, never edit
@@ -17,7 +17,7 @@ dist/                   generated static site, never edit
 Build flow:
 
 1. Parse components from `src/components/*.html`.
-2. Compose route/body HTML from `src/routes/*.html` and content markdown.
+2. Compose route/body HTML from `src/pages/**/*.html` and content markdown.
 3. Extract component styles/scripts into hashed assets.
 4. Process images with `Bun.Image`.
 5. Emit discovery artifacts: sitemap, feeds, llms files, manifest, route JSON.
@@ -44,7 +44,7 @@ No runtime framework. No hydration. No npm dependency model. Bun only.
 bun run new route pricing
 ```
 
-Or create `src/routes/pricing.html`:
+Or create `src/pages/pricing.html`:
 
 ```html
 <head>
@@ -174,9 +174,9 @@ Markdown body.
 
 Global CSS files:
 
-- `src/styles/styles.css` — tokens, reset/base/type, theme tokens, `.c`, `.w`, page overrides.
-- `src/styles/grid.css` — `[g]`, `[c]`, `[r]`, `[o]` primitives.
-- `src/styles/lenis.css` — optional scroll integration.
+- `src/styles.css` — tokens, reset/base/type, theme tokens, `.c`, `.w`, page overrides.
+- `src/styles.cssgrid.css` — `[g]`, `[c]`, `[r]`, `[o]` primitives.
+- `src/styles.csslenis.css` — optional scroll integration.
 
 Component CSS:
 

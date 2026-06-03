@@ -3,7 +3,8 @@
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { join } from 'path'
-import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, root, shellFile, sourceImagesDir, src } from './paths'
+import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, sourceImagesDir, src, stylesDir, appDir } from './paths'
+import { discoverSourceRoutes } from './source-files'
 import { BuildError } from './errors'
 import { compileContent } from './content'
 import { assertUniqueImageNames } from './images'
@@ -110,19 +111,14 @@ async function checkSiteJson(fail: (m: string) => void) {
   catch { fail('src/site.json is not valid JSON') }
 }
 
-function slugFromRouteFile(name: string) {
-  return name.replace(/\.html$/i, '').replace(/\/index$/i, '') || 'index'
-}
-
 async function checkSourceContracts(fail: (m: string) => void, warn: (m: string) => void) {
   await assertUniqueImageNames(await sourceImagesDir(), join(root, 'media', 'images')).catch((err) => {
     fail(err instanceof Error ? err.message : String(err))
   })
 
   const routeSlugs = new Map<string, string>()
-  for (const name of await readdir(join(src, 'routes')).catch(() => [])) {
-    if (!name.endsWith('.html')) continue
-    routeSlugs.set(slugFromRouteFile(name), `src/routes/${name}`)
+  for (const route of await discoverSourceRoutes()) {
+    routeSlugs.set(route.slug, route.sourceRel)
   }
 
   const contentRoutes = await compileContent().catch((err) => {
@@ -153,6 +149,9 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
 
 async function checkSourceLayout(warn: (m: string) => void) {
   const legacy = [
+    ['src/routes', routesDir],
+    ['src/styles', stylesDir],
+    ['src/app', appDir],
     ['src/assets/js', legacyAppDir],
     ['src/assets/css', legacyStylesDir],
     ['src/assets/images', legacyImagesDir],
@@ -162,7 +161,7 @@ async function checkSourceLayout(warn: (m: string) => void) {
   for (const [label, path] of legacy) {
     try {
       await stat(path)
-      warn(`${label} is legacy; use src/app, src/styles, src/images, or runtime instead`)
+      warn(`${label} is legacy; prefer src/pages, src/styles.css, src/app.js, src/images, or runtime instead`)
     } catch {
       /* canonical layout */
     }
@@ -185,8 +184,12 @@ async function checkComponentTags(warn: (m: string) => void) {
     }
   }
   await scanFile(shellFile)
-  for (const name of await readdir(join(src, 'routes')).catch(() => [])) {
-    if (name.endsWith('.html')) await scanFile(join(src, 'routes', name))
+  const glob = new Bun.Glob('**/*.html')
+  for (const dir of [routesDir, pagesDir]) {
+    if (!(await Bun.file(dir).exists())) continue
+    for await (const rel of glob.scan({ cwd: dir, onlyFiles: true })) {
+      await scanFile(join(dir, rel))
+    }
   }
 }
 

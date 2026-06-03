@@ -79,18 +79,19 @@ Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install`
 src/
   shell.html              Page wrapper (header + main + footer + scripts)
   site.json               Brand defaults: name, url, description, ogImage, scroll
-  routes/                 Static routes; one file → one URL (index.html = /)
+  pages/                  Static pages; nested files map to nested URLs
   components/             One HTML file per component — that's it
-  templates/              Render shells for CMS content (post.html, page.html)
-  styles/                 styles.css (tokens + reset), grid.css, lenis.css
-  app/                    app.js (site code), scroll.js, components.js, vendor/lenis.min.js
+  styles.css              Tokens, reset/base, layout primitives, page overrides
+  app.js or app.ts        Site code
   images/                 Image masters → built to webp at multiple sizes
 
-content/                  PagesCMS-managed markdown
-  posts/                  → /insights/{slug}/
-  pages/                  → /{slug}/
-
-media/images/             PagesCMS uploads, also fed through image pipeline
+Opt-in/legacy:
+  src/routes/             Legacy route input; src/pages wins on collisions
+  src/styles/styles.css   Legacy global CSS path
+  src/app/app.js          Legacy app entry
+  src/templates/          CMS render shells
+  content/                PagesCMS markdown
+  media/images/           PagesCMS uploads, also fed through image pipeline
 
 runtime/
   router.js               Client framework, exposes window.snz
@@ -118,7 +119,7 @@ CSS ownership: global CSS owns tokens, reset/base, `.c`, `.w`, and grid attrs `[
 
 ## Routes
 
-Drop a file into `src/routes/`. It becomes `/{name}/`. The router intercepts navigation and uses view transitions where supported.
+Drop a file into `src/pages/`. It becomes its nested URL: `index.html` → `/`, `about.html` → `/about/`, `blog/index.html` → `/blog/`, `work/case.html` → `/work/case/`. Legacy `src/routes/` still works; `src/pages/` wins on slug collisions.
 
 Override SEO per route with a `<head>` wrapper:
 
@@ -136,7 +137,7 @@ Override SEO per route with a `<head>` wrapper:
 
 ## Content pipeline
 
-`content/posts/*.md` and `content/pages/*.md` with YAML front-matter compile through `src/templates/{post,page}.html`. Minimal markdown subset.
+CMS support is opt-in. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Minimal markdown subset.
 
 ```yaml
 ---
@@ -184,7 +185,7 @@ Component `<script>` blocks become per-instance mount functions (see [`docs/comp
 
 ## Scroll
 
-Lenis is optional and self-hosted (`src/app/vendor/lenis.min.js`). Toggle in `site.json`:
+Lenis is optional and self-hosted (`src/app.jsvendor/lenis.min.js`). Toggle in `site.json`:
 
 ```jsonc
 { "scroll": "lenis" }   // default
@@ -199,7 +200,7 @@ Lenis is optional and self-hosted (`src/app/vendor/lenis.min.js`). Toggle in `si
 
 ## Adding a page
 
-1. Drop `src/routes/pricing.html` (or `bun run new route pricing`).
+1. Drop `src/pages/pricing.html` (or `bun run new route pricing`). Use nested files for nested URLs.
 2. Optional `<head><SEO title="..." description="..." /></head>` wrapper.
 3. Use components: `<Card title="..."><Button href="..." label="..." />...</Card>`.
 4. `bun run build`. Page is at `/pricing/`, in manifest, sitemap, llms.txt, and `/routes/pricing.json`.

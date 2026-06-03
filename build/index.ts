@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { createComposer } from './compose'
 import {
@@ -30,7 +30,6 @@ import {
   root,
   shellFile,
   siteFile,
-  sourceAppDir,
   sourceAppFile,
   sourceImagesDir,
   sourceRouterFile,
@@ -54,6 +53,7 @@ import {
 } from './discovery'
 import type { ComposeInstance } from './compose'
 import { writeComponentsReadme } from './docs'
+import { discoverSourceRoutes } from './source-files'
 
 async function writeComposed(
   srcPath: string,
@@ -157,20 +157,18 @@ async function build() {
     }
   }
 
-  for (const name of await readdir(join(src, 'routes'))) {
-    if (!name.endsWith('.html')) continue
-    const routeRaw = await readFile(join(src, 'routes', name), 'utf8')
-    const slug = composer.slugFromRouteFile(name)
-    routeSlugs.push(slug)
-    const { scripts } = extractRouteTopScripts(routeRaw, name)
-    scriptBlocks.push(...routeScriptBlocks(slug, scripts))
+  for (const route of await discoverSourceRoutes()) {
+    const routeRaw = await readFile(route.sourcePath, 'utf8')
+    routeSlugs.push(route.slug)
+    const { scripts } = extractRouteTopScripts(routeRaw, route.sourceRel)
+    scriptBlocks.push(...routeScriptBlocks(route.slug, scripts))
 
-    const { body } = extractRouteTopScripts(routeRaw, name)
-    const html = await composer.prepareRouteSource(body, name)
-    const outPath = join(dist, 'routes', name)
+    const { body } = extractRouteTopScripts(routeRaw, route.sourceRel)
+    const html = await composer.prepareRouteSource(body, route.sourceRel)
+    const outPath = join(dist, 'routes', route.outFile)
     await mkdir(join(outPath, '..'), { recursive: true })
     await writeFile(outPath, html)
-    routeRecords.push(await recordFromHtml(slug, html))
+    routeRecords.push(await recordFromHtml(route.slug, html))
   }
 
   // Compile content/posts and content/pages via templates → dist/routes/...

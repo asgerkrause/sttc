@@ -297,10 +297,10 @@ function watchTree(rootPath: string, recursive: boolean) {
   try { watch(rootPath, { recursive }, onWatch(rootPath)) } catch {}
 }
 
-for (const rel of ['routes', 'components', 'assets', 'templates']) {
+for (const rel of ['pages', 'routes', 'components', 'assets', 'templates', 'styles', 'app']) {
   watchTree(join(src, rel), true)
 }
-watchTree(src, false) // shell.html, site.json — watch dir, not file (file watches die on save+rename)
+watchTree(src, false) // shell.html, site.json, styles.css, app.js/app.ts — watch dir, not file (file watches die on save+rename)
 watchTree(join(root, 'build'), true)
 watchTree(root, false) // router.js, .pages.yml
 watchTree(join(root, 'lib'), true)

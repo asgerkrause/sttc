@@ -1,6 +1,6 @@
 import { mkdir, readdir, rm, stat } from 'fs/promises'
-import { join } from 'path'
-import { dist, root, sourceAppDir, sourceStylesDir } from './paths'
+import { basename, join } from 'path'
+import { dist, root, sourceAppDir, sourceAppFile, sourceStylesDir, sourceStylesFile } from './paths'
 
 // Recursive copy implemented with sequential per-file writes. fs.cp(recursive: true) was
 // observed to race with adjacent writes (image variants would vanish), so we walk + Bun.write.
@@ -35,8 +35,16 @@ export async function copyAssets() {
   // Wipe stale js bundles so old hashed app.*.js bundles don't linger.
   await rm(join(assetsDist, 'js'), { recursive: true, force: true })
 
-  await copyTree(await sourceStylesDir(), join(assetsDist, 'css'))
-  await copyTree(await sourceAppDir(), join(assetsDist, 'js'), (name) => name === 'app.js')
+  const cssDist = join(assetsDist, 'css')
+  const jsDist = join(assetsDist, 'js')
+  await mkdir(cssDist, { recursive: true })
+  await mkdir(jsDist, { recursive: true })
+  await copyTree(await sourceStylesDir(), cssDist, (name) => name === 'styles.css')
+  await Bun.write(join(cssDist, 'styles.css'), Bun.file(await sourceStylesFile()))
+  await copyTree(await sourceAppDir(), jsDist, (name) => name === 'app.js')
+  const appEntry = await sourceAppFile('app.js')
+  await Bun.write(join(jsDist, 'app.js'), Bun.file(appEntry))
+  if (basename(appEntry) === 'app.ts') await Bun.write(join(jsDist, 'app.ts'), Bun.file(appEntry))
   await mkdir(join(assetsDist, 'images'), { recursive: true })
 }
 

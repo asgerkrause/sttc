@@ -12,8 +12,10 @@ create-snz-bp .
 
 Ships with:
 
-- `/` — generic landing page
-- `/components/` — built-in component gallery
+- `src/pages/index.html` → `/`
+- `src/pages/components.html` → `/components/`
+- flat `src/styles.css`, `src/app.js`, `src/site.json`
+- no CMS files by default (CMS support is opt-in later)
 - no demo marketing routes (add your own with `bun run new route about`)
 
 ## Commands
@@ -25,4 +27,4 @@ bun run build
 bun run check
 ```
 
-Edit `src/`, `content/`, and `media/`. Do not edit `dist/`.
+Edit `src/`. Do not edit `dist/`.

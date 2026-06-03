@@ -22,16 +22,19 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | Path | What |
 |---|---|
 | `src/shell.html` | Page wrapper — header, main, footer, scripts (build → `dist/index.html`) |
-| `src/routes/*.html` | Static routes; one file → one URL |
+| `src/pages/**/*.html` | Static routes; one file → one URL |
 | `src/components/*.html` | One HTML file per component. Schema inline at top as `<!-- @desc / @attr -->` comment. |
-| `src/templates/{post,page}.html` | Render shells used by the content pipeline |
 | `src/site.json` | Site config: name, url, description, ogImage, locale, scroll |
-| `src/styles/` | `styles.css` (tokens + reset), `grid.css`, `lenis.css` |
-| `src/app/` | `app.js`, `scroll.js`, `components.js` (lifecycle runtime), `vendor/lenis.min.js` |
+| `src/styles.css` | Global tokens, reset, layout primitives, page overrides |
+| `src/app.js` / `src/app.ts` | Site code entry |
 | `src/images/` | Raster masters → built to webp at multiple sizes |
-| `content/posts/*.md` | PagesCMS posts → `/insights/{slug}/` |
-| `content/pages/*.md` | PagesCMS pages → `/{slug}/` |
-| `media/images/` | PagesCMS image uploads — also fed through Bun.Image |
+| `src/routes/**/*.html` | Legacy static route input; `src/pages` wins on collisions |
+| `src/styles/styles.css` | Legacy global CSS path |
+| `src/app/app.js` | Legacy app entry + optional runtime helpers |
+| `src/templates/{post,page}.html` | Opt-in CMS render shells |
+| `content/posts/*.md` | Opt-in PagesCMS posts → `/insights/{slug}/` |
+| `content/pages/*.md` | Opt-in PagesCMS pages → `/{slug}/` |
+| `media/images/` | Opt-in PagesCMS image uploads |
 | `runtime/lib/paths.js` | Shared by router (browser) + build (Bun) |
 | `runtime/router.js` | Client framework, exposes `window.snz` |
 | `build/` | Build pipeline (TypeScript, runs in Bun) |
@@ -43,7 +46,7 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | `docs/decisions/` | Short ADRs |
 | `bin/snz-bp.ts` | Package CLI wrapper |
 | `templates/default/` | Starter client site |
-| `.pages.yml` | PagesCMS config |
+| `.pages.yml` | Opt-in PagesCMS config |
 
 ## Shell vs route
 
@@ -79,13 +82,13 @@ To spawn a new component via LLM, hand it `docs/component-prompt.md`. Or just wr
 
 ## Routes
 
-Drop `src/routes/{slug}.html`. URL becomes `/{slug}/`. Home is `index.html` (→ `/`). 404 is `404.html`.
+Drop `src/pages/{slug}.html`. Home is `index.html` (→ `/`). Nested pages map by path: `blog/index.html` → `/blog/`, `work/case.html` → `/work/case/`. 404 is `404.html`. Legacy `src/routes/` still works.
 
 Inline `<script>` allowed only at the top of a route — auto-extracted and wrapped with `snz.onPage('{slug}', ...)` at build time. `<style>` not allowed in routes (use a component `<style>` or `html[data-page="{slug}"]` rules in `styles.css`).
 
 ## Content pipeline
 
-`content/posts/*.md` and `content/pages/*.md` compile through `src/templates/{post,page}.html`. Front-matter must include `title`.
+CMS is opt-in. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Front-matter must include `title`.
 
 ```yaml
 ---
@@ -133,7 +136,7 @@ Per-route transition variants: `<meta name="snz:transition" content="fade|slide|
 
 ## Scroll
 
-Lenis is **optional and self-hosted** (`src/app/vendor/lenis.min.js`, pinned 1.1.20).
+Lenis is **optional and self-hosted** (`src/app.jsvendor/lenis.min.js`, pinned 1.1.20).
 
 ```jsonc
 // src/site.json
@@ -164,7 +167,7 @@ Structured data auto-emitted:
 
 ## CSS
 
-- Base tokens + reset: `src/styles/styles.css` (`--mw`, `--bx`, `--by`, `--ffs`, `--fs`, color system).
+- Base tokens + reset: `src/styles.css` (`--mw`, `--bx`, `--by`, `--ffs`, `--fs`, color system).
 - Global layout primitives: `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`.
 - `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`). Small stacks by default.
 - Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).
@@ -174,7 +177,7 @@ Structured data auto-emitted:
 
 ## JS bundling
 
-- `src/app/app.js` is your site code.
+- `src/app.js` or `src/app.ts` is your site code. Legacy `src/app/app.js` still works.
 - Build concatenates shell head inline scripts + component lifecycle scripts + route top scripts (wrapped with `snz.onPage('{slug}', ...)`) into `dist/assets/js/app.{hash}.js`.
 
 ## Errors
@@ -193,7 +196,7 @@ Dev server writes `dist/__build-error.html` and serves it instead of routes unti
 
 ## Adding a page
 
-1. `bun run new route pricing` (or drop `src/routes/pricing.html` by hand).
+1. `bun run new route pricing` (or drop `src/pages/pricing.html` by hand).
 2. Use components.
 3. `bun run build`. Page is at `/pricing/`, in manifest, sitemap, llms.txt, `/routes/pricing.json`.
 

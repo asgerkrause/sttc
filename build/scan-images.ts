@@ -1,5 +1,6 @@
-import { readdir, readFile } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { pagesDir, routesDir } from './paths'
 import { parseAttrs } from './tags'
 import { BuildError } from './errors'
 
@@ -56,6 +57,15 @@ async function readIfExists(path: string) {
   return readFile(path, 'utf8')
 }
 
+async function scanHtmlDir(dir: string, label: string, map: Map<string, ImageEncodeOptions>) {
+  if (!(await Bun.file(dir).exists())) return
+  const glob = new Bun.Glob('**/*.html')
+  for await (const rel of glob.scan({ cwd: dir, onlyFiles: true })) {
+    const html = await readFile(join(dir, rel), 'utf8')
+    scanHtml(html, `${label}/${rel}`, map)
+  }
+}
+
 /** Scan shell, routes, and component templates for <Image /> encode attrs. */
 export async function scanImageEncodeOptions(
   srcDir: string,
@@ -66,26 +76,9 @@ export async function scanImageEncodeOptions(
   const shell = await readIfExists(join(srcDir, 'shell.html'))
   if (shell) scanHtml(shell, 'src/shell.html', map)
 
-  const routesDir = join(srcDir, 'routes')
-  try {
-    for (const name of await readdir(routesDir)) {
-      if (!name.endsWith('.html')) continue
-      const html = await readFile(join(routesDir, name), 'utf8')
-      scanHtml(html, `src/routes/${name}`, map)
-    }
-  } catch {
-    /* no routes */
-  }
-
-  try {
-    for (const name of await readdir(componentsDir)) {
-      if (!name.endsWith('.html')) continue
-      const html = await readFile(join(componentsDir, name), 'utf8')
-      scanHtml(html, `src/components/${name}`, map)
-    }
-  } catch {
-    /* no components */
-  }
+  await scanHtmlDir(routesDir, 'src/routes', map)
+  await scanHtmlDir(pagesDir, 'src/pages', map)
+  await scanHtmlDir(componentsDir, 'src/components', map)
 
   return Object.fromEntries(map)
 }

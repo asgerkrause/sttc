@@ -8,9 +8,13 @@ export const dist = join(root, 'dist')
 export const shellFile = join(src, 'shell.html')
 export const siteFile = join(src, 'site.json')
 export const componentsDir = join(src, 'components')
+export const pagesDir = join(src, 'pages')
 export const routesDir = join(src, 'routes')
 export const templatesDir = join(src, 'templates')
 
+export const appFile = join(src, 'app.js')
+export const appTsFile = join(src, 'app.ts')
+export const stylesFile = join(src, 'styles.css')
 export const appDir = join(src, 'app')
 export const stylesDir = join(src, 'styles')
 export const imagesDir = join(src, 'images')
@@ -48,11 +52,16 @@ export async function sourceStylesDir() {
   return firstExisting(stylesDir, legacyStylesDir)
 }
 
+export async function sourceStylesFile() {
+  return firstExisting(stylesFile, join(stylesDir, 'styles.css'), join(legacyStylesDir, 'styles.css'))
+}
+
 export async function sourceImagesDir() {
   return firstExisting(imagesDir, legacyImagesDir)
 }
 
 export async function sourceAppFile(name = 'app.js') {
+  if (name === 'app.js') return firstExisting(appFile, appTsFile, join(appDir, name), join(legacyAppDir, name))
   return firstExisting(join(appDir, name), join(legacyAppDir, name))
 }
 

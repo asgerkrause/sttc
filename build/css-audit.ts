@@ -1,8 +1,7 @@
 import { readFile } from 'fs/promises'
-import { join } from 'path'
-import { sourceStylesDir } from './paths'
+import { sourceStylesFile } from './paths'
 
-const stylesPath = join(await sourceStylesDir(), 'styles.css')
+const stylesPath = await sourceStylesFile()
 
 const blocked = [
   { selector: '.card', owner: 'src/components/Card.html' },

@@ -95,9 +95,9 @@ Usage:
 
 Colocate component-specific `<style>` in the component file. The build extracts it into `dist/assets/css/components.{hash}.css` (loaded after the global stylesheet so component rules win at equal specificity).
 
-`src/styles/styles.css` owns tokens, reset/base type, `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.card`, `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
+`src/styles.css` owns tokens, reset/base type, `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.card`, `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
 
-Use design tokens from `src/styles/styles.css`. Don't hardcode spacing or colors.
+Use design tokens from `src/styles.css`. Don't hardcode spacing or colors.
 
 ## Lifecycle scripts
 
