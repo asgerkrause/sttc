@@ -1,0 +1,33 @@
+{
+  "folders": [
+    {
+      "name": "site",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "build": true,
+      "runtime": true,
+      "bin": true,
+      "packages": true,
+      ".github": true,
+      ".pi": true,
+      "docs/decisions": true,
+      "templates": true,
+      "dist": true,
+      "node_modules": true
+    },
+    "search.exclude": {
+      "build": true,
+      "runtime": true,
+      "bin": true,
+      "packages": true,
+      ".github": true,
+      ".pi": true,
+      "templates": true,
+      "dist": true,
+      "node_modules": true
+    }
+  }
+}

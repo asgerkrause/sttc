@@ -44,6 +44,7 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`).
 | `docs/component-prompt.md` | Copy-paste prompt for LLM-spawned components |
 | `docs/components-catalog.md` | **Auto-generated** catalog — do not hand-edit |
 | `docs/decisions/` | Short ADRs |
+| `site.code-workspace` | Authoring-focused Cursor/VS Code workspace |
 | `.pages.yml` | Opt-in PagesCMS config |
 
 ## Shell vs route

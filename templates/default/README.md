@@ -29,3 +29,5 @@ bun run new cms    # optional: add PagesCMS/content scaffolding
 ```
 
 Edit `src/`. Do not edit `dist/`.
+
+Open `site.code-workspace` in Cursor/VS Code for authoring mode; it hides generated output and package internals.

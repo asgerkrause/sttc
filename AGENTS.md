@@ -46,6 +46,7 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | `docs/decisions/` | Short ADRs |
 | `bin/snz-bp.ts` | Package CLI wrapper |
 | `templates/default/` | Starter client site |
+| `site.code-workspace` | Authoring-focused Cursor/VS Code workspace |
 | `.pages.yml` | Opt-in PagesCMS config |
 
 ## Shell vs route

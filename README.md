@@ -74,6 +74,13 @@ bun ../../bin/snz-bp.ts check
 
 Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install` must run before `bun dev`. Later, published clients should depend on `@snz/bp` and run `bun update @snz/bp` for framework upgrades.
 
+## Workspace modes
+
+- Framework mode: open the repo root to edit `build/`, `runtime/`, `packages/`, docs, and the starter.
+- Author mode: open `site.code-workspace` in Cursor/VS Code to focus on `src/`, content, media, and site docs while hiding framework internals.
+
+Generated starter projects also include `site.code-workspace` for authoring-only work.
+
 ## Layout
 
 ```
