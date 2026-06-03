@@ -902,10 +902,6 @@ main {
       navigation: auto;
     }
 
-    body>header {
-      view-transition-name: header;
-    }
-
     :root {
       --pt-b: 0.2em;
 
