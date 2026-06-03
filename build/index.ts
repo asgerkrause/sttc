@@ -16,15 +16,30 @@ import {
 } from './extract-js'
 import {
   assertImageApi,
+  assertUniqueImageNames,
   processImages,
   processOgImage,
+  pruneStaleImages,
   pruneStaleVariants,
   type ImageMeta,
 } from './images'
 import { scanImageEncodeOptions } from './scan-images'
-import { componentsDir, dist, root, src } from './paths'
+import {
+  componentsDir,
+  dist,
+  root,
+  shellFile,
+  siteFile,
+  sourceAppDir,
+  sourceAppFile,
+  sourceImagesDir,
+  sourceRouterFile,
+  sourceRuntimeLibDir,
+  sourceStylesDir,
+  src,
+} from './paths'
 import { writeRobots, writeSitemap, type SiteConfig } from './seo'
-import { compileContent, type ContentRoute } from './content'
+import { compileContent, slugifyTag, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
 import { runChecks, failOnReport } from './check'
@@ -77,32 +92,25 @@ async function copyTree(srcDir: string, destDir: string, skip: (relPath: string)
 }
 
 async function copyAssets() {
-  const assetsSrc = join(src, 'assets')
   const assetsDist = join(dist, 'assets')
   await mkdir(assetsDist, { recursive: true })
 
   // Wipe stale js bundles so old hashed app.*.js bundles don't linger.
   await rm(join(assetsDist, 'js'), { recursive: true, force: true })
 
-  // Copy everything except images (those are emitted by processImages).
-  await copyTree(assetsSrc, assetsDist, (name) => name === 'images')
+  await copyTree(await sourceStylesDir(), join(assetsDist, 'css'))
+  await copyTree(await sourceAppDir(), join(assetsDist, 'js'), (name) => name === 'app.js')
   await mkdir(join(assetsDist, 'images'), { recursive: true })
 }
 
 async function copyMediaFolder() {
-  const imagesSrc = join(root, 'media', 'images')
-  try {
-    if ((await stat(imagesSrc)).isDirectory()) {
-      await copyTree(imagesSrc, join(dist, 'media', 'images'))
-      return
-    }
-  } catch {
-    /* fall through */
-  }
+  // media/images is source input for the optimizer, not a public raw asset tree.
+  // Other media folders can still be copied for non-image CMS files if added later.
+  await rm(join(dist, 'media', 'images'), { recursive: true, force: true })
   const mediaSrc = join(root, 'media')
   try {
     if ((await stat(mediaSrc)).isDirectory()) {
-      await copyTree(mediaSrc, join(dist, 'media'))
+      await copyTree(mediaSrc, join(dist, 'media'), (name) => name === 'images')
     }
   } catch {
     /* no media folder */
@@ -159,32 +167,35 @@ async function autoGenerateIndexes(
   }
 
   // /tags/{tag}/ — one index per unique tag
-  const byTag = new Map<string, ContentRoute[]>()
+  const byTag = new Map<string, { label: string; posts: ContentRoute[] }>()
   for (const p of posts) {
     for (const t of p.tags) {
-      if (!byTag.has(t)) byTag.set(t, [])
-      byTag.get(t)!.push(p)
+      const slug = slugifyTag(t)
+      if (!slug) continue
+      if (!byTag.has(slug)) byTag.set(slug, { label: t, posts: [] })
+      byTag.get(slug)!.posts.push(p)
     }
   }
   if (byTag.size === 0) return
 
-  for (const [tag, postsForTag] of byTag) {
+  for (const [tagSlug, group] of byTag) {
+    const { label, posts: postsForTag } = group
     const body = `<head>
-  <SEO title="Tag: ${tag}" description="Posts tagged ${tag}." path="/tags/${tag}/" />
+  <SEO title="Tag: ${label}" description="Posts tagged ${label}." path="/tags/${tagSlug}/" />
 </head>
 <Section>
-  <h1>Tag: <code>${tag}</code></h1>
+  <h1>Tag: <code>${label}</code></h1>
   ${postLinkList(postsForTag)}
   <p><a href="/tags/">← All tags</a></p>
 </Section>`
-    const html = await composer.prepareRouteSource(body, `tags/${tag}.html`)
+    const html = await composer.prepareRouteSource(body, `tags/${tagSlug}.html`)
     await mkdir(join(dist, 'routes', 'tags'), { recursive: true })
-    await writeFile(join(dist, 'routes', 'tags', `${tag}.html`), html)
-    routeSlugs.push(`tags/${tag}`)
+    await writeFile(join(dist, 'routes', 'tags', `${tagSlug}.html`), html)
+    routeSlugs.push(`tags/${tagSlug}`)
     routeRecords.push({
-      slug: `tags/${tag}`,
-      title: `Tag: ${tag}`,
-      description: `Posts tagged ${tag}.`,
+      slug: `tags/${tagSlug}`,
+      title: `Tag: ${label}`,
+      description: `Posts tagged ${label}.`,
       components: [],
       internalLinks: postsForTag.map((p) => `/${p.slug}/`),
       schemas: ['CollectionPage'],
@@ -194,8 +205,8 @@ async function autoGenerateIndexes(
 
   // /tags/ — index of all tags
   const tagLinks = [...byTag.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([t, ps]) => `<li><a href="/tags/${t}/">${t}</a> <small>(${ps.length})</small></li>`)
+    .sort(([, a], [, b]) => a.label.localeCompare(b.label))
+    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${group.label}</a> <small>(${group.posts.length})</small></li>`)
     .join('\n  ')
   const body = `<head>
   <SEO title="Tags" description="All tags." path="/tags/" />
@@ -257,15 +268,17 @@ async function build() {
   // subsequent writes (variants get truncated). Encoding before any cp call avoids it.
   t = performance.now()
   const imageEncode = await scanImageEncodeOptions(src, componentsDir)
-  const imagesSrc = join(src, 'assets', 'images')
+  const imagesSrc = await sourceImagesDir()
   const imagesDist = join(dist, 'assets', 'images')
   const assetsDist = join(dist, 'assets')
   await mkdir(imagesDist, { recursive: true })
+  await assertUniqueImageNames(imagesSrc, join(root, 'media', 'images'))
   // (Variant pruning intentionally removed — it raced with the cache check in processImages.
   // Stale variants are harmless: srcset only references widths the current sidecar reports.)
   const srcMeta = await processImages(imagesSrc, imagesDist, imageEncode)
   const mediaMeta = await processImages(join(root, 'media', 'images'), imagesDist, imageEncode)
   imageMeta = { ...mediaMeta, ...srcMeta }
+  await pruneStaleImages(imagesDist, Object.keys(imageMeta))
   await processOgImage(join(imagesSrc, 'og.png'), assetsDist)
   tick('images', t)
 
@@ -279,7 +292,7 @@ async function build() {
 
   const scriptBlocks: ScriptBlock[] = []
 
-  const shellRaw = await readFile(join(src, 'shell.html'), 'utf8')
+  const shellRaw = await readFile(shellFile, 'utf8')
   const { blocks: shellScripts } = extractShellHeadScripts(shellRaw)
   scriptBlocks.push(...shellScripts)
   // Component lifecycle scripts registered before any route scripts run.
@@ -340,7 +353,7 @@ async function build() {
   tick('routes', t)
 
   t = performance.now()
-  const site = JSON.parse(await readFile(join(src, 'site.json'), 'utf8')) as SiteConfig
+  const site = JSON.parse(await readFile(siteFile, 'utf8')) as SiteConfig
 
   // Auto-generate /insights/ index + /tags/{tag}/ + /tags/ index if not authored manually.
   const posts = contentRoutes.filter((c) => c.collection === 'posts' && !c.draft)
@@ -362,7 +375,7 @@ async function build() {
   tick('discovery', t)
 
   const appJsFile = await writeAppJs(
-    join(src, 'assets', 'js', 'app.js'),
+    await sourceAppFile('app.js'),
     join(dist, 'assets', 'js'),
     scriptBlocks,
   )
@@ -372,8 +385,8 @@ async function build() {
     .replace(/<script src="\/assets\/js\/app\.js"/, `<script src="/assets/js/${appJsFile}"`)
   await writeFile(join(dist, 'index.html'), indexHtml)
 
-  await Bun.write(join(dist, 'router.js'), Bun.file(join(root, 'router.js')))
-  await copyTree(join(root, 'lib'), join(dist, 'lib'))
+  await Bun.write(join(dist, 'router.js'), Bun.file(await sourceRouterFile()))
+  await copyTree(await sourceRuntimeLibDir(), join(dist, 'lib'))
 
   t = performance.now()
   const allowBrokenLinks = process.argv.includes('--allow-broken-links')

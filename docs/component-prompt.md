@@ -12,7 +12,7 @@ Produce exactly one file: `src/components/<PascalName>.html`. It must contain:
 
 1. A leading `<!-- ... -->` schema comment with at minimum `@desc` and any `@attr` declarations.
 2. The HTML template using `{{attr}}` for attributes and `{{slot}}` / `{{slot:name}}` for children.
-3. An optional `<style>` block (colocated, uses design tokens from `src/assets/css/styles.css`).
+3. An optional `<style>` block (colocated, uses design tokens from `src/styles/styles.css`).
 4. An optional `<script>` block if the component needs runtime behavior. `el` is bound to the instance root; return a function for cleanup.
 
 Rules:

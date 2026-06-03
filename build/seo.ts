@@ -1,6 +1,6 @@
 import { writeFile } from 'fs/promises'
 import { join } from 'path'
-import { publicPathFromSlug } from '../lib/paths.js'
+import { publicPathFromSlug } from '../runtime/lib/paths.js'
 
 export type SiteConfig = {
   name: string

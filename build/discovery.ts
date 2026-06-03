@@ -7,7 +7,7 @@
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { absoluteUrl, type SiteConfig } from './seo'
-import { publicPathFromSlug } from '../lib/paths.js'
+import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import type { ComponentSchema, ComposeInstance } from './compose'
 import type { ContentRoute } from './content'
 
@@ -23,6 +23,10 @@ export type RouteRecord = {
   /** Date / lastModified ISO string. */
   lastModified?: string
 }
+
+export const MANIFEST_SCHEMA_VERSION = 1
+export const GENERATOR_NAME = '@snz/bp'
+export const GENERATOR_VERSION = '2.0.0'
 
 const INTERNAL_LINK_RE = /<a\s+[^>]*href="(\/[^"#?]*)/gi
 
@@ -131,6 +135,11 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
     const routeJsonPath = join(distDir, 'routes', `${r.slug}.json`)
     await mkdir(join(routeJsonPath, '..'), { recursive: true })
     await writeFile(routeJsonPath, JSON.stringify({
+      schemaVersion: MANIFEST_SCHEMA_VERSION,
+      generator: {
+        name: GENERATOR_NAME,
+        version: GENERATOR_VERSION,
+      },
       slug: r.slug,
       path: publicPathFromSlug(r.slug),
       title: r.title,
@@ -224,7 +233,11 @@ async function writeAiPlugin(distDir: string, site: SiteConfig) {
 async function writeManifest(distDir: string, input: DiscoveryInput) {
   const { site, routes, componentSchemas, componentUseCounts } = input
   const manifest = {
-    generator: 'snz-renderer@2.0',
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
+    generator: {
+      name: GENERATOR_NAME,
+      version: GENERATOR_VERSION,
+    },
     generatedAt: new Date().toISOString(),
     site,
     routes: routes.map((r) => ({

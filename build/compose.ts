@@ -7,7 +7,7 @@ import { componentsDir, src } from './paths'
 import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { COMPONENT_OPEN_RE, nextComponent, parseAttrs, type ComponentMatch } from './tags'
-import { slugFromRouteFile as libSlugFromRouteFile } from '../lib/paths.js'
+import { slugFromRouteFile as libSlugFromRouteFile } from '../runtime/lib/paths.js'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
 const LEGACY_COMMENT_RE = /<!--\s*@(component|seo)\b/
@@ -127,7 +127,7 @@ export function createComposer(
 
     const site = await loadSiteConfig()
     if (name === 'Header' && !attrs.siteName) attrs.siteName = site.name
-    if (name === 'Footer' && !attrs.copyright) attrs.copyright = `© ${site.name}`
+    if (name === 'Footer' && !attrs.siteName) attrs.siteName = site.name
     return attrs
   }
 
@@ -201,7 +201,7 @@ export function createComposer(
     let children = m.children
     // Markdown: render children as markdown into the `rendered` attr; default slot stays empty.
     if (m.name === 'Markdown' && children) {
-      attrs.rendered = renderMarkdown(children)
+      attrs.rendered = renderMarkdown(children, { file: fileHint })
       children = ''
     }
     let fragment = expandSlots(template, children)

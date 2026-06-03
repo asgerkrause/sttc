@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { src } from './paths'
+import { sourceStylesDir } from './paths'
 
-const stylesPath = join(src, 'assets', 'css', 'styles.css')
+const stylesPath = join(await sourceStylesDir(), 'styles.css')
 
 const blocked = [
   { selector: '.card', owner: 'src/components/Card.html' },

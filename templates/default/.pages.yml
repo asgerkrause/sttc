@@ -1,0 +1,80 @@
+# Pages CMS — https://pagescms.org/docs/configuration/
+# Content compiles at build time. CMS uploads feed optimized /assets/images output.
+
+media:
+  - name: images
+    label: Images
+    input: media/images
+    output: /assets/images
+    extensions: [png, jpg, jpeg, webp]
+    rename: safe
+
+content:
+  - name: editorial
+    label: Content
+    type: group
+    items:
+      - name: posts
+        label: Insights
+        type: collection
+        path: content/posts
+        format: yaml-frontmatter
+        filename: "{primary}.md"
+        view:
+          primary: title
+          sort: date
+          order: desc
+        fields:
+          - name: title
+            type: string
+            required: true
+          - name: date
+            type: date
+            required: true
+          - name: description
+            type: text
+          - name: image
+            type: image
+          - name: body
+            type: rich-text
+            required: true
+      - name: pages
+        label: Extra pages
+        type: collection
+        path: content/pages
+        format: yaml-frontmatter
+        filename: "{primary}.md"
+        subfolders: false
+        fields:
+          - name: title
+            type: string
+            required: true
+          - name: body
+            type: rich-text
+            required: true
+  - name: site
+    label: Site settings
+    type: file
+    path: src/site.json
+    format: json
+    operations:
+      delete: false
+    fields:
+      - name: name
+        type: string
+        required: true
+      - name: url
+        type: string
+        required: true
+      - name: description
+        type: text
+        required: true
+      - name: locale
+        type: string
+      - name: ogImage
+        type: string
+      - name: twitter
+        type: string
+
+settings:
+  merge: false

@@ -20,7 +20,58 @@ bun run doctor    # CSS ownership audit + strict check
 bun run new       # scaffolder: bun run new component|route|post|page <name>
 ```
 
+Package CLI:
+
+```bash
+snz-bp dev
+snz-bp build
+snz-bp check
+snz-bp doctor
+snz-bp new component Hero
+snz-bp migrate
+```
+
 `bun run build --allow-broken-links` skips the link checker.
+
+## Starter template
+
+New client project starter lives in `templates/default/`. Creator package lives in `packages/create-snz-bp/`.
+
+Private local UX:
+
+```bash
+bun scripts/install-local-creator.ts
+create-snz-bp my-client
+cd my-client
+bun install
+bun dev
+```
+
+Create in current empty directory:
+
+```bash
+create-snz-bp .
+bun install
+bun dev
+```
+
+Target published UX later:
+
+```bash
+bun create snz-bp my-client
+cd my-client
+bun install
+bun dev
+```
+
+Current local verification:
+
+```bash
+cd templates/default
+bun ../../bin/snz-bp.ts check
+```
+
+Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install` must run before `bun dev`. Later, published clients should depend on `@snz/bp` and run `bun update @snz/bp` for framework upgrades.
 
 ## Layout
 
@@ -31,10 +82,9 @@ src/
   routes/                 Static routes; one file → one URL (index.html = /)
   components/             One HTML file per component — that's it
   templates/              Render shells for CMS content (post.html, page.html)
-  assets/
-    css/                  styles.css (tokens + reset), grid.css, lenis.css
-    js/                   app.js (site code), scroll.js, components.js, vendor/lenis.min.js
-    images/               Image masters → built to webp at multiple sizes
+  styles/                 styles.css (tokens + reset), grid.css, lenis.css
+  app/                    app.js (site code), scroll.js, components.js, vendor/lenis.min.js
+  images/                 Image masters → built to webp at multiple sizes
 
 content/                  PagesCMS-managed markdown
   posts/                  → /insights/{slug}/
@@ -42,8 +92,9 @@ content/                  PagesCMS-managed markdown
 
 media/images/             PagesCMS uploads, also fed through image pipeline
 
-lib/                      Shared by router + build (paths.js)
-router.js                 Client framework, exposes window.snz
+runtime/
+  router.js               Client framework, exposes window.snz
+  lib/paths.js            Shared by router + build
 build/                    Build pipeline (TypeScript, runs in Bun)
 dev.ts                    Dev server with file watcher
 docs/
@@ -58,7 +109,7 @@ docs/
 
 Invoked as `<PascalName />` or `<PascalName>children</PascalName>`. **One file per component.** Schema lives in a leading `<!-- @desc / @attr -->` comment at the top of each `.html`. Agent orientation is in [`docs/agent-guide.md`](./docs/agent-guide.md). Authoring contract is in [`docs/components.md`](./docs/components.md).
 
-Built-ins (14):
+Built-ins (15):
 `Header`, `Footer`, `SEO`, `Image`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
 
 Add a new component by handing [`docs/component-prompt.md`](./docs/component-prompt.md) to Claude, or just write it yourself.
@@ -133,7 +184,7 @@ Component `<script>` blocks become per-instance mount functions (see [`docs/comp
 
 ## Scroll
 
-Lenis is optional and self-hosted (`src/assets/js/vendor/lenis.min.js`). Toggle in `site.json`:
+Lenis is optional and self-hosted (`src/app/vendor/lenis.min.js`). Toggle in `site.json`:
 
 ```jsonc
 { "scroll": "lenis" }   // default

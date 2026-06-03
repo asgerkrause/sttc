@@ -20,11 +20,11 @@ Most clones use [Pages CMS](https://pagescms.org/) lightly: marketing shells in 
 | Source | Who | URLs |
 | ------ | --- | ---- |
 | `src/routes/` | dev/agent | home, about, contact, 404, … |
-| `content/posts/` | client (PagesCMS) | `/insights/{slug}/` after **content compile** (v2) |
-| `content/pages/` | client | `/{slug}/` long-tail (v2) |
+| `content/posts/` | client (PagesCMS) | `/insights/{slug}/` after content compile |
+| `content/pages/` | client | `/{slug}/` long-tail routes after content compile |
 | `src/site.json` | client via PagesCMS `type: file` | SEO defaults |
 
-**One route template** at compile time (`src/templates/post.html` in v2) — not one HTML file per post in `src/routes/`.
+**Route templates** compile content at build time (`src/templates/post.html`, `src/templates/page.html`) — not one HTML file per post/page in `src/routes/`.
 
 `.pages.yml`: `group` sidebar, `yaml-frontmatter`, `filename: "{primary}.md"`, split `media/images`.
 
@@ -34,11 +34,14 @@ Clean tree for agents; client-friendly editor (Insights + Site settings); router
 
 ## Consequences
 
-- v1.2: CMS folders + config exist; **build ignores** `content/` until v2
-- Do not add per-post files under `src/routes/`
-- Compile contract in `future-desires/todo.md`
+- Build compiles `content/posts/` and `content/pages/` into generated route files.
+- Dev watches `content/` and rebuilds on edits.
+- Do not add per-post files under `src/routes/`.
+- Markdown renders at build time through `build/markdown.ts`; unsafe HTML and unsafe URLs fail loudly.
+- Current hardening work lives in GitHub issues: media path alignment, content safety, tag slugging, and source collision checks.
 
 ## Links
 
 - `.pages.yml`
 - `content/README.md`
+- `docs/decisions/markdown-rendering.md`

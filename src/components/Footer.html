@@ -1,10 +1,15 @@
 <!--
-  @desc Site footer. Defaults copyright to © {siteName}.
-  @attr copyright Override copyright text. Defaults to © {site.name}.
+  @desc Site footer with dynamic year and site name.
+  @attr siteName Override site name. Defaults to site.json name.
 -->
 <footer data-theme="invert">
   <div class="c">
-    <p><small>{{copyright}}</small></p>
+    <p class="footer-copy">
+      <span>©</span>
+      <span data-snz-year></span>
+      <span>{{siteName}}</span>
+      <span>All rights reserved.</span>
+    </p>
   </div>
 </footer>
 
@@ -13,4 +18,17 @@
     padding: var(--bx);
     padding-top: var(--by);
   }
+
+  .footer-copy {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35em;
+    margin: 0;
+    font-size: var(--fs-sm, 0.875rem);
+  }
 </style>
+
+<script>
+const year = el.querySelector('[data-snz-year]')
+if (year) year.textContent = String(new Date().getFullYear())
+</script>

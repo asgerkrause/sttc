@@ -15,9 +15,9 @@ Assets were copied raw (`cp src/assets → dist/assets`). No raster files in rep
 
 ## Chosen
 
-- Masters in `src/assets/images/` (jpg/png)
-- `images.ts` runs from `build.ts` via `Bun.file(…).image()` → webp (and OG png fallback)
-- `dist/assets/images/*.webp` + `dist/assets/og.webp` served as static files
+- Masters in `src/images/` and CMS uploads in `media/images/` (jpg/png/webp)
+- `images.ts` runs from build via `Bun.Image` → webp variants (and OG png fallback)
+- `dist/assets/images/*.webp` + responsive `-{width}.webp` variants + `dist/assets/og.webp` served as static files
 - Requires **Bun >= 1.3.14** (`Bun.Image`)
 
 ## `<Image />` component
@@ -37,18 +37,19 @@ Assets were copied raw (`cp src/assets → dist/assets`). No raster files in rep
 - `image-preview.js` removes `.img-tmp` on main `load` / `error` (no inline handlers)
 - `loading="eager"` → single `<img>`, no tmp
 - Optional pixelated tmp: `image-rendering: pixelated` on `.img-tmp` in `Image.html`
-- Output format: **webp** for dist rasters (v1 fixed)
+- Output format: **webp** for dist rasters
+- Responsive `srcset` emits for generated variants unless `responsive="false"`
 
-## Out of scope (v1)
+## Out of scope
 
-- Responsive `srcset` / multi-width variants (add later if needed)
-- AVIF output  
-- Runtime `Bun.serve` transforms  
+- AVIF output
+- Runtime `Bun.serve` transforms
 - Rewriting arbitrary `<img src="hero.jpg">` in routes
+- Remote media URL ingest
 
 ## Author workflow
 
-1. Add `src/assets/images/{name}.jpg` (or png)  
+1. Add `src/images/{name}.jpg` (or png)
 2. `bun run build`  
 3. `<Image src="{name}" alt="…" />` in routes (or manual `/assets/images/{name}.webp`)  
-4. OG: `src/assets/images/og.png` → `dist/assets/og.webp` + `og.png`; default in `site.json` is `/assets/og.webp`
+4. OG: `src/images/og.png` → `dist/assets/og.webp` + `og.png`; default in `site.json` is `/assets/og.webp`

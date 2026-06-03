@@ -1,15 +1,24 @@
 {
   "name": "@snz/bp",
   "private": true,
+  "type": "module",
+  "workspaces": [
+    "templates/default",
+    "packages/create-snz-bp"
+  ],
+  "bin": {
+    "snz-bp": "./bin/snz-bp.ts"
+  },
   "engines": {
     "bun": ">=1.3.14"
   },
   "scripts": {
-    "build": "bun build/index.ts",
-    "check": "bun build/check.ts",
-    "css:audit": "bun build/css-audit.ts",
-    "dev": "bun dev.ts",
-    "doctor": "bun run css:audit && bun run check",
-    "new": "bun build/scaffold.ts"
+    "build": "bun bin/snz-bp.ts build",
+    "check": "bun bin/snz-bp.ts check",
+    "css:audit": "bun bin/snz-bp.ts css:audit",
+    "dev": "bun bin/snz-bp.ts dev",
+    "doctor": "bun bin/snz-bp.ts doctor",
+    "new": "bun bin/snz-bp.ts new",
+    "migrate": "bun bin/snz-bp.ts migrate"
   }
 }

@@ -43,7 +43,7 @@ export function resolveImageAttrs(
 
   const dims = meta[name]
   if (!dims) {
-    throw new Error(`Image "${name}": add src/assets/images/${name}.{jpg,png,webp} and rebuild`)
+    throw new Error(`Image "${name}": add src/images/${name}.{jpg,png,webp} or media/images/${name}.{jpg,png,webp} and rebuild`)
   }
 
   const src = `/assets/images/${name}.webp`
@@ -156,6 +156,21 @@ export async function pruneStaleVariants(distDir: string) {
   } catch { /* dist dir not present yet */ }
 }
 
+export async function pruneStaleImages(distDir: string, currentNames: Iterable<string>) {
+  const keep = new Set(currentNames)
+  try {
+    for (const entry of await readdir(distDir, { withFileTypes: true })) {
+      if (!entry.isFile()) continue
+      const match = entry.name.match(/^(.+?)(?:-\d+)?\.webp$/i)
+      if (!match) continue
+      const name = match[1]
+      if (name === 'og' || keep.has(name)) continue
+      await unlink(join(distDir, entry.name))
+      await unlink(sidecarPath(distDir, name)).catch(() => {})
+    }
+  } catch { /* dist dir not present yet */ }
+}
+
 async function rasterFiles(dir: string): Promise<string[]> {
   const out: string[] = []
   let entries
@@ -175,6 +190,33 @@ async function rasterFiles(dir: string): Promise<string[]> {
     out.push(path)
   }
   return out
+}
+
+export async function assertUniqueImageNames(...roots: string[]) {
+  const byName = new Map<string, string[]>()
+  for (const root of roots) {
+    for (const file of await rasterFiles(root)) {
+      const name = basename(file, extname(file))
+      if (name === 'og') continue
+      const files = byName.get(name) ?? []
+      files.push(file)
+      byName.set(name, files)
+    }
+  }
+
+  const duplicates = [...byName.entries()].filter(([, files]) => files.length > 1)
+  if (!duplicates.length) return
+
+  const details = duplicates
+    .map(([name, files]) => [
+      `- ${name}`,
+      ...files.map((file) => `  - ${relative(process.cwd(), file)}`),
+    ].join('\n'))
+    .join('\n')
+
+  throw new Error(
+    `Duplicate image logical names found. Rename one master before build.\n${details}`,
+  )
 }
 
 /** One webp per master — Bun.Image resize + webp at build */

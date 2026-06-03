@@ -15,7 +15,7 @@ bun run doctor   # CSS ownership audit + strict check
 bun run new      # scaffolder: bun run new component|route|post|page <name>
 ```
 
-Requires **Bun >= 1.3.14** (for `Bun.Image`).
+Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 
 ## Layout
 
@@ -26,14 +26,14 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`).
 | `src/components/*.html` | One HTML file per component. Schema inline at top as `<!-- @desc / @attr -->` comment. |
 | `src/templates/{post,page}.html` | Render shells used by the content pipeline |
 | `src/site.json` | Site config: name, url, description, ogImage, locale, scroll |
-| `src/assets/css/` | `styles.css` (tokens + reset), `grid.css`, `lenis.css` |
-| `src/assets/js/` | `app.js`, `scroll.js`, `components.js` (lifecycle runtime), `vendor/lenis.min.js` |
-| `src/assets/images/` | Raster masters → built to webp at multiple sizes |
+| `src/styles/` | `styles.css` (tokens + reset), `grid.css`, `lenis.css` |
+| `src/app/` | `app.js`, `scroll.js`, `components.js` (lifecycle runtime), `vendor/lenis.min.js` |
+| `src/images/` | Raster masters → built to webp at multiple sizes |
 | `content/posts/*.md` | PagesCMS posts → `/insights/{slug}/` |
 | `content/pages/*.md` | PagesCMS pages → `/{slug}/` |
 | `media/images/` | PagesCMS image uploads — also fed through Bun.Image |
-| `lib/paths.js` | Shared by router (browser) + build (Bun) |
-| `router.js` | Client framework, exposes `window.snz` |
+| `runtime/lib/paths.js` | Shared by router (browser) + build (Bun) |
+| `runtime/router.js` | Client framework, exposes `window.snz` |
 | `build/` | Build pipeline (TypeScript, runs in Bun) |
 | `dev.ts` | Dev server with watch + SSE hot reload + in-page error banner |
 | `docs/agent-guide.md` | Fast orientation for LLMs: mental model, tasks, CSS ownership, checks |
@@ -41,6 +41,8 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`).
 | `docs/component-prompt.md` | Copy-paste prompt for LLM-spawned components |
 | `docs/components-catalog.md` | **Auto-generated** catalog — do not hand-edit |
 | `docs/decisions/` | Short ADRs |
+| `bin/snz-bp.ts` | Package CLI wrapper |
+| `templates/default/` | Starter client site |
 | `.pages.yml` | PagesCMS config |
 
 ## Shell vs route
@@ -101,11 +103,11 @@ Drafts (`draft: true`) are excluded from production builds, included in dev. Tag
 
 ## Images
 
-- Masters live in `src/assets/images/` or `media/images/` (PagesCMS).
+- Masters live in `src/images/` or `media/images/` (PagesCMS).
 - Build encodes to `dist/assets/images/{name}.webp` via `Bun.Image`, with responsive variants (320, 640, 1024, {max}).
 - `<Image src="hero" alt="..." max="1200" quality="82" />` — `max`/`quality` are pre-scanned to choose the largest needed size.
 - Lazy by default. `loading="eager"` skips the placeholder for above-fold images.
-- OG: `src/assets/images/og.png` → `dist/assets/og.webp` (+ `og.png` fallback).
+- OG: `src/images/og.png` → `dist/assets/og.webp` (+ `og.png` fallback).
 
 ## Client framework (`router.js`)
 
@@ -131,7 +133,7 @@ Per-route transition variants: `<meta name="snz:transition" content="fade|slide|
 
 ## Scroll
 
-Lenis is **optional and self-hosted** (`src/assets/js/vendor/lenis.min.js`, pinned 1.1.20).
+Lenis is **optional and self-hosted** (`src/app/vendor/lenis.min.js`, pinned 1.1.20).
 
 ```jsonc
 // src/site.json
@@ -162,7 +164,7 @@ Structured data auto-emitted:
 
 ## CSS
 
-- Base tokens + reset: `src/assets/css/styles.css` (`--mw`, `--bx`, `--by`, `--ffs`, `--fs`, color system).
+- Base tokens + reset: `src/styles/styles.css` (`--mw`, `--bx`, `--by`, `--ffs`, `--fs`, color system).
 - Global layout primitives: `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`.
 - `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`). Small stacks by default.
 - Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).
@@ -172,7 +174,7 @@ Structured data auto-emitted:
 
 ## JS bundling
 
-- `src/assets/js/app.js` is your site code.
+- `src/app/app.js` is your site code.
 - Build concatenates shell head inline scripts + component lifecycle scripts + route top scripts (wrapped with `snz.onPage('{slug}', ...)`) into `dist/assets/js/app.{hash}.js`.
 
 ## Errors

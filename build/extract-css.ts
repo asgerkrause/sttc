@@ -43,7 +43,7 @@ const COMPONENT_SCRIPT_RE =
 
 /**
  * Extract lifecycle <script> blocks from a component template.
- * Each block becomes a per-instance mount function (see src/assets/js/components.js).
+ * Each block becomes a per-instance mount function (see runtime/components.js).
  */
 export function extractComponentScripts(html: string): { html: string; scripts: string[] } {
   const scripts: string[] = []
@@ -59,7 +59,7 @@ export function rejectStyleInRoute(html: string, file: string) {
   if (/<style\b/i.test(html)) {
     throw new BuildError(`<style> not allowed in routes`, {
       file,
-      hint: 'Use a component <style>, or scope rules with html[data-page="..."] in src/assets/css/styles.css.',
+      hint: 'Use a component <style>, or scope rules with html[data-page="..."] in src/styles/styles.css.',
     })
   }
 }

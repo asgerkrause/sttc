@@ -1,0 +1,37 @@
+<!--
+  @desc Code block with optional language label. Put the code in the default slot.
+  @attr lang Language identifier (e.g. js, ts, html, css).
+-->
+<figure class="code">
+  <figcaption class="code-lang">{{lang}}</figcaption>
+  <pre><code class="lang-{{lang}}">{{slot}}</code></pre>
+</figure>
+
+<style>
+  .code {
+    margin: 1rem 0;
+    border: 1px solid color-mix(in oklab, var(--fg) 10%, transparent);
+    border-radius: .5rem;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--fg) 4%, var(--bg));
+
+    .code-lang {
+      padding: .25rem .75rem;
+      font-size: .75rem;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      opacity: .6;
+      border-bottom: 1px solid color-mix(in oklab, var(--fg) 8%, transparent);
+    }
+    .code-lang:empty { display: none; }
+    pre {
+      margin: 0;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .875rem;
+      line-height: 1.5;
+    }
+    code { font-family: inherit; }
+  }
+</style>

@@ -2,12 +2,13 @@ import { watch } from 'fs'
 import { stat as fsStat } from 'fs/promises'
 import { basename, join } from 'path'
 import { spawn } from 'bun'
-import { isAssetPath } from './lib/paths.js'
+import { isAssetPath } from './runtime/lib/paths.js'
 
-const root = import.meta.dir
+const packageRoot = import.meta.dir
+const root = process.cwd()
 const src = join(root, 'src')
 const dist = join(root, 'dist')
-const port = 3000
+const preferredPort = Number(process.env.PORT ?? 3000)
 
 let building = false
 let dirty = false           // event arrived while we were building or absorbing — needs a build after the window
@@ -36,7 +37,7 @@ async function runBuild() {
   building = true
   dirty = false
   broadcast('building')
-  const proc = spawn(['bun', 'build/index.ts'], {
+  const proc = spawn(['bun', join(packageRoot, 'build', 'index.ts')], {
     cwd: root,
     stdout: 'inherit',
     stderr: 'inherit',
@@ -169,9 +170,9 @@ const HMR_CLIENT = `
 
 await runBuild()
 
-Bun.serve({
-  port,
-  async fetch(req) {
+const server = await startServer()
+
+async function handleRequest(req: Request) {
     const url = new URL(req.url)
     let path = decodeURIComponent(url.pathname)
     if (path.endsWith('/')) path = path.slice(0, -1) || '/'
@@ -236,8 +237,20 @@ Bun.serve({
     const idx = await shell.text()
     const withHmr = idx.replace('</body>', '<script src="/__snz/hmr.js"></script></body>')
     return new Response(withHmr, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
-  },
-})
+}
+
+async function startServer() {
+  for (let port = preferredPort; port < preferredPort + 20; port++) {
+    try {
+      return Bun.serve({ port, fetch: handleRequest })
+    } catch (err) {
+      const code = typeof err === 'object' && err && 'code' in err ? String(err.code) : ''
+      const message = err instanceof Error ? err.message : String(err)
+      if (code !== 'EADDRINUSE' && !message.includes('EADDRINUSE')) throw err
+    }
+  }
+  throw new Error(`No available port found from ${preferredPort} to ${preferredPort + 19}`)
+}
 
 function waitingPage() {
   return `<!doctype html>
@@ -278,7 +291,7 @@ poll()
 </body></html>`
 }
 
-console.log(`http://localhost:${port}`)
+console.log(`http://localhost:${server.port}`)
 
 function watchTree(rootPath: string, recursive: boolean) {
   try { watch(rootPath, { recursive }, onWatch(rootPath)) } catch {}

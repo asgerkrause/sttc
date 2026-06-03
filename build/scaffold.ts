@@ -55,7 +55,7 @@ if (kind === 'component') {
 
 <style>
   .${name.toLowerCase()} {
-    /* use tokens from src/assets/css/styles.css; prefer elements/attrs before extra classes */
+    /* use tokens from src/styles/styles.css; prefer elements/attrs before extra classes */
   }
 </style>
 `

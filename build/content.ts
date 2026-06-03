@@ -4,8 +4,8 @@
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { join } from 'path'
-import { BuildError } from './errors'
-import { parseFrontMatter, render as renderMarkdown } from './markdown'
+import { BuildError, lineOf } from './errors'
+import { fmString, fmStringArray, parseFrontMatter, render as renderMarkdown } from './markdown'
 import { root, src } from './paths'
 
 export type ContentRoute = {
@@ -47,6 +47,33 @@ function substitute(template: string, vars: Record<string, string>) {
   return template.replace(/\{\{(\w+)\}\}/g, (m, key) => vars[key] ?? m)
 }
 
+export function slugifyTag(tag: string) {
+  return tag
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function normalizeContentMediaRefs(value: string) {
+  return value.replace(/\/(?:media|assets)\/images\/([^\s)"']+)\.(jpe?g|png|webp)\b/gi, (_m, name) => {
+    return `/assets/images/${name}.webp`
+  })
+}
+
+function assertSafeContentMarkdown(body: string, file: string) {
+  const unsafe = body.match(/<\s*\/?\s*(script|style)\b/i)
+  if (!unsafe || unsafe.index == null) return
+  const tag = unsafe[1].toLowerCase()
+  throw new BuildError(`Unsafe <${tag}> tag in CMS markdown`, {
+    file,
+    line: lineOf(body, unsafe.index),
+    hint: `Remove <${tag}> from markdown. Put scripts in src/app/app.js and styles in component <style> blocks.`,
+  })
+}
+
 async function compileFile(
   collection: 'posts' | 'pages',
   filename: string,
@@ -59,21 +86,29 @@ async function compileFile(
   const basename = filename.replace(/\.md$/i, '')
   const slug = collection === 'posts' ? `insights/${basename}` : basename
 
-  if (!data.title) {
+  if (!fmString(data, 'title')) {
     throw new BuildError(`content/${collection}/${filename} missing "title" in front-matter`, {
       file: `content/${collection}/${filename}`,
     })
   }
 
-  const html = renderMarkdown(body)
-  const tags = parseTags(data.tags)
-  const draft = data.draft === 'true' || data.draft === '1'
+  const sourceRel = `content/${collection}/${filename}`
+  assertSafeContentMarkdown(body, sourceRel)
+  const normalizedBody = normalizeContentMediaRefs(body)
+  const html = renderMarkdown(normalizedBody, { file: sourceRel })
+  const tags = fmStringArray(data, 'tags').length ? fmStringArray(data, 'tags') : parseTags(fmString(data, 'tags'))
+  const draft = fmString(data, 'draft') === 'true' || fmString(data, 'draft') === '1'
+  const flat: Record<string, string> = {}
+  for (const [k, v] of Object.entries(data)) {
+    flat[k] = normalizeContentMediaRefs(typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v))
+  }
   const vars: Record<string, string> = {
-    ...data,
+    ...flat,
+    title: fmString(data, 'title'),
     slug,
     basename,
     body: html,
-    tagsHtml: tags.map((t) => `<Tag href="/tags/${t}/" label="${t}" />`).join(' '),
+    tagsHtml: tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${t}" />`).join(' '),
   }
   let composed = substitute(template, vars)
   if (draft && process.env.SNZ_DEV) {
@@ -85,8 +120,8 @@ async function compileFile(
     slug,
     routeFile,
     body: composed,
-    source: `content/${collection}/${filename}`,
-    data,
+    source: sourceRel,
+    data: flat,
     collection,
     markdown: body,
     tags,

@@ -1,6 +1,7 @@
 import { slugFromPath, publicPath, fetchPath } from './lib/paths.js'
 
 const main = document.querySelector('main[data-route-root]')
+let routeAnnouncer = null
 
 const DISCLOSURE_SEL =
   'button[aria-controls][aria-expanded]:not([data-snz-ignore])'
@@ -165,6 +166,34 @@ function afterEmit(detail) {
   }
 }
 
+function announcer() {
+  if (routeAnnouncer) return routeAnnouncer
+  routeAnnouncer = document.createElement('div')
+  routeAnnouncer.setAttribute('aria-live', 'polite')
+  routeAnnouncer.setAttribute('aria-atomic', 'true')
+  routeAnnouncer.dataset.snzAnnouncer = ''
+  routeAnnouncer.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0'
+  document.body.append(routeAnnouncer)
+  return routeAnnouncer
+}
+
+function focusRouteRoot() {
+  if (!main) return
+  const target = main.querySelector('h1') ?? main
+  if (!(target instanceof HTMLElement)) return
+  const hadTabindex = target.hasAttribute('tabindex')
+  if (!hadTabindex) target.setAttribute('tabindex', '-1')
+  target.focus({ preventScroll: true })
+  if (!hadTabindex) {
+    target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true })
+  }
+}
+
+function announceRoute() {
+  const title = document.title || main?.querySelector('h1')?.textContent?.trim() || 'Page loaded'
+  announcer().textContent = title
+}
+
 async function runBeforeNavigate(detail) {
   for (const fn of beforeHandlers) {
     try {
@@ -175,13 +204,13 @@ async function runBeforeNavigate(detail) {
   return true
 }
 
-async function render(pathname, { is404 = false, transition = true } = {}) {
+async function render(pathname, { is404 = false, transition = true, focus = false } = {}) {
   if (!main) return
 
   const raw = await fetchRouteHtml(pathname)
   if (raw === null) {
     if (!is404 && slugFromPath(pathname) !== '404') {
-      return render('/404/', { is404: true, transition })
+      return render('/404/', { is404: true, transition, focus })
     }
     main.replaceChildren()
     document.documentElement.removeAttribute('data-page')
@@ -191,7 +220,7 @@ async function render(pathname, { is404 = false, transition = true } = {}) {
   const parsed = wrapPage(raw)
   if (!parsed) {
     if (!is404 && slugFromPath(pathname) !== '404') {
-      return render('/404/', { is404: true, transition })
+      return render('/404/', { is404: true, transition, focus })
     }
     main.replaceChildren()
     document.documentElement.removeAttribute('data-page')
@@ -215,6 +244,10 @@ async function render(pathname, { is404 = false, transition = true } = {}) {
   } else {
     apply()
   }
+  if (focus) {
+    focusRouteRoot()
+    announceRoute()
+  }
   afterEmit(detail)
 }
 
@@ -232,7 +265,7 @@ async function go(pathname) {
   const ok = await runBeforeNavigate(detail)
   if (!ok) return
   history.pushState(null, '', url)
-  await render(url)
+  await render(url, { focus: true })
 }
 
 // ---- public API ----
@@ -319,7 +352,7 @@ document.addEventListener(
   { passive: true },
 )
 
-window.addEventListener('popstate', () => render(location.pathname))
+window.addEventListener('popstate', () => render(location.pathname, { focus: true }))
 
 // Invalidate route cache after long background
 let hiddenAt = 0

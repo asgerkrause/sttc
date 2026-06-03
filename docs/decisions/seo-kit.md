@@ -5,21 +5,19 @@
 
 ## Context
 
-Clones need autonomous search + answer-engine signals without hand-maintained sitemaps or per-page SEO files. Challenge picked **Kit 3 phased**; v1.2 ships baseline only.
+Clones need autonomous search + answer-engine signals without hand-maintained sitemaps or per-page SEO files. Build now ships baseline SEO plus content-aware discovery artifacts.
 
 ## Options considered
 
 1. **Runtime SEO** — rejected; static boilerplate, build-time only
 2. **Hand-edited sitemap** — rejected; drifts, bad DX
-3. **Phased build kit** — baseline now, content-aware + AEO later
+3. **Phased build kit** — baseline first, then content-aware discovery and richer AEO/GEO fields
 
 ## Chosen
 
-**Phase 1 (v1.2):** `build/seo.ts` — `Organization` + `WebSite` + `WebPage` in JSON-LD; `dist/sitemap.xml`; `dist/robots.txt`; `bun run check` validates output.
+**Shipped:** `build/seo.ts` + `build/discovery.ts` emit `Organization`, `WebSite`, `WebPage`, FAQ-style component schemas, `BlogPosting` for CMS posts, `sitemap.xml`, `robots.txt`, feeds, `llms.txt`, `llms-full.txt`, `site.manifest.json`, route JSON, and ai-plugin metadata. Manifest and route JSON include `schemaVersion` plus structured generator metadata. `bun run check` validates required discovery output.
 
-**Phase 2 (v2):** `FAQPage` when route has FAQ markup; `Article`/`BlogPosting` for CMS **generated route** entries.
-
-**Phase 3 (v2+):** `dist/llms.txt` from extended `site.json` (contact, `sameAs`, etc.).
+**Next:** extend `site.json` with richer organization/contact/topic fields.
 
 ## Why
 
@@ -27,9 +25,10 @@ Matches north star: ship speed (one `site.json` + build) + SEO/AEO depth without
 
 ## Consequences
 
-- All public **static route** slugs (except `404`) appear in sitemap
-- `site.json` `url` must be production origin before deploy
-- Phase 2+ tracked in `future-desires/todo.md`
+- All public route slugs (except `404`) appear in sitemap, including generated content routes.
+- `site.json` `url` must be production origin before deploy.
+- Richer AEO/GEO fields are tracked in GitHub issues.
+- Manifest consumers can branch on `schemaVersion` and generator metadata instead of guessing output shape.
 
 ## Links
 

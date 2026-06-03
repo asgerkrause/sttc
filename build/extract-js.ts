@@ -57,7 +57,7 @@ function rejectScriptInRouteBody(html: string, file: string) {
   if (/<script\b/i.test(html)) {
     throw new BuildError(`<script> only allowed at top of route file`, {
       file,
-      hint: 'Move route logic into src/assets/js/app.js and use snz.onPage(...) or the snz:page event.',
+      hint: 'Move route logic into src/app/app.js and use snz.onPage(...) or the snz:page event.',
     })
   }
 }
@@ -95,7 +95,7 @@ export function componentScriptBlocks(byComponent: Map<string, string[]>): Scrip
 }
 
 /**
- * Concatenates app.js + extracted script blocks, writes to dist/assets/js/app.{hash}.js,
+ * Concatenates src/app/app.js + extracted script blocks, writes to dist/assets/js/app.{hash}.js,
  * returns the hashed filename. Old app.*.js bundles are removed.
  */
 export async function writeAppJs(

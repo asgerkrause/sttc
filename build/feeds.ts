@@ -3,7 +3,7 @@
 import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import { absoluteUrl, type SiteConfig } from './seo'
-import { publicPathFromSlug } from '../lib/paths.js'
+import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import type { ContentRoute } from './content'
 
 function esc(s: string) {

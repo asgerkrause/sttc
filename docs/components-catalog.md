@@ -11,10 +11,10 @@ See `docs/components.md` for the authoring contract.
 - [`<Card />`](#card) — Article card with title, body, optional CTA, and a default slot for additional content.
 - [`<Code />`](#code) — Code block with optional language label. Put the code in the default slot.
 - [`<FAQ />`](#faq) — Demo FAQ block. Prefer assembling <Accordion> tags directly in routes — this is a starting-point copy.
-- [`<Footer />`](#footer) — Site footer. Defaults copyright to © {siteName}.
+- [`<Footer />`](#footer) — Site footer with dynamic year and site name.
 - [`<Grid />`](#grid) — Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
 - [`<Header />`](#header) — Site header. Pulls siteName from site.json by default.
-- [`<Image />`](#image) — Lazy-loaded image with blurhash placeholder and responsive srcset. Master in src/assets/images/{src}.{ext} or media/images/{src}.{ext}; build emits multiple webp sizes.
+- [`<Image />`](#image) — Lazy-loaded image with blurhash placeholder and responsive srcset. Master in src/images/{src}.{ext} or media/images/{src}.{ext}; build emits multiple webp sizes.
 - [`<Link />`](#link) — Underlined inline link.
 - [`<Markdown />`](#markdown) — Inline markdown rendered at build time. Put markdown source in the default slot.
 - [`<SEO />`](#seo) — Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or rely on defaults.
@@ -106,13 +106,13 @@ Demo FAQ block. Prefer assembling <Accordion> tags directly in routes — this i
 
 ## Footer
 
-Site footer. Defaults copyright to © {siteName}.
+Site footer with dynamic year and site name.
 
 ### Attributes
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `copyright` |  | string | Override copyright text. Defaults to © {site.name}. |
+| `siteName` |  | string | Override site name. Defaults to site.json name. |
 
 ### Example
 
@@ -157,7 +157,7 @@ Site header. Pulls siteName from site.json by default.
 
 ## Image
 
-Lazy-loaded image with blurhash placeholder and responsive srcset. Master in src/assets/images/{src}.{ext} or media/images/{src}.{ext}; build emits multiple webp sizes.
+Lazy-loaded image with blurhash placeholder and responsive srcset. Master in src/images/{src}.{ext} or media/images/{src}.{ext}; build emits multiple webp sizes.
 
 ### Attributes
 

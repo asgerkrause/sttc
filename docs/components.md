@@ -95,9 +95,9 @@ Usage:
 
 Colocate component-specific `<style>` in the component file. The build extracts it into `dist/assets/css/components.{hash}.css` (loaded after the global stylesheet so component rules win at equal specificity).
 
-`src/assets/css/styles.css` owns tokens, reset/base type, `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.card`, `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
+`src/styles/styles.css` owns tokens, reset/base type, `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.card`, `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
 
-Use design tokens from `src/assets/css/styles.css`. Don't hardcode spacing or colors.
+Use design tokens from `src/styles/styles.css`. Don't hardcode spacing or colors.
 
 ## Lifecycle scripts
 
@@ -128,7 +128,7 @@ Optional `<script>` block runs once per instance. `el` is bound to the root elem
 
 The build auto-injects `data-snz-component="{Name}"` on the template root. Runtime walks `[data-snz-component]:not([data-snz-mounted])` after each navigation and runs the wrapper.
 
-## Built-in components (14)
+## Built-in components (15)
 
 | Component | Purpose |
 |---|---|
@@ -139,7 +139,7 @@ The build auto-injects `data-snz-component="{Name}"` on the template root. Runti
 | `Card` | Article card with title/body/CTA/slot. |
 | `Accordion`, `FAQ` | Native `<details>` disclosure + demo composite. |
 | `Section` | Semantic section + `.c` container. No root class. |
-| `Markdown` | Inline build-time markdown (use slot for source). |
+| `Markdown` | Inline build-time markdown (use slot for source). Supports headings, lists, tables, code, safe links/images, and PascalCase components. |
 | `Grid` | Attribute grid wrapper. `cols` maps to `[g]`; `span`/`rows`/`order` map to `[c]`/`[r]`/`[o]` for nested grid children. |
 | `Stack` | Deprecated compatibility wrapper. Prefer `<div class="w">…</div>`. |
 | `Code` | `<pre><code>` block with optional language label. |

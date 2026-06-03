@@ -1,0 +1,12 @@
+{
+  "name": "create-snz-bp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "create-snz-bp": "./bin/create-snz-bp.ts"
+  },
+  "engines": {
+    "bun": ">=1.3.14"
+  }
+}

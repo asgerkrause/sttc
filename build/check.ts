@@ -3,8 +3,10 @@
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { join } from 'path'
-import { componentsDir, dist, root, src } from './paths'
+import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, root, shellFile, sourceImagesDir, src } from './paths'
 import { BuildError } from './errors'
+import { compileContent } from './content'
+import { assertUniqueImageNames } from './images'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
@@ -15,6 +17,8 @@ export async function runChecks(opts: { allowBrokenLinks?: boolean } = {}): Prom
   const warn = (m: string) => warnings.push(m)
 
   await checkSiteJson(fail)
+  await checkSourceContracts(fail, warn)
+  await checkSourceLayout(warn)
   await checkSeoFiles(fail)
   await checkJsonLd(fail)
   if (!opts.allowBrokenLinks) await checkInternalLinks(fail)
@@ -106,6 +110,65 @@ async function checkSiteJson(fail: (m: string) => void) {
   catch { fail('src/site.json is not valid JSON') }
 }
 
+function slugFromRouteFile(name: string) {
+  return name.replace(/\.html$/i, '').replace(/\/index$/i, '') || 'index'
+}
+
+async function checkSourceContracts(fail: (m: string) => void, warn: (m: string) => void) {
+  await assertUniqueImageNames(await sourceImagesDir(), join(root, 'media', 'images')).catch((err) => {
+    fail(err instanceof Error ? err.message : String(err))
+  })
+
+  const routeSlugs = new Map<string, string>()
+  for (const name of await readdir(join(src, 'routes')).catch(() => [])) {
+    if (!name.endsWith('.html')) continue
+    routeSlugs.set(slugFromRouteFile(name), `src/routes/${name}`)
+  }
+
+  const contentRoutes = await compileContent().catch((err) => {
+    fail(err instanceof Error ? err.message : String(err))
+    return []
+  })
+  for (const route of contentRoutes) {
+    const existing = routeSlugs.get(route.slug)
+    if (existing) fail(`${route.source}: content route collides with ${existing} at /${route.slug}/`)
+  }
+
+  for (const template of ['post.html', 'page.html']) {
+    const rel = `src/templates/${template}`
+    const raw = await readFile(join(src, 'templates', template), 'utf8').catch(() => '')
+    if (!raw) continue
+    if (!raw.includes('{{body}}')) fail(`${rel}: missing {{body}} placeholder`)
+    if (!raw.includes('{{title}}')) warn(`${rel}: missing {{title}} placeholder`)
+  }
+
+  const pages = await readFile(join(root, '.pages.yml'), 'utf8').catch(() => '')
+  if (pages && !/input:\s*media\/images\b/.test(pages)) {
+    warn('.pages.yml: media.input should stay media/images so CMS uploads feed the image pipeline')
+  }
+  if (pages && !/output:\s*\/assets\/images\b/.test(pages)) {
+    warn('.pages.yml: media.output should be /assets/images to match optimized public image output')
+  }
+}
+
+async function checkSourceLayout(warn: (m: string) => void) {
+  const legacy = [
+    ['src/assets/js', legacyAppDir],
+    ['src/assets/css', legacyStylesDir],
+    ['src/assets/images', legacyImagesDir],
+    ['router.js', legacyRuntimeRouter],
+    ['lib', legacyRuntimeLib],
+  ] as const
+  for (const [label, path] of legacy) {
+    try {
+      await stat(path)
+      warn(`${label} is legacy; use src/app, src/styles, src/images, or runtime instead`)
+    } catch {
+      /* canonical layout */
+    }
+  }
+}
+
 async function checkComponentTags(warn: (m: string) => void) {
   let names: string[]
   try {
@@ -121,7 +184,7 @@ async function checkComponentTags(warn: (m: string) => void) {
       warn(`${path}: unknown component <${m[1]} />`)
     }
   }
-  await scanFile(join(src, 'shell.html'))
+  await scanFile(shellFile)
   for (const name of await readdir(join(src, 'routes')).catch(() => [])) {
     if (name.endsWith('.html')) await scanFile(join(src, 'routes', name))
   }
@@ -150,7 +213,7 @@ async function checkDiscoveryArtifacts(fail: (m: string) => void) {
 if (import.meta.main) {
   const skipBuild = process.argv.includes('--skip-build')
   if (!skipBuild) {
-    const proc = Bun.spawn(['bun', 'run', 'build'], { cwd: root, stdout: 'inherit', stderr: 'inherit' })
+    const proc = Bun.spawn(['bun', join(packageRoot, 'build', 'index.ts')], { cwd: root, stdout: 'inherit', stderr: 'inherit' })
     const code = await proc.exited
     if (code !== 0) process.exit(code)
   }

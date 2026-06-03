@@ -129,13 +129,31 @@ Use `.w`:
 
 ### Add image
 
-Place master in `src/assets/images/hero.png` or `media/images/hero.png`, then:
+Place master in `src/images/hero.png` or `media/images/hero.png`, then:
 
 ```html
 <Image src="hero" alt="Product interface" max="1200" loading="eager" />
 ```
 
 Build emits responsive WebP variants.
+
+### Add inline markdown
+
+Use `<Markdown>` for build-time markdown inside routes/components:
+
+```html
+<Markdown>
+## Feature table
+
+| Feature | Status |
+| --- | --- |
+| Tables | Supported |
+
+<Button label="Contact" href="/contact/" />
+</Markdown>
+```
+
+Markdown is rendered at build time. Unsafe HTML and unsafe URL protocols fail loudly.
 
 ### Add content page/post
 
@@ -156,9 +174,9 @@ Markdown body.
 
 Global CSS files:
 
-- `src/assets/css/styles.css` — tokens, reset/base/type, theme tokens, `.c`, `.w`, page overrides.
-- `src/assets/css/grid.css` — `[g]`, `[c]`, `[r]`, `[o]` primitives.
-- `src/assets/css/lenis.css` — optional scroll integration.
+- `src/styles/styles.css` — tokens, reset/base/type, theme tokens, `.c`, `.w`, page overrides.
+- `src/styles/grid.css` — `[g]`, `[c]`, `[r]`, `[o]` primitives.
+- `src/styles/lenis.css` — optional scroll integration.
 
 Component CSS:
 

@@ -1,12 +1,12 @@
 # Pages CMS — https://pagescms.org/docs/configuration/
-# v1.2: editor config; content compile → routes is v2 (see future-desires/todo.md).
+# Content compiles at build time. Media path contract tracked in GitHub issue #6.
 
 media:
   - name: images
     label: Images
     input: media/images
-    output: /media/images
-    extensions: [png, jpg, jpeg, webp, gif]
+    output: /assets/images
+    extensions: [png, jpg, jpeg, webp]
     rename: safe
 
 content:
