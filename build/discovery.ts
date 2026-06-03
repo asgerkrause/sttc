@@ -10,6 +10,7 @@ import { absoluteUrl, type SiteConfig } from './seo'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import type { ComponentSchema, ComposeInstance } from './compose'
 import type { ContentRoute } from './content'
+import { extractHtmlDescription, extractHtmlTitle, scanHtmlInternalLinks } from './html'
 
 export type RouteRecord = {
   slug: string
@@ -28,23 +29,9 @@ export const MANIFEST_SCHEMA_VERSION = 1
 export const GENERATOR_NAME = '@snz/bp'
 export const GENERATOR_VERSION = '2.0.0'
 
-const INTERNAL_LINK_RE = /<a\s+[^>]*href="(\/[^"#?]*)/gi
-
-export function scanInternalLinks(html: string): string[] {
-  const set = new Set<string>()
-  for (const m of html.matchAll(INTERNAL_LINK_RE)) set.add(m[1])
-  return [...set]
-}
-
-export function extractTitle(html: string): string {
-  const m = html.match(/<title>([^<]*)<\/title>/i)
-  return m ? m[1].trim() : ''
-}
-
-export function extractDescription(html: string): string {
-  const m = html.match(/<meta\s+name="description"\s+content="([^"]*)"/i)
-  return m ? m[1].trim() : ''
-}
+export const scanInternalLinks = scanHtmlInternalLinks
+export const extractTitle = extractHtmlTitle
+export const extractDescription = extractHtmlDescription
 
 /** Build per-route JSON-LD additions based on what components the route contains. */
 export function detectSchemas(record: RouteRecord, schemas: Map<string, ComponentSchema>): unknown[] {
