@@ -11,6 +11,7 @@ import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import type { ComponentSchema, ComposeInstance } from './compose'
 import type { ContentRoute } from './content'
 import { extractHtmlDescription, extractHtmlTitle, scanHtmlInternalLinks } from './html'
+import { GENERATOR_NAME, GENERATOR_VERSION } from './version'
 
 export type RouteRecord = {
   slug: string
@@ -26,8 +27,6 @@ export type RouteRecord = {
 }
 
 export const MANIFEST_SCHEMA_VERSION = 1
-export const GENERATOR_NAME = '@snz/bp'
-export const GENERATOR_VERSION = '2.0.0'
 
 export const scanInternalLinks = scanHtmlInternalLinks
 export const extractTitle = extractHtmlTitle
