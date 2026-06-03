@@ -1,85 +1,81 @@
 <head>
-  <SEO title="Components" description="Built-in component gallery for SANITIZE Boilerplate." />
+  <SEO title="Components" description="Simple built-in component showcase for SANITIZE Boilerplate." />
 </head>
 
 <section>
-  <div class="c">
-    <h1>Component gallery</h1>
-    <p class="f-md">Reference page for built-in components. Copy patterns into your routes.</p>
-    <p><Link label="Back home" href="/" /></p>
-  </div>
-</section>
-
-<section>
-  <div class="c">
-    <h2>Typography</h2>
-    <p class="h0">H0 Heading</p>
-    <h1>H1 Heading</h1>
-    <h2>H2 Heading</h2>
-    <h3>H3 Heading</h3>
-    <h4>H4 Heading</h4>
-    <h5>H5 Heading</h5>
-    <h6>H6 Heading</h6>
-    <p class="f-lg">Large body copy for intros and lead paragraphs.</p>
-    <p class="f-md">Medium body copy for standard content blocks.</p>
-    <p class="f-sm">Small body copy for captions and meta text.</p>
-  </div>
-</section>
-
-<section>
-  <div class="c">
-    <h2>Buttons + links</h2>
+  <div class="c w">
+    <h1>Component showcase</h1>
+    <p class="f-md">Simple examples for every built-in component. Copy sections into routes and adjust content.</p>
     <div class="btns">
-      <Button label="Default" href="/components/" />
-      <Button label="Accent" href="/components/" variant="accent" />
-      <Button label="Ghost" href="/components/" variant="ghost" />
-    </div>
-    <p><Link label="Inline link" href="/" /></p>
-  </div>
-</section>
-
-<section>
-  <div class="c">
-    <h2>Card</h2>
-    <Card
-      title="Example card"
-      body="Use cards for grouped content with an optional CTA."
-      linkHref="/"
-      linkLabel="Home"
-      variant="elevated"
-    />
-  </div>
-</section>
-
-<section>
-  <div class="c">
-    <h2>Accordion</h2>
-    <Accordion summary="What is SANITIZE Boilerplate?" body="An HTML-first static site builder powered by Bun." group="gallery" />
-    <Accordion summary="Where do routes live?" body="Author files in src/routes/. One file becomes one URL." group="gallery" />
-  </div>
-</section>
-
-<section>
-  <div class="c">
-    <h2>FAQ</h2>
-    <FAQ />
-  </div>
-</section>
-
-<section>
-  <div class="c">
-    <h2>Code</h2>
-    <Code lang="html">&lt;Button label="Go" href="/" /&gt;</Code>
-  </div>
-</section>
-
-<section>
-  <div class="c">
-    <h2>Grid</h2>
-    <div g="3">
-      <div class="w" c="1"><p>Column 1</p></div>
-      <div class="w" c="1"><p>Column 2</p></div>
-      <div class="w" c="1"><p>Column 3</p></div>
+      <Button label="Back home" href="/" variant="ghost" />
+      <Link label="Read component docs" href="https://github.com/sanitizestudio/snz-bp" />
     </div>
   </div>
 </section>
+
+<Section id="buttons">
+  <h2>Button + Link</h2>
+  <div class="btns">
+    <Button label="Default" href="/components/" />
+    <Button label="Accent" href="/components/" variant="accent" />
+    <Button label="Ghost" href="/components/" variant="ghost" />
+  </div>
+  <p><Link label="Inline link" href="/" /></p>
+</Section>
+
+<Section id="cards">
+  <h2>Card</h2>
+  <Grid cols="3-2">
+    <Card title="Default card" body="Grouped content with an optional action." linkHref="/" linkLabel="Home" />
+    <Card title="Elevated card" body="Variant styles stay inside the component." linkHref="/components/" linkLabel="Stay here" variant="elevated" />
+    <Card title="Ghost card" body="Use variants for quieter supporting content." variant="ghost" />
+  </Grid>
+</Section>
+
+<Section id="image">
+  <h2>Image</h2>
+  <Grid cols="2">
+    <Image src="showcase" alt="Starter image placeholder" />
+    <div class="w">
+      <h3>Responsive by default</h3>
+      <p>Image masters live in <code>src/images</code> or <code>media/images</code>. Build emits optimized WebP variants.</p>
+    </div>
+  </Grid>
+</Section>
+
+<Section id="accordion">
+  <h2>Accordion + FAQ</h2>
+  <Accordion summary="Where do routes live?" body="Author HTML files in src/routes. One file becomes one URL." group="showcase" />
+  <Accordion summary="Can markdown render to HTML?" body="Yes. Markdown renders at build time with safe links, tables, code blocks, and component passthrough." group="showcase" />
+  <FAQ />
+</Section>
+
+<Section id="markdown">
+  <h2>Markdown</h2>
+  <Markdown>
+## Rendered markdown
+
+| Feature | Status |
+| --- | --- |
+| Tables | Supported |
+| Heading anchors | Supported |
+
+- Safe links
+- Code fences
+- Component passthrough
+  </Markdown>
+</Section>
+
+<Section id="code">
+  <h2>Code</h2>
+  <Code lang="html">&lt;Button label="Go" href="/" /&gt;</Code>
+</Section>
+
+<Section id="layout">
+  <h2>Section, Grid, Stack</h2>
+  <Grid cols="3-2">
+    <Stack><h3>Stack</h3><p>Legacy wrapper for vertical rhythm. Prefer <code>.w</code> directly in new work.</p></Stack>
+    <div class="w"><h3>Grid child</h3><p>Grid maps to global <code>[g]</code> primitives.</p></div>
+    <div class="w"><h3>Section</h3><p>Section wraps content in a semantic section and container.</p></div>
+  </Grid>
+</Section>

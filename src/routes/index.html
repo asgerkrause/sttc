@@ -1,18 +1,34 @@
+<head>
+  <SEO title="Home" description="HTML-first static sites with composable components." />
+</head>
+
 <section>
   <div class="c">
-    <div g="2">
-      <div class="w">
-        <h2>Join the revolution</h2>
-        <Button label="About" href="/about/" />
+    <div class="w">
+      <h1>HTML-first sites, composed at build time.</h1>
+      <p class="f-md">Write routes, drop in components, and ship static output. No runtime framework required.</p>
+      <div class="btns">
+        <Button label="View components" href="/components/" />
+        <Button label="About" href="/about/" variant="ghost" />
       </div>
-      <Image src="r6" alt="Rainbow Six Siege" />
     </div>
   </div>
 </section>
 
 <section>
   <div class="c">
-    <h2>Questions</h2>
+    <h2>Built-in patterns</h2>
+    <div g="3-2">
+      <Card title="Content" body="Cards, markdown, accordions, code blocks, and images." linkHref="/components/" linkLabel="Browse components" />
+      <Card title="Layout" body="Sections, grids, stack rhythm, and global primitives stay predictable." linkHref="/components/" linkLabel="See layout" />
+      <Card title="Publishing" body="Build emits static HTML, optimized images, feeds, sitemap, and discovery files." linkHref="/components/" linkLabel="Inspect output" />
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="c">
+    <h2>Common questions</h2>
     <FAQ />
   </div>
 </section>

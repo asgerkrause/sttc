@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, stat, writeFile } from 'fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { createComposer } from './compose'
 import {
@@ -39,9 +39,11 @@ import {
   src,
 } from './paths'
 import { writeRobots, writeSitemap, type SiteConfig } from './seo'
-import { compileContent, slugifyTag, type ContentRoute } from './content'
+import { compileContent, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
+import { copyAssets, copyMediaFolder, copyTree } from './assets'
+import { autoGenerateIndexes } from './generated-routes'
 import { runChecks, failOnReport } from './check'
 import {
   extractTitle,
@@ -63,172 +65,6 @@ async function writeComposed(
   const html = await prepare(raw, name)
   await mkdir(join(destPath, '..'), { recursive: true })
   await writeFile(destPath, html)
-}
-
-// Recursive copy implemented with sequential per-file writes. fs.cp(recursive: true) was
-// observed to race with adjacent writes (image variants would vanish), so we walk + Bun.write.
-// Skips files whose dest is already up to date — avoids reading src files unnecessarily,
-// which on macOS causes fs.watch to fire spurious "change" events (atime touch).
-async function copyTree(srcDir: string, destDir: string, skip: (relPath: string) => boolean = () => false) {
-  let entries
-  try { entries = await readdir(srcDir, { withFileTypes: true }) } catch { return }
-  await mkdir(destDir, { recursive: true })
-  for (const entry of entries) {
-    if (entry.name === '.DS_Store' || entry.name === '.gitkeep') continue
-    if (skip(entry.name)) continue
-    const srcPath = join(srcDir, entry.name)
-    const destPath = join(destDir, entry.name)
-    if (entry.isDirectory()) {
-      await copyTree(srcPath, destPath, skip)
-    } else if (entry.isFile()) {
-      const srcStat = await stat(srcPath).catch(() => null)
-      const destStat = await stat(destPath).catch(() => null)
-      if (srcStat && destStat && destStat.mtimeMs >= srcStat.mtimeMs && destStat.size === srcStat.size) {
-        continue // already up to date
-      }
-      await Bun.write(destPath, Bun.file(srcPath))
-    }
-  }
-}
-
-async function copyAssets() {
-  const assetsDist = join(dist, 'assets')
-  await mkdir(assetsDist, { recursive: true })
-
-  // Wipe stale js bundles so old hashed app.*.js bundles don't linger.
-  await rm(join(assetsDist, 'js'), { recursive: true, force: true })
-
-  await copyTree(await sourceStylesDir(), join(assetsDist, 'css'))
-  await copyTree(await sourceAppDir(), join(assetsDist, 'js'), (name) => name === 'app.js')
-  await mkdir(join(assetsDist, 'images'), { recursive: true })
-}
-
-async function copyMediaFolder() {
-  // media/images is source input for the optimizer, not a public raw asset tree.
-  // Other media folders can still be copied for non-image CMS files if added later.
-  await rm(join(dist, 'media', 'images'), { recursive: true, force: true })
-  const mediaSrc = join(root, 'media')
-  try {
-    if ((await stat(mediaSrc)).isDirectory()) {
-      await copyTree(mediaSrc, join(dist, 'media'), (name) => name === 'images')
-    }
-  } catch {
-    /* no media folder */
-  }
-}
-
-function postLinkList(posts: ContentRoute[]) {
-  return posts
-    .sort((a, b) => (b.data.date ?? '').localeCompare(a.data.date ?? ''))
-    .map((p) => `
-  <article class="post-item">
-    <h2 class="post-item-title"><a href="/${p.slug}/">${escapeHtmlBasic(p.data.title)}</a></h2>
-    <p class="post-item-meta"><time datetime="${p.data.date ?? ''}">${p.data.date ?? ''}</time></p>
-    <p class="post-item-desc">${escapeHtmlBasic(p.data.description ?? '')}</p>
-  </article>`)
-    .join('\n')
-}
-
-function escapeHtmlBasic(s: string) {
-  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
-}
-
-async function autoGenerateIndexes(
-  composer: ReturnType<typeof createComposer>,
-  posts: ContentRoute[],
-  routeRecords: RouteRecord[],
-  routeSlugs: string[],
-) {
-  if (!posts.length) return
-
-  // /insights/ — list all posts
-  const insightsExists = await Bun.file(join(src, 'routes', 'insights.html')).exists()
-  if (!insightsExists) {
-    const body = `<head>
-  <SEO title="Insights" description="All posts." path="/insights/" />
-</head>
-<Section>
-  <h1>Insights</h1>
-  ${postLinkList(posts)}
-</Section>`
-    const html = await composer.prepareRouteSource(body, 'insights.html')
-    await mkdir(join(dist, 'routes'), { recursive: true })
-    await writeFile(join(dist, 'routes', 'insights.html'), html)
-    routeSlugs.push('insights')
-    routeRecords.push({
-      slug: 'insights',
-      title: 'Insights',
-      description: 'All posts.',
-      components: [],
-      internalLinks: posts.map((p) => `/${p.slug}/`),
-      schemas: ['CollectionPage'],
-      lastModified: new Date().toISOString(),
-    })
-  }
-
-  // /tags/{tag}/ — one index per unique tag
-  const byTag = new Map<string, { label: string; posts: ContentRoute[] }>()
-  for (const p of posts) {
-    for (const t of p.tags) {
-      const slug = slugifyTag(t)
-      if (!slug) continue
-      if (!byTag.has(slug)) byTag.set(slug, { label: t, posts: [] })
-      byTag.get(slug)!.posts.push(p)
-    }
-  }
-  if (byTag.size === 0) return
-
-  for (const [tagSlug, group] of byTag) {
-    const { label, posts: postsForTag } = group
-    const body = `<head>
-  <SEO title="Tag: ${label}" description="Posts tagged ${label}." path="/tags/${tagSlug}/" />
-</head>
-<Section>
-  <h1>Tag: <code>${label}</code></h1>
-  ${postLinkList(postsForTag)}
-  <p><a href="/tags/">← All tags</a></p>
-</Section>`
-    const html = await composer.prepareRouteSource(body, `tags/${tagSlug}.html`)
-    await mkdir(join(dist, 'routes', 'tags'), { recursive: true })
-    await writeFile(join(dist, 'routes', 'tags', `${tagSlug}.html`), html)
-    routeSlugs.push(`tags/${tagSlug}`)
-    routeRecords.push({
-      slug: `tags/${tagSlug}`,
-      title: `Tag: ${label}`,
-      description: `Posts tagged ${label}.`,
-      components: [],
-      internalLinks: postsForTag.map((p) => `/${p.slug}/`),
-      schemas: ['CollectionPage'],
-      lastModified: new Date().toISOString(),
-    })
-  }
-
-  // /tags/ — index of all tags
-  const tagLinks = [...byTag.entries()]
-    .sort(([, a], [, b]) => a.label.localeCompare(b.label))
-    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${group.label}</a> <small>(${group.posts.length})</small></li>`)
-    .join('\n  ')
-  const body = `<head>
-  <SEO title="Tags" description="All tags." path="/tags/" />
-</head>
-<Section>
-  <h1>Tags</h1>
-  <ul>
-  ${tagLinks}
-  </ul>
-</Section>`
-  const html = await composer.prepareRouteSource(body, 'tags.html')
-  await writeFile(join(dist, 'routes', 'tags.html'), html)
-  routeSlugs.push('tags')
-  routeRecords.push({
-    slug: 'tags',
-    title: 'Tags',
-    description: 'All tags.',
-    components: [],
-    internalLinks: [...byTag.keys()].map((t) => `/tags/${t}/`),
-    schemas: ['CollectionPage'],
-    lastModified: new Date().toISOString(),
-  })
 }
 
 async function build() {
@@ -402,7 +238,7 @@ async function build() {
 }
 
 function escapeHtml(s: string) {
-  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
+  return s.replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 }
 
 async function writeErrorPage(err: unknown) {
