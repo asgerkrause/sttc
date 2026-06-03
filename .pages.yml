@@ -1,5 +1,5 @@
 # Pages CMS — https://pagescms.org/docs/configuration/
-# Content compiles at build time. Media path contract tracked in GitHub issue #6.
+# Content compiles at build time. CMS uploads feed optimized /assets/images output.
 
 media:
   - name: images

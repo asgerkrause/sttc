@@ -15,7 +15,7 @@ Ships with:
 - `src/pages/index.html` → `/`
 - `src/pages/components.html` → `/components/`
 - flat `src/styles.css`, `src/app.js`, `src/site.json`
-- no CMS files by default (CMS support is opt-in later)
+- no CMS files by default (`bun run new cms` opts in)
 - no demo marketing routes (add your own with `bun run new route about`)
 
 ## Commands
@@ -25,6 +25,7 @@ bun install
 bun run dev
 bun run build
 bun run check
+bun run new cms    # optional: add PagesCMS/content scaffolding
 ```
 
 Edit `src/`. Do not edit `dist/`.

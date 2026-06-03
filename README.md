@@ -17,7 +17,7 @@ bun run dev       # http://localhost:3000, watch + SSE hot reload + in-page erro
 bun run build     # produce dist/, run strict checks at the end
 bun run check     # rebuild + validate without serving
 bun run doctor    # CSS ownership audit + strict check
-bun run new       # scaffolder: bun run new component|route|post|page <name>
+bun run new       # scaffolder: component|route|post|page <name>, or cms
 ```
 
 Package CLI:
@@ -28,6 +28,7 @@ snz-bp build
 snz-bp check
 snz-bp doctor
 snz-bp new component Hero
+snz-bp new cms
 snz-bp migrate
 ```
 
@@ -137,7 +138,7 @@ Override SEO per route with a `<head>` wrapper:
 
 ## Content pipeline
 
-CMS support is opt-in. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Minimal markdown subset.
+CMS support is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `media/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Minimal markdown subset.
 
 ```yaml
 ---

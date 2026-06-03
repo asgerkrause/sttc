@@ -12,7 +12,7 @@ bun run build    # writes dist/, runs strict checks at the end
 bun run check    # rebuild + validate without serving
 bun run css:audit # report component-owned selectors left in global CSS
 bun run doctor   # CSS ownership audit + strict check
-bun run new      # scaffolder: bun run new component|route|post|page <name>
+bun run new      # scaffolder: component|route|post|page <name>, or cms
 ```
 
 Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
@@ -88,7 +88,7 @@ Inline `<script>` allowed only at the top of a route — auto-extracted and wrap
 
 ## Content pipeline
 
-CMS is opt-in. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Front-matter must include `title`.
+CMS is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `media/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Front-matter must include `title`.
 
 ```yaml
 ---

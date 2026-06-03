@@ -155,9 +155,15 @@ Use `<Markdown>` for build-time markdown inside routes/components:
 
 Markdown is rendered at build time. Unsafe HTML and unsafe URL protocols fail loudly.
 
-### Add content page/post
+### Add CMS content
 
-`content/pages/about.md` → `/about/`.
+CMS is opt-in. Scaffold the content surface first:
+
+```bash
+bun run new cms
+```
+
+Then add markdown. `content/pages/about.md` → `/about/`.
 
 ```md
 ---
@@ -174,9 +180,8 @@ Markdown body.
 
 Global CSS files:
 
-- `src/styles.css` — tokens, reset/base/type, theme tokens, `.c`, `.w`, page overrides.
-- `src/styles.cssgrid.css` — `[g]`, `[c]`, `[r]`, `[o]` primitives.
-- `src/styles.csslenis.css` — optional scroll integration.
+- `src/styles.css` — tokens, reset/base/type, theme tokens, `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`, page overrides.
+- Legacy support: `src/styles/styles.css`, `src/styles/grid.css`, and `src/styles/lenis.css` can still be used.
 
 Component CSS:
 
