@@ -2,7 +2,7 @@ import { mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { BuildError } from './errors'
 
-function shortHash(s: string) {
+export function shortHash(s: string) {
   return Bun.hash(s).toString(16).slice(0, 8)
 }
 
@@ -94,18 +94,8 @@ export function componentScriptBlocks(byComponent: Map<string, string[]>): Scrip
   return out
 }
 
-/**
- * Concatenates src/app/app.js + extracted script blocks, writes to dist/assets/js/app.{hash}.js,
- * returns the hashed filename. Old app.*.js bundles are removed.
- */
-export async function writeAppJs(
-  srcAppPath: string,
-  distAppDir: string,
-  blocks: ScriptBlock[],
-): Promise<string> {
-  let out = await readFile(srcAppPath, 'utf8').catch(() => '')
-  if (!out.endsWith('\n')) out += '\n'
-
+function generatedScriptCode(blocks: ScriptBlock[]) {
+  let out = ''
   for (const block of blocks) {
     if (block.slug) {
       out += `\n// build: ${block.label}\nwindow.snz?.onPage('${block.slug}', () => {\n`
@@ -114,16 +104,72 @@ export async function writeAppJs(
       out += `\n// build: ${block.label}\n${block.code}\n`
     }
   }
+  return out
+}
 
-  const hash = shortHash(out)
-  const filename = `app.${hash}.js`
-  await mkdir(distAppDir, { recursive: true })
-  // Remove previous hashed bundles
+function publicEnvDefines() {
+  const define: Record<string, string> = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!key.startsWith('PUBLIC_')) continue
+    define[`process.env.${key}`] = JSON.stringify(value ?? '')
+    define[`import.meta.env.${key}`] = JSON.stringify(value ?? '')
+  }
+  return define
+}
+
+async function removeOldAppBundles(distAppDir: string, keep: string) {
   for (const entry of await (await import('fs/promises')).readdir(distAppDir).catch(() => [])) {
-    if (/^app(\.[a-f0-9]+)?\.js$/i.test(entry) && entry !== filename) {
+    if (/^app(\.[a-f0-9]+)?\.js$/i.test(entry) && entry !== keep) {
       await rm(join(distAppDir, entry), { force: true })
     }
   }
+}
+
+/**
+ * Bundles the author app entry with Bun.build, appends extracted shell/component/route scripts,
+ * writes dist/assets/js/app.{hash}.js, and returns the hashed filename.
+ */
+export async function writeAppJs(
+  srcAppPath: string,
+  distAppDir: string,
+  blocks: ScriptBlock[],
+): Promise<string> {
+  await mkdir(distAppDir, { recursive: true })
+  const tempDir = join(distAppDir, '.app-build')
+  await rm(tempDir, { recursive: true, force: true })
+  await mkdir(tempDir, { recursive: true })
+
+  let appCode = ''
+  if (await Bun.file(srcAppPath).exists()) {
+    const result = await Bun.build({
+      entrypoints: [srcAppPath],
+      outdir: tempDir,
+      target: 'browser',
+      format: 'esm',
+      splitting: false,
+      sourcemap: 'none',
+      define: publicEnvDefines(),
+    })
+    if (!result.success) {
+      const message = result.logs.map((log) => log.message).filter(Boolean).join('\n') || `Could not bundle ${srcAppPath}`
+      throw new BuildError(message, {
+        file: srcAppPath,
+        hint: 'Check imports from src/app.js or src/app.ts. Only PUBLIC_* env vars are inlined.',
+      })
+    }
+    const output = result.outputs.find((file) => file.path.endsWith('.js'))
+    appCode = output ? await output.text() : ''
+  } else {
+    appCode = await readFile(srcAppPath, 'utf8').catch(() => '')
+  }
+
+  let out = appCode.endsWith('\n') ? appCode : `${appCode}\n`
+  out += generatedScriptCode(blocks)
+
+  const hash = shortHash(out)
+  const filename = `app.${hash}.js`
   await writeFile(join(distAppDir, filename), out)
+  await removeOldAppBundles(distAppDir, filename)
+  await rm(tempDir, { recursive: true, force: true })
   return filename
 }

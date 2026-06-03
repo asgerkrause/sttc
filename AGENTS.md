@@ -178,7 +178,7 @@ Structured data auto-emitted:
 ## JS bundling
 
 - `src/app.js` or `src/app.ts` is your site code. Legacy `src/app/app.js` still works.
-- Build concatenates shell head inline scripts + component lifecycle scripts + route top scripts (wrapped with `snz.onPage('{slug}', ...)`) into `dist/assets/js/app.{hash}.js`.
+- Build bundles `src/app.js` / `src/app.ts` with `Bun.build`, then appends shell head inline scripts, component lifecycle scripts, and route top scripts (wrapped with `snz.onPage('{slug}', ...)`) into `dist/assets/js/app.{hash}.js`.
 
 ## Errors
 

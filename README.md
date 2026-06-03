@@ -184,9 +184,11 @@ Route scripts at the top of a route file are auto-wrapped with `snz.onPage('{slu
 
 Component `<script>` blocks become per-instance mount functions (see [`docs/components.md`](./docs/components.md) → Lifecycle scripts).
 
+`src/app.js` or `src/app.ts` is bundled with `Bun.build`, so author code can use imports and TypeScript. Only `PUBLIC_*` env vars are inlined.
+
 ## Scroll
 
-Lenis is optional and self-hosted (`src/app.jsvendor/lenis.min.js`). Toggle in `site.json`:
+Lenis is optional and self-hosted (`src/app/vendor/lenis.min.js`). Toggle in `site.json`:
 
 ```jsonc
 { "scroll": "lenis" }   // default

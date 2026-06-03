@@ -217,6 +217,10 @@ Full contract: `docs/components.md`.
 - `<style>` in routes is forbidden. Use component style or `html[data-page="slug"]` in `styles.css`.
 - Authored/content/generated routes share one slug registry. Duplicate public slugs fail loudly; `src/pages` only replaces legacy `src/routes` for the same slug.
 
+## App scripts
+
+`src/app.js` or `src/app.ts` is bundled with `Bun.build`, so author code can use imports and TypeScript. Shell head scripts, component lifecycle scripts, and route top scripts are appended to the same hashed `dist/assets/js/app.{hash}.js` output. Only `PUBLIC_*` env vars are inlined.
+
 ## Router API
 
 Available in browser as `window.snz`:
