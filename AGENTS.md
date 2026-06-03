@@ -102,7 +102,7 @@ draft: false
 Body in **markdown**. Supports headings, lists, links, code, emphasis, blockquotes.
 ```
 
-Drafts (`draft: true`) are excluded from production builds, included in dev. Tags emit `/tags/{tag}/` indexes automatically. `/insights/` auto-generated unless overridden.
+Drafts (`draft: true`) are excluded from production builds, included in dev. Tags emit `/tags/{tag}/` indexes automatically. Generated `/insights/`, `/tags/`, and `/tags/{tag}/` routes fail loudly if authored/content routes already own those slugs.
 
 ## Images
 

@@ -1,9 +1,10 @@
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { dist, src } from './paths'
+import { dist } from './paths'
 import { createComposer } from './compose'
 import { slugifyTag, type ContentRoute } from './content'
 import type { RouteRecord } from './discovery'
+import type { RouteRegistry } from './routes'
 
 function escapeHtmlBasic(s: string) {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
@@ -25,33 +26,30 @@ export async function autoGenerateIndexes(
   composer: ReturnType<typeof createComposer>,
   posts: ContentRoute[],
   routeRecords: RouteRecord[],
-  routeSlugs: string[],
+  routeRegistry: RouteRegistry,
 ) {
   if (!posts.length) return
 
-  const insightsExists = await Bun.file(join(src, 'routes', 'insights.html')).exists()
-  if (!insightsExists) {
-    const body = `<head>
+  const insightsBody = `<head>
   <SEO title="Insights" description="All posts." path="/insights/" />
 </head>
 <Section>
   <h1>Insights</h1>
   ${postLinkList(posts)}
 </Section>`
-    const html = await composer.prepareRouteSource(body, 'insights.html')
-    await mkdir(join(dist, 'routes'), { recursive: true })
-    await writeFile(join(dist, 'routes', 'insights.html'), html)
-    routeSlugs.push('insights')
-    routeRecords.push({
-      slug: 'insights',
-      title: 'Insights',
-      description: 'All posts.',
-      components: [],
-      internalLinks: posts.map((p) => `/${p.slug}/`),
-      schemas: ['CollectionPage'],
-      lastModified: new Date().toISOString(),
-    })
-  }
+  const insightsRoute = routeRegistry.register({ slug: 'insights', kind: 'generated', source: 'generated:insights' })
+  const insightsHtml = await composer.prepareRouteSource(insightsBody, insightsRoute.outFile)
+  await mkdir(join(dist, 'routes'), { recursive: true })
+  await writeFile(join(dist, 'routes', insightsRoute.outFile), insightsHtml)
+  routeRecords.push({
+    slug: 'insights',
+    title: 'Insights',
+    description: 'All posts.',
+    components: [],
+    internalLinks: posts.map((p) => `/${p.slug}/`),
+    schemas: ['CollectionPage'],
+    lastModified: new Date().toISOString(),
+  })
 
   const byTag = new Map<string, { label: string; posts: ContentRoute[] }>()
   for (const p of posts) {
@@ -74,12 +72,13 @@ export async function autoGenerateIndexes(
   ${postLinkList(postsForTag)}
   <p><a href="/tags/">← All tags</a></p>
 </Section>`
-    const html = await composer.prepareRouteSource(body, `tags/${tagSlug}.html`)
+    const slug = `tags/${tagSlug}`
+    const registered = routeRegistry.register({ slug, kind: 'generated', source: `generated:${slug}` })
+    const html = await composer.prepareRouteSource(body, registered.outFile)
     await mkdir(join(dist, 'routes', 'tags'), { recursive: true })
-    await writeFile(join(dist, 'routes', 'tags', `${tagSlug}.html`), html)
-    routeSlugs.push(`tags/${tagSlug}`)
+    await writeFile(join(dist, 'routes', registered.outFile), html)
     routeRecords.push({
-      slug: `tags/${tagSlug}`,
+      slug,
       title: `Tag: ${label}`,
       description: `Posts tagged ${label}.`,
       components: [],
@@ -102,9 +101,9 @@ export async function autoGenerateIndexes(
   ${tagLinks}
   </ul>
 </Section>`
-  const html = await composer.prepareRouteSource(body, 'tags.html')
-  await writeFile(join(dist, 'routes', 'tags.html'), html)
-  routeSlugs.push('tags')
+  const registered = routeRegistry.register({ slug: 'tags', kind: 'generated', source: 'generated:tags' })
+  const html = await composer.prepareRouteSource(body, registered.outFile)
+  await writeFile(join(dist, 'routes', registered.outFile), html)
   routeRecords.push({
     slug: 'tags',
     title: 'Tags',

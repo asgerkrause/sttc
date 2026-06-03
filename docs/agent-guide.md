@@ -215,6 +215,7 @@ Full contract: `docs/components.md`.
 - Optional top `<head>...</head>` wrapper supports SEO and transition meta.
 - Inline `<script>` allowed only at top of route; build wraps it in `snz.onPage('{slug}', ...)`.
 - `<style>` in routes is forbidden. Use component style or `html[data-page="slug"]` in `styles.css`.
+- Authored/content/generated routes share one slug registry. Duplicate public slugs fail loudly; `src/pages` only replaces legacy `src/routes` for the same slug.
 
 ## Router API
 
