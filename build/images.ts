@@ -1,5 +1,6 @@
 import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'fs/promises'
 import { basename, extname, join, relative } from 'path'
+import { BuildError } from './errors'
 import type { ImageEncodeOptions } from './scan-images'
 
 const RASTER_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp'])
@@ -38,12 +39,22 @@ export function resolveImageAttrs(
   attrs: Record<string, string>,
 ): Record<string, string> {
   const name = nameFromSrc(attrs.src ?? '')
-  if (!name) throw new Error('Image requires src="name" (no extension)')
-  if (!attrs.alt) throw new Error(`Image "${name}" requires alt="…"`)
+  if (!name) {
+    throw new BuildError('Image requires src="name" (no extension)', {
+      hint: 'Use a logical image name without extension, e.g. <Image src="hero" alt="..." />.',
+    })
+  }
+  if (!attrs.alt) {
+    throw new BuildError(`Image "${name}" requires alt="…"`, {
+      hint: 'Add useful alt text, or alt="" for decorative images.',
+    })
+  }
 
   const dims = meta[name]
   if (!dims) {
-    throw new Error(`Image "${name}": add src/images/${name}.{jpg,png,webp} or media/images/${name}.{jpg,png,webp} and rebuild`)
+    throw new BuildError(`Image "${name}": add src/images/${name}.{jpg,png,webp} or media/images/${name}.{jpg,png,webp} and rebuild`, {
+      hint: `Add src/images/${name}.jpg, .png, or .webp; or use media/images/${name}.* for CMS media.`,
+    })
   }
 
   const src = `/assets/images/${name}.webp`
@@ -78,7 +89,9 @@ export function resolveImageAttrs(
 
   const tmpSrc = dims.placeholder
   if (!tmpSrc) {
-    throw new Error(`Image "${name}": lazy preview missing — rebuild`)
+    throw new BuildError(`Image "${name}": lazy preview missing — rebuild`, {
+      hint: 'Run the build again so the image sidecar can regenerate its lazy preview.',
+    })
   }
 
   return {
@@ -214,8 +227,9 @@ export async function assertUniqueImageNames(...roots: string[]) {
     ].join('\n'))
     .join('\n')
 
-  throw new Error(
+  throw new BuildError(
     `Duplicate image logical names found. Rename one master before build.\n${details}`,
+    { hint: 'Image logical names are file basenames. Keep each basename unique across src/images and media/images.' },
   )
 }
 

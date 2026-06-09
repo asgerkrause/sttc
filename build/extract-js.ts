@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { BuildError } from './errors'
+import { buildErrorAt, BuildError } from './errors'
 import { assetHash } from './hash'
 
 const INLINE_SCRIPT_RE =
@@ -51,10 +51,11 @@ export function extractRouteTopScripts(
 }
 
 function rejectScriptInRouteBody(html: string, file: string) {
-  if (/<script\b/i.test(html)) {
-    throw new BuildError(`<script> only allowed at top of route file`, {
+  const match = html.match(/<script\b/i)
+  if (match?.index !== undefined) {
+    throw buildErrorAt(`<script> only allowed at top of route file`, html, match.index, {
       file,
-      hint: 'Move route logic into src/app/app.js and use snz.onPage(...) or the snz:page event.',
+      hint: 'Move route logic into src/app.js and use snz.onPage(...) or the snz:page event.',
     })
   }
 }
