@@ -1,0 +1,21 @@
+{
+  "folders": [
+    {
+      "name": "site",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "dist": true,
+      "node_modules": true,
+      "runtime": true,
+      "docs/decisions": true
+    },
+    "search.exclude": {
+      "dist": true,
+      "node_modules": true,
+      "runtime": true
+    }
+  }
+}

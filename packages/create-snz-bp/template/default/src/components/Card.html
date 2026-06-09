@@ -1,0 +1,76 @@
+<!--
+  @desc Article card with title, body, optional CTA, and a default slot for additional content.
+  @attr title! Card heading.
+  @attr body Body paragraph. Optional — also supports children via default slot.
+  @attr linkHref Optional CTA destination.
+  @attr linkLabel Optional CTA label.
+  @attr variant=[default|elevated|ghost|subtle] :class Visual variant.
+-->
+<article class="card">
+  <h2>{{title}}</h2>
+  <div class="card-body">
+    <p>{{body}}</p>
+    {{slot}}
+  </div>
+  <a class="card-link" href="{{linkHref}}">{{linkLabel}}</a>
+</article>
+
+<style>
+  .card {
+    --crd-s: var(--t);
+    --crd-i: var(--i);
+    --crd-b: transparent;
+    padding: var(--pd);
+    background: var(--crd-s);
+    color: var(--crd-i);
+    border: var(--bw) var(--crd-b) solid;
+    border-radius: var(--br);
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    overflow: hidden;
+    gap: var(--gp);
+
+    &:is(a) {
+      --crd-b: var(--b);
+      background-image: none;
+
+      &:hover {
+        --crd-s: var(--s);
+      }
+    }
+
+    &.elevated { box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 8px 24px rgb(0 0 0 / .08); }
+    &.ghost { --crd-s: transparent; }
+    &.subtle { --crd-s: var(--n05); }
+
+    p { color: var(--g); }
+
+    h2,
+    h3 {
+      font: inherit;
+    }
+
+    .card-body { text-wrap: pretty; }
+    .card-body p:empty { display: none; }
+    .card-link:empty { display: none; }
+
+    .lnks,
+    .btns {
+      margin-top: auto;
+      padding-top: var(--pd);
+    }
+
+    &:has(.img-w) {
+      & .img-w:is(:first-child) {
+        margin: calc(var(--pd) * -1);
+        margin-bottom: calc(var(--pd) / 2);
+      }
+
+      & .img-w:is(:last-child) {
+        margin: calc(var(--pd) * -1);
+        margin-top: calc(var(--pd) / 2);
+      }
+    }
+  }
+</style>

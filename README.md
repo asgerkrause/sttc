@@ -70,9 +70,10 @@ Current local verification:
 ```bash
 cd templates/default
 bun ../../bin/snz-bp.ts check
+bun run smoke:create
 ```
 
-Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install` must run before `bun dev`. Later, published clients should depend on `@snz/bp` and run `bun update @snz/bp` for framework upgrades.
+Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install` must run before `bun dev`. Packaged creator uses `packages/create-snz-bp/template/default` and writes the matching published `@snz/bp` semver range. Run `bun run prepare:create-template` before packaging. Publish steps live in [`docs/publish-checklist.md`](./docs/publish-checklist.md).
 
 ## Workspace modes
 
