@@ -143,6 +143,28 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
   await writeManifest(distDir, input)
 }
 
+function siteContactEmail(site: SiteConfig) {
+  return site.organization?.contact?.email ?? site.contact?.email ?? ''
+}
+
+function siteFactLines(site: SiteConfig): string[] {
+  const lines: string[] = []
+  const sameAs = site.organization?.sameAs ?? site.sameAs ?? []
+  const contact = site.organization?.contact ?? site.contact
+  const topics = site.topics ?? []
+
+  if (!sameAs.length && !contact && !topics.length) return lines
+
+  lines.push('## Site facts')
+  lines.push('')
+  if (topics.length) lines.push(`- Topics: ${topics.join(', ')}`)
+  if (sameAs.length) lines.push(`- Same-as: ${sameAs.join(', ')}`)
+  if (contact?.email) lines.push(`- Contact: ${contact.email}`)
+  if (contact?.url) lines.push(`- Contact URL: ${absoluteUrl(site.url, contact.url)}`)
+  lines.push('')
+  return lines
+}
+
 async function writeLlmsTxt(
   distDir: string,
   site: SiteConfig,
@@ -154,6 +176,7 @@ async function writeLlmsTxt(
   lines.push('')
   lines.push(`> ${site.description}`)
   lines.push('')
+  lines.push(...siteFactLines(site))
 
   const pages = routes.filter((r) => !r.slug.startsWith('insights/') && r.slug !== '404')
   const posts = routes.filter((r) => r.slug.startsWith('insights/'))
@@ -206,7 +229,7 @@ async function writeAiPlugin(distDir: string, site: SiteConfig) {
     name_for_model: site.name.toLowerCase().replace(/\s+/g, '_'),
     description_for_human: site.description,
     description_for_model: `Read ${absoluteUrl(site.url, '/llms.txt')} for a structured index of this site. Per-route JSON at /routes/{slug}.json. Full manifest at /site.manifest.json.`,
-    contact_email: '',
+    contact_email: siteContactEmail(site),
     legal_info_url: absoluteUrl(site.url, '/'),
     api: {
       type: 'manifest',
