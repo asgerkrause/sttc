@@ -44,17 +44,11 @@ import { BuildError } from './errors'
 import { copyAssets, copyMediaFolder, copyTree } from './assets'
 import { autoGenerateIndexes } from './generated-routes'
 import { runChecks, failOnReport } from './check'
-import {
-  extractTitle,
-  extractDescription,
-  scanInternalLinks,
-  writeDiscovery,
-  type RouteRecord,
-} from './discovery'
+import { writeDiscovery } from './discovery'
 import type { ComposeInstance } from './compose'
 import { writeComponentsReadme } from './docs'
 import { discoverSourceRoutes } from './source-files'
-import { RouteRegistry } from './routes'
+import { RouteGraph } from './route-graph'
 
 async function writeComposed(
   srcPath: string,
@@ -143,51 +137,32 @@ async function build() {
   })()
 
   t = performance.now()
-  const routeRegistry = new RouteRegistry()
-  const routeRecords: RouteRecord[] = []
-
-  async function recordFromHtml(slug: string, finalHtml: string): Promise<RouteRecord> {
-    return {
-      slug,
-      title: extractTitle(finalHtml),
-      description: extractDescription(finalHtml),
-      components: instancesByRoute.get(slug) ?? [],
-      internalLinks: scanInternalLinks(finalHtml),
-      schemas: ['WebPage'],
-      lastModified: new Date().toISOString(),
-    }
-  }
+  const routeGraph = new RouteGraph({
+    composer,
+    instancesFor: (slug) => instancesByRoute.get(slug) ?? [],
+  })
 
   for (const route of await discoverSourceRoutes()) {
     const routeRaw = await readFile(route.sourcePath, 'utf8')
-    const registered = routeRegistry.register({
+    const owner = {
       slug: route.slug,
-      kind: route.legacy ? 'legacy-static' : 'static',
+      kind: route.legacy ? 'legacy-static' as const : 'static' as const,
       source: route.sourceRel,
       outFile: route.outFile,
-    })
+    }
     const { scripts } = extractRouteTopScripts(routeRaw, route.sourceRel)
     scriptBlocks.push(...routeScriptBlocks(route.slug, scripts))
 
     const { body } = extractRouteTopScripts(routeRaw, route.sourceRel)
-    const html = await composer.prepareRouteSource(body, { slug: route.slug, fileHint: route.sourceRel })
-    const outPath = join(dist, 'routes', registered.outFile)
-    await mkdir(join(outPath, '..'), { recursive: true })
-    await writeFile(outPath, html)
-    routeRecords.push(await recordFromHtml(route.slug, html))
+    await routeGraph.compose(owner, body)
   }
 
   // Compile content/posts and content/pages via templates → dist/routes/...
   const contentRoutes = await compileContent()
   const contentByslug = new Map<string, ContentRoute>()
   for (const c of contentRoutes) {
-    const registered = routeRegistry.register({ slug: c.slug, kind: 'content', source: c.source, outFile: c.routeFile })
     contentByslug.set(c.slug, c)
-    const html = await composer.prepareRouteSource(c.body, { slug: c.slug, fileHint: c.source })
-    const out = join(dist, 'routes', registered.outFile)
-    await mkdir(join(out, '..'), { recursive: true })
-    await writeFile(out, html)
-    routeRecords.push(await recordFromHtml(c.slug, html))
+    await routeGraph.compose({ slug: c.slug, kind: 'content', source: c.source, outFile: c.routeFile }, c.body)
   }
 
   tick('routes', t)
@@ -197,9 +172,9 @@ async function build() {
 
   // Auto-generate /insights/ index + /tags/{tag}/ + /tags/ index if not authored manually.
   const posts = contentRoutes.filter((c) => c.collection === 'posts' && !c.draft)
-  await autoGenerateIndexes(composer, posts, routeRecords, routeRegistry)
+  await autoGenerateIndexes(routeGraph, posts)
 
-  await writeSitemap(dist, site.url, routeRegistry.slugs())
+  await writeSitemap(dist, site.url, routeGraph.slugs())
   await writeRobots(dist, site.url)
   await writeFeeds(dist, site, posts)
 
@@ -207,7 +182,7 @@ async function build() {
 
   await writeDiscovery(dist, {
     site,
-    routes: routeRecords,
+    routes: routeGraph.records(),
     componentSchemas: schemas,
     componentUseCounts,
     contentByslug,
