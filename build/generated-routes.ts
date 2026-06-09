@@ -38,7 +38,7 @@ export async function autoGenerateIndexes(
   ${postLinkList(posts)}
 </Section>`
   const insightsRoute = routeRegistry.register({ slug: 'insights', kind: 'generated', source: 'generated:insights' })
-  const insightsHtml = await composer.prepareRouteSource(insightsBody, insightsRoute.outFile)
+  const insightsHtml = await composer.prepareRouteSource(insightsBody, { slug: insightsRoute.slug, fileHint: insightsRoute.source })
   await mkdir(join(dist, 'routes'), { recursive: true })
   await writeFile(join(dist, 'routes', insightsRoute.outFile), insightsHtml)
   routeRecords.push({
@@ -74,7 +74,7 @@ export async function autoGenerateIndexes(
 </Section>`
     const slug = `tags/${tagSlug}`
     const registered = routeRegistry.register({ slug, kind: 'generated', source: `generated:${slug}` })
-    const html = await composer.prepareRouteSource(body, registered.outFile)
+    const html = await composer.prepareRouteSource(body, { slug: registered.slug, fileHint: registered.source })
     await mkdir(join(dist, 'routes', 'tags'), { recursive: true })
     await writeFile(join(dist, 'routes', registered.outFile), html)
     routeRecords.push({
@@ -102,7 +102,7 @@ export async function autoGenerateIndexes(
   </ul>
 </Section>`
   const registered = routeRegistry.register({ slug: 'tags', kind: 'generated', source: 'generated:tags' })
-  const html = await composer.prepareRouteSource(body, registered.outFile)
+  const html = await composer.prepareRouteSource(body, { slug: registered.slug, fileHint: registered.source })
   await writeFile(join(dist, 'routes', registered.outFile), html)
   routeRecords.push({
     slug: 'tags',

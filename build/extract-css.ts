@@ -40,7 +40,7 @@ const COMPONENT_SCRIPT_RE =
 
 /**
  * Extract lifecycle <script> blocks from a component template.
- * Each block becomes a per-instance mount function (see runtime/components.js).
+ * Each block becomes a per-instance mount function registered with the router runtime.
  */
 export function extractComponentScripts(html: string): { html: string; scripts: string[] } {
   const scripts: string[] = []

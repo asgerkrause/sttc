@@ -16,6 +16,53 @@ const preloadTimers = new WeakMap()
 const pageHandlers = new Map() // slug | '*' -> Set<fn>
 const beforeHandlers = new Set()
 const afterHandlers = new Set()
+const componentRegistry = new Map() // name -> Set<fn>
+const componentCleanups = new WeakMap() // el -> Array<fn>
+
+function componentRoots(root, selector) {
+  const out = []
+  if (root instanceof Element && root.matches(selector)) out.push(root)
+  for (const el of root.querySelectorAll(selector)) out.push(el)
+  return out
+}
+
+function mountComponents(root = document) {
+  for (const el of componentRoots(root, '[data-snz-component]:not([data-snz-mounted])')) {
+    const name = el.getAttribute('data-snz-component')
+    const fns = name ? componentRegistry.get(name) : null
+    if (!name || !fns) continue
+
+    const teardowns = []
+    for (const fn of fns) {
+      try {
+        const teardown = fn(el)
+        if (typeof teardown === 'function') teardowns.push(teardown)
+      } catch (e) {
+        console.error(`[snz] ${name} mount error:`, e)
+      }
+    }
+    if (teardowns.length) componentCleanups.set(el, teardowns)
+    el.setAttribute('data-snz-mounted', '')
+  }
+}
+
+function unmountComponents(root) {
+  for (const el of componentRoots(root, '[data-snz-mounted]')) {
+    const teardowns = componentCleanups.get(el)
+    if (!teardowns) continue
+    for (const teardown of teardowns) {
+      try { teardown() } catch (e) { console.error('[snz] cleanup error:', e) }
+    }
+    componentCleanups.delete(el)
+  }
+}
+
+function registerComponent(name, fn) {
+  if (!componentRegistry.has(name)) componentRegistry.set(name, new Set())
+  componentRegistry.get(name).add(fn)
+  mountComponents()
+  return () => componentRegistry.get(name)?.delete(fn)
+}
 
 function wrapPage(raw) {
   const trimmed = raw.trim()
@@ -212,6 +259,7 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
     if (!is404 && slugFromPath(pathname) !== '404') {
       return render('/404/', { is404: true, transition, focus })
     }
+    unmountComponents(main)
     main.replaceChildren()
     document.documentElement.removeAttribute('data-page')
     return
@@ -222,6 +270,7 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
     if (!is404 && slugFromPath(pathname) !== '404') {
       return render('/404/', { is404: true, transition, focus })
     }
+    unmountComponents(main)
     main.replaceChildren()
     document.documentElement.removeAttribute('data-page')
     return
@@ -234,7 +283,9 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
   const apply = () => {
     if (head?.children.length) mergeHead(head)
     document.documentElement.dataset.page = slug
+    unmountComponents(main)
     main.replaceChildren(...body.childNodes)
+    mountComponents(main)
     resetScroll()
     syncNavCurrent(pathname)
     emit(slug, detail)
@@ -291,6 +342,9 @@ window.snz = {
   prefetch: (path) => fetchRouteHtml(path),
   beforeNavigate: (fn) => (beforeHandlers.add(fn), () => beforeHandlers.delete(fn)),
   afterNavigate: (fn) => (afterHandlers.add(fn), () => afterHandlers.delete(fn)),
+  _registerComponent: registerComponent,
+  _mountComponents: mountComponents,
+  _unmountIn: unmountComponents,
 }
 
 // ---- event wiring ----

@@ -7,7 +7,6 @@ import { componentsDir, src } from './paths'
 import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { COMPONENT_OPEN_RE, nextComponent, parseAttrs, type ComponentMatch } from './tags'
-import { slugFromRouteFile as libSlugFromRouteFile } from '../runtime/lib/paths.js'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
 const LEGACY_COMMENT_RE = /<!--\s*@(component|seo)\b/
@@ -41,6 +40,11 @@ export type ComposeInstance = {
   name: string
   attrs: Record<string, string>
   route?: string
+}
+
+export type RouteComposeInput = {
+  slug: string
+  fileHint: string
 }
 
 export type Composer = ReturnType<typeof createComposer>
@@ -84,7 +88,12 @@ export function createComposer(
 
   function titleCase(slug: string) {
     if (slug === '404') return 'Not found'
-    return slug.charAt(0).toUpperCase() + slug.slice(1)
+    const label = slug.split('/').filter(Boolean).at(-1) ?? slug
+    return label
+      .split(/[-_]+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
   }
 
   async function defaultSeoAttrs(slug: string): Promise<Record<string, string>> {
@@ -295,9 +304,8 @@ export function createComposer(
     return substitute(loadComponent('SEO', fileHint), enriched)
   }
 
-  async function prepareRouteSource(raw: string, filename: string) {
-    const slug = libSlugFromRouteFile(filename)
-    const fileHint = `src/routes/${filename}`
+  async function prepareRouteSource(raw: string, route: RouteComposeInput) {
+    const { slug, fileHint } = route
     currentRoute = slug
     try {
       rejectLegacySyntax(raw, fileHint)
@@ -334,7 +342,6 @@ export function createComposer(
     resetSiteConfig,
     prepareRouteSource,
     prepareShellSource,
-    slugFromRouteFile: libSlugFromRouteFile,
   }
 }
 

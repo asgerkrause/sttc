@@ -1,7 +1,15 @@
 import { describe, expect, test } from 'bun:test'
+import { readFile } from 'fs/promises'
+import { createComposer } from '../build/compose'
 import { outFileFromSlug, slugFromPageRel } from '../build/source-files'
 import { slugifyTag } from '../build/content'
 import { publicPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
+
+async function composeRoute(slug: string, fileHint: string) {
+  const seoTemplate = await readFile('src/components/SEO.html', 'utf8')
+  const composer = createComposer(new Map([['SEO', seoTemplate]]), new Map(), () => ({}))
+  return composer.prepareRouteSource('<h1>Page</h1>', { slug, fileHint })
+}
 
 describe('build path contracts', () => {
   test('normalizes nested page files to route slugs', () => {
@@ -28,5 +36,22 @@ describe('build path contracts', () => {
   test('slugifies generated tag routes predictably', () => {
     expect(slugifyTag('Bun Native')).toBe('bun-native')
     expect(slugifyTag('Ångström & SEO')).toBe('angstrom-seo')
+  })
+
+  test('uses explicit route slug for default SEO instead of source file path', async () => {
+    const html = await composeRoute('about', 'src/pages/about.html')
+
+    expect(html).toContain('<link rel="canonical" href="https://example.com/about/">')
+    expect(html).toContain('<meta property="og:url" content="https://example.com/about/">')
+    expect(html).toContain('"url":"https://example.com/about/"')
+    expect(html).not.toContain('/src/pages/about/')
+  })
+
+  test('keeps index route canonical at site root', async () => {
+    const html = await composeRoute('index', 'src/pages/index.html')
+
+    expect(html).toContain('<link rel="canonical" href="https://example.com/">')
+    expect(html).toContain('<meta property="og:url" content="https://example.com/">')
+    expect(html).not.toContain('/index/')
   })
 })
