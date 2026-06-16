@@ -60,9 +60,9 @@ body:
       label: Risk label to apply
       description: Project labels are set after issue creation. Use risk as the agent safety dial.
       options:
-        - risk:low — low-risk, non-ambiguous, safe after readiness check
-        - risk:medium — moderate risk; human decides before agent pickup
-        - risk:high — high-risk or client-critical; human-led by default
+        - "risk:low — low-risk, non-ambiguous, safe after readiness check"
+        - "risk:medium — moderate risk; human decides before agent pickup"
+        - "risk:high — high-risk or client-critical; human-led by default"
     validations:
       required: true
   - type: dropdown
@@ -71,23 +71,23 @@ body:
       label: Type label to apply
       description: Project labels are set after issue creation.
       options:
-        - type:bug — broken behavior or regression
-        - type:feature — new capability or user-facing addition
-        - type:docs — documentation, copy, or content-only work
-        - type:test — test coverage, QA harness, or verification work
-        - type:refactor — internal code shape change with no intended behavior change
-        - type:chore — maintenance, dependency, repo, or process work
+        - "type:bug — broken behavior or regression"
+        - "type:feature — new capability or user-facing addition"
+        - "type:docs — documentation, copy, or content-only work"
+        - "type:test — test coverage, QA harness, or verification work"
+        - "type:refactor — internal code shape change with no intended behavior change"
+        - "type:chore — maintenance, dependency, repo, or process work"
     validations:
       required: true
   - type: dropdown
     id: readiness
     attributes:
       label: Automation readiness
-      description: `agent:ready` is a permission grant. Use `needs:human` when judgement/access/content is missing.
+      description: "`agent:ready` is a permission grant. Use `needs:human` when judgement/access/content is missing."
       options:
-        - needs:human — decision, access, approval, content, design, or context needed
-        - not ready — keep human-owned for now
-        - agent:ready candidate — manager may grant only after assessment
+        - "needs:human — decision, access, approval, content, design, or context needed"
+        - "not ready — keep human-owned for now"
+        - "agent:ready candidate — manager may grant only after assessment"
     validations:
       required: true
   - type: textarea
