@@ -1,0 +1,112 @@
+name: Client task
+about: Client delivery task for the Client Project template
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for approved client work. Title should describe the outcome only — no `[Frontend]`, `[task]`, `P1:`, or similar prefixes.
+
+        After creation, add this issue to the client Project built from the `Client` template and set Project fields: Status, Priority, Area, Start, End.
+
+        Labels are the automation gate: one `risk:*`, one `type:*`, then either `agent:ready` or `needs:human` when applicable. Do not add `agent:ready` until outcome, acceptance, scope, and verification path are clear.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What must be true when this issue is done?
+      placeholder: |
+        Users can...
+        Client can see...
+        System now...
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Concrete steps. Keep steps here unless a child needs separate owner/date/status/PR, then create sub-issue.
+      placeholder: |
+        - [ ] Inspect current behavior
+        - [ ] Implement smallest safe change
+        - [ ] Verify result
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: Observable done state. Done requires evidence, not just implementation.
+      placeholder: |
+        - [ ] User/client-facing result is correct
+        - [ ] Edge cases handled
+        - [ ] PR/check/manual evidence is linked or posted
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: Commands, screenshots, URLs, review steps, or manual evidence required before Done.
+      placeholder: |
+        - `bun run check`
+        - Preview URL: ...
+        - Manual QA: ...
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk label to apply
+      description: Project labels are set after issue creation. Use risk as the agent safety dial.
+      options:
+        - risk:low — low-risk, non-ambiguous, safe after readiness check
+        - risk:medium — moderate risk; human decides before agent pickup
+        - risk:high — high-risk or client-critical; human-led by default
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type label to apply
+      description: Project labels are set after issue creation.
+      options:
+        - type:bug — broken behavior or regression
+        - type:feature — new capability or user-facing addition
+        - type:docs — documentation, copy, or content-only work
+        - type:test — test coverage, QA harness, or verification work
+        - type:refactor — internal code shape change with no intended behavior change
+        - type:chore — maintenance, dependency, repo, or process work
+    validations:
+      required: true
+  - type: dropdown
+    id: readiness
+    attributes:
+      label: Automation readiness
+      description: `agent:ready` is a permission grant. Use `needs:human` when judgement/access/content is missing.
+      options:
+        - needs:human — decision, access, approval, content, design, or context needed
+        - not ready — keep human-owned for now
+        - agent:ready candidate — manager may grant only after assessment
+    validations:
+      required: true
+  - type: textarea
+    id: agent-context
+    attributes:
+      label: Agent context
+      description: Links, constraints, known files, repo/project/milestone notes, or blocker question.
+      placeholder: |
+        Project:
+        Milestone:
+        Relevant files/URLs:
+        Constraints:
+        Human question if blocked:
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Extra context, client feedback, design refs, credentials/access notes without secrets.
+    validations:
+      required: false
