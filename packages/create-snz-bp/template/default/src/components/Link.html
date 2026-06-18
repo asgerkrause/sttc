@@ -1,0 +1,41 @@
+<!--
+  @desc Underlined inline link.
+  @attr href! Destination URL or path.
+  @attr label! Link text.
+-->
+<a class="lnk" href="{{href}}">{{label}}</a>
+
+<style>
+  a.lnk {
+    background-image: linear-gradient(0deg, var(--i), var(--i));
+    background-repeat: no-repeat;
+    background-position-x: right;
+    background-position-y: 100%;
+    background-size: 0 var(--bw);
+
+    @media (hover: hover) {
+      &:hover {
+        background-size: 100% var(--bw);
+        background-position-x: left;
+      }
+
+      &:not(:hover, :focus-visible) {
+        color: var(--g);
+      }
+    }
+
+    @media (hover: none) {
+      background-size: 100% var(--bw);
+    }
+
+    &:focus-visible {
+      background-size: 100% var(--bw);
+      background-position-x: left;
+    }
+
+    &[aria-current="page"] {
+      background-size: 100% var(--bw);
+      color: var(--i);
+    }
+  }
+</style>

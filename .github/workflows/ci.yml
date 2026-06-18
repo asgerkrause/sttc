@@ -34,3 +34,6 @@ jobs:
       - name: Starter template check
         working-directory: templates/default
         run: bun ../../bin/snz-bp.ts check
+
+      - name: Create smoke
+        run: bun run smoke:create

@@ -1,8 +1,22 @@
 {
   "name": "create-snz-bp",
   "version": "0.1.0",
-  "private": true,
+  "description": "Project creator for @snz/bp SANITIZE Boilerplate sites.",
   "type": "module",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanitizestudio/snz-bp.git",
+    "directory": "packages/create-snz-bp"
+  },
+  "homepage": "https://github.com/sanitizestudio/snz-bp#readme",
+  "bugs": {
+    "url": "https://github.com/sanitizestudio/snz-bp/issues"
+  },
+  "files": [
+    "bin/",
+    "template/"
+  ],
   "bin": {
     "create-snz-bp": "./bin/create-snz-bp.ts"
   },

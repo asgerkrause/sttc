@@ -1,7 +1,34 @@
 {
   "name": "@snz/bp",
-  "private": true,
+  "version": "0.1.0",
+  "description": "HTML-first, Bun-native static site builder for SANITIZE Boilerplate sites.",
   "type": "module",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanitizestudio/snz-bp.git"
+  },
+  "homepage": "https://github.com/sanitizestudio/snz-bp#readme",
+  "bugs": {
+    "url": "https://github.com/sanitizestudio/snz-bp/issues"
+  },
+  "keywords": [
+    "bun",
+    "static-site",
+    "html",
+    "seo",
+    "llms"
+  ],
+  "files": [
+    "AGENTS.md",
+    "README.md",
+    "bin/",
+    "build/",
+    "dev.ts",
+    "docs/",
+    "runtime/",
+    "templates/default/"
+  ],
   "workspaces": [
     "templates/default",
     "packages/create-snz-bp"
@@ -20,6 +47,8 @@
     "doctor": "bun bin/snz-bp.ts doctor",
     "test": "bun test",
     "new": "bun bin/snz-bp.ts new",
-    "migrate": "bun bin/snz-bp.ts migrate"
+    "migrate": "bun bin/snz-bp.ts migrate",
+    "prepare:create-template": "bun scripts/sync-create-template.ts",
+    "smoke:create": "bun scripts/smoke-create.ts"
   }
 }
