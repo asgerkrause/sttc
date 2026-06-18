@@ -12,6 +12,7 @@
     "css:audit": "snz-bp css:audit",
     "doctor": "snz-bp doctor",
     "new": "snz-bp new",
+    "add": "snz-bp add",
     "migrate": "snz-bp migrate"
   },
   "dependencies": {

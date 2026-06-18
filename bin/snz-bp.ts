@@ -14,11 +14,12 @@ const commands: Record<string, string[]> = {
   check: ['bun', join(packageRoot, 'build', 'check.ts')],
   'css:audit': ['bun', join(packageRoot, 'build', 'css-audit.ts')],
   new: ['bun', join(packageRoot, 'build', 'scaffold.ts')],
+  add: ['bun', join(packageRoot, 'build', 'add.ts')],
   migrate: ['bun', join(packageRoot, 'build', 'migrate.ts')],
 }
 
 function usage(): never {
-  console.error(`Usage: snz-bp <dev|build|check|doctor|css:audit|new|migrate> [...args]`)
+  console.error(`Usage: snz-bp <dev|build|check|doctor|css:audit|new|add|migrate> [...args]`)
   process.exit(1)
 }
 

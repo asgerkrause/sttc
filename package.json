@@ -2,6 +2,7 @@
   "name": "@snz/bp",
   "version": "0.1.0",
   "description": "HTML-first, Bun-native static site builder for SANITIZE Boilerplate sites.",
+  "private": true,
   "type": "module",
   "license": "UNLICENSED",
   "repository": {
@@ -47,6 +48,7 @@
     "doctor": "bun bin/snz-bp.ts doctor",
     "test": "bun test",
     "new": "bun bin/snz-bp.ts new",
+    "add": "bun bin/snz-bp.ts add",
     "migrate": "bun bin/snz-bp.ts migrate",
     "prepare:create-template": "bun scripts/sync-create-template.ts",
     "check:create-template": "bun scripts/sync-create-template.ts --check",

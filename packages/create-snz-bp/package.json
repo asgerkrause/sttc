@@ -2,6 +2,7 @@
   "name": "create-snz-bp",
   "version": "0.1.0",
   "description": "Project creator for @snz/bp SANITIZE Boilerplate sites.",
+  "private": true,
   "type": "module",
   "license": "UNLICENSED",
   "repository": {

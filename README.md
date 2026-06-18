@@ -4,6 +4,8 @@
 
 Repo: `sanitizestudio/snz-bp`.
 
+Private review status: packages are intentionally unpublished and marked `"private": true`. Do not publish, change npm access, or remove that guard until a human explicitly approves release.
+
 ## Stack
 
 - **Runtime**: Bun (>= 1.3.14, for `Bun.Image`).
@@ -18,6 +20,7 @@ bun run build     # produce dist/, run strict checks at the end
 bun run check     # rebuild + validate without serving
 bun run doctor    # CSS ownership audit + strict check
 bun run new       # scaffolder: component|route|post|page <name>, or cms
+bun run add       # add component preset or theme pack
 ```
 
 Package CLI:
@@ -29,6 +32,8 @@ snz-bp check
 snz-bp doctor
 snz-bp new component Hero
 snz-bp new cms
+snz-bp add component hero
+snz-bp add theme minimal
 snz-bp migrate
 ```
 
@@ -56,7 +61,7 @@ bun install
 bun dev
 ```
 
-Target published UX later:
+Target published UX later, after human release approval and private guards are removed:
 
 ```bash
 bun create snz-bp my-client
@@ -75,7 +80,7 @@ cd ../..
 bun run smoke:create
 ```
 
-Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install` must run before `bun dev`. Packaged creator uses `packages/create-snz-bp/template/default` and writes the matching published `@snz/bp` semver range. Run `bun run prepare:create-template` before packaging. Publish steps live in [`docs/publish-checklist.md`](./docs/publish-checklist.md).
+Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install` must run before `bun dev`. Packaged creator uses `packages/create-snz-bp/template/default` and writes the matching published `@snz/bp` semver range for smoke testing. Run `bun run prepare:create-template` before packaging. Publish steps and private guard removal live in [`docs/publish-checklist.md`](./docs/publish-checklist.md).
 
 ## Workspace modes
 
@@ -125,6 +130,18 @@ Built-ins (15):
 `Header`, `Footer`, `SEO`, `Image`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
 
 Add a new component by handing [`docs/component-prompt.md`](./docs/component-prompt.md) to Claude, or just write it yourself.
+
+Add a private section preset with `snz-bp add component <preset>`. Presets: `hero`, `logos`, `pricing`, `testimonial`, `faq`. They write normal PascalCase component files in `src/components/` and refuse to overwrite existing files unless `--force` is passed.
+
+Theme token packs are private starter shortcuts, not design systems:
+
+```bash
+snz-bp add theme minimal      # neutral, clean default
+snz-bp add theme editorial    # type-forward, content-heavy
+snz-bp add theme brutalist    # bold/high-contrast
+```
+
+Theme packs append a marked `snz-bp theme` block to `src/styles.css`. Existing theme blocks are not replaced unless `--force` is passed.
 
 CSS ownership: global CSS owns tokens, reset/base, `.c`, `.w`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Component-specific selectors live in component `<style>` blocks.
 

@@ -2,8 +2,14 @@
 
 Use when publishing `@snz/bp` and `create-snz-bp`.
 
+## Private review guard
+
+This repo is intentionally unpublished for now. Both package manifests must keep `"private": true` during private review. Do not remove it, change npm access, or publish until a human makes an explicit release decision.
+
 ## Preflight
 
+- [ ] Confirm a human approved moving out of private review.
+- [ ] Remove `"private": true` from root `package.json` and `packages/create-snz-bp/package.json` only after that approval.
 - [ ] Confirm `package.json` version matches `packages/create-snz-bp/package.json`.
 - [ ] Run `bun run prepare:create-template` so `packages/create-snz-bp/template/default` matches `templates/default`.
 - [ ] Run `bun run check:create-template`.
@@ -18,7 +24,7 @@ Use when publishing `@snz/bp` and `create-snz-bp`.
 ## Human gates
 
 - [ ] Confirm npm account/org access for `@snz/bp` and `create-snz-bp`.
-- [ ] Confirm npm publish access mode for scoped `@snz/bp` (`--access public` if public).
+- [ ] Confirm npm publish access mode for scoped `@snz/bp` (`--access public` if public). Do not change access before approval.
 - [ ] Confirm provenance/2FA requirements for both package publishes.
 - [ ] Confirm `UNLICENSED` is intentional before public publish, or replace with approved license.
 - [ ] Confirm version, release notes, and git tag for release.
@@ -38,6 +44,7 @@ bun run check
 
 ## Safety
 
+- Keep `"private": true` in both package manifests until human release approval; this blocks accidental `npm publish`/`bun publish` from private review.
 - Never publish with `file:` or `workspace:*` dependencies in generated templates.
 - The creator uses `file:<repo-root>` only in local monorepo mode.
 - Published creator uses its packaged template and writes `@snz/bp` as the matching semver range.

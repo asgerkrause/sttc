@@ -1,4 +1,5 @@
 // CLI: bun run new <kind> <name> [--force] [--demo]
+//      snz-bp add component <preset> [--force]
 // kind: component | route | post | page | cms
 // route writes src/pages/*.html. page remains CMS content page. cms has no name.
 //
@@ -7,10 +8,12 @@
 import { mkdir, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { root } from './paths'
+import { addComponentPreset } from './component-presets'
 
 type Kind = 'component' | 'route' | 'post' | 'page' | 'cms'
-
-const args = process.argv.slice(2)
+const rawArgs = process.argv.slice(2)
+const isAdd = rawArgs[0] === 'add'
+const args = isAdd ? rawArgs.slice(1) : rawArgs
 const kind = args[0] as Kind | undefined
 const name = args[1]
 const force = args.includes('--force')
@@ -19,12 +22,14 @@ const demo = args.includes('--demo')
 function usage(): never {
   console.error('Usage: bun run new <component|route|post|page> <name> [--force] [--demo]')
   console.error('       bun run new cms [--force]')
+  console.error('       snz-bp add component <hero|logos|pricing|testimonial|faq> [--force]')
   process.exit(1)
 }
 
 if (!kind) usage()
 if (!['component', 'route', 'post', 'page', 'cms'].includes(kind)) usage()
 if (kind !== 'cms' && !name) usage()
+if (isAdd && kind !== 'component') usage()
 
 async function exists(p: string) {
   try { await stat(p); return true } catch { return false }
@@ -173,7 +178,9 @@ const pageTemplate = `<head>
 </article>
 `
 
-if (kind === 'cms') {
+if (isAdd) {
+  await addComponentPreset(name!, { force })
+} else if (kind === 'cms') {
   await writeIfMissing(join(root, '.pages.yml'), pagesYml)
   await writeIfMissing(join(root, 'content', 'README.md'), contentReadme)
   await writeIfMissing(join(root, 'content', 'posts', '.gitkeep'), '')

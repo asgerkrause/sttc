@@ -61,6 +61,28 @@ URL becomes `/pricing/`. Build also emits sitemap, manifest, llms, and `/routes/
 
 ### Add component
 
+Add a private section preset when a common landing-page block is enough:
+
+```bash
+snz-bp add component hero       # HeroSection.html
+snz-bp add component logos      # LogoCloud.html
+snz-bp add component pricing    # PricingSection.html
+snz-bp add component testimonial # TestimonialSection.html
+snz-bp add component faq        # FAQSection.html
+```
+
+Presets write normal PascalCase component files under `src/components/` and refuse to overwrite existing files unless `--force` is passed.
+
+Add private token theme packs when a starter needs a quick visual direction:
+
+```bash
+snz-bp add theme minimal
+snz-bp add theme editorial
+snz-bp add theme brutalist
+```
+
+Theme packs append a marked `snz-bp theme` block to `src/styles.css` and refuse to replace an existing theme block unless `--force` is passed.
+
 Create `src/components/FeatureCard.html`:
 
 ```html

@@ -26,6 +26,9 @@ bun run dev
 bun run build
 bun run check
 bun run new cms    # optional: add PagesCMS/content scaffolding
+bun run add theme minimal      # neutral, clean default
+bun run add theme editorial    # type-forward, content-heavy
+bun run add theme brutalist    # bold/high-contrast
 ```
 
 Edit `src/`. Do not edit `dist/`.
