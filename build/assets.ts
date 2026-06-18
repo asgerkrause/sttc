@@ -1,22 +1,29 @@
 import { mkdir, readdir, rm, stat } from 'fs/promises'
-import { basename, join } from 'path'
+import { basename, isAbsolute, join, relative, resolve, sep } from 'path'
+import { pagesCmsMediaInputs } from './images'
 import { dist, root, sourceAppDir, sourceAppFile, sourceStylesDir, sourceStylesFile } from './paths'
 
 // Recursive copy implemented with sequential per-file writes. fs.cp(recursive: true) was
 // observed to race with adjacent writes (image variants would vanish), so we walk + Bun.write.
 // Skips files whose dest is already up to date — avoids reading src files unnecessarily,
 // which on macOS causes fs.watch to fire spurious "change" events (atime touch).
-export async function copyTree(srcDir: string, destDir: string, skip: (relPath: string) => boolean = () => false) {
+export async function copyTree(
+  srcDir: string,
+  destDir: string,
+  skip: (relPath: string) => boolean = () => false,
+  baseRel = '',
+) {
   let entries
   try { entries = await readdir(srcDir, { withFileTypes: true }) } catch { return }
   await mkdir(destDir, { recursive: true })
   for (const entry of entries) {
     if (entry.name === '.DS_Store' || entry.name === '.gitkeep') continue
-    if (skip(entry.name)) continue
+    const relPath = baseRel ? join(baseRel, entry.name) : entry.name
+    if (skip(relPath)) continue
     const srcPath = join(srcDir, entry.name)
     const destPath = join(destDir, entry.name)
     if (entry.isDirectory()) {
-      await copyTree(srcPath, destPath, skip)
+      await copyTree(srcPath, destPath, skip, relPath)
     } else if (entry.isFile()) {
       const srcStat = await stat(srcPath).catch(() => null)
       const destStat = await stat(destPath).catch(() => null)
@@ -48,14 +55,43 @@ export async function copyAssets() {
   await mkdir(join(assetsDist, 'images'), { recursive: true })
 }
 
+function slashPath(path: string) {
+  return path.split(sep).join('/')
+}
+
+export async function mediaInputCopyExclusions(projectRoot = root) {
+  const mediaSrc = resolve(projectRoot, 'media')
+  const exclusions: string[] = []
+  for (const input of await pagesCmsMediaInputs(projectRoot)) {
+    const rel = relative(mediaSrc, resolve(projectRoot, input))
+    if (rel === '') {
+      exclusions.push('')
+      continue
+    }
+    if (rel.startsWith('..') || isAbsolute(rel)) continue
+    exclusions.push(slashPath(rel))
+  }
+  return [...new Set(exclusions)]
+}
+
+export function shouldSkipMediaCopy(relPath: string, exclusions: string[]) {
+  const rel = slashPath(relPath)
+  return exclusions.some((exclusion) =>
+    exclusion === '' || rel === exclusion || rel.startsWith(`${exclusion}/`),
+  )
+}
+
 export async function copyMediaFolder() {
-  // media/images is source input for the optimizer, not a public raw asset tree.
+  // Configured media.input roots are source input for the optimizer, not public raw asset trees.
   // Other media folders can still be copied for non-image CMS files if added later.
-  await rm(join(dist, 'media', 'images'), { recursive: true, force: true })
   const mediaSrc = join(root, 'media')
+  const exclusions = await mediaInputCopyExclusions(root)
+  for (const exclusion of exclusions) {
+    await rm(join(dist, 'media', exclusion), { recursive: true, force: true })
+  }
   try {
     if ((await stat(mediaSrc)).isDirectory()) {
-      await copyTree(mediaSrc, join(dist, 'media'), (name) => name === 'images')
+      await copyTree(mediaSrc, join(dist, 'media'), (relPath) => shouldSkipMediaCopy(relPath, exclusions))
     }
   } catch {
     /* no media folder */

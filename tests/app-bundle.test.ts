@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { writeAppJs, type ScriptBlock } from '../build/extract-js'
+import { componentScriptBlocks, writeAppJs, type ScriptBlock } from '../build/extract-js'
 
 const tempDirs: string[] = []
 
@@ -35,6 +35,21 @@ describe('app bundle writer', () => {
     expect(bundled).toContain('bundled')
     expect(bundled).toContain("window.snz?.onPage('about'")
     expect(bundled).toContain('window.__routeRan = true')
+  })
+
+  test('registers component lifecycle scripts against router runtime API', async () => {
+    const root = await makeTempDir()
+    const src = join(root, 'src')
+    const dist = join(root, 'dist', 'assets', 'js')
+    await mkdir(src, { recursive: true })
+    await writeFile(join(src, 'app.js'), 'window.__appLoaded = true\n')
+
+    const blocks = componentScriptBlocks(new Map([['Counter', ['window.__mountedComponent = el.dataset.snzComponent']]]))
+    const filename = await writeAppJs(join(src, 'app.js'), dist, blocks)
+    const bundled = await readFile(join(dist, filename), 'utf8')
+
+    expect(bundled).toContain("window.snz?._registerComponent('Counter'")
+    expect(bundled).toContain('window.__mountedComponent = el.dataset.snzComponent')
   })
 
   test('inlines PUBLIC env values without private env values', async () => {

@@ -1,0 +1,9 @@
+{
+  "name": "My Site",
+  "url": "https://example.com",
+  "description": "Built with SANITIZE Boilerplate.",
+  "locale": "en",
+  "twitter": "",
+  "ogImage": "/assets/og.webp",
+  "scroll": "lenis"
+}

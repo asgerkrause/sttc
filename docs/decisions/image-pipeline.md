@@ -15,7 +15,8 @@ Assets were copied raw (`cp src/assets → dist/assets`). No raster files in rep
 
 ## Chosen
 
-- Masters in `src/images/` and CMS uploads in `media/images/` (jpg/png/webp)
+- Masters in `src/images/`, legacy `src/assets/images/`, and PagesCMS uploads from `.pages.yml` `media.input` (default `media/images`) are source-only image roots
+- Public contract: authored/CMS images resolve by logical basename to optimized `/assets/images/{name}.webp` outputs; raw `media.output` files are not served
 - `images.ts` runs from build via `Bun.Image` → webp variants (and OG png fallback)
 - `dist/assets/images/*.webp` + responsive `-{width}.webp` variants + `dist/assets/og.webp` served as static files
 - Requires **Bun >= 1.3.14** (`Bun.Image`)
@@ -25,6 +26,7 @@ Assets were copied raw (`cp src/assets → dist/assets`). No raster files in rep
 - `src/components/Image.html` — `.img-w` wrapper + single `<img>`
 - Route: `<Image src="hero" alt="…" />` (`src` = logical name, no extension)
 - Build maps `src` → `/assets/images/{name}.webp` and dimensions from `metadata()`
+- Duplicate logical names (same basename) across image source roots fail before `<Image src="name" />` can resolve ambiguously
 - Optional encode attrs: `max="1200"` `quality="82"` (quoted integers)
 - Pre-scan (`scan-images.ts`) of shell, routes, components before `processImages`
 - Same `src` on multiple tags: build uses **max** of each attr per name
@@ -49,7 +51,8 @@ Assets were copied raw (`cp src/assets → dist/assets`). No raster files in rep
 
 ## Author workflow
 
-1. Add `src/images/{name}.jpg` (or png)
-2. `bun run build`  
-3. `<Image src="{name}" alt="…" />` in routes (or manual `/assets/images/{name}.webp`)  
-4. OG: `src/images/og.png` → `dist/assets/og.webp` + `og.png`; default in `site.json` is `/assets/og.webp`
+1. Add `src/images/{name}.jpg` (or png), or upload through PagesCMS `media.input`
+2. Keep `{name}` unique across image source roots
+3. `bun run build`
+4. `<Image src="{name}" alt="…" />` in routes (or manual `/assets/images/{name}.webp`)
+5. OG: `src/images/og.png` → `dist/assets/og.webp` + `og.png`; default in `site.json` is `/assets/og.webp`

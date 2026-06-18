@@ -1,13 +1,12 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { BuildError } from './errors'
+import { buildErrorAt, BuildError } from './errors'
 import { resolveImageAttrs, type ImageMeta } from './images'
 import { render as renderMarkdown } from './markdown'
 import { componentsDir, src } from './paths'
 import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { COMPONENT_OPEN_RE, nextComponent, parseAttrs, type ComponentMatch } from './tags'
-import { slugFromRouteFile as libSlugFromRouteFile } from '../runtime/lib/paths.js'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
 const LEGACY_COMMENT_RE = /<!--\s*@(component|seo)\b/
@@ -41,6 +40,11 @@ export type ComposeInstance = {
   name: string
   attrs: Record<string, string>
   route?: string
+}
+
+export type RouteComposeInput = {
+  slug: string
+  fileHint: string
 }
 
 export type Composer = ReturnType<typeof createComposer>
@@ -84,7 +88,12 @@ export function createComposer(
 
   function titleCase(slug: string) {
     if (slug === '404') return 'Not found'
-    return slug.charAt(0).toUpperCase() + slug.slice(1)
+    const label = slug.split('/').filter(Boolean).at(-1) ?? slug
+    return label
+      .split(/[-_]+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
   }
 
   async function defaultSeoAttrs(slug: string): Promise<Record<string, string>> {
@@ -131,7 +140,7 @@ export function createComposer(
     return attrs
   }
 
-  function loadComponent(name: string, fileHint: string) {
+  function loadComponent(name: string, fileHint: string, source?: string, index?: number) {
     const tpl = templates.get(name)
     if (tpl !== undefined) return tpl
     // No case-insensitive fallback. Suggest the right cased name if close.
@@ -139,24 +148,29 @@ export function createComposer(
     const hint = candidates.length
       ? `Did you mean <${candidates[0]} ... />? (PascalCase required.)`
       : `Create src/components/${name}.html`
+    if (source && index !== undefined) {
+      throw buildErrorAt(`Unknown component <${name} />`, source, index, { file: fileHint, hint })
+    }
     throw new BuildError(`Unknown component <${name} />`, { file: fileHint, hint })
   }
 
-  function validateAttrs(name: string, attrs: Record<string, string>, fileHint: string) {
+  function validateAttrs(name: string, attrs: Record<string, string>, fileHint: string, source: string, index: number) {
     const schema = schemas.get(name)
     if (!schema) return // no schema = no validation (back-compat)
 
     const declared = schema.attrs ?? {}
     for (const [key, rule] of Object.entries(declared)) {
       if (rule.required && (attrs[key] === undefined || attrs[key] === '')) {
-        throw new BuildError(`<${name} /> missing required attribute "${key}"`, {
+        throw buildErrorAt(`<${name} /> missing required attribute "${key}"`, source, index, {
           file: fileHint,
           hint: rule.description,
         })
       }
       if (rule.enum && attrs[key] !== undefined && !rule.enum.includes(attrs[key])) {
-        throw new BuildError(
+        throw buildErrorAt(
           `<${name} /> attribute "${key}" must be one of ${rule.enum.join(', ')} — got "${attrs[key]}"`,
+          source,
+          index,
           { file: fileHint },
         )
       }
@@ -166,9 +180,9 @@ export function createComposer(
         // built-in enrichers may add keys post-validate; allow common ones for SEO/Image
         if (declared[key] !== undefined) continue
         if (name === 'SEO' || name === 'Image' || name === 'Header' || name === 'Footer') continue
-        throw new BuildError(`<${name} /> has unknown attribute "${key}"`, {
+        throw buildErrorAt(`<${name} /> has unknown attribute "${key}"`, source, index, {
           file: fileHint,
-          hint: `Declared attrs: ${Object.keys(declared).join(', ') || '(none)'} — add it to ${name}.schema.json if intended.`,
+          hint: `Declared attrs: ${Object.keys(declared).join(', ') || '(none)'} — add it to the inline schema comment if intended.`,
         })
       }
     }
@@ -189,15 +203,24 @@ export function createComposer(
       .replace(SLOT_DEFAULT_RE, defaultChildren)
   }
 
-  async function expandOne(m: ComponentMatch, fileHint: string): Promise<string> {
+  async function expandOne(m: ComponentMatch, fileHint: string, source: string): Promise<string> {
     if (m.name === 'SEO' && m.selfClosing === false) {
       throw new BuildError('<SEO> must be self-closing', { file: fileHint })
     }
-    validateAttrs(m.name, m.attrs, fileHint)
-    const attrs = await enrichComponentAttrs(m.name, { ...m.attrs })
+    validateAttrs(m.name, m.attrs, fileHint, source, m.index)
+    let attrs: Record<string, string>
+    try {
+      attrs = await enrichComponentAttrs(m.name, { ...m.attrs })
+    } catch (err) {
+      if (err instanceof BuildError && err.line) throw err
+      throw buildErrorAt(err instanceof Error ? err.message : String(err), source, m.index, {
+        file: err instanceof BuildError ? err.file ?? fileHint : fileHint,
+        hint: err instanceof BuildError ? err.hint : 'Check the component attributes and referenced source files.',
+      })
+    }
     if (onInstance) onInstance({ name: m.name, attrs: { ...m.attrs }, route: currentRoute })
 
-    const template = loadComponent(m.name, fileHint)
+    const template = loadComponent(m.name, fileHint, source, m.index)
     let children = m.children
     // Markdown: render children as markdown into the `rendered` attr; default slot stays empty.
     if (m.name === 'Markdown' && children) {
@@ -258,9 +281,9 @@ export function createComposer(
       if (guard++ > 1024) {
         throw new BuildError('Component expansion exceeded 1024 iterations (cycle?)', { file: fileHint })
       }
-      const m = nextComponent(out)
+      const m = nextComponent(out, 0, fileHint)
       if (!m) return out
-      const fragment = await expandOne(m, fileHint)
+      const fragment = await expandOne(m, fileHint, out)
       out = out.slice(0, m.index) + fragment + out.slice(m.index + m.full.length)
     }
   }
@@ -295,9 +318,8 @@ export function createComposer(
     return substitute(loadComponent('SEO', fileHint), enriched)
   }
 
-  async function prepareRouteSource(raw: string, filename: string) {
-    const slug = libSlugFromRouteFile(filename)
-    const fileHint = `src/routes/${filename}`
+  async function prepareRouteSource(raw: string, route: RouteComposeInput) {
+    const { slug, fileHint } = route
     currentRoute = slug
     try {
       rejectLegacySyntax(raw, fileHint)
@@ -334,7 +356,6 @@ export function createComposer(
     resetSiteConfig,
     prepareRouteSource,
     prepareShellSource,
-    slugFromRouteFile: libSlugFromRouteFile,
   }
 }
 

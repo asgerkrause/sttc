@@ -29,6 +29,7 @@ Matches north star: ship speed (one `site.json` + build) + SEO/AEO depth without
 - `site.json` `url` must be production origin before deploy.
 - Richer AEO/GEO fields are tracked in GitHub issues.
 - Manifest consumers can branch on `schemaVersion` and generator metadata instead of guessing output shape.
+- Bump `schemaVersion` only for breaking JSON contract changes; bump `GENERATOR_VERSION` for generator releases and non-breaking output additions.
 
 ## Links
 

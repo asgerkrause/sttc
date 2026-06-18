@@ -1,0 +1,104 @@
+<!--
+  @desc Link styled as an action button.
+  @attr href! Destination URL or path.
+  @attr label! Visible button text.
+  @attr variant=[default|ghost|tone|accent|complimentary] :class Visual style.
+  @attr size=[sm|md|lg] :class Size variant.
+-->
+<a class="btn" href="{{href}}">{{label}}</a>
+
+<style>
+  .btn,
+  button {
+    --btn-s: var(--i);
+    --btn-i: var(--s);
+    --btn-b: transparent;
+    border: var(--bw) var(--btn-b) solid;
+    background: var(--btn-s);
+    color: var(--btn-i);
+    display: inline-flex;
+    cursor: pointer;
+    padding: var(--pd-sm) var(--pd);
+    text-decoration: none;
+    border-radius: var(--br);
+
+    &.ghost {
+      --btn-s: transparent;
+      --btn-i: var(--g);
+      --btn-b: transparent;
+    }
+
+    &.tone {
+      --btn-s: var(--t);
+      --btn-i: var(--n80);
+      --btn-b: var(--b);
+    }
+
+    &.accent {
+      --btn-s: var(--a);
+      --btn-i: var(--a-i);
+
+      &.tone {
+        --btn-s: var(--a05);
+        --btn-i: var(--a60);
+        --btn-b: var(--a10);
+      }
+    }
+
+    &.complimentary {
+      --btn-s: var(--c);
+      --btn-i: var(--c-i);
+
+      &.tone {
+        --btn-s: var(--c05);
+        --btn-i: var(--c60);
+        --btn-b: var(--c10);
+      }
+    }
+
+    &:hover {
+      --btn-s: var(--a);
+      --btn-i: var(--a-i);
+
+      &.ghost {
+        --btn-s: var(--t);
+        --btn-i: var(--i);
+        --btn-b: transparent;
+      }
+
+      &.tone {
+        --btn-s: var(--a05);
+        --btn-i: var(--a80);
+        --btn-b: var(--a10);
+      }
+
+      &.accent,
+      &.complimentary {
+        --btn-s: var(--i);
+        --btn-i: var(--s);
+
+        &.tone {
+          --btn-s: var(--t);
+          --btn-i: var(--n80);
+          --btn-b: var(--b);
+        }
+      }
+    }
+
+    &:active {
+      filter: brightness(0.9) contrast(1.5);
+    }
+
+    &.sm {
+      padding: var(--pd-xs) var(--pd-sm);
+      border-radius: var(--br-sm);
+      font-size: var(--fs-sm);
+    }
+
+    &.lg {
+      padding: var(--pd) var(--pd-lg);
+      border-radius: var(--br-lg);
+      font-size: var(--fs-lg);
+    }
+  }
+</style>

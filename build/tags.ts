@@ -2,7 +2,7 @@
 // Replaces build/attrs.ts and the various COMPONENT_TAG_RE / IMAGE_TAG_RE / SEO regexes
 // that used to live scattered across compose.ts and scan-images.ts.
 
-import { BuildError } from './errors'
+import { BuildError, lineOf } from './errors'
 
 // `<Component attr="value" flag />` — PascalCase only.
 const ATTRS_GROUP = '(?:\\s+(?:[\\w-]+(?:="[^"]*")?))*'
@@ -32,7 +32,7 @@ export function parseAttrs(attrPart: string): Record<string, string> {
  * Find the next component invocation in `html`, supporting both self-closing
  * (`<Card />`) and paired (`<Card>children</Card>`) forms. Returns null if none.
  */
-export function nextComponent(html: string, from = 0): ComponentMatch | null {
+export function nextComponent(html: string, from = 0, fileHint?: string): ComponentMatch | null {
   COMPONENT_OPEN_RE.lastIndex = from
   const m = COMPONENT_OPEN_RE.exec(html)
   if (!m) return null
@@ -57,6 +57,8 @@ export function nextComponent(html: string, from = 0): ComponentMatch | null {
     const close = closeRe.exec(html)
     if (!close) {
       throw new BuildError(`Unclosed <${name}> tag`, {
+        file: fileHint,
+        line: lineOf(html, m.index),
         hint: `Either close with </${name}> or use the self-closing form <${name} ... />`,
       })
     }

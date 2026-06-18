@@ -14,7 +14,7 @@ See `docs/components.md` for the authoring contract.
 - [`<Footer />`](#footer) — Site footer with dynamic year and site name.
 - [`<Grid />`](#grid) — Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
 - [`<Header />`](#header) — Site header. Pulls siteName from site.json by default.
-- [`<Image />`](#image) — Lazy-loaded image with blurhash placeholder and responsive srcset. Master in src/images/{src}.{ext} or media/images/{src}.{ext}; build emits multiple webp sizes.
+- [`<Image />`](#image) — Lazy-loaded image with blurhash placeholder and responsive srcset. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
 - [`<Link />`](#link) — Underlined inline link.
 - [`<Markdown />`](#markdown) — Inline markdown rendered at build time. Put markdown source in the default slot.
 - [`<SEO />`](#seo) — Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or rely on defaults.
@@ -157,13 +157,13 @@ Site header. Pulls siteName from site.json by default.
 
 ## Image
 
-Lazy-loaded image with blurhash placeholder and responsive srcset. Master in src/images/{src}.{ext} or media/images/{src}.{ext}; build emits multiple webp sizes.
+Lazy-loaded image with blurhash placeholder and responsive srcset. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
 
 ### Attributes
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `src` | ✓ | string | Logical image name (without extension). |
+| `src` | ✓ | string | Unique logical image name (basename without extension). |
 | `alt` | ✓ | string | Alt text. Use alt="" for decorative. |
 | `max` |  | string | Max long edge in px. Default 1200. |
 | `quality` |  | string | WebP quality 1-100. Default 82. |

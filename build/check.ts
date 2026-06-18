@@ -3,11 +3,11 @@
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { join } from 'path'
-import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, sourceImagesDir, src, stylesDir, appDir } from './paths'
+import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, src, stylesDir, appDir } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError } from './errors'
 import { compileContent } from './content'
-import { assertUniqueImageNames } from './images'
+import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs } from './images'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
@@ -112,7 +112,12 @@ async function checkSiteJson(fail: (m: string) => void) {
 }
 
 async function checkSourceContracts(fail: (m: string) => void, warn: (m: string) => void) {
-  await assertUniqueImageNames(await sourceImagesDir(), join(root, 'media', 'images')).catch((err) => {
+  const imageRoots = await imageSourceRoots(root)
+  await assertUniqueImageNames(...imageRoots).catch((err) => {
+    if (err instanceof BuildError) {
+      fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
+      return
+    }
     fail(err instanceof Error ? err.message : String(err))
   })
 
@@ -139,11 +144,11 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
   }
 
   const pages = await readFile(join(root, '.pages.yml'), 'utf8').catch(() => '')
-  if (pages && !/input:\s*media\/images\b/.test(pages)) {
-    warn('.pages.yml: media.input should stay media/images so CMS uploads feed the image pipeline')
+  if (pages && parsePagesCmsMediaInputs(pages).length === 0) {
+    warn('.pages.yml: media.input missing; build defaults CMS image input to media/images')
   }
   if (pages && !/output:\s*\/assets\/images\b/.test(pages)) {
-    warn('.pages.yml: media.output should be /assets/images to match optimized public image output')
+    warn('.pages.yml: media.output should be /assets/images because CMS images publish as optimized assets')
   }
 }
 

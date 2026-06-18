@@ -40,3 +40,15 @@ export function lineOf(source: string, index: number) {
   for (let i = 0; i < index && i < source.length; i++) if (source[i] === '\n') line++
   return line
 }
+
+export function buildErrorAt(
+  message: string,
+  source: string,
+  index: number,
+  ctx: Omit<BuildErrorContext, 'line'> = {},
+) {
+  return new BuildError(message, {
+    ...ctx,
+    line: lineOf(source, index),
+  })
+}

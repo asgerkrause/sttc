@@ -1,10 +1,5 @@
-import { mkdir, writeFile } from 'fs/promises'
-import { join } from 'path'
-import { dist } from './paths'
-import { createComposer } from './compose'
 import { slugifyTag, type ContentRoute } from './content'
-import type { RouteRecord } from './discovery'
-import type { RouteRegistry } from './routes'
+import type { RouteGraph } from './route-graph'
 
 function escapeHtmlBasic(s: string) {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
@@ -23,10 +18,8 @@ function postLinkList(posts: ContentRoute[]) {
 }
 
 export async function autoGenerateIndexes(
-  composer: ReturnType<typeof createComposer>,
+  routeGraph: RouteGraph,
   posts: ContentRoute[],
-  routeRecords: RouteRecord[],
-  routeRegistry: RouteRegistry,
 ) {
   if (!posts.length) return
 
@@ -37,19 +30,11 @@ export async function autoGenerateIndexes(
   <h1>Insights</h1>
   ${postLinkList(posts)}
 </Section>`
-  const insightsRoute = routeRegistry.register({ slug: 'insights', kind: 'generated', source: 'generated:insights' })
-  const insightsHtml = await composer.prepareRouteSource(insightsBody, insightsRoute.outFile)
-  await mkdir(join(dist, 'routes'), { recursive: true })
-  await writeFile(join(dist, 'routes', insightsRoute.outFile), insightsHtml)
-  routeRecords.push({
-    slug: 'insights',
-    title: 'Insights',
-    description: 'All posts.',
-    components: [],
-    internalLinks: posts.map((p) => `/${p.slug}/`),
-    schemas: ['CollectionPage'],
-    lastModified: new Date().toISOString(),
-  })
+  await routeGraph.compose(
+    { slug: 'insights', kind: 'generated', source: 'generated:insights' },
+    insightsBody,
+    { schemas: ['CollectionPage'] },
+  )
 
   const byTag = new Map<string, { label: string; posts: ContentRoute[] }>()
   for (const p of posts) {
@@ -64,33 +49,26 @@ export async function autoGenerateIndexes(
 
   for (const [tagSlug, group] of byTag) {
     const { label, posts: postsForTag } = group
+    const safeLabel = escapeHtmlBasic(label)
     const body = `<head>
-  <SEO title="Tag: ${label}" description="Posts tagged ${label}." path="/tags/${tagSlug}/" />
+  <SEO title="Tag: ${safeLabel}" description="Posts tagged ${safeLabel}." path="/tags/${tagSlug}/" />
 </head>
 <Section>
-  <h1>Tag: <code>${label}</code></h1>
+  <h1>Tag: <code>${safeLabel}</code></h1>
   ${postLinkList(postsForTag)}
   <p><a href="/tags/">← All tags</a></p>
 </Section>`
     const slug = `tags/${tagSlug}`
-    const registered = routeRegistry.register({ slug, kind: 'generated', source: `generated:${slug}` })
-    const html = await composer.prepareRouteSource(body, registered.outFile)
-    await mkdir(join(dist, 'routes', 'tags'), { recursive: true })
-    await writeFile(join(dist, 'routes', registered.outFile), html)
-    routeRecords.push({
-      slug,
-      title: `Tag: ${label}`,
-      description: `Posts tagged ${label}.`,
-      components: [],
-      internalLinks: postsForTag.map((p) => `/${p.slug}/`),
-      schemas: ['CollectionPage'],
-      lastModified: new Date().toISOString(),
-    })
+    await routeGraph.compose(
+      { slug, kind: 'generated', source: `generated:${slug}` },
+      body,
+      { schemas: ['CollectionPage'] },
+    )
   }
 
   const tagLinks = [...byTag.entries()]
     .sort(([, a], [, b]) => a.label.localeCompare(b.label))
-    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${group.label}</a> <small>(${group.posts.length})</small></li>`)
+    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${escapeHtmlBasic(group.label)}</a> <small>(${group.posts.length})</small></li>`)
     .join('\n  ')
   const body = `<head>
   <SEO title="Tags" description="All tags." path="/tags/" />
@@ -101,16 +79,9 @@ export async function autoGenerateIndexes(
   ${tagLinks}
   </ul>
 </Section>`
-  const registered = routeRegistry.register({ slug: 'tags', kind: 'generated', source: 'generated:tags' })
-  const html = await composer.prepareRouteSource(body, registered.outFile)
-  await writeFile(join(dist, 'routes', registered.outFile), html)
-  routeRecords.push({
-    slug: 'tags',
-    title: 'Tags',
-    description: 'All tags.',
-    components: [],
-    internalLinks: [...byTag.keys()].map((t) => `/tags/${t}/`),
-    schemas: ['CollectionPage'],
-    lastModified: new Date().toISOString(),
-  })
+  await routeGraph.compose(
+    { slug: 'tags', kind: 'generated', source: 'generated:tags' },
+    body,
+    { schemas: ['CollectionPage'] },
+  )
 }

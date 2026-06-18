@@ -1,0 +1,10 @@
+<!--
+  @desc Native <details> disclosure. Multiple accordions sharing the same group name are mutually exclusive.
+  @attr summary! Visible summary text (the toggle row).
+  @attr body! Disclosed body content. May be HTML.
+  @attr group Optional shared name for exclusive grouping (uses <details name>).
+-->
+<details name="{{group}}">
+  <summary><span>{{summary}}</span><div class="icn"></div></summary>
+  <p>{{body}}</p>
+</details>
