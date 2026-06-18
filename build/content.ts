@@ -22,7 +22,7 @@ export type ContentRoute = {
   collection: 'posts' | 'pages'
   /** Raw markdown body (for llms-full.txt). */
   markdown: string
-  /** Parsed tags from front-matter `tags: [a, b]`. */
+  /** Display labels parsed from front-matter `tags: [a, b]`; route slugs are derived with slugifyTag. */
   tags: string[]
   /** Draft flag — excluded from prod. Always built in dev with a banner. */
   draft: boolean
@@ -57,19 +57,42 @@ export function slugifyTag(tag: string) {
     .replace(/^-+|-+$/g, '')
 }
 
+export function normalizeContentTags(tags: string[]) {
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const raw of tags) {
+    const label = raw.trim()
+    const slug = slugifyTag(label)
+    if (!label || !slug || seen.has(slug)) continue
+    seen.add(slug)
+    out.push(label)
+  }
+  return out
+}
+
+function escapeAttr(s: string) {
+  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
+}
+
 function normalizeContentMediaRefs(value: string) {
   return value.replace(/\/(?:media|assets)\/images\/([^\s)"']+)\.(jpe?g|png|webp)\b/gi, (_m, name) => {
     return `/assets/images/${name}.webp`
   })
 }
 
-function assertSafeContentMarkdown(body: string, file: string) {
+function markdownBodyStart(raw: string) {
+  return raw.match(/^---\n[\s\S]*?\n---\n?/)?.[0].length ?? 0
+}
+
+export function assertSafeContentMarkdown(raw: string, file: string) {
+  const bodyStart = markdownBodyStart(raw)
+  const body = raw.slice(bodyStart)
   const unsafe = body.match(/<\s*\/?\s*(script|style)\b/i)
   if (!unsafe || unsafe.index == null) return
   const tag = unsafe[1].toLowerCase()
   throw new BuildError(`Unsafe <${tag}> tag in CMS markdown`, {
     file,
-    line: lineOf(body, unsafe.index),
+    line: lineOf(raw, bodyStart + unsafe.index),
     hint: `Remove <${tag}> from markdown. Put scripts in src/app/app.js and styles in component <style> blocks.`,
   })
 }
@@ -93,10 +116,11 @@ async function compileFile(
   }
 
   const sourceRel = `content/${collection}/${filename}`
-  assertSafeContentMarkdown(body, sourceRel)
+  assertSafeContentMarkdown(raw, sourceRel)
   const normalizedBody = normalizeContentMediaRefs(body)
   const html = renderMarkdown(normalizedBody, { file: sourceRel })
-  const tags = fmStringArray(data, 'tags').length ? fmStringArray(data, 'tags') : parseTags(fmString(data, 'tags'))
+  const frontMatterTags = fmStringArray(data, 'tags')
+  const tags = normalizeContentTags(frontMatterTags.length ? frontMatterTags : parseTags(fmString(data, 'tags')))
   const draft = fmString(data, 'draft') === 'true' || fmString(data, 'draft') === '1'
   const flat: Record<string, string> = {}
   for (const [k, v] of Object.entries(data)) {
@@ -108,7 +132,7 @@ async function compileFile(
     slug,
     basename,
     body: html,
-    tagsHtml: tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${t}" />`).join(' '),
+    tagsHtml: tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${escapeAttr(t)}" />`).join(' '),
   }
   let composed = substitute(template, vars)
   if (draft && process.env.SNZ_DEV) {

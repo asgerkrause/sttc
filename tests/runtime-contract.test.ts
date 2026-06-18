@@ -19,4 +19,26 @@ describe('runtime ownership contracts', () => {
     expect(starterShell).not.toContain('/assets/js/components.js')
     expect(await Bun.file('src/app/components.js').exists()).toBe(false)
   })
+
+  test('router owns route-change focus management', async () => {
+    const router = await readFile('runtime/router.js', 'utf8')
+
+    expect(router).toContain('function focusRouteRoot')
+    expect(router).toContain("main.querySelector('h1, h2, [role=\"heading\"]') ?? main")
+    expect(router).toContain('target.focus({ preventScroll: true })')
+    expect(router).toContain('focusRouteRoot()')
+    expect(router).toContain("render(location.pathname, { focus: true })")
+  })
+
+  test('router announces client route changes through shell live region', async () => {
+    const router = await readFile('runtime/router.js', 'utf8')
+    const shell = await readFile('src/shell.html', 'utf8')
+
+    expect(shell).toContain('data-snz-announcer')
+    expect(shell).toContain('aria-live="polite"')
+    expect(shell).toContain('aria-atomic="true"')
+    expect(router).toContain("document.querySelector('[data-snz-announcer]')")
+    expect(router).toContain('function routeAnnouncementLabel')
+    expect(router).toContain('announceRoute()')
+  })
 })

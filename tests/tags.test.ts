@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { BuildError } from '../build/errors'
+import { autoGenerateIndexes } from '../build/generated-routes'
+import { normalizeContentTags, slugifyTag, type ContentRoute } from '../build/content'
+import type { RouteGraph } from '../build/route-graph'
 import { detectLowercaseComponentLike, nextComponent, parseAttrs } from '../build/tags'
 
 describe('component tag parser', () => {
@@ -43,5 +46,39 @@ describe('component tag parser', () => {
   test('detects lowercase component-like self-closing tags', () => {
     expect(detectLowercaseComponentLike('<card />')).toEqual({ name: 'card', index: 0 })
     expect(detectLowercaseComponentLike('<br />')).toBeNull()
+  })
+
+  test('normalizes content tag labels separately from route slugs', () => {
+    expect(slugifyTag('R&D <SEO>')).toBe('r-d-seo')
+    expect(normalizeContentTags([' Case Study ', 'case-study', 'R&D <SEO>', '!!!'])).toEqual([
+      'Case Study',
+      'R&D <SEO>',
+    ])
+  })
+
+  test('generated tag routes use safe slugs and escaped display labels', async () => {
+    const bodies = new Map<string, string>()
+    const routeGraph = {
+      async compose(owner: { slug: string }, body: string) {
+        bodies.set(owner.slug, body)
+      },
+    }
+    const post: ContentRoute = {
+      slug: 'insights/post',
+      routeFile: 'insights/post.html',
+      body: '',
+      source: 'content/posts/post.md',
+      data: { title: 'Post', date: '2026-06-18', description: 'Desc' },
+      collection: 'posts',
+      markdown: '',
+      tags: ['R&D <SEO>'],
+      draft: false,
+    }
+
+    await autoGenerateIndexes(routeGraph as unknown as RouteGraph, [post])
+
+    expect(bodies.has('tags/r-d-seo')).toBe(true)
+    expect(bodies.get('tags/r-d-seo')).toContain('<h1>Tag: <code>R&amp;D &lt;SEO&gt;</code></h1>')
+    expect(bodies.get('tags')).toContain('<a href="/tags/r-d-seo/">R&amp;D &lt;SEO&gt;</a>')
   })
 })

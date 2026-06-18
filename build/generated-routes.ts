@@ -49,11 +49,12 @@ export async function autoGenerateIndexes(
 
   for (const [tagSlug, group] of byTag) {
     const { label, posts: postsForTag } = group
+    const safeLabel = escapeHtmlBasic(label)
     const body = `<head>
-  <SEO title="Tag: ${label}" description="Posts tagged ${label}." path="/tags/${tagSlug}/" />
+  <SEO title="Tag: ${safeLabel}" description="Posts tagged ${safeLabel}." path="/tags/${tagSlug}/" />
 </head>
 <Section>
-  <h1>Tag: <code>${label}</code></h1>
+  <h1>Tag: <code>${safeLabel}</code></h1>
   ${postLinkList(postsForTag)}
   <p><a href="/tags/">← All tags</a></p>
 </Section>`
@@ -67,7 +68,7 @@ export async function autoGenerateIndexes(
 
   const tagLinks = [...byTag.entries()]
     .sort(([, a], [, b]) => a.label.localeCompare(b.label))
-    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${group.label}</a> <small>(${group.posts.length})</small></li>`)
+    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${escapeHtmlBasic(group.label)}</a> <small>(${group.posts.length})</small></li>`)
     .join('\n  ')
   const body = `<head>
   <SEO title="Tags" description="All tags." path="/tags/" />

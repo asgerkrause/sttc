@@ -1,6 +1,6 @@
 <!--
-  @desc Lazy-loaded image with blurhash placeholder and responsive srcset. Master in src/images/{src}.{ext} or media/images/{src}.{ext}; build emits multiple webp sizes.
-  @attr src! Logical image name (without extension).
+  @desc Lazy-loaded image with blurhash placeholder and responsive srcset. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
+  @attr src! Unique logical image name (basename without extension).
   @attr alt! Alt text. Use alt="" for decorative.
   @attr max Max long edge in px. Default 1200.
   @attr quality WebP quality 1-100. Default 82.

@@ -1,5 +1,5 @@
 import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'fs/promises'
-import { basename, extname, join, relative } from 'path'
+import { basename, extname, join, relative, resolve } from 'path'
 import { BuildError } from './errors'
 import type { ImageEncodeOptions } from './scan-images'
 
@@ -8,8 +8,10 @@ const FIT = { fit: 'inside' as const, withoutEnlargement: true }
 const DEFAULT_MAX = 1200
 const DEFAULT_QUALITY = 82
 const HUGE_DIMENSION = 4000
+const DEFAULT_MEDIA_INPUT = 'media/images'
 
 export type ImageMeta = { width: number; height: number; placeholder?: string; sizes?: number[] }
+export type ImageSourceRoot = { dir: string; label: string }
 
 type EncodeSidecar = { srcMtime: number; max: number; quality: number; placeholder?: string; sizes?: number[] }
 
@@ -17,6 +19,80 @@ const RESPONSIVE_BREAKPOINTS = [320, 640, 1024]
 
 function isLazy(attrs: Record<string, string>) {
   return (attrs.loading ?? 'lazy') !== 'eager'
+}
+
+function stripYamlScalar(value: string) {
+  return value
+    .replace(/\s+#.*$/, '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+}
+
+export function parsePagesCmsMediaInputs(yaml: string): string[] {
+  const inputs: string[] = []
+  let inMedia = false
+
+  for (const line of yaml.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+
+    const indent = line.match(/^\s*/)?.[0].length ?? 0
+    if (indent === 0 && /^[\w-]+:/.test(trimmed)) {
+      inMedia = trimmed.startsWith('media:')
+      continue
+    }
+    if (!inMedia) continue
+
+    const match = trimmed.match(/^input:\s*(.+)$/)
+    if (!match) continue
+    const input = stripYamlScalar(match[1])
+    if (input) inputs.push(input)
+  }
+
+  return [...new Set(inputs)]
+}
+
+export async function pagesCmsMediaInputs(projectRoot = process.cwd()): Promise<string[]> {
+  const path = join(projectRoot, '.pages.yml')
+  if (!(await Bun.file(path).exists())) return [DEFAULT_MEDIA_INPUT]
+  const inputs = parsePagesCmsMediaInputs(await readFile(path, 'utf8'))
+  return inputs.length ? inputs : [DEFAULT_MEDIA_INPUT]
+}
+
+function sourceRoot(projectRoot: string, rel: string, label = rel): ImageSourceRoot {
+  return { dir: resolve(projectRoot, rel), label }
+}
+
+function uniqueRoots(roots: ImageSourceRoot[]) {
+  const seen = new Set<string>()
+  const out: ImageSourceRoot[] = []
+  for (const root of roots) {
+    const key = resolve(root.dir)
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(root)
+  }
+  return out
+}
+
+export async function imageSourceRoots(projectRoot = process.cwd()): Promise<ImageSourceRoot[]> {
+  const mediaRoots = (await pagesCmsMediaInputs(projectRoot)).map((input) =>
+    sourceRoot(projectRoot, input, input),
+  )
+
+  return uniqueRoots([
+    sourceRoot(projectRoot, 'src/images'),
+    sourceRoot(projectRoot, 'src/assets/images', 'src/assets/images (legacy)'),
+    ...mediaRoots,
+  ])
+}
+
+export async function sourceOgImagePath(projectRoot = process.cwd()) {
+  for (const rel of ['src/images/og.png', 'src/assets/images/og.png']) {
+    const path = resolve(projectRoot, rel)
+    if (await Bun.file(path).exists()) return path
+  }
+  return resolve(projectRoot, 'src/images/og.png')
 }
 
 export function assertImageApi() {
@@ -52,8 +128,8 @@ export function resolveImageAttrs(
 
   const dims = meta[name]
   if (!dims) {
-    throw new BuildError(`Image "${name}": add src/images/${name}.{jpg,png,webp} or media/images/${name}.{jpg,png,webp} and rebuild`, {
-      hint: `Add src/images/${name}.jpg, .png, or .webp; or use media/images/${name}.* for CMS media.`,
+    throw new BuildError(`Image "${name}": add an image master named ${name}.{jpg,png,webp} and rebuild`, {
+      hint: `Add src/images/${name}.jpg, .png, or .webp; or upload ${name} through PagesCMS media.input.`,
     })
   }
 
@@ -205,10 +281,15 @@ async function rasterFiles(dir: string): Promise<string[]> {
   return out
 }
 
-export async function assertUniqueImageNames(...roots: string[]) {
+function normalizeImageRoot(root: string | ImageSourceRoot): ImageSourceRoot {
+  return typeof root === 'string' ? { dir: root, label: relative(process.cwd(), root) || root } : root
+}
+
+export async function assertUniqueImageNames(...roots: Array<string | ImageSourceRoot>) {
+  const sourceRoots = roots.map(normalizeImageRoot)
   const byName = new Map<string, string[]>()
-  for (const root of roots) {
-    for (const file of await rasterFiles(root)) {
+  for (const root of sourceRoots) {
+    for (const file of await rasterFiles(root.dir)) {
       const name = basename(file, extname(file))
       if (name === 'og') continue
       const files = byName.get(name) ?? []
@@ -226,11 +307,24 @@ export async function assertUniqueImageNames(...roots: string[]) {
       ...files.map((file) => `  - ${relative(process.cwd(), file)}`),
     ].join('\n'))
     .join('\n')
+  const scope = sourceRoots.map((root) => root.label).join(', ')
 
   throw new BuildError(
     `Duplicate image logical names found. Rename one master before build.\n${details}`,
-    { hint: 'Image logical names are file basenames. Keep each basename unique across src/images and media/images.' },
+    { hint: `Image logical names are file basenames. Keep each basename unique across ${scope}.` },
   )
+}
+
+export async function processImageSources(
+  roots: ImageSourceRoot[],
+  distDir: string,
+  options: Record<string, ImageEncodeOptions> = {},
+): Promise<Record<string, ImageMeta>> {
+  const meta: Record<string, ImageMeta> = {}
+  for (const root of roots) {
+    Object.assign(meta, await processImages(root.dir, distDir, options))
+  }
+  return meta
 }
 
 /** One webp per master — Bun.Image resize + webp at build */

@@ -49,6 +49,7 @@
     "new": "bun bin/snz-bp.ts new",
     "migrate": "bun bin/snz-bp.ts migrate",
     "prepare:create-template": "bun scripts/sync-create-template.ts",
+    "check:create-template": "bun scripts/sync-create-template.ts --check",
     "smoke:create": "bun scripts/smoke-create.ts"
   }
 }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { BuildError } from '../build/errors'
+import { assertSafeContentMarkdown } from '../build/content'
 import { fmString, fmStringArray, parseFrontMatter, render } from '../build/markdown'
 
 describe('markdown renderer', () => {
@@ -24,6 +25,29 @@ const ok = true
   test('rejects unsafe URLs and unsafe HTML', () => {
     expect(() => render('[Bad](javascript:alert(1))', { file: 'post.md' })).toThrow(BuildError)
     expect(() => render('<script>alert(1)</script>', { file: 'post.md' })).toThrow(BuildError)
+  })
+
+  test('rejects script and style tags in CMS markdown with source file line and hint', () => {
+    const scriptSource = `---
+title: Bad
+---
+
+Intro
+<script>alert(1)</script>`
+
+    try {
+      assertSafeContentMarkdown(scriptSource, 'content/posts/bad.md')
+      throw new Error('expected BuildError')
+    } catch (err) {
+      expect(err).toBeInstanceOf(BuildError)
+      const build = err as BuildError
+      expect(build.message).toBe('Unsafe <script> tag in CMS markdown')
+      expect(build.file).toBe('content/posts/bad.md')
+      expect(build.line).toBe(6)
+      expect(build.hint).toContain('component <style> blocks')
+    }
+
+    expect(() => assertSafeContentMarkdown('Safe line\n<style>.x{}</style>', 'content/pages/bad.md')).toThrow(BuildError)
   })
 
   test('preserves PascalCase component passthrough', () => {

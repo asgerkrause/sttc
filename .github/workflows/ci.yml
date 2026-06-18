@@ -25,6 +25,9 @@ jobs:
       - name: Regression tests
         run: bun test
 
+      - name: Create template sync
+        run: bun run check:create-template
+
       - name: Root check
         run: bun run check
 

@@ -215,18 +215,20 @@ function afterEmit(detail) {
 
 function announcer() {
   if (routeAnnouncer) return routeAnnouncer
-  routeAnnouncer = document.createElement('div')
+  routeAnnouncer = document.querySelector('[data-snz-announcer]') ?? document.createElement('div')
   routeAnnouncer.setAttribute('aria-live', 'polite')
   routeAnnouncer.setAttribute('aria-atomic', 'true')
   routeAnnouncer.dataset.snzAnnouncer = ''
-  routeAnnouncer.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0'
-  document.body.append(routeAnnouncer)
+  if (!routeAnnouncer.parentNode) {
+    routeAnnouncer.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0'
+    document.body.append(routeAnnouncer)
+  }
   return routeAnnouncer
 }
 
 function focusRouteRoot() {
   if (!main) return
-  const target = main.querySelector('h1') ?? main
+  const target = main.querySelector('h1, h2, [role="heading"]') ?? main
   if (!(target instanceof HTMLElement)) return
   const hadTabindex = target.hasAttribute('tabindex')
   if (!hadTabindex) target.setAttribute('tabindex', '-1')
@@ -236,9 +238,14 @@ function focusRouteRoot() {
   }
 }
 
+function routeAnnouncementLabel() {
+  return main?.querySelector('h1, h2, [role="heading"]')?.textContent?.trim()
+    || document.title
+    || 'Page loaded'
+}
+
 function announceRoute() {
-  const title = document.title || main?.querySelector('h1')?.textContent?.trim() || 'Page loaded'
-  announcer().textContent = title
+  announcer().textContent = routeAnnouncementLabel()
 }
 
 async function runBeforeNavigate(detail) {

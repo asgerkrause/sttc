@@ -129,13 +129,13 @@ Use `.w`:
 
 ### Add image
 
-Place master in `src/images/hero.png` or `media/images/hero.png`, then:
+Place master in `src/images/hero.png` or a PagesCMS `media.input` image root (default `media/images/hero.png`), then:
 
 ```html
 <Image src="hero" alt="Product interface" max="1200" loading="eager" />
 ```
 
-Build emits responsive WebP variants.
+Build emits responsive WebP variants under `/assets/images/`. Keep each logical basename unique across image roots.
 
 ### Add inline markdown
 

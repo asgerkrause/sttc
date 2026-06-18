@@ -68,8 +68,10 @@ bun dev
 Current local verification:
 
 ```bash
+bun run check:create-template
 cd templates/default
 bun ../../bin/snz-bp.ts check
+cd ../..
 bun run smoke:create
 ```
 
@@ -100,7 +102,7 @@ Opt-in/legacy:
   src/app/app.js          Legacy app entry
   src/templates/          CMS render shells
   content/                PagesCMS markdown
-  media/images/           PagesCMS uploads, also fed through image pipeline
+  media/images/           Default PagesCMS media.input; optimized to /assets/images/
 
 runtime/
   router.js               Client framework, exposes window.snz

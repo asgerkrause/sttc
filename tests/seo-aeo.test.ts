@@ -3,7 +3,8 @@ import { mkdtemp, readFile, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildSchemaGraph, type SiteConfig } from '../build/seo'
-import { writeDiscovery } from '../build/discovery'
+import { MANIFEST_SCHEMA_VERSION, writeDiscovery } from '../build/discovery'
+import { GENERATOR_NAME, GENERATOR_VERSION } from '../build/version'
 
 const baseSite: SiteConfig = {
   name: 'Example Studio',
@@ -62,6 +63,35 @@ describe('AEO/GEO site facts', () => {
       address: { '@type': 'PostalAddress', addressLocality: 'Copenhagen', addressCountry: 'DK' },
     })
     expect(website.knowsAbout).toEqual(['Bun', 'Static sites'])
+  })
+
+  test('writes discovery version metadata without requiring rich site config', async () => {
+    await withTempDir(async (distDir) => {
+      await writeDiscovery(distDir, {
+        site: baseSite,
+        routes: [{
+          slug: 'index',
+          title: 'Home',
+          description: 'Home page.',
+          components: [],
+          internalLinks: [],
+          schemas: [],
+        }],
+        componentSchemas: new Map(),
+        componentUseCounts: new Map(),
+        contentByslug: new Map(),
+      })
+
+      const llms = await readFile(join(distDir, 'llms.txt'), 'utf8')
+      const manifest = JSON.parse(await readFile(join(distDir, 'site.manifest.json'), 'utf8'))
+      const route = JSON.parse(await readFile(join(distDir, 'routes', 'index.json'), 'utf8'))
+
+      expect(llms).not.toContain('## Site facts')
+      expect(manifest.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION)
+      expect(manifest.generator).toEqual({ name: GENERATOR_NAME, version: GENERATOR_VERSION })
+      expect(route.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION)
+      expect(route.generator).toEqual({ name: GENERATOR_NAME, version: GENERATOR_VERSION })
+    })
   })
 
   test('writes rich site facts to llms and ai-plugin metadata', async () => {

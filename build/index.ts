@@ -17,10 +17,11 @@ import {
 import {
   assertImageApi,
   assertUniqueImageNames,
-  processImages,
+  imageSourceRoots,
+  processImageSources,
   processOgImage,
   pruneStaleImages,
-  pruneStaleVariants,
+  sourceOgImagePath,
   type ImageMeta,
 } from './images'
 import { scanImageEncodeOptions } from './scan-images'
@@ -31,7 +32,6 @@ import {
   shellFile,
   siteFile,
   sourceAppFile,
-  sourceImagesDir,
   sourceRouterFile,
   sourceRuntimeLibDir,
   sourceStylesDir,
@@ -99,18 +99,16 @@ async function build() {
   // subsequent writes (variants get truncated). Encoding before any cp call avoids it.
   t = performance.now()
   const imageEncode = await scanImageEncodeOptions(src, componentsDir)
-  const imagesSrc = await sourceImagesDir()
+  const imageRoots = await imageSourceRoots(root)
   const imagesDist = join(dist, 'assets', 'images')
   const assetsDist = join(dist, 'assets')
   await mkdir(imagesDist, { recursive: true })
-  await assertUniqueImageNames(imagesSrc, join(root, 'media', 'images'))
+  await assertUniqueImageNames(...imageRoots)
   // (Variant pruning intentionally removed — it raced with the cache check in processImages.
   // Stale variants are harmless: srcset only references widths the current sidecar reports.)
-  const srcMeta = await processImages(imagesSrc, imagesDist, imageEncode)
-  const mediaMeta = await processImages(join(root, 'media', 'images'), imagesDist, imageEncode)
-  imageMeta = { ...mediaMeta, ...srcMeta }
+  imageMeta = await processImageSources(imageRoots, imagesDist, imageEncode)
   await pruneStaleImages(imagesDist, Object.keys(imageMeta))
-  await processOgImage(join(imagesSrc, 'og.png'), assetsDist)
+  await processOgImage(await sourceOgImagePath(root), assetsDist)
   tick('images', t)
 
   t = performance.now()

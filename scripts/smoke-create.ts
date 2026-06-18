@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { mkdtemp, rm } from 'fs/promises'
+import { mkdir, mkdtemp, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 
@@ -9,6 +9,7 @@ const creator = join(repoRoot, 'packages', 'create-snz-bp', 'bin', 'create-snz-b
 const root = await mkdtemp(join(tmpdir(), 'snz-create-smoke-'))
 const localTarget = join(root, 'site-local')
 const packagedTarget = join(root, 'site-packaged')
+const dotTarget = join(root, 'site-dot')
 const rootPkg = JSON.parse(await Bun.file(join(repoRoot, 'package.json')).text())
 const expectedVersion = `^${rootPkg.version}`
 
@@ -43,6 +44,13 @@ try {
   const packagedDependency = await packageDependency(packagedTarget)
   if (packagedDependency !== expectedVersion) {
     throw new Error(`packaged create wrote ${packagedDependency}; expected ${expectedVersion}`)
+  }
+  await run(['bun', join(repoRoot, 'bin', 'snz-bp.ts'), 'check'], packagedTarget)
+
+  await mkdir(dotTarget)
+  await run(['bun', creator, '.'], dotTarget)
+  if (!(await packageDependency(dotTarget)).startsWith('file:')) {
+    throw new Error('dot create did not write file: @snz/bp dependency')
   }
 
   console.log(`create smoke ok: ${root}`)
