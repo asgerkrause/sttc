@@ -4,7 +4,7 @@ Fast orientation for LLMs working in SANITIZE Boilerplate (`@snz/bp`).
 
 ## Mental model
 
-SANITIZE Boilerplate (`@snz/bp`) is an HTML-first, Bun-native static site builder.
+SANITIZE Boilerplate (`@snz/bp`) is an HTML-first, Bun-native static site framework. Authors edit normal HTML/CSS/JS/markdown; Bun compiles it into static files with routing, components, images, SEO, feeds, llms files, and discovery JSON.
 
 ```txt
 src/shell.html          app shell, loaded once
@@ -23,7 +23,7 @@ Build flow:
 5. Emit discovery artifacts: sitemap, feeds, llms files, manifest, route JSON.
 6. Run strict checks.
 
-No runtime framework. No hydration. No npm dependency model. Bun only.
+No third-party runtime framework. No virtual DOM. No hydration. No npm dependency model. Bun only. The client framework is `runtime/router.js`, exposed as `window.snz` for navigation, route cache, page hooks, and component lifecycle mounting.
 
 ## Golden rules
 
@@ -186,7 +186,7 @@ CMS is opt-in. Scaffold the content surface first:
 bun run new cms
 ```
 
-Then add markdown. `content/pages/about.md` → `/about/`.
+Then add markdown. Built-in collections need no config: `content/pages/about.md` → `/about/`; `content/posts/intro.md` → `/insights/intro/`.
 
 ```md
 ---
@@ -198,6 +198,24 @@ Markdown body.
 ```
 
 `content/posts/name.md` → `/insights/name/`. Drafts excluded from production builds.
+
+Optional custom collections live in `content/collections.json`:
+
+```json
+{
+  "collections": [
+    {
+      "name": "projects",
+      "path": "content/projects",
+      "template": "project.html",
+      "route": "work/{slug}",
+      "required": ["title"]
+    }
+  ]
+}
+```
+
+`content/projects/acme.md` builds to `/work/acme/` through `src/templates/project.html`. `posts` and `pages` are reserved. Filename basename is the URL slug. Custom collections do not create indexes, feeds, or tag pages by default.
 
 ## CSS ownership
 

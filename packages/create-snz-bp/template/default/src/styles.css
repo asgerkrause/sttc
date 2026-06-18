@@ -372,15 +372,15 @@
   hanging-punctuation: first last;
   text-wrap: pretty;
 
-  --mw: 200rem;
+  --mw: 148rem;
   --by: 8rem;
   --bx: 2rem;
   --pp: var(--by) var(--bx);
-  --gp: 1rem;
+  --gp: 1.2rem;
   --gg: var(--gp);
   --gt: 1rem;
-  --pd: 1.6rem;
-  --br: .8rem;
+  --pd: 1.8rem;
+  --br: 1.2rem;
 
   --ss: 4rem;
   --bw: 0.1rem;
@@ -567,8 +567,8 @@
   --g: var(--n50);
   --b: var(--n10);
 
-  --a: #07e;
-  --c: #70e;
+  --a: #315cff;
+  --c: #6b3df5;
 
   --a-i: var(--li);
   --c-i: var(--li);
@@ -1259,6 +1259,83 @@ main {
       animation-timing-function: linear;
       animation-range: cover 0% cover 100%;
     }
+  }
+}
+
+.eyebrow {
+  color: var(--g);
+  font-size: var(--sm-fs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gp);
+  align-items: center;
+}
+
+.hero {
+  min-height: 72svh;
+  align-items: center;
+
+  &.compact {
+    min-height: 48svh;
+  }
+}
+
+.hero-panel,
+.step {
+  border: var(--bw) solid var(--b);
+  border-radius: var(--br-lg);
+  background: color-mix(in srgb, var(--s) 70%, transparent);
+  padding: var(--pd-lg);
+}
+
+.hero-panel {
+  align-self: stretch;
+  justify-content: end;
+
+  span {
+    color: var(--g);
+    font-size: var(--sm-fs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  strong {
+    display: block;
+    font-size: var(--h2-fs);
+    font-weight: var(--h2-fw);
+    letter-spacing: var(--h2-ls);
+    line-height: var(--h2-lh);
+  }
+}
+
+.step {
+  min-height: 22rem;
+
+  span {
+    color: var(--a);
+    font-size: var(--sm-fs);
+    font-weight: 700;
+  }
+}
+
+.section-head {
+  max-width: 72rem;
+}
+
+@media (width < 60rem) {
+  .hero {
+    min-height: auto;
+  }
+
+  .btns {
+    width: 100%;
   }
 }
 

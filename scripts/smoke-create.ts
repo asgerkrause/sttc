@@ -27,20 +27,75 @@ async function run(cmd: string[], cwd = repoRoot, env: Record<string, string> = 
   }
 }
 
+async function packageJson(target: string) {
+  return JSON.parse(await Bun.file(join(target, 'package.json')).text())
+}
+
 async function packageDependency(target: string) {
-  const pkg = JSON.parse(await Bun.file(join(target, 'package.json')).text())
+  const pkg = await packageJson(target)
   return pkg.dependencies?.['@snz/bp']
+}
+
+async function assertFile(target: string, relativePath: string) {
+  if (!(await Bun.file(join(target, relativePath)).exists())) {
+    throw new Error(`created starter missing ${relativePath}`)
+  }
+}
+
+async function assertStarterSurface(target: string) {
+  for (const file of [
+    'AGENTS.md',
+    'README.md',
+    'src/shell.html',
+    'src/site.json',
+    'src/styles.css',
+    'src/app.js',
+    'src/pages/index.html',
+    'src/pages/404.html',
+    'src/pages/components.html',
+    'src/components/Header.html',
+    'src/components/Footer.html',
+    'src/components/Section.html',
+    'src/components/Button.html',
+    'src/components/Card.html',
+    'src/components/Accordion.html',
+    'src/components/FAQ.html',
+    'src/components/Image.html',
+    'src/images/og.png',
+    'src/images/showcase.png',
+  ]) {
+    await assertFile(target, file)
+  }
+
+  const scripts = (await packageJson(target)).scripts ?? {}
+  for (const script of ['check', 'new', 'add']) {
+    if (typeof scripts[script] !== 'string') {
+      throw new Error(`created starter missing package script "${script}"`)
+    }
+  }
 }
 
 try {
   await run(['bun', creator, localTarget])
+  await assertStarterSurface(localTarget)
   if (!(await packageDependency(localTarget)).startsWith('file:')) {
     throw new Error('local create did not write file: @snz/bp dependency')
   }
   await run(['bun', 'install'], localTarget)
+  await run(['bun', 'run', 'new', 'cms'], localTarget)
+  await run(['bun', 'run', 'new', 'post', 'smoke-post'], localTarget)
+  await run(['bun', 'run', 'new', 'page', 'smoke-page'], localTarget)
+  await run(['bun', 'run', 'add', 'theme', 'minimal'], localTarget)
+  await run(['bun', 'run', 'add', 'component', 'hero'], localTarget)
+  await Bun.write(join(localTarget, 'src', 'pages', 'smoke.html'), `<head>
+  <SEO title="Smoke" description="Smoke route." path="/smoke/" />
+</head>
+<HeroSection />
+`)
   await run(['bun', 'run', 'check'], localTarget)
 
   await run(['bun', creator, packagedTarget], repoRoot, { SNZ_BP_CREATE_MODE: 'packaged' })
+  await assertStarterSurface(packagedTarget)
   const packagedDependency = await packageDependency(packagedTarget)
   if (packagedDependency !== expectedVersion) {
     throw new Error(`packaged create wrote ${packagedDependency}; expected ${expectedVersion}`)
@@ -49,6 +104,7 @@ try {
 
   await mkdir(dotTarget)
   await run(['bun', creator, '.'], dotTarget)
+  await assertStarterSurface(dotTarget)
   if (!(await packageDependency(dotTarget)).startsWith('file:')) {
     throw new Error('dot create did not write file: @snz/bp dependency')
   }

@@ -1,6 +1,6 @@
 # Custom content collections
 
-**Status:** proposed  
+**Status:** implemented v1; scaffolder command remains future work
 **Date:** 2026-06-18
 
 ## Context
@@ -122,7 +122,7 @@ Rules:
 - relation/reference fields are editor data only in v1; compiler passes their front-matter value through as string/JSON placeholder data and does not join records.
 - media keeps current behavior: image refs from `/media/images/*` or `/assets/images/*` normalize to `/assets/images/*.webp`.
 
-Future command shape:
+Future scaffolder command shape:
 
 ```bash
 bun run new collection projects --route work/{slug} --template project
@@ -211,18 +211,18 @@ hint: content/projects/acme.md (content) conflicts with src/pages/work/acme.html
 
 Existing sites need no migration unless they opt into custom collections.
 
-## Implementation plan
+## Implementation notes
 
-Likely files:
+Primary files:
 
 - `build/content.ts` — introduce `ContentCollectionConfig`, `loadContentCollections()`, generic `compileFile(collectionConfig, filename)`
 - `build/check.ts` — validate custom templates include `{{body}}`; validate route pattern and required fields
 - `build/generated-routes.ts` — keep posts-only behavior by filtering `collection === 'posts'`
 - `build/feeds.ts` — keep posts-only input
 - `build/discovery.ts` — avoid treating every custom content route as `BlogPosting`
-- `build/scaffold.ts` — later command to generate collection surface
+- `build/scaffold.ts` — future command to generate collection surface
 - `.pages.yml` — only touched when adding actual starter/example custom collection
-- `content/README.md` — document opt-in config after implementation
+- `content/README.md` — documents opt-in config
 
 Suggested type shape:
 

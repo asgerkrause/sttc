@@ -1,6 +1,8 @@
 # SANITIZE Boilerplate
 
-`@snz/bp` — HTML-first, Bun-native static site builder. Author HTML; ship a site with structured data, llms.txt, and a machine-readable manifest. Zero npm dependencies.
+`@snz/bp` — HTML-first, Bun-native static site framework. Author normal HTML in `src/`; the Bun build turns it into a static `dist/` site with components, routed pages, optimized images, structured data, llms.txt, feeds, and a machine-readable manifest.
+
+It is not a React/Vue/Svelte/Vite wrapper. There is no runtime app framework, virtual DOM, or hydration layer. The tiny client framework is `runtime/router.js`, exposed as `window.snz` for navigation hooks and page swaps.
 
 Repo: `sanitizestudio/snz-bp`.
 
@@ -10,6 +12,8 @@ Private review status: packages are intentionally unpublished and marked `"priva
 
 - **Runtime**: Bun (>= 1.3.14, for `Bun.Image`).
 - **Output**: a static `dist/` you can host anywhere.
+- **Author surface**: `src/`, `content/`, `media/`, and `src/site.json`.
+- **Framework surface**: `build/`, `runtime/`, `bin/`, `packages/`, and `templates/default/`.
 - Markdown, image processing, hashing, server — all Bun stdlib.
 
 ## Commands
@@ -19,26 +23,36 @@ bun run dev       # http://localhost:3000, watch + SSE hot reload + in-page erro
 bun run build     # produce dist/, run strict checks at the end
 bun run check     # rebuild + validate without serving
 bun run doctor    # CSS ownership audit + strict check
-bun run new       # scaffolder: component|route|post|page <name>, or cms
+bun run new       # scaffolder: component|route|post|page <name>, collection <name>, or cms
 bun run add       # add component preset or theme pack
 ```
 
 Package CLI:
 
 ```bash
-snz-bp dev
-snz-bp build
-snz-bp check
-snz-bp doctor
-snz-bp new component Hero
-snz-bp new cms
-snz-bp add component hero
-snz-bp add component hero --demo
-snz-bp add theme minimal
-snz-bp migrate
+snz-bp dev                         # dev server + hot reload
+snz-bp build                       # build dist/ + strict checks
+snz-bp check                       # rebuild + validate
+snz-bp doctor                      # CSS audit + check
+snz-bp new route pricing           # scaffold src/pages/pricing.html
+snz-bp new component Hero          # scaffold src/components/Hero.html
+snz-bp new post hello-world        # scaffold content/posts/hello-world.md
+snz-bp new page about              # scaffold content/pages/about.md
+snz-bp new collection projects --route work/{slug} --template project
+snz-bp new cms                     # create PagesCMS/content/template surface
+snz-bp add component hero          # add private component preset
+snz-bp add component hero --demo   # also add demo invocation when styles page exists
+snz-bp add theme minimal           # append starter theme token block
+snz-bp migrate                     # migrate legacy component sidecars
 ```
 
 `bun run build --allow-broken-links` skips the link checker.
+
+## Built-in boilerplate
+
+`templates/default/` is the starter site copied into new client projects. It includes the authoring surface (`src/`, starter pages/components/styles, `src/site.json`, optional content/media folders, and `site.code-workspace`) without copying framework internals into every client repo.
+
+Client projects run framework commands through `@snz/bp`. The starter stays editable; framework behavior can update from the package boundary later.
 
 ## Starter template
 
@@ -127,7 +141,7 @@ docs/
 
 Invoked as `<PascalName />` or `<PascalName>children</PascalName>`. **One file per component.** Schema lives in a leading `<!-- @desc / @attr -->` comment at the top of each `.html`. Agent orientation is in [`docs/agent-guide.md`](./docs/agent-guide.md). Authoring contract is in [`docs/components.md`](./docs/components.md).
 
-Built-ins (15):
+Built-ins (14):
 `Header`, `Footer`, `SEO`, `Image`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
 
 Add a new component by handing [`docs/component-prompt.md`](./docs/component-prompt.md) to Claude, or just write it yourself.
@@ -168,6 +182,8 @@ Override SEO per route with a `<head>` wrapper:
 
 CMS support is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `media/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Minimal markdown subset.
 
+Custom collections are opt-in too. `snz-bp new collection projects --route work/{slug} --template project` creates `content/projects/`, `src/templates/project.html`, a `content/collections.json` compiler entry, and a matching `.pages.yml` editor entry. Omit flags for defaults: `route: projects/{slug}`, `template: project.html`.
+
 ```yaml
 ---
 title: Hello, world
@@ -181,6 +197,25 @@ Body in **markdown**.
 ```
 
 Drafts (`draft: true`) are excluded from production builds, included in dev. Tags emit `/tags/{tag}/` indexes automatically. Generated `/insights/`, `/tags/`, and `/tags/{tag}/` routes fail loudly if authored/content routes already own those slugs.
+
+Custom collections are optional via `content/collections.json`. Built-in `posts` and `pages` stay implicit and reserved. A custom collection declares its markdown folder, template file in `src/templates/`, public route pattern, and required front-matter fields:
+
+```json
+{
+  "collections": [
+    {
+      "name": "projects",
+      "label": "Projects",
+      "path": "content/projects",
+      "template": "project.html",
+      "route": "work/{slug}",
+      "required": ["title"]
+    }
+  ]
+}
+```
+
+`content/projects/acme.md` then builds to `/work/acme/` through `src/templates/project.html`. Filename basename is the URL slug; front-matter `slug` overrides are not supported. Custom collections do not generate indexes, feeds, or tag pages by default.
 
 ## AI-native discovery
 

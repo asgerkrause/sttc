@@ -128,7 +128,7 @@ Optional `<script>` block runs once per instance. `el` is bound to the root elem
 
 The build auto-injects `data-snz-component="{Name}"` on the template root. Runtime walks `[data-snz-component]:not([data-snz-mounted])` after each navigation and runs the wrapper.
 
-## Built-in components (15)
+## Built-in components (14)
 
 | Component | Purpose |
 |---|---|

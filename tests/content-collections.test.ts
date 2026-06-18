@@ -40,6 +40,31 @@ describe('custom content collections', () => {
     })
   })
 
+  test('escapes front-matter values before template substitution', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'post.html'), '<article data-title="{{title}}"><h1>{{title}}</h1><p>{{description}}</p>{{body}}</article>')
+      await writeFile(join(dir, 'content', 'posts', 'safe-post.md'), '---\ntitle: Bad \"><img src=x onerror=alert(1)>\ndescription: Use <script>alert(1)</script> & keep safe\n---\nBody')
+
+      const [route] = await compileContentFrom({ rootDir: dir, includeDrafts: false })
+
+      expect(route.body).not.toContain('<img src=x')
+      expect(route.body).not.toContain('<script>alert(1)</script>')
+      expect(route.body).toContain('data-title="Bad &quot;&gt;&lt;img src=x onerror=alert(1)&gt;"')
+      expect(route.body).toContain('Use &lt;script&gt;alert(1)&lt;/script&gt; &amp; keep safe')
+    })
+  })
+
+  test('rejects unsafe built-in content filenames', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
+      await writeFile(join(dir, 'content', 'posts', 'Hello World.md'), '---\ntitle: Hello\n---\nBody')
+
+      await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('Unsafe content filename slug "Hello World"')
+    })
+  })
+
   test('compiles configured project collection through custom template', async () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'projects'), { recursive: true })

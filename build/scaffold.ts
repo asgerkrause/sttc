@@ -1,7 +1,9 @@
 // CLI: bun run new <kind> <name> [--force] [--demo]
+//      bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]
 //      snz-bp add component <preset> [--force] [--demo]
-// kind: component | route | post | page | cms
+// kind: component | route | post | page | cms | collection
 // route writes src/pages/*.html. page remains CMS content page. cms has no name.
+// collection writes config/folder/template/editor scaffold; compiler owns compile.
 //
 // Writes the minimum viable shape for each. Refuses to overwrite without --force.
 
@@ -10,7 +12,7 @@ import { join } from 'path'
 import { root } from './paths'
 import { addComponentPreset } from './component-presets'
 
-type Kind = 'component' | 'route' | 'post' | 'page' | 'cms'
+type Kind = 'component' | 'route' | 'post' | 'page' | 'cms' | 'collection'
 const rawArgs = process.argv.slice(2)
 const isAdd = rawArgs[0] === 'add'
 const args = isAdd ? rawArgs.slice(1) : rawArgs
@@ -22,12 +24,13 @@ const demo = args.includes('--demo')
 function usage(): never {
   console.error('Usage: bun run new <component|route|post|page> <name> [--force] [--demo]')
   console.error('       bun run new cms [--force]')
+  console.error('       bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]')
   console.error('       snz-bp add component <hero|logos|pricing|testimonial|faq> [--force] [--demo]')
   process.exit(1)
 }
 
 if (!kind) usage()
-if (!['component', 'route', 'post', 'page', 'cms'].includes(kind)) usage()
+if (!['component', 'route', 'post', 'page', 'cms', 'collection'].includes(kind)) usage()
 if (kind !== 'cms' && !name) usage()
 if (isAdd && kind !== 'component') usage()
 
@@ -43,6 +46,56 @@ async function writeIfMissing(path: string, content: string) {
   await mkdir(join(path, '..'), { recursive: true })
   await writeFile(path, content)
   console.log(`wrote ${path}`)
+}
+
+function optionValue(flag: string) {
+  const i = args.indexOf(flag)
+  if (i === -1) return undefined
+  const value = args[i + 1]
+  if (!value || value.startsWith('--')) {
+    console.error(`${flag} requires a value`)
+    process.exit(1)
+  }
+  return value
+}
+
+function titleize(value: string) {
+  return value.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+}
+
+function singularize(value: string) {
+  if (value.endsWith('ies')) return `${value.slice(0, -3)}y`
+  if (value.endsWith('s')) return value.slice(0, -1)
+  return value
+}
+
+function validateCollectionName(value: string) {
+  if (/^[a-z][a-z0-9-]*$/.test(value) && value !== 'posts' && value !== 'pages') return
+  console.error(`collection name must be a lowercase id and not posts/pages (got "${value}")`)
+  process.exit(1)
+}
+
+function validateCollectionRoute(value: string) {
+  const route = value.replace(/^\/+|\/+$/g, '')
+  const tokenCount = route.match(/\{slug\}/g)?.length ?? 0
+  if (tokenCount !== 1) {
+    console.error('collection route must contain exactly one {slug} token')
+    process.exit(1)
+  }
+  for (const part of route.split('/')) {
+    if (part === '{slug}') continue
+    if (/^[a-z0-9][a-z0-9-]*$/.test(part)) continue
+    console.error('collection route segments must be lowercase URL-safe literals or {slug}')
+    process.exit(1)
+  }
+  return route
+}
+
+function validateTemplateName(value: string) {
+  const template = value.endsWith('.html') ? value : `${value}.html`
+  if (!template.includes('/') && !template.includes('\\') && !template.includes('..') && /^[a-z][a-z0-9-]*\.html$/.test(template)) return template
+  console.error('collection template must be a lowercase .html filename in src/templates/')
+  process.exit(1)
 }
 
 const today = new Date().toISOString().slice(0, 10)
@@ -142,6 +195,10 @@ Editors add files here via [Pages CMS](https://pagescms.org/). Paths match \`.pa
 
 Markdown renders to static HTML at build time. Supported: headings with anchors, lists, tables, blockquotes, code fences, safe links/images, and PascalCase components. Unsafe HTML and unsafe URL protocols fail the build.
 
+## Custom collections
+
+Run \`bun run new collection projects --route work/{slug} --template project\` to add a custom markdown collection. The command updates \`content/collections.json\`, \`.pages.yml\`, \`content/{name}/\`, and \`src/templates/{template}.html\`.
+
 ## Site settings
 
 \`src/site.json\` is editable in PagesCMS under **Site settings**. Rebuild after changes.
@@ -177,6 +234,123 @@ const pageTemplate = `<head>
   </div>
 </article>
 `
+
+function collectionTemplate(collectionName: string, route: string) {
+  const singular = singularize(collectionName)
+  return `<head>
+  <SEO title="{{title}}" description="{{description}}" path="/${route.replace('{slug}', '{{basename}}')}/" />
+</head>
+<article class="${singular}">
+  <h1>{{title}}</h1>
+  <div class="${singular}-body">
+    {{body}}
+  </div>
+</article>
+`
+}
+
+function collectionConfigEntry(collectionName: string, label: string, template: string, route: string) {
+  return {
+    name: collectionName,
+    label,
+    path: `content/${collectionName}`,
+    template,
+    route,
+    required: ['title'],
+    fields: [
+      { name: 'title', type: 'string', required: true },
+      { name: 'description', type: 'text' },
+      { name: 'image', type: 'image' },
+      { name: 'body', type: 'rich-text', required: true },
+    ],
+  }
+}
+
+async function readCollectionConfig(path: string) {
+  let config: { collections: unknown[] } = { collections: [] }
+  if (!(await exists(path))) return config
+
+  try {
+    const parsed = JSON.parse(await Bun.file(path).text())
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.collections)) throw new Error('expected { "collections": [] }')
+    config = parsed
+  } catch (err) {
+    console.error(`invalid ${path}: ${err instanceof Error ? err.message : 'fix JSON syntax'}`)
+    process.exit(1)
+  }
+  return config
+}
+
+async function writeCollectionConfig(collectionName: string, label: string, template: string, route: string) {
+  const path = join(root, 'content', 'collections.json')
+  const entry = collectionConfigEntry(collectionName, label, template, route)
+  const config = await readCollectionConfig(path)
+
+  const index = config.collections.findIndex((item) => item && typeof item === 'object' && (item as { name?: unknown }).name === collectionName)
+  if (index !== -1 && !force) {
+    console.error(`collection "${collectionName}" already exists in ${path} (pass --force to replace)`)
+    process.exit(2)
+  }
+  if (index === -1) config.collections.push(entry)
+  else config.collections[index] = entry
+
+  await mkdir(join(path, '..'), { recursive: true })
+  await writeFile(path, `${JSON.stringify(config, null, 2)}\n`)
+  console.log(`${index === -1 ? 'wrote' : 'updated'} ${path}`)
+}
+
+function pagesCollectionBlock(collectionName: string, label: string) {
+  return `      - name: ${collectionName}
+        label: ${label}
+        type: collection
+        path: content/${collectionName}
+        format: yaml-frontmatter
+        filename: "{primary}.md"
+        view:
+          primary: title
+        fields:
+          - name: title
+            type: string
+            required: true
+          - name: description
+            type: text
+          - name: image
+            type: image
+          - name: body
+            type: rich-text
+            required: true
+`
+}
+
+function pagesCollectionPattern(collectionName: string) {
+  return new RegExp(`\\n      - name: ${collectionName}\\n[\\s\\S]*?(?=\\n      - name: |\\n  - name: |\\nsettings:|$)`)
+}
+
+async function upsertPagesCollection(collectionName: string, label: string) {
+  const path = join(root, '.pages.yml')
+  if (!(await exists(path))) await writeIfMissing(path, pagesYml)
+
+  const current = await Bun.file(path).text()
+  const block = pagesCollectionBlock(collectionName, label)
+  const itemPattern = pagesCollectionPattern(collectionName)
+  if (itemPattern.test(current)) {
+    if (!force) {
+      console.error(`collection "${collectionName}" already exists in ${path} (pass --force to replace)`)
+      process.exit(2)
+    }
+    await writeFile(path, current.replace(itemPattern, `\n${block.trimEnd()}`))
+    console.log(`updated ${path}`)
+    return
+  }
+
+  const marker = '\n  - name: site\n'
+  if (!current.includes(marker)) {
+    console.error(`could not find editorial group in ${path}`)
+    process.exit(1)
+  }
+  await writeFile(path, current.replace(marker, `\n${block}${marker.slice(1)}`))
+  console.log(`updated ${path}`)
+}
 
 if (isAdd) {
   await addComponentPreset(name!, { force, demo })
@@ -255,4 +429,37 @@ ${kind === 'post' ? 'tags: []\n' : ''}---
 Write here.
 `
   await writeIfMissing(join(root, 'content', dir, `${name}.md`), md)
+} else if (kind === 'collection') {
+  validateCollectionName(name!)
+  const route = validateCollectionRoute(optionValue('--route') ?? `${name}/{slug}`)
+  const template = validateTemplateName(optionValue('--template') ?? singularize(name!))
+  const label = optionValue('--label') ?? titleize(name!)
+  const configPath = join(root, 'content', 'collections.json')
+  const templatePath = join(root, 'src', 'templates', template)
+  const pagesPath = join(root, '.pages.yml')
+
+  const config = await readCollectionConfig(configPath)
+  if (!force && config.collections.some((item) => item && typeof item === 'object' && (item as { name?: unknown }).name === name)) {
+    console.error(`collection "${name}" already exists in ${configPath} (pass --force to replace)`)
+    process.exit(2)
+  }
+  if (!force && await exists(templatePath)) {
+    console.error(`refusing to overwrite ${templatePath} (pass --force to overwrite)`)
+    process.exit(2)
+  }
+  if (!force && await exists(pagesPath) && pagesCollectionPattern(name!).test(await Bun.file(pagesPath).text())) {
+    console.error(`collection "${name}" already exists in ${pagesPath} (pass --force to replace)`)
+    process.exit(2)
+  }
+
+  await writeCollectionConfig(name!, label, template, route)
+  await mkdir(join(root, 'content', name!), { recursive: true })
+  if (!(await exists(join(root, 'content', name!, '.gitkeep')))) await writeFile(join(root, 'content', name!, '.gitkeep'), '')
+  await writeIfMissing(templatePath, collectionTemplate(name!, route))
+  await upsertPagesCollection(name!, label)
+
+  console.log('\nCollection scaffold ready.')
+  console.log('Next steps:')
+  console.log(`- add markdown files in content/${name}/`)
+  console.log('- bun run check')
 }

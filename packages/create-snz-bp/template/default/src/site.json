@@ -1,7 +1,7 @@
 {
-  "name": "My Site",
+  "name": "Starter Site",
   "url": "https://example.com",
-  "description": "Built with SANITIZE Boilerplate.",
+  "description": "A clean starter site built with SANITIZE Boilerplate.",
   "locale": "en",
   "twitter": "",
   "ogImage": "/assets/og.webp",

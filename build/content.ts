@@ -86,6 +86,10 @@ function substitute(template: string, vars: Record<string, string>) {
   return template.replace(/\{\{(\w+)\}\}/g, (m, key) => vars[key] ?? m)
 }
 
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
+}
+
 export function slugifyTag(tag: string) {
   return tag
     .trim()
@@ -109,9 +113,6 @@ export function normalizeContentTags(tags: string[]) {
   return out
 }
 
-function escapeAttr(s: string) {
-  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
-}
 
 function normalizeContentMediaRefs(value: string) {
   return value.replace(/\/(?:media|assets)\/images\/([^\s)"']+)\.(jpe?g|png|webp)\b/gi, (_m, name) => {
@@ -286,7 +287,7 @@ async function compileFile(
   const raw = await readFile(fullPath, 'utf8')
   const { data, body } = parseFrontMatter(raw)
   const basename = filename.replace(/\.md$/i, '')
-  if (!collection.builtin) assertSafeBasename(basename, sourceRel)
+  assertSafeBasename(basename, sourceRel)
   const slug = routeSlugFor(collection.route, basename)
 
   for (const field of collection.required) {
@@ -307,14 +308,15 @@ async function compileFile(
   for (const [k, v] of Object.entries(data)) {
     flat[k] = normalizeContentMediaRefs(typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v))
   }
+  const escapedFlat = Object.fromEntries(Object.entries(flat).map(([k, v]) => [k, escapeHtml(v)]))
   const vars: Record<string, string> = {
-    ...flat,
-    title: fmString(data, 'title'),
+    ...escapedFlat,
+    title: escapeHtml(fmString(data, 'title')),
     slug,
     basename,
     collection: collection.name,
     body: html,
-    tagsHtml: tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${escapeAttr(t)}" />`).join(' '),
+    tagsHtml: tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${escapeHtml(t)}" />`).join(' '),
   }
   let composed = substitute(template, vars)
   if (draft && process.env.SNZ_DEV) {

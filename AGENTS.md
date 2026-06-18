@@ -12,7 +12,7 @@ bun run build    # writes dist/, runs strict checks at the end
 bun run check    # rebuild + validate without serving
 bun run css:audit # report component-owned selectors left in global CSS
 bun run doctor   # CSS ownership audit + strict check
-bun run new      # scaffolder: component|route|post|page <name>, or cms
+bun run new      # scaffolder: component|route|post|page <name>, collection <name>, or cms
 ```
 
 Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
@@ -137,7 +137,7 @@ Per-route transition variants: `<meta name="snz:transition" content="fade|slide|
 
 ## Scroll
 
-Lenis is **optional and self-hosted** (`src/app.jsvendor/lenis.min.js`, pinned 1.1.20).
+Lenis is **optional and self-hosted** (`src/app/vendor/lenis.min.js`, pinned 1.1.20).
 
 ```jsonc
 // src/site.json

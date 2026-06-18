@@ -83,6 +83,90 @@ async function writeMinimalSite(root: string) {
   await writeFile(join(root, 'src', 'app.js'), '')
 }
 
+describe('collection scaffold', () => {
+  test('creates custom collection config, folder, template, and PagesCMS entry', async () => {
+    const dir = await tempProject()
+    try {
+      const result = await runScaffold(['collection', 'projects', '--route', 'work/{slug}', '--template', 'project'], dir)
+      const config = JSON.parse(await readFile(join(dir, 'content', 'collections.json'), 'utf8'))
+      const template = await readFile(join(dir, 'src', 'templates', 'project.html'), 'utf8')
+      const pages = await readFile(join(dir, '.pages.yml'), 'utf8')
+      const gitkeep = await readFile(join(dir, 'content', 'projects', '.gitkeep'), 'utf8')
+
+      expect(result.code).toBe(0)
+      expect(config.collections[0]).toMatchObject({
+        name: 'projects',
+        label: 'Projects',
+        path: 'content/projects',
+        template: 'project.html',
+        route: 'work/{slug}',
+        required: ['title'],
+      })
+      expect(template).toContain('<SEO title="{{title}}" description="{{description}}" path="/work/{{basename}}/" />')
+      expect(template).toContain('{{body}}')
+      expect(pages).toContain('name: projects')
+      expect(pages).toContain('path: content/projects')
+      expect(gitkeep).toBe('')
+      expect(result.stdout).toContain('Collection scaffold ready.')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('snz-bp new dispatches collection scaffold with defaults', async () => {
+    const dir = await tempProject()
+    try {
+      const result = await runBun(binPath, ['new', 'collection', 'services'], dir)
+      const config = JSON.parse(await readFile(join(dir, 'content', 'collections.json'), 'utf8'))
+
+      expect(result.code).toBe(0)
+      expect(config.collections[0].route).toBe('services/{slug}')
+      expect(config.collections[0].template).toBe('service.html')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('usage documents collection command', async () => {
+    const dir = await tempProject()
+    try {
+      const result = await runScaffold([], dir)
+
+      expect(result.code).toBe(1)
+      expect(result.stderr).toContain('bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects invalid collection route with clear error', async () => {
+    const dir = await tempProject()
+    try {
+      const result = await runScaffold(['collection', 'projects', '--route', 'work'], dir)
+
+      expect(result.code).toBe(1)
+      expect(result.stderr).toContain('collection route must contain exactly one {slug} token')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('refuses to replace existing collection config without force', async () => {
+    const dir = await tempProject()
+    try {
+      const first = await runScaffold(['collection', 'projects'], dir)
+      const second = await runScaffold(['collection', 'projects'], dir)
+
+      expect(first.code).toBe(0)
+      expect(second.code).toBe(2)
+      expect(second.stderr).toContain('collection "projects" already exists')
+      expect(second.stderr).toContain('pass --force to replace')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('component preset scaffold', () => {
   test('keeps new component scaffold separate from presets', async () => {
     const dir = await tempProject()
@@ -125,6 +209,47 @@ describe('component preset scaffold', () => {
       expect(result.code).toBe(0)
       expect(result.stdout).toContain('Added LogoCloud')
       expect(html).toContain('@desc Logo cloud preset')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('snz-bp add dispatches to theme scaffold', async () => {
+    const dir = await tempProject()
+    try {
+      await mkdir(join(dir, 'src'), { recursive: true })
+      await writeFile(join(dir, 'src', 'styles.css'), 'body { color: var(--i); }\n')
+
+      const result = await runBun(binPath, ['add', 'theme', 'brutalist'], dir)
+      const css = await readFile(join(dir, 'src', 'styles.css'), 'utf8')
+
+      expect(result.code).toBe(0)
+      expect(result.stdout).toContain('applied brutalist theme')
+      expect(css).toContain('/* snz-bp theme:start */')
+      expect(css).toContain('/* brutalist token pack. Safe to edit after applying. */')
+      expect(css).toContain('--bw: 0.2rem;')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('cms scaffold creates collection config, templates, and entries', async () => {
+    const dir = await tempProject()
+    try {
+      const cms = await runScaffold(['cms'], dir)
+      const post = await runScaffold(['post', 'smoke-post'], dir)
+      const page = await runScaffold(['page', 'about-us'], dir)
+
+      expect(cms.code).toBe(0)
+      expect(cms.stdout).toContain('CMS scaffold ready')
+      expect(post.code).toBe(0)
+      expect(page.code).toBe(0)
+      expect(await readFile(join(dir, '.pages.yml'), 'utf8')).toContain('path: content/posts')
+      expect(await readFile(join(dir, 'content', 'README.md'), 'utf8')).toContain('content/posts/')
+      expect(await readFile(join(dir, 'src', 'templates', 'post.html'), 'utf8')).toContain('/insights/{{basename}}/')
+      expect(await readFile(join(dir, 'src', 'templates', 'page.html'), 'utf8')).toContain('/{{basename}}/')
+      expect(await readFile(join(dir, 'content', 'posts', 'smoke-post.md'), 'utf8')).toContain('title: Smoke Post')
+      expect(await readFile(join(dir, 'content', 'pages', 'about-us.md'), 'utf8')).toContain('title: About Us')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
