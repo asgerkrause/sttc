@@ -1,5 +1,5 @@
 // CLI: bun run new <kind> <name> [--force] [--demo]
-//      snz-bp add component <preset> [--force]
+//      snz-bp add component <preset> [--force] [--demo]
 // kind: component | route | post | page | cms
 // route writes src/pages/*.html. page remains CMS content page. cms has no name.
 //
@@ -22,7 +22,7 @@ const demo = args.includes('--demo')
 function usage(): never {
   console.error('Usage: bun run new <component|route|post|page> <name> [--force] [--demo]')
   console.error('       bun run new cms [--force]')
-  console.error('       snz-bp add component <hero|logos|pricing|testimonial|faq> [--force]')
+  console.error('       snz-bp add component <hero|logos|pricing|testimonial|faq> [--force] [--demo]')
   process.exit(1)
 }
 
@@ -179,7 +179,7 @@ const pageTemplate = `<head>
 `
 
 if (isAdd) {
-  await addComponentPreset(name!, { force })
+  await addComponentPreset(name!, { force, demo })
 } else if (kind === 'cms') {
   await writeIfMissing(join(root, '.pages.yml'), pagesYml)
   await writeIfMissing(join(root, 'content', 'README.md'), contentReadme)

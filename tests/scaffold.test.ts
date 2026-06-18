@@ -130,6 +130,26 @@ describe('component preset scaffold', () => {
     }
   })
 
+  test('appends preset demo to styles page when requested', async () => {
+    const dir = await tempProject()
+    try {
+      await mkdir(join(dir, 'src', 'pages'), { recursive: true })
+      await writeFile(join(dir, 'src', 'pages', 'styles.html'), '<Section><h1>Styles</h1></Section>\n')
+
+      const result = await runScaffold(['add', 'component', 'testimonial', '--demo'], dir)
+      const html = await readFile(join(dir, 'src', 'components', 'TestimonialSection.html'), 'utf8')
+      const styles = await readFile(join(dir, 'src', 'pages', 'styles.html'), 'utf8')
+
+      expect(result.code).toBe(0)
+      expect(result.stdout).toContain('appended demo to')
+      expect(result.stdout).toContain('Added TestimonialSection')
+      expect(html).toContain('@desc Testimonial section preset')
+      expect(styles).toContain('<TestimonialSection />')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
   test('rejects unknown preset with available list', async () => {
     const dir = await tempProject()
     try {

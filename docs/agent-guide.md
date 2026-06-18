@@ -69,9 +69,10 @@ snz-bp add component logos      # LogoCloud.html
 snz-bp add component pricing    # PricingSection.html
 snz-bp add component testimonial # TestimonialSection.html
 snz-bp add component faq        # FAQSection.html
+snz-bp add component hero --demo # also append <HeroSection /> to styles page when present
 ```
 
-Presets write normal PascalCase component files under `src/components/` and refuse to overwrite existing files unless `--force` is passed.
+Presets write normal PascalCase component files under `src/components/` and refuse to overwrite existing files unless `--force` is passed. Add `--demo` to append invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present.
 
 Add private token theme packs when a starter needs a quick visual direction:
 

@@ -52,6 +52,7 @@
     "migrate": "bun bin/snz-bp.ts migrate",
     "prepare:create-template": "bun scripts/sync-create-template.ts",
     "check:create-template": "bun scripts/sync-create-template.ts --check",
+    "check:private": "bun scripts/private-review-guard.ts",
     "smoke:create": "bun scripts/smoke-create.ts"
   }
 }

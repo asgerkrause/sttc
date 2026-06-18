@@ -115,7 +115,7 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
   for (const r of routes) {
     const extras = detectSchemas(r, componentSchemas)
     const content = contentByslug.get(r.slug)
-    if (content) extras.push(blogPostingFor(r, content, site))
+    if (content?.collection === 'posts') extras.push(blogPostingFor(r, content, site))
     if (r.slug.startsWith('insights/') && !content) r.schemas.push('WebPage')
 
     const routeJsonPath = join(distDir, 'routes', `${r.slug}.json`)
@@ -178,8 +178,8 @@ async function writeLlmsTxt(
   lines.push('')
   lines.push(...siteFactLines(site))
 
-  const pages = routes.filter((r) => !r.slug.startsWith('insights/') && r.slug !== '404')
-  const posts = routes.filter((r) => r.slug.startsWith('insights/'))
+  const pages = routes.filter((r) => contentByslug.get(r.slug)?.collection !== 'posts' && r.slug !== '404')
+  const posts = routes.filter((r) => contentByslug.get(r.slug)?.collection === 'posts')
 
   if (pages.length) {
     lines.push('## Pages')

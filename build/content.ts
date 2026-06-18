@@ -1,12 +1,32 @@
-// Compiles content/posts/*.md → src/routes/insights/{slug}.html (in-memory)
-// and content/pages/*.md → src/routes/{slug}.html (in-memory).
-// Templates live in src/templates/{post,page}.html and use {{title}}, {{body}}, {{date}}, etc.
+// Compiles built-in and optional custom markdown collections into in-memory routes.
+// Built-ins stay implicit:
+// - content/posts/*.md → /insights/{slug}/ through src/templates/post.html
+// - content/pages/*.md → /{slug}/ through src/templates/page.html
+// Custom collections come from content/collections.json.
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { join } from 'path'
 import { BuildError, lineOf } from './errors'
 import { fmString, fmStringArray, parseFrontMatter, render as renderMarkdown } from './markdown'
 import { root, src } from './paths'
+
+export type ContentFieldConfig = {
+  name: string
+  type?: string
+  required?: boolean
+  [key: string]: unknown
+}
+
+export type ContentCollectionConfig = {
+  name: string
+  label?: string
+  path: string
+  template: string
+  route: string
+  required: string[]
+  fields?: ContentFieldConfig[]
+  builtin?: 'posts' | 'pages'
+}
 
 export type ContentRoute = {
   slug: string
@@ -19,7 +39,7 @@ export type ContentRoute = {
   /** Front-matter data (title, date, description, hero, etc.) */
   data: Record<string, string>
   /** Collection name. */
-  collection: 'posts' | 'pages'
+  collection: string
   /** Raw markdown body (for llms-full.txt). */
   markdown: string
   /** Display labels parsed from front-matter `tags: [a, b]`; route slugs are derived with slugifyTag. */
@@ -28,12 +48,31 @@ export type ContentRoute = {
   draft: boolean
 }
 
+const BUILTIN_COLLECTIONS: ContentCollectionConfig[] = [
+  {
+    name: 'posts',
+    path: 'content/posts',
+    template: 'post.html',
+    route: 'insights/{slug}',
+    required: ['title'],
+    builtin: 'posts',
+  },
+  {
+    name: 'pages',
+    path: 'content/pages',
+    template: 'page.html',
+    route: '{slug}',
+    required: ['title'],
+    builtin: 'pages',
+  },
+]
+
 async function exists(p: string) {
   try { await stat(p); return true } catch { return false }
 }
 
-async function loadTemplate(name: string): Promise<string> {
-  const path = join(src, 'templates', name)
+async function loadTemplate(srcDir: string, name: string): Promise<string> {
+  const path = join(srcDir, 'templates', name)
   if (!(await exists(path))) {
     throw new BuildError(`Missing template ${path}`, {
       file: `src/templates/${name}`,
@@ -97,25 +136,167 @@ export function assertSafeContentMarkdown(raw: string, file: string) {
   })
 }
 
-async function compileFile(
-  collection: 'posts' | 'pages',
-  filename: string,
-  template: string,
-): Promise<ContentRoute> {
-  const dir = join(root, 'content', collection)
-  const fullPath = join(dir, filename)
-  const raw = await readFile(fullPath, 'utf8')
-  const { data, body } = parseFrontMatter(raw)
-  const basename = filename.replace(/\.md$/i, '')
-  const slug = collection === 'posts' ? `insights/${basename}` : basename
+function configError(message: string, hint?: string): never {
+  throw new BuildError(message, {
+    file: 'content/collections.json',
+    hint,
+  })
+}
 
-  if (!fmString(data, 'title')) {
-    throw new BuildError(`content/${collection}/${filename} missing "title" in front-matter`, {
-      file: `content/${collection}/${filename}`,
+function normalizeContentPath(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) configError('Custom collection path must be a non-empty string')
+  const rel = value.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/g, '')
+  const parts = rel.split('/').filter(Boolean)
+  if (!parts.length || rel.startsWith('/') || parts.includes('..') || parts.includes('.')) {
+    configError('Custom collection path must be a safe repo-relative path', 'Use paths like content/projects. Path traversal and absolute paths are not allowed.')
+  }
+  const normalized = parts.join('/')
+  if (!normalized.startsWith('content/') || normalized === 'content/posts' || normalized === 'content/pages') {
+    configError('Custom collection path must be a non-built-in content subfolder', 'Use paths like content/projects. Built-in content/posts and content/pages stay implicit.')
+  }
+  return normalized
+}
+
+function normalizeTemplate(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) configError('Custom collection template must be a non-empty string')
+  const template = value.trim()
+  if (template.includes('/') || template.includes('\\') || template.includes('..') || !template.endsWith('.html')) {
+    configError('Custom collection template must be an .html file in src/templates/', 'Use a filename like project.html, with no path segments.')
+  }
+  return template
+}
+
+function normalizeRoutePattern(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) configError('Custom collection route must be a non-empty string')
+  const route = value.trim().replace(/^\/+|\/+$/g, '')
+  const tokenCount = route.match(/\{slug\}/g)?.length ?? 0
+  if (tokenCount !== 1) configError('Custom collection route must contain exactly one {slug} token')
+  const parts = route.split('/')
+  for (const part of parts) {
+    if (part === '{slug}') continue
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(part)) {
+      configError('Custom collection route segments must be lowercase URL-safe literals or {slug}', 'Use a route like work/{slug} or locations/{slug}.')
+    }
+  }
+  return route
+}
+
+function normalizeRequired(value: unknown) {
+  if (value == null) return ['title']
+  if (!Array.isArray(value)) configError('Custom collection required must be an array of front-matter keys')
+  const required = value.map((item) => {
+    if (typeof item !== 'string' || !item.trim()) configError('Custom collection required keys must be non-empty strings')
+    return item.trim()
+  })
+  return required.length ? required : ['title']
+}
+
+function normalizeFields(value: unknown): ContentFieldConfig[] | undefined {
+  if (value == null) return undefined
+  if (!Array.isArray(value)) configError('Custom collection fields must be an array')
+  return value.map((field) => {
+    if (!field || typeof field !== 'object' || Array.isArray(field)) configError('Custom collection fields must be objects')
+    const record = field as Record<string, unknown>
+    if (typeof record.name !== 'string' || !record.name.trim()) configError('Custom collection field.name must be a non-empty string')
+    return { ...record, name: record.name.trim() } as ContentFieldConfig
+  })
+}
+
+function validateCustomCollection(raw: unknown): ContentCollectionConfig {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) configError('Custom collection entries must be objects')
+  const record = raw as Record<string, unknown>
+  const name = typeof record.name === 'string' ? record.name.trim() : ''
+  if (!/^[a-z][a-z0-9-]*$/.test(name)) {
+    configError('Custom collection name must be a lowercase id', 'Use [a-z][a-z0-9-]*, e.g. projects or team-members.')
+  }
+  if (name === 'posts' || name === 'pages') {
+    configError(`Custom collection name "${name}" is reserved`, 'Built-in posts and pages stay implicit; use another collection name.')
+  }
+
+  return {
+    name,
+    label: typeof record.label === 'string' ? record.label : undefined,
+    path: normalizeContentPath(record.path),
+    template: normalizeTemplate(record.template),
+    route: normalizeRoutePattern(record.route),
+    required: normalizeRequired(record.required),
+    fields: normalizeFields(record.fields),
+  }
+}
+
+export async function loadCustomContentCollections(projectRoot = root): Promise<ContentCollectionConfig[]> {
+  const rel = 'content/collections.json'
+  const path = join(projectRoot, rel)
+  if (!(await exists(path))) return []
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(await readFile(path, 'utf8'))
+  } catch (err) {
+    throw new BuildError('Invalid content/collections.json', {
+      file: rel,
+      hint: err instanceof Error ? err.message : 'Fix JSON syntax.',
     })
   }
 
-  const sourceRel = `content/${collection}/${filename}`
+  const collections = Array.isArray(parsed)
+    ? parsed
+    : parsed && typeof parsed === 'object'
+      ? (parsed as Record<string, unknown>).collections
+      : undefined
+
+  if (!Array.isArray(collections)) {
+    configError('content/collections.json must contain a collections array', 'Use { "collections": [{ "name": "projects", ... }] }.')
+  }
+
+  const seen = new Set<string>()
+  return collections.map((entry) => {
+    const collection = validateCustomCollection(entry)
+    if (seen.has(collection.name)) configError(`Duplicate custom collection name "${collection.name}"`)
+    seen.add(collection.name)
+    return collection
+  })
+}
+
+export async function loadContentCollections(projectRoot = root): Promise<ContentCollectionConfig[]> {
+  return [...BUILTIN_COLLECTIONS, ...(await loadCustomContentCollections(projectRoot))]
+}
+
+function assertSafeBasename(basename: string, sourceRel: string) {
+  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(basename)) return
+  throw new BuildError(`Unsafe content filename slug "${basename}"`, {
+    file: sourceRel,
+    hint: 'Use lowercase URL-safe filenames like acme-project.md. Front-matter slug overrides are not supported.',
+  })
+}
+
+function routeSlugFor(pattern: string, basename: string) {
+  return pattern.replace('{slug}', basename).replace(/^\/+|\/+$/g, '')
+}
+
+async function compileFile(
+  projectRoot: string,
+  collection: ContentCollectionConfig,
+  filename: string,
+  template: string,
+): Promise<ContentRoute> {
+  const dir = join(projectRoot, collection.path)
+  const fullPath = join(dir, filename)
+  const sourceRel = `${collection.path}/${filename}`
+  const raw = await readFile(fullPath, 'utf8')
+  const { data, body } = parseFrontMatter(raw)
+  const basename = filename.replace(/\.md$/i, '')
+  if (!collection.builtin) assertSafeBasename(basename, sourceRel)
+  const slug = routeSlugFor(collection.route, basename)
+
+  for (const field of collection.required) {
+    const ok = field === 'body' ? body.trim().length > 0 : !!fmString(data, field)
+    if (ok) continue
+    throw new BuildError(`${sourceRel} missing "${field}" in front-matter`, {
+      file: sourceRel,
+    })
+  }
+
   assertSafeContentMarkdown(raw, sourceRel)
   const normalizedBody = normalizeContentMediaRefs(body)
   const html = renderMarkdown(normalizedBody, { file: sourceRel })
@@ -131,6 +312,7 @@ async function compileFile(
     title: fmString(data, 'title'),
     slug,
     basename,
+    collection: collection.name,
     body: html,
     tagsHtml: tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${escapeAttr(t)}" />`).join(' '),
   }
@@ -146,7 +328,7 @@ async function compileFile(
     body: composed,
     source: sourceRel,
     data: flat,
-    collection,
+    collection: collection.name,
     markdown: body,
     tags,
     draft,
@@ -160,24 +342,34 @@ function parseTags(raw: string | undefined): string[] {
   return inner.split(',').map((t) => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
 }
 
-export async function compileContent(): Promise<ContentRoute[]> {
-  const includeDrafts = !!process.env.SNZ_DEV
+export async function compileContentFrom(options: {
+  rootDir?: string
+  srcDir?: string
+  includeDrafts?: boolean
+} = {}): Promise<ContentRoute[]> {
+  const projectRoot = options.rootDir ?? root
+  const sourceRoot = options.srcDir ?? join(projectRoot, 'src')
+  const includeDrafts = options.includeDrafts ?? !!process.env.SNZ_DEV
   const out: ContentRoute[] = []
-  for (const collection of ['posts', 'pages'] as const) {
-    const dir = join(root, 'content', collection)
+
+  for (const collection of await loadContentCollections(projectRoot)) {
+    const dir = join(projectRoot, collection.path)
     if (!(await exists(dir))) continue
     let files: string[]
     try {
-      files = (await readdir(dir)).filter((f) => f.endsWith('.md'))
+      files = (await readdir(dir)).filter((f) => f.endsWith('.md')).sort()
     } catch { continue }
     if (files.length === 0) continue
-    const tplName = collection === 'posts' ? 'post.html' : 'page.html'
-    const template = await loadTemplate(tplName)
+    const template = await loadTemplate(sourceRoot, collection.template)
     for (const f of files) {
-      const route = await compileFile(collection, f, template)
+      const route = await compileFile(projectRoot, collection, f, template)
       if (route.draft && !includeDrafts) continue
       out.push(route)
     }
   }
   return out
+}
+
+export async function compileContent(): Promise<ContentRoute[]> {
+  return compileContentFrom({ rootDir: root, srcDir: src })
 }

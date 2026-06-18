@@ -4,10 +4,13 @@ Use when publishing `@snz/bp` and `create-snz-bp`.
 
 ## Private review guard
 
-This repo is intentionally unpublished for now. Both package manifests must keep `"private": true` during private review. Do not remove it, change npm access, or publish until a human makes an explicit release decision.
+This repo is intentionally unpublished for now. Package manifests must keep `"private": true` during private review. Do not remove it, add publish config/scripts, change npm access, or publish until a human makes an explicit release decision.
+
+Run `bun run check:private` before release-adjacent work. It fails if root, creator, or starter-template package manifests drift away from private review invariants.
 
 ## Preflight
 
+- [ ] Run `bun run check:private` and confirm private review guard passes before changing release gates.
 - [ ] Confirm a human approved moving out of private review.
 - [ ] Remove `"private": true` from root `package.json` and `packages/create-snz-bp/package.json` only after that approval.
 - [ ] Confirm `package.json` version matches `packages/create-snz-bp/package.json`.
@@ -44,7 +47,8 @@ bun run check
 
 ## Safety
 
-- Keep `"private": true` in both package manifests until human release approval; this blocks accidental `npm publish`/`bun publish` from private review.
+- Keep `"private": true` in root, creator, and starter-template package manifests until human release approval; this blocks accidental `npm publish`/`bun publish` from private review.
+- Keep `publishConfig` and publish lifecycle scripts absent during private review.
 - Never publish with `file:` or `workspace:*` dependencies in generated templates.
 - The creator uses `file:<repo-root>` only in local monorepo mode.
 - Published creator uses its packaged template and writes `@snz/bp` as the matching semver range.

@@ -22,6 +22,9 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Private review guard
+        run: bun run check:private
+
       - name: Regression tests
         run: bun test
 

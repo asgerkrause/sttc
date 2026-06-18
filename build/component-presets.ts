@@ -1,4 +1,4 @@
-import { mkdir, stat, writeFile } from 'fs/promises'
+import { mkdir, readFile, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { root } from './paths'
 
@@ -8,6 +8,7 @@ type ComponentPreset = {
   componentName: string
   fileName: string
   html: string
+  demoHtml: string
 }
 
 async function exists(path: string) {
@@ -28,6 +29,7 @@ const componentPresets: Record<ComponentPresetName, ComponentPreset> = {
   hero: {
     componentName: 'HeroSection',
     fileName: 'HeroSection.html',
+    demoHtml: '<HeroSection />',
     html: `<!--
   @desc Hero section preset with headline, supporting copy, and two actions.
 -->
@@ -59,7 +61,7 @@ const componentPresets: Record<ComponentPresetName, ComponentPreset> = {
       line-height: var(--h0-lh);
     }
 
-    p {
+    .w p {
       max-width: var(--fmw);
       color: var(--g);
     }
@@ -84,6 +86,7 @@ const componentPresets: Record<ComponentPresetName, ComponentPreset> = {
   logos: {
     componentName: 'LogoCloud',
     fileName: 'LogoCloud.html',
+    demoHtml: '<LogoCloud />',
     html: `<!--
   @desc Logo cloud preset for partner, client, or press marks.
 -->
@@ -138,6 +141,7 @@ const componentPresets: Record<ComponentPresetName, ComponentPreset> = {
   pricing: {
     componentName: 'PricingSection',
     fileName: 'PricingSection.html',
+    demoHtml: '<PricingSection />',
     html: `<!--
   @desc Pricing section preset with three plan cards and calls to action.
 -->
@@ -185,6 +189,7 @@ const componentPresets: Record<ComponentPresetName, ComponentPreset> = {
   testimonial: {
     componentName: 'TestimonialSection',
     fileName: 'TestimonialSection.html',
+    demoHtml: '<TestimonialSection />',
     html: `<!--
   @desc Testimonial section preset with quote, attribution, and proof points.
 -->
@@ -248,6 +253,7 @@ const componentPresets: Record<ComponentPresetName, ComponentPreset> = {
   faq: {
     componentName: 'FAQSection',
     fileName: 'FAQSection.html',
+    demoHtml: '<FAQSection />',
     html: `<!--
   @desc FAQ section preset built from Accordion primitives.
 -->
@@ -301,9 +307,21 @@ function componentPreset(name: string): ComponentPreset {
   process.exit(1)
 }
 
-export async function addComponentPreset(name: string, options: { force?: boolean } = {}) {
+async function appendDemo(preset: ComponentPreset) {
+  const pagesStylesPath = join(root, 'src', 'pages', 'styles.html')
+  const routesStylesPath = join(root, 'src', 'routes', 'styles.html')
+  const stylesPath = (await exists(pagesStylesPath)) ? pagesStylesPath : routesStylesPath
+  if (!(await exists(stylesPath))) return
+
+  const append = `\n${preset.demoHtml}\n`
+  await writeFile(stylesPath, (await readFile(stylesPath, 'utf8')) + append)
+  console.log(`appended demo to ${stylesPath}`)
+}
+
+export async function addComponentPreset(name: string, options: { force?: boolean, demo?: boolean } = {}) {
   const preset = componentPreset(name)
   await writeIfMissing(join(root, 'src', 'components', preset.fileName), preset.html, options.force ?? false)
+  if (options.demo) await appendDemo(preset)
   console.log(`\nAdded ${preset.componentName}.`)
   console.log(`Use it in a route with <${preset.componentName} />`)
 }

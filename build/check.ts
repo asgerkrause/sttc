@@ -6,7 +6,7 @@ import { join } from 'path'
 import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, src, stylesDir, appDir } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError } from './errors'
-import { compileContent } from './content'
+import { compileContent, loadCustomContentCollections } from './content'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs } from './images'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
@@ -139,6 +139,21 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
     const rel = `src/templates/${template}`
     const raw = await readFile(join(src, 'templates', template), 'utf8').catch(() => '')
     if (!raw) continue
+    if (!raw.includes('{{body}}')) fail(`${rel}: missing {{body}} placeholder`)
+    if (!raw.includes('{{title}}')) warn(`${rel}: missing {{title}} placeholder`)
+  }
+
+  const customCollections = await loadCustomContentCollections().catch((err) => {
+    fail(err instanceof Error ? err.message : String(err))
+    return []
+  })
+  for (const collection of customCollections) {
+    const rel = `src/templates/${collection.template}`
+    const raw = await readFile(join(src, 'templates', collection.template), 'utf8').catch(() => '')
+    if (!raw) {
+      fail(`${rel}: missing custom collection template for "${collection.name}"`)
+      continue
+    }
     if (!raw.includes('{{body}}')) fail(`${rel}: missing {{body}} placeholder`)
     if (!raw.includes('{{title}}')) warn(`${rel}: missing {{title}} placeholder`)
   }

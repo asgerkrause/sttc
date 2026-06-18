@@ -33,6 +33,7 @@ snz-bp doctor
 snz-bp new component Hero
 snz-bp new cms
 snz-bp add component hero
+snz-bp add component hero --demo
 snz-bp add theme minimal
 snz-bp migrate
 ```
@@ -131,7 +132,7 @@ Built-ins (15):
 
 Add a new component by handing [`docs/component-prompt.md`](./docs/component-prompt.md) to Claude, or just write it yourself.
 
-Add a private section preset with `snz-bp add component <preset>`. Presets: `hero`, `logos`, `pricing`, `testimonial`, `faq`. They write normal PascalCase component files in `src/components/` and refuse to overwrite existing files unless `--force` is passed.
+Add a private section preset with `snz-bp add component <preset>`. Presets: `hero`, `logos`, `pricing`, `testimonial`, `faq`. They write normal PascalCase component files in `src/components/` and refuse to overwrite existing files unless `--force` is passed. Pass `--demo` to append component invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present.
 
 Theme token packs are private starter shortcuts, not design systems:
 
