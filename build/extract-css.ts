@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
-import { BuildError } from './errors'
+import { buildErrorAt, BuildError } from './errors'
 import type { ComponentSchema } from './compose'
 import { parseInlineSchema } from './component-meta'
 import { assetHash } from './hash'
@@ -53,8 +53,9 @@ export function extractComponentScripts(html: string): { html: string; scripts: 
 }
 
 export function rejectStyleInRoute(html: string, file: string) {
-  if (/<style\b/i.test(html)) {
-    throw new BuildError(`<style> not allowed in routes`, {
+  const match = html.match(/<style\b/i)
+  if (match?.index !== undefined) {
+    throw buildErrorAt(`<style> not allowed in routes`, html, match.index, {
       file,
       hint: 'Use a component <style>, or scope rules with html[data-page="..."] in src/styles/styles.css.',
     })
