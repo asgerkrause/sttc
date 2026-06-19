@@ -42,7 +42,7 @@ dist/lib/paths.js
 - Authoring paths describe ownership, not URL shape.
 - `/assets/*` remains an output contract only.
 - `runtime/` makes framework-owned client code explicit.
-- `src/app/` leaves one obvious home for project-specific JavaScript.
+- `src/app.ts` leaves one obvious home for TypeScript-first site code; `src/app/` holds optional support modules/vendor files.
 - `src/styles/` leaves one obvious home for global style primitives and tokens.
 
 ## Compatibility

@@ -62,14 +62,21 @@
     <h2>Image + Embed</h2>
   </div>
   <Grid cols="2">
-    <Image src="showcase" alt="Abstract starter site preview" max="1200" loading="eager" />
     <div class="w">
-      <h3>Responsive by default</h3>
-      <p>Place source images in <code>src/images</code> or <code>media/images</code>. Build emits optimized WebP sizes and keeps route markup clean.</p>
-      <Code lang="html">&lt;Image src="showcase" alt="Abstract starter site preview" max="1200" /&gt;</Code>
-      <Embed src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Example video embed" />
+      <h3>Eager image</h3>
+      <Image src="showcase" alt="Abstract starter site preview" max="1200" loading="eager" />
+    </div>
+    <div class="w">
+      <h3>Lazy image with tmp preview</h3>
+      <Image src="showcase" alt="Abstract starter site preview lazy example" max="1200" />
     </div>
   </Grid>
+  <div class="w">
+    <h3>Responsive by default</h3>
+    <p>Place source images in <code>src/images</code> or <code>media/images</code>. Build emits optimized WebP sizes and keeps route markup clean.</p>
+    <Code lang="html">&lt;Image src="showcase" alt="Abstract starter site preview" max="1200" /&gt;</Code>
+    <Embed src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Example video embed" />
+  </div>
 </Section>
 
 <Section id="disclosure">

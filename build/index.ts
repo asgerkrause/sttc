@@ -188,7 +188,7 @@ async function build() {
   tick('discovery', t)
 
   const appJsFile = await writeAppJs(
-    await sourceAppFile('app.js'),
+    await sourceAppFile(),
     join(dist, 'assets', 'js'),
     scriptBlocks,
   )

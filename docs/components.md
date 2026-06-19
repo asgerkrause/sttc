@@ -156,7 +156,7 @@ Use attrs only for stable configuration: variant, theme, href, image source, acc
 | `Header`, `Footer` | Shell chrome. |
 | `Logo` | Text-first site logo. Defaults to site.json name; slot can hold an SVG or img mark. |
 | `SEO` | Per-route head injection (title, meta, OG, JSON-LD). |
-| `Image` | Lazy webp with responsive srcset, blurhash placeholder. |
+| `Image` | Responsive WebP image. Lazy by default with temporary `.img-tmp` preview; eager images skip preview. |
 | `Embed` | Responsive iframe wrapper for video/maps/rich media. |
 | `Button`, `Link` | Action / inline link primitives. |
 | `Card` | Flexible styled container. Put headings, copy, media, and actions in the slot. |

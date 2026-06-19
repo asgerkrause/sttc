@@ -3,7 +3,7 @@
 import { initImagePreview } from './app/image-preview.js'
 
 document.addEventListener('DOMContentLoaded', () => initImagePreview())
-document.addEventListener('snz:page', (e) => {
-  const root = e.detail?.main ?? document.querySelector('[data-route-root]')
+document.addEventListener('snz:page', (event) => {
+  const root = event.detail.main ?? document.querySelector('[data-route-root]')
   initImagePreview(root ?? document)
 })

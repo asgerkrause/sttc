@@ -1,6 +1,6 @@
 <!--
-  @desc Lazy-loaded image with blurhash placeholder and responsive srcset. Master in src/images/{src}.{ext} or media/images/{src}.{ext}; build emits multiple webp sizes.
-  @attr src! Logical image name (without extension).
+  @desc Responsive WebP image. Lazy by default with temporary .img-tmp preview; eager images skip preview. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
+  @attr src! Unique logical image name (basename without extension).
   @attr alt! Alt text. Use alt="" for decorative.
   @attr max Max long edge in px. Default 1200.
   @attr quality WebP quality 1-100. Default 82.
@@ -24,30 +24,35 @@
     background-image: linear-gradient(35deg, var(--b), var(--t));
   }
 
-  /* All images inside .img-w fill the wrapper absolutely.
-     Avoids % height resolution issues when the parent's height comes from aspect-ratio. */
   .img-w img {
-    position: absolute;
-    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
   }
 
-  .img-w .img-tmp { z-index: 1; }
-  .img-w .img-main { z-index: 0; }
+  .img-w .img-tmp {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    image-rendering: pixelated;
+  }
 
   @supports (animation-timeline: view()) {
     .img-w[data-scrub] {
-      --plx: 5vw;
+      --plx: 8vh;
+      transition-timing-function: linear;
     }
 
-    .img-w[data-scrub] .img-main {
-      /* Extend img beyond the wrapper for parallax travel, then translate based on scroll progress. */
-      top: calc(var(--plx) * -1);
-      height: calc(100% + var(--plx) * 2);
+    .img-w[data-scrub] img {
+      height: calc(100% + var(--plx));
+      margin-top: calc(var(--plx) * -1);
       transform: translateY(calc(var(--plx) * var(--sp-t)));
+    }
+
+    .img-w[data-scrub] .img-tmp {
+      position: absolute;
+      inset: 0;
     }
   }
 </style>

@@ -51,13 +51,20 @@
 <Section id="media">
   <h2>Image + Embed</h2>
   <Grid cols="2">
-    <Image src="r6" alt="Rainbow Six Siege artwork" loading="eager" max="1200" />
     <div class="w">
-      <h3>Responsive by default</h3>
-      <p>Image masters live in <code>src/images</code> or configured PagesCMS <code>media.input</code> roots. Build emits optimized WebP variants.</p>
-      <Embed src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Example video embed" />
+      <h3>Eager image</h3>
+      <Image src="r6" alt="Rainbow Six Siege artwork" loading="eager" max="1200" />
+    </div>
+    <div class="w">
+      <h3>Lazy image with tmp preview</h3>
+      <Image src="r6" alt="Rainbow Six Siege artwork lazy example" max="1200" />
     </div>
   </Grid>
+  <div class="w">
+    <h3>Responsive by default</h3>
+    <p>Image masters live in <code>src/images</code> or configured PagesCMS <code>media.input</code> roots. Build emits optimized WebP variants.</p>
+    <Embed src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Example video embed" />
+  </div>
 </Section>
 
 <Section id="accordion">

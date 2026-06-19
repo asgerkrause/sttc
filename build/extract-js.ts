@@ -55,7 +55,7 @@ function rejectScriptInRouteBody(html: string, file: string) {
   if (match?.index !== undefined) {
     throw buildErrorAt(`<script> only allowed at top of route file`, html, match.index, {
       file,
-      hint: 'Move route logic into src/app.js and use snz.onPage(...) or the snz:page event.',
+      hint: 'Move route logic into src/app.ts and use snz.onPage(...) or the snz:page event.',
     })
   }
 }

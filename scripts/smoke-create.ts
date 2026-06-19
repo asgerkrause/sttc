@@ -42,6 +42,12 @@ async function assertFile(target: string, relativePath: string) {
   }
 }
 
+async function assertNoFile(target: string, relativePath: string) {
+  if (await Bun.file(join(target, relativePath)).exists()) {
+    throw new Error(`created starter should not include ${relativePath}`)
+  }
+}
+
 async function assertStarterSurface(target: string) {
   for (const file of [
     'AGENTS.md',
@@ -49,7 +55,8 @@ async function assertStarterSurface(target: string) {
     'src/shell.html',
     'src/site.json',
     'src/styles.css',
-    'src/app.js',
+    'src/app.ts',
+    'src/snz.d.ts',
     'tsconfig.json',
     'vercel.json',
     'src/pages/index.html',
@@ -68,6 +75,8 @@ async function assertStarterSurface(target: string) {
   ]) {
     await assertFile(target, file)
   }
+
+  await assertNoFile(target, 'src/app.js')
 
   const scripts = (await packageJson(target)).scripts ?? {}
   for (const script of ['build', 'check', 'doctor', 'typecheck', 'new', 'add', 'migrate']) {

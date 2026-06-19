@@ -22,9 +22,11 @@
   "include": [
     "bin/**/*.ts",
     "build/**/*.ts",
+    "src/**/*.ts",
     "dev.ts",
     "scripts/**/*.ts",
     "tests/**/*.ts",
-    "packages/**/*.ts"
+    "packages/**/*.ts",
+    "types/**/*.d.ts"
   ]
 }

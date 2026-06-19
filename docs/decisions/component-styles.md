@@ -19,8 +19,8 @@ Global `styles.css` grew monolithic. Authors wanted co-located component CSS wit
 
 ## Scripts (same build pass)
 
-- Inline `<script>` in shell `<head>` → appended to `dist/assets/js/app.js`
-- Inline `<script>` at top of route file → `app.js` with `snz:page` guard
+- Inline `<script>` in shell `<head>` → appended to hashed `dist/assets/js/app.{hash}.js`
+- Inline `<script>` at top of route file → hashed app bundle with `snz.onPage(...)` guard
 - No executable `<script>` in components (SEO ld+json excepted)
 
 ## Out of scope

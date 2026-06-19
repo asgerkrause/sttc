@@ -7,9 +7,10 @@ import { outFileFromSlug, slugFromPageRel } from '../build/source-files'
 import { slugifyTag } from '../build/content'
 import { BuildError } from '../build/errors'
 import { mediaInputCopyExclusions, shouldSkipMediaCopy } from '../build/assets'
-import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs } from '../build/images'
+import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, resolveImageAttrs } from '../build/images'
 import { publicPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
 import { checkVercelConfig } from '../build/check'
+import { selectAppEntry } from '../build/paths'
 
 async function composeRoute(slug: string, fileHint: string) {
   const seoTemplate = await readFile('src/components/SEO.html', 'utf8')
@@ -46,6 +47,14 @@ describe('build path contracts', () => {
   test('slugifies generated tag routes predictably', () => {
     expect(slugifyTag('Bun Native')).toBe('bun-native')
     expect(slugifyTag('Ångström & SEO')).toBe('angstrom-seo')
+  })
+
+  test('prefers TypeScript app entry and rejects ambiguous root entries', () => {
+    const paths = { appTs: '/site/src/app.ts', appJs: '/site/src/app.js', legacyAppJs: '/site/src/app/app.js' }
+    expect(selectAppEntry(paths, new Set([paths.appTs]))).toBe(paths.appTs)
+    expect(selectAppEntry(paths, new Set([paths.appJs]))).toBe(paths.appJs)
+    expect(selectAppEntry(paths, new Set([paths.legacyAppJs]))).toBe(paths.legacyAppJs)
+    expect(() => selectAppEntry(paths, new Set([paths.appTs, paths.appJs]))).toThrow(BuildError)
   })
 
   test('parses PagesCMS media inputs from .pages.yml', () => {
@@ -184,6 +193,29 @@ content:
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
+  })
+
+  test('keeps eager Image output as plain main image', () => {
+    const attrs = resolveImageAttrs({ hero: { width: 1200, height: 800, sizes: [320, 640] } }, {
+      src: 'hero',
+      alt: 'Hero',
+      loading: 'eager',
+    })
+
+    expect(attrs.imgTmp).toBe('')
+    expect(attrs.imgMain).not.toContain('class=')
+    expect(attrs.imgMain).toContain('fetchpriority="high"')
+  })
+
+  test('keeps lazy Image tmp separate from plain main image', () => {
+    const attrs = resolveImageAttrs({ hero: { width: 1200, height: 800, placeholder: 'data:image/png;base64,x' } }, {
+      src: 'hero',
+      alt: 'Hero',
+    })
+
+    expect(attrs.imgTmp).toContain('class="img-tmp"')
+    expect(attrs.imgMain).not.toContain('class=')
+    expect(attrs.imgMain).toContain('loading="lazy"')
   })
 
   test('uses explicit route slug for default SEO instead of source file path', async () => {

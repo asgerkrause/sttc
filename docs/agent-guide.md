@@ -162,7 +162,7 @@ Place master in `src/images/hero.png` or a PagesCMS `media.input` image root (de
 <Image src="hero" alt="Product interface" max="1200" loading="eager" />
 ```
 
-Build emits responsive WebP variants under `/assets/images/`. Keep each logical basename unique across image roots.
+Build emits responsive WebP variants under `/assets/images/`. Lazy images include a temporary `.img-tmp` preview that site code removes after the main image loads. `loading="eager"` skips the preview for above-fold images. The main image has no private `.img-main` class; target `.img-w img` or `.img-tmp` when styling. Keep each logical basename unique across image roots.
 
 ### Add inline markdown
 
@@ -272,7 +272,7 @@ Full contract: `docs/components.md`.
 
 ## App scripts
 
-`src/app.js` or `src/app.ts` is bundled with `Bun.build`, so author code can use imports and TypeScript. Shell head scripts, component lifecycle scripts, and route top scripts are appended to the same hashed `dist/assets/js/app.{hash}.js` output. Only `PUBLIC_*` env vars are inlined.
+`src/app.ts` is the default site code entry and is bundled with `Bun.build`. Author code can use imports and TypeScript directly. Starter projects include `src/snz.d.ts` for typed `window.snz`, `snz:page`, and `snz:track` usage. `src/app.js` still works as an escape hatch, but do not keep both files; the build fails on ambiguous root app entries. Shell head scripts, component lifecycle scripts, and route top scripts are appended to the same hashed `dist/assets/js/app.{hash}.js` output. Only `PUBLIC_*` env vars are inlined.
 
 ## Vercel analytics intent
 

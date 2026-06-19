@@ -1,4 +1,5 @@
 import { join } from 'path'
+import { BuildError } from './errors'
 
 export const packageRoot = join(import.meta.dir, '..')
 export const root = process.cwd()
@@ -60,9 +61,30 @@ export async function sourceImagesDir() {
   return firstExisting(imagesDir, legacyImagesDir)
 }
 
-export async function sourceAppFile(name = 'app.js') {
-  if (name === 'app.js') return firstExisting(appFile, appTsFile, join(appDir, name), join(legacyAppDir, name))
-  return firstExisting(join(appDir, name), join(legacyAppDir, name))
+export function selectAppEntry(paths: { appTs: string; appJs: string; legacyAppJs: string }, found: Set<string>) {
+  const hasTs = found.has(paths.appTs)
+  const hasJs = found.has(paths.appJs)
+  if (hasTs && hasJs) {
+    throw new BuildError('Multiple app entries found: use src/app.ts or src/app.js, not both.', {
+      file: src,
+      hint: 'Prefer src/app.ts. Delete src/app.js or merge its code into src/app.ts.',
+    })
+  }
+  if (hasTs) return paths.appTs
+  if (hasJs) return paths.appJs
+  return paths.legacyAppJs
+}
+
+export async function sourceAppFile(name = 'app.ts') {
+  if (name !== 'app.ts' && name !== 'app.js') return firstExisting(join(appDir, name), join(legacyAppDir, name))
+
+  const legacyAppJs = await firstExisting(join(appDir, 'app.js'), join(legacyAppDir, 'app.js'))
+  const candidates = { appTs: appTsFile, appJs: appFile, legacyAppJs }
+  const found = new Set<string>()
+  for (const path of Object.values(candidates)) {
+    if (await exists(path)) found.add(path)
+  }
+  return selectAppEntry(candidates, found)
 }
 
 export async function sourceRouterFile() {

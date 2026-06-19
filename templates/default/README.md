@@ -14,7 +14,8 @@ Ships with:
 
 - `src/pages/index.html` → `/`
 - `src/pages/components.html` → `/components/`
-- flat `src/styles.css`, `src/app.js`, `src/site.json`
+- flat `src/styles.css`, `src/app.ts`, `src/site.json`
+- TypeScript-first site code: use `src/app.ts`; `src/app.js` works only as an escape hatch and must not exist beside `src/app.ts`
 - no CMS files by default (`bun run new cms` opts in)
 - no demo marketing routes (add your own with `bun run new route about`)
 

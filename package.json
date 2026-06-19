@@ -28,7 +28,8 @@
     "dev.ts",
     "docs/",
     "runtime/",
-    "templates/default/"
+    "templates/default/",
+    "types/"
   ],
   "workspaces": [
     "templates/default",

@@ -10,7 +10,7 @@ src/
   components/
   images/
   styles.css
-  app.js or app.ts
+  app.ts
   site.json
 ```
 
@@ -20,7 +20,7 @@ src/
 - `src/routes/**/*.html` remains supported as legacy input; `src/pages` wins on slug collisions.
 - Nested pages map by path: `blog/index.html` → `/blog/`, `work/case.html` → `/work/case/`.
 - `src/styles.css` is canonical global CSS. `src/styles/styles.css` remains supported.
-- `src/app.js` or `src/app.ts` is canonical site script. `src/app/app.js` remains supported.
+- `src/app.ts` is canonical site script. `src/app.js` is an escape hatch; `src/app.ts` + `src/app.js` together fail loudly. `src/app/app.js` remains supported only when no root app entry exists.
 - CMS files (`content/`, `media/`, `.pages.yml`, `src/templates/`) are opt-in, not shipped in the default starter.
 
 ## Why

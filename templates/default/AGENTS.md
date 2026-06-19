@@ -26,7 +26,7 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`).
 | `src/components/*.html` | One HTML file per component. Schema inline at top as `<!-- @desc / @attr -->` comment. |
 | `src/site.json` | Site config: name, url, description, ogImage, locale, scroll |
 | `src/styles.css`, `src/styles/*.css` | Global CSS import shell, tokens, reset, type, grid, wrappers, motion |
-| `src/app.js` / `src/app.ts` | Site code entry |
+| `src/app.ts` (`src/app.js` escape hatch) | Site code entry |
 | `src/images/` | Raster masters → built to webp at multiple sizes |
 | `src/routes/**/*.html` | Legacy static route input; `src/pages` wins on collisions |
 | `src/styles/styles.css` | Legacy global CSS path |
@@ -108,7 +108,7 @@ Drafts (`draft: true`) are excluded from production builds, included in dev. Tag
 - Masters live in `src/images/` or `media/images/` (PagesCMS).
 - Build encodes to `dist/assets/images/{name}.webp` via `Bun.Image`, with responsive variants (320, 640, 1024, {max}).
 - `<Image src="hero" alt="..." max="1200" quality="82" />` — `max`/`quality` are pre-scanned to choose the largest needed size.
-- Lazy by default. `loading="eager"` skips the placeholder for above-fold images.
+- Lazy by default. Lazy images render a temporary `.img-tmp` preview over the main image; `loading="eager"` skips that preview for above-fold images. Main image has no private `.img-main` class.
 - OG: `src/images/og.png` → `dist/assets/og.webp` (+ `og.png` fallback).
 
 ## Client framework (`router.js`)
@@ -135,7 +135,7 @@ Per-route transition variants: `<meta name="snz:transition" content="fade|slide|
 
 ## Scroll
 
-Lenis is **optional and self-hosted** (`src/app.jsvendor/lenis.min.js`, pinned 1.1.20).
+Lenis is **optional and self-hosted** (`src/app/vendor/lenis.min.js`, pinned 1.1.20).
 
 ```jsonc
 // src/site.json
@@ -177,8 +177,9 @@ Structured data auto-emitted:
 
 ## JS bundling
 
-- `src/app.js` or `src/app.ts` is your site code. Legacy `src/app/app.js` still works.
-- Build bundles `src/app.js` / `src/app.ts` with `Bun.build`, then appends shell head inline scripts, component lifecycle scripts, and route top scripts (wrapped with `snz.onPage('{slug}', ...)`) into `dist/assets/js/app.{hash}.js`.
+- `src/app.ts` is your site code. `src/app.js` works as an escape hatch; do not keep both. Legacy `src/app/app.js` still works when no root app entry exists.
+- Build bundles `src/app.ts` (or the `src/app.js` escape hatch) with `Bun.build`, then appends shell head inline scripts, component lifecycle scripts, and route top scripts (wrapped with `snz.onPage('{slug}', ...)`) into `dist/assets/js/app.{hash}.js`.
+- Starter projects include `src/snz.d.ts` for typed `window.snz` and `snz:page` events. Runtime `router.js` stays framework-owned JS intentionally.
 
 ## Errors
 

@@ -1,4 +1,4 @@
-@layer motion {
+@layer scrub {
   @supports (animation-timeline: view()) {
     @property --sp-t {
       syntax: '<number>';
@@ -18,20 +18,14 @@
       initial-value: 0;
     }
 
-    @property --sp-tf {
-      syntax: '<number>';
-      inherits: true;
-      initial-value: 1;
-    }
-
     @keyframes sp-t {
-      from { --sp-t: 0; }
-      to { --sp-t: 1; }
+      0% { --sp-t: 0; }
+      100% { --sp-t: 1; }
     }
 
     @keyframes sp-f {
-      from { --sp-f: 1; }
-      to { --sp-f: 0; }
+      0% { --sp-f: 1; }
+      100% { --sp-f: 0; }
     }
 
     @keyframes sp-ft {
@@ -40,21 +34,17 @@
       100% { --sp-ft: 0; }
     }
 
-    @keyframes sp-tf {
-      0% { --sp-tf: 1; }
-      50% { --sp-tf: 0; }
-      100% { --sp-tf: 1; }
-    }
-
     [data-scrub] {
-      animation-name: sp-t, sp-f, sp-ft, sp-tf;
+      animation-timing-function: linear;
+      animation-name: sp-t, sp-f, sp-ft;
       animation-fill-mode: both;
       animation-timeline: view();
-      animation-timing-function: linear;
-      animation-range: cover 0% cover 100%;
+      animation-range: entry 0% exit 100%;
     }
   }
+}
 
+@layer motion {
   @supports (view-transition-name: none) {
     @view-transition {
       navigation: auto;

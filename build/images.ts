@@ -179,7 +179,7 @@ export function resolveImageAttrs(
     height,
     loading,
     imgTmp: `<img class="img-tmp" src="${tmpSrc}" alt="" aria-hidden="true" decoding="sync" />`,
-    imgMain: `<img class="img-main" src="${src}"${srcsetMarkup}${sizesMarkup} alt="${alt}" width="${width}" height="${height}" loading="${loading}" decoding="async" />`,
+    imgMain: `<img src="${src}"${srcsetMarkup}${sizesMarkup} alt="${alt}" width="${width}" height="${height}" loading="${loading}" decoding="async" />`,
   }
 }
 

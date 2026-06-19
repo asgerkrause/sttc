@@ -113,7 +113,7 @@ src/
   pages/                  Static pages; nested files map to nested URLs
   components/             One HTML file per component — that's it
   styles.css              Tokens, reset/base, layout primitives, page overrides
-  app.js or app.ts        Site code
+  app.ts                  Site code (TypeScript-first; app.js escape hatch)
   images/                 Image masters → built to webp at multiple sizes
 
 Opt-in/legacy:
@@ -249,7 +249,7 @@ Route scripts at the top of a route file are auto-wrapped with `snz.onPage('{slu
 
 Component `<script>` blocks become per-instance mount functions (see [`docs/components.md`](./docs/components.md) → Lifecycle scripts).
 
-`src/app.js` or `src/app.ts` is bundled with `Bun.build`, so author code can use imports and TypeScript. Only `PUBLIC_*` env vars are inlined.
+`src/app.ts` is the default site code entry and is bundled with `Bun.build`. Author code can use imports and TypeScript directly; starter projects include `src/snz.d.ts` for the `window.snz` API and `snz:page` events. `src/app.js` still works as an escape hatch, but do not keep both files; the build fails on ambiguous root app entries. Only `PUBLIC_*` env vars are inlined.
 
 ## Scroll
 
@@ -272,7 +272,7 @@ Starter projects include `vercel.json` for Bun-first static deploys: `bun instal
 
 ## Asset caching
 
-`app.js` and `components.css` are content-hashed (`app.{hash}.js`, `components.{hash}.css`). Cache them forever — they invalidate when their contents change.
+`app.{hash}.js` and `components.{hash}.css` are content-hashed. Cache them forever — they invalidate when their contents change.
 
 ## Adding a page
 

@@ -15,7 +15,7 @@ See `docs/components.md` for the authoring contract.
 - [`<Footer />`](#footer) — Site footer with dynamic year and site name.
 - [`<Grid />`](#grid) — Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
 - [`<Header />`](#header) — Site header.
-- [`<Image />`](#image) — Lazy-loaded image with blurhash placeholder and responsive srcset. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
+- [`<Image />`](#image) — Responsive WebP image. Lazy by default with temporary .img-tmp preview; eager images skip preview. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
 - [`<Link />`](#link) — Underlined inline link.
 - [`<Logo />`](#logo) — Text-first site logo. Uses site.json name by default; slot can hold an SVG or img mark.
 - [`<Markdown />`](#markdown) — Inline markdown rendered at build time. Put markdown source in the default slot.
@@ -169,7 +169,7 @@ Site header.
 
 ## Image
 
-Lazy-loaded image with blurhash placeholder and responsive srcset. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
+Responsive WebP image. Lazy by default with temporary .img-tmp preview; eager images skip preview. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
 
 ### Attributes
 

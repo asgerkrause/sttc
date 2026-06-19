@@ -251,7 +251,7 @@ async function checkSourceLayout(warn: (m: string) => void) {
   for (const [label, path] of legacy) {
     try {
       await stat(path)
-      warn(`${label} is legacy; prefer src/pages, src/styles.css, src/app.js, src/images, or runtime instead`)
+      warn(`${label} is legacy; prefer src/pages, src/styles.css, src/app.ts, src/images, or runtime instead`)
     } catch {
       /* canonical layout */
     }

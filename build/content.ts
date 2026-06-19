@@ -161,7 +161,7 @@ export function assertSafeContentMarkdown(raw: string, file: string) {
   throw new BuildError(`Unsafe <${tag}> tag in CMS markdown`, {
     file,
     line: lineOf(raw, bodyStart + unsafe.index),
-    hint: `Remove <${tag}> from markdown. Put scripts in src/app/app.js and styles in component <style> blocks.`,
+    hint: `Remove <${tag}> from markdown. Put scripts in src/app.ts and styles in component <style> blocks.`,
   })
 }
 
