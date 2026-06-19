@@ -62,12 +62,32 @@ Single entry point for `/plan` and `/implement`. Update after `/prd` and `/chall
 
 **Content model (settled):** **B hybrid** — static `src/routes/` + CMS `posts` → `/insights/{slug}/`; optional `pages` long-tail. One **route template**; no per-post route files. PagesCMS: [configuration](https://pagescms.org/docs/configuration/), [media](https://pagescms.org/docs/configuration/media/), [content](https://pagescms.org/docs/configuration/content/).
 
+## Current handoff (2026-06-19)
+
+Repo moved from `/Users/krause/Downloads/dev/snz-renderer` to `/Users/krause/GitHub/snz-bp`. Old Downloads folder was deleted after fresh clone verification.
+
+Latest pushed baseline:
+
+- GitHub: `sanitizestudio/snz-bp`, `main`, tip `142bc50`.
+- Fresh clone verification passed: `bun install`, `bun run doctor`, `bun test` (`92 pass`).
+- Added Bun/TypeScript baseline: `tsconfig.json`, `typecheck`, `@types/bun`, `typescript`, lockfile.
+- Added Vercel adapter defaults: root/template `vercel.json`, cache headers, Bun build/output config.
+- Added `track="Event name"` component attr → `data-snz-track`, runtime `snz.track()`, click delegation, `snz:track` fallback.
+- Added dev server `idleTimeout: 255` to quiet Bun SSE timeout noise.
+- Removed accidental `node_modules` commit with follow-up commit; HEAD has no tracked `node_modules`.
+
+Next sensible work:
+
+1. Decide whether to enable Vercel Analytics/Speed Insights injection from `site.json.vercel` or keep docs-only for now.
+2. Harden PagesCMS: generated/synced `.pages.yml`, media output checks, clearer content/frontmatter errors.
+3. Add Vercel checks to `snz-bp doctor`: validate `vercel.json`, output dir, build command, Bun version, analytics package/flags.
+4. Later: consider `noUncheckedIndexedAccess: true` after fixing indexed access assumptions across build/tests.
+
 ## Open questions
 
-- None for v1.2 — decision docs in planner scope
-- ~~Interactivity challenge (2026-05-24)~~ **Done:** `router.js` disclosure behaviors; `Accordion` + `FAQ` components; Header nav wired.
+- Should `site.json.vercel.analytics` inject Vercel analytics automatically, or stay advisory until package/deploy setup is explicit?
+- Should Vercel adapter be always-on in starter, or scaffolded by `snz-bp new vercel` later?
 - **PagesCMS media `output` vs `/assets/images/`** — align `.pages.yml` `output` with dist paths, or rewrite in content compile?
-- **Decision docs** — file `content-compile.md` + `component-styles.md` after user confirms?
 
 ## Suggested next step
 
