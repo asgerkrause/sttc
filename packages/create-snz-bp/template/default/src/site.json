@@ -5,5 +5,9 @@
   "locale": "en",
   "twitter": "",
   "ogImage": "/assets/og.webp",
-  "scroll": "lenis"
+  "scroll": "lenis",
+  "vercel": {
+    "analytics": false,
+    "speedInsights": false
+  }
 }

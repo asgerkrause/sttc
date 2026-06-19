@@ -37,15 +37,20 @@
   "bin": {
     "snz-bp": "./bin/snz-bp.ts"
   },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "latest"
+  },
   "engines": {
     "bun": ">=1.3.14"
   },
   "scripts": {
     "build": "bun bin/snz-bp.ts build",
     "check": "bun bin/snz-bp.ts check",
+    "typecheck": "tsc --noEmit",
     "css:audit": "bun bin/snz-bp.ts css:audit",
     "dev": "bun bin/snz-bp.ts dev",
-    "doctor": "bun bin/snz-bp.ts doctor",
+    "doctor": "bun bin/snz-bp.ts doctor && bun run typecheck",
     "test": "bun test",
     "new": "bun bin/snz-bp.ts new",
     "add": "bun bin/snz-bp.ts add",

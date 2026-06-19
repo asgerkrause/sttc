@@ -242,7 +242,7 @@ async function handleRequest(req: Request) {
 async function startServer() {
   for (let port = preferredPort; port < preferredPort + 20; port++) {
     try {
-      return Bun.serve({ port, fetch: handleRequest })
+      return Bun.serve({ port, fetch: handleRequest, idleTimeout: 255 })
     } catch (err) {
       const code = typeof err === 'object' && err && 'code' in err ? String(err.code) : ''
       const message = err instanceof Error ? err.message : String(err)

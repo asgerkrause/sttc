@@ -84,4 +84,15 @@ describe('build error source spans', () => {
       expectBuildError(err, 2, 'src/pages/page.html')
     }
   })
+
+  test('allows global track attr and emits data-snz-track', async () => {
+    const schemas = new Map<string, ComponentSchema>([
+      ['Card', { attrs: { title: { required: true } } }],
+    ])
+    const html = await composer(schemas).prepareRouteSource(
+      '<Card title="Contact" track="Contact CTA" />',
+      { slug: 'page', fileHint: 'src/pages/page.html' },
+    )
+    expect(html).toContain('<article data-snz-track="Contact CTA">Contact</article>')
+  })
 })

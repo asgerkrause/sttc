@@ -9,13 +9,18 @@
     "dev": "snz-bp dev",
     "build": "snz-bp build",
     "check": "snz-bp check",
+    "typecheck": "tsc --noEmit",
     "css:audit": "snz-bp css:audit",
-    "doctor": "snz-bp doctor",
+    "doctor": "snz-bp doctor && bun run typecheck",
     "new": "snz-bp new",
     "add": "snz-bp add",
     "migrate": "snz-bp migrate"
   },
   "dependencies": {
     "@snz/bp": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "latest"
   }
 }

@@ -33,6 +33,10 @@ export type SiteConfig = {
   twitter?: string
   ogImage?: string
   scroll?: 'lenis' | 'native'
+  vercel?: {
+    analytics?: boolean
+    speedInsights?: boolean
+  }
   organization?: SiteOrganization
   sameAs?: string[]
   contact?: SiteContact

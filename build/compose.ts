@@ -80,6 +80,14 @@ export function createComposer(
     }
   }
 
+  function escapeAttr(value: string) {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+  }
+
   function substitute(template: string, attrs: Record<string, string>) {
     return template
       .replace(/\{\{(\w+)\}\}/g, (_, key) => attrs[key] ?? '')
@@ -179,6 +187,7 @@ export function createComposer(
       for (const key of Object.keys(attrs)) {
         // built-in enrichers may add keys post-validate; allow common ones for SEO/Image
         if (declared[key] !== undefined) continue
+        if (key === 'track') continue
         if (name === 'SEO' || name === 'Image' || name === 'Header' || name === 'Footer') continue
         throw buildErrorAt(`<${name} /> has unknown attribute "${key}"`, source, index, {
           file: fileHint,
@@ -241,12 +250,13 @@ export function createComposer(
     const extraClasses = asClassAttrs
       .map((k) => rawAttrs[k])
       .filter((v) => v && v.length > 0)
+    const track = rawAttrs.track?.trim()
 
     // Built-in components don't get data-snz-component injected (chrome, primitives).
     const hasComponentScript = scriptsByComponent?.has(name) ?? false
     const wantDataAttr = hasComponentScript
 
-    if (extraClasses.length === 0 && !wantDataAttr) return fragment
+    if (extraClasses.length === 0 && !wantDataAttr && !track) return fragment
 
     // Find the first opening tag and augment class + data-snz-component.
     const tagRe = /^(\s*)<([a-z][\w-]*)((?:\s+[\w-]+(?:="[^"]*")?)*)\s*(\/?>)/i
@@ -269,6 +279,10 @@ export function createComposer(
 
     if (wantDataAttr && !/\sdata-snz-component=/.test(newAttrStr)) {
       newAttrStr += ` data-snz-component="${name}"`
+    }
+
+    if (track && !/\sdata-snz-track=/.test(newAttrStr)) {
+      newAttrStr += ` data-snz-track="${escapeAttr(track)}"`
     }
 
     return `${lead}<${tag}${newAttrStr}${close}${fragment.slice(full.length)}`

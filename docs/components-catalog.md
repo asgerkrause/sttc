@@ -51,6 +51,7 @@ Link styled as an action button.
 | `label` | ✓ | string | Visible button text. |
 | `variant` |  | `default \| ghost \| tone \| accent \| complimentary` | Visual style. |
 | `size` |  | `sm \| md \| lg` | Size variant. |
+| `track` |  | string | Optional analytics event name; emits data-snz-track on the root. |
 
 ### Example
 

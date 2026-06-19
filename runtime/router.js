@@ -213,6 +213,33 @@ function afterEmit(detail) {
   }
 }
 
+function track(event, data = {}) {
+  if (!event) return
+  const payload = { ...data }
+  try {
+    if (typeof window.va === 'function') {
+      window.va('event', { name: event, data: payload })
+      return
+    }
+    if (typeof window.va?.track === 'function') {
+      window.va.track(event, payload)
+      return
+    }
+    document.dispatchEvent(new CustomEvent('snz:track', { detail: { event, data: payload } }))
+  } catch (e) {
+    console.error('[snz] track error:', e)
+  }
+}
+
+function trackElement(el) {
+  const event = el?.getAttribute?.('data-snz-track')
+  if (!event) return
+  const data = {}
+  const location = el.getAttribute('data-snz-track-location')
+  if (location) data.location = location
+  track(event, data)
+}
+
 function announcer() {
   if (routeAnnouncer) return routeAnnouncer
   routeAnnouncer = document.querySelector('[data-snz-announcer]') ?? document.createElement('div')
@@ -349,6 +376,7 @@ window.snz = {
   prefetch: (path) => fetchRouteHtml(path),
   beforeNavigate: (fn) => (beforeHandlers.add(fn), () => beforeHandlers.delete(fn)),
   afterNavigate: (fn) => (afterHandlers.add(fn), () => afterHandlers.delete(fn)),
+  track,
   _registerComponent: registerComponent,
   _mountComponents: mountComponents,
   _unmountIn: unmountComponents,
@@ -360,9 +388,13 @@ document.addEventListener('click', (e) => {
   const control = e.target.closest(DISCLOSURE_SEL)
   if (control) {
     e.preventDefault()
+    trackElement(control)
     toggleDisclosure(control)
     return
   }
+
+  const tracked = e.target.closest('[data-snz-track]')
+  if (tracked) trackElement(tracked)
 
   const a = e.target.closest('a[href]')
   if (!a || a.origin !== location.origin) return
