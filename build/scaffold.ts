@@ -34,6 +34,8 @@ if (!['component', 'route', 'post', 'page', 'cms', 'collection'].includes(kind))
 if (kind !== 'cms' && !name) usage()
 if (isAdd && kind !== 'component') usage()
 
+const requiredName = name ?? ''
+
 async function exists(p: string) {
   try { await stat(p); return true } catch { return false }
 }
@@ -60,7 +62,7 @@ function optionValue(flag: string) {
 }
 
 function titleize(value: string) {
-  return value.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+  return value.split('-').filter(Boolean).map((w) => `${w[0]?.toUpperCase() ?? ''}${w.slice(1)}`).join(' ')
 }
 
 function singularize(value: string) {
@@ -353,7 +355,7 @@ async function upsertPagesCollection(collectionName: string, label: string) {
 }
 
 if (isAdd) {
-  await addComponentPreset(name!, { force, demo })
+  await addComponentPreset(requiredName, { force, demo })
 } else if (kind === 'cms') {
   await writeIfMissing(join(root, '.pages.yml'), pagesYml)
   await writeIfMissing(join(root, 'content', 'README.md'), contentReadme)
@@ -368,98 +370,99 @@ if (isAdd) {
   console.log('- bun run new page about')
   console.log('- bun run check')
 } else if (kind === 'component') {
-  if (!/^[A-Z][A-Za-z0-9]*$/.test(name!)) {
-    console.error(`component name must be PascalCase (got "${name}")`)
+  if (!/^[A-Z][A-Za-z0-9]*$/.test(requiredName)) {
+    console.error(`component name must be PascalCase (got "${requiredName}")`)
     process.exit(1)
   }
   const html = `<!--
-  @desc ${name} — TODO describe what this component does.
+  @desc ${requiredName} — TODO describe what this component does.
   @attr title! Heading text.
 -->
-<article class="${name!.toLowerCase()}">
+<article class="${requiredName.toLowerCase()}">
   <h2>{{title}}</h2>
   <div>{{slot}}</div>
 </article>
 
 <style>
-  .${name!.toLowerCase()} {
+  .${requiredName.toLowerCase()} {
     /* use tokens from src/styles.css; prefer elements/attrs before extra classes */
   }
 </style>
 `
-  await writeIfMissing(join(root, 'src', 'components', `${name}.html`), html)
+  await writeIfMissing(join(root, 'src', 'components', `${requiredName}.html`), html)
   if (demo) {
     const stylesPath = (await exists(join(root, 'src', 'pages', 'styles.html')))
       ? join(root, 'src', 'pages', 'styles.html')
       : join(root, 'src', 'routes', 'styles.html')
     if (await exists(stylesPath)) {
-      const append = `\n<section><div class="c"><${name} title="${name} demo">Demo content.</${name}></div></section>\n`
+      const append = `\n<section><div class="c"><${requiredName} title="${requiredName} demo">Demo content.</${requiredName}></div></section>\n`
       const cur = await Bun.file(stylesPath).text()
       await writeFile(stylesPath, cur + append)
       console.log(`appended demo to ${stylesPath}`)
     }
   }
 } else if (kind === 'route') {
-  if (!/^[a-z][a-z0-9-/]*$/.test(name) || name.includes('//') || name.endsWith('/')) {
-    console.error(`route slug must be kebab-case path (got "${name}")`)
+  if (!/^[a-z][a-z0-9-/]*$/.test(requiredName) || requiredName.includes('//') || requiredName.endsWith('/')) {
+    console.error(`route slug must be kebab-case path (got "${requiredName}")`)
     process.exit(1)
   }
+  const title = titleize(requiredName.split('/').at(-1) ?? requiredName)
   const html = `<head>
-  <SEO title="${name[0].toUpperCase() + name.slice(1)}" description="..." />
+  <SEO title="${title}" description="..." />
 </head>
 
 <Section>
-  <h1>${name[0].toUpperCase() + name.slice(1)}</h1>
+  <h1>${title}</h1>
   <p>Route body.</p>
 </Section>
 `
-  await writeIfMissing(join(root, 'src', 'pages', `${name}.html`), html)
+  await writeIfMissing(join(root, 'src', 'pages', `${requiredName}.html`), html)
 } else if (kind === 'post' || kind === 'page') {
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) {
-    console.error(`${kind} slug must be kebab-case (got "${name}")`)
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(requiredName)) {
+    console.error(`${kind} slug must be kebab-case (got "${requiredName}")`)
     process.exit(1)
   }
   const dir = kind === 'post' ? 'posts' : 'pages'
   const md = `---
-title: ${name.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')}
+title: ${titleize(requiredName)}
 date: ${today}
 description: TODO
 ${kind === 'post' ? 'tags: []\n' : ''}---
 
 Write here.
 `
-  await writeIfMissing(join(root, 'content', dir, `${name}.md`), md)
+  await writeIfMissing(join(root, 'content', dir, `${requiredName}.md`), md)
 } else if (kind === 'collection') {
-  validateCollectionName(name!)
-  const route = validateCollectionRoute(optionValue('--route') ?? `${name}/{slug}`)
-  const template = validateTemplateName(optionValue('--template') ?? singularize(name!))
-  const label = optionValue('--label') ?? titleize(name!)
+  validateCollectionName(requiredName)
+  const route = validateCollectionRoute(optionValue('--route') ?? `${requiredName}/{slug}`)
+  const template = validateTemplateName(optionValue('--template') ?? singularize(requiredName))
+  const label = optionValue('--label') ?? titleize(requiredName)
   const configPath = join(root, 'content', 'collections.json')
   const templatePath = join(root, 'src', 'templates', template)
   const pagesPath = join(root, '.pages.yml')
 
   const config = await readCollectionConfig(configPath)
-  if (!force && config.collections.some((item) => item && typeof item === 'object' && (item as { name?: unknown }).name === name)) {
-    console.error(`collection "${name}" already exists in ${configPath} (pass --force to replace)`)
+  if (!force && config.collections.some((item) => item && typeof item === 'object' && (item as { name?: unknown }).name === requiredName)) {
+    console.error(`collection "${requiredName}" already exists in ${configPath} (pass --force to replace)`)
     process.exit(2)
   }
   if (!force && await exists(templatePath)) {
     console.error(`refusing to overwrite ${templatePath} (pass --force to overwrite)`)
     process.exit(2)
   }
-  if (!force && await exists(pagesPath) && pagesCollectionPattern(name!).test(await Bun.file(pagesPath).text())) {
-    console.error(`collection "${name}" already exists in ${pagesPath} (pass --force to replace)`)
+  if (!force && await exists(pagesPath) && pagesCollectionPattern(requiredName).test(await Bun.file(pagesPath).text())) {
+    console.error(`collection "${requiredName}" already exists in ${pagesPath} (pass --force to replace)`)
     process.exit(2)
   }
 
-  await writeCollectionConfig(name!, label, template, route)
-  await mkdir(join(root, 'content', name!), { recursive: true })
-  if (!(await exists(join(root, 'content', name!, '.gitkeep')))) await writeFile(join(root, 'content', name!, '.gitkeep'), '')
-  await writeIfMissing(templatePath, collectionTemplate(name!, route))
-  await upsertPagesCollection(name!, label)
+  await writeCollectionConfig(requiredName, label, template, route)
+  await mkdir(join(root, 'content', requiredName), { recursive: true })
+  if (!(await exists(join(root, 'content', requiredName, '.gitkeep')))) await writeFile(join(root, 'content', requiredName, '.gitkeep'), '')
+  await writeIfMissing(templatePath, collectionTemplate(requiredName, route))
+  await upsertPagesCollection(requiredName, label)
 
   console.log('\nCollection scaffold ready.')
   console.log('Next steps:')
-  console.log(`- add markdown files in content/${name}/`)
+  console.log(`- add markdown files in content/${requiredName}/`)
   console.log('- bun run check')
 }

@@ -260,6 +260,14 @@ Lenis is optional and self-hosted (`src/app/vendor/lenis.min.js`). Toggle in `si
 
 `prefers-reduced-motion: reduce` always disables it.
 
+## Vercel deploys
+
+Starter projects include `vercel.json` for Bun-first static deploys: `bun install`, `bun run build`, and `dist` output. `/assets/*` can be cached forever because built CSS/JS/images are content-hashed; discovery files use shorter cache headers.
+
+`src/site.json` includes `vercel.analytics` and `vercel.speedInsights` flags as project intent only. They do not inject scripts or add packages. Enable Analytics/Speed Insights in Vercel deliberately, then wire any required script/package in the client project.
+
+`track="Event name"` on components becomes `data-snz-track` in output. `snz.track(event, data?)` sends to Vercel Analytics when `window.va` exists; otherwise it dispatches `snz:track` so projects can attach another analytics adapter.
+
 ## Asset caching
 
 `app.js` and `components.css` are content-hashed (`app.{hash}.js`, `components.{hash}.css`). Cache them forever — they invalidate when their contents change.

@@ -112,6 +112,8 @@ async function checkSiteJson(fail: (m: string) => void) {
 }
 
 async function checkSourceContracts(fail: (m: string) => void, warn: (m: string) => void) {
+  await checkVercelConfig(root, warn)
+
   const imageRoots = await imageSourceRoots(root)
   await assertUniqueImageNames(...imageRoots).catch((err) => {
     if (err instanceof BuildError) {
@@ -164,6 +166,74 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
   }
   if (pages && !/output:\s*\/assets\/images\b/.test(pages)) {
     warn('.pages.yml: media.output should be /assets/images because CMS images publish as optimized assets')
+  }
+}
+
+type VercelHeader = {
+  key?: unknown
+  value?: unknown
+}
+
+type VercelHeaderRule = {
+  source?: unknown
+  headers?: unknown
+}
+
+type VercelConfig = {
+  installCommand?: unknown
+  buildCommand?: unknown
+  devCommand?: unknown
+  outputDirectory?: unknown
+  bunVersion?: unknown
+  headers?: unknown
+}
+
+function hasCacheHeader(rule: VercelHeaderRule, source: string, valueIncludes: string) {
+  if (rule.source !== source || !Array.isArray(rule.headers)) return false
+  return rule.headers.some((header: VercelHeader) => (
+    header?.key === 'Cache-Control'
+    && typeof header.value === 'string'
+    && header.value.includes(valueIncludes)
+  ))
+}
+
+export async function checkVercelConfig(projectRoot: string, warn: (m: string) => void) {
+  const rel = 'vercel.json'
+  const path = join(projectRoot, rel)
+  const raw = await readFile(path, 'utf8').catch(() => null)
+  if (!raw) return
+
+  let config: VercelConfig
+  try {
+    config = JSON.parse(raw)
+  } catch {
+    warn(`${rel}: invalid JSON; Vercel deploys may ignore framework defaults`)
+    return
+  }
+
+  const expected: [keyof VercelConfig, string][] = [
+    ['installCommand', 'bun install'],
+    ['buildCommand', 'bun run build'],
+    ['devCommand', 'bun run dev'],
+    ['outputDirectory', 'dist'],
+    ['bunVersion', '1.x'],
+  ]
+  for (const [key, value] of expected) {
+    if (config[key] !== value) warn(`${rel}: ${key} should be "${value}" for snz-bp Bun static deploys`)
+  }
+
+  const headers = Array.isArray(config.headers) ? config.headers as VercelHeaderRule[] : []
+  if (!hasCacheHeader(headers.find((rule) => rule.source === '/assets/(.*)') ?? {}, '/assets/(.*)', 'immutable')) {
+    warn(`${rel}: /assets/(.*) should use immutable Cache-Control headers`)
+  }
+  if (!headers.some((rule) => (
+    typeof rule.source === 'string'
+    && rule.source.includes('llms')
+    && rule.source.includes('robots')
+    && rule.source.includes('sitemap')
+    && hasCacheHeader(rule, rule.source, 'max-age=3600')
+  ))) {
+    warn(`${rel}: discovery files should use short Cache-Control headers`)
   }
 }
 

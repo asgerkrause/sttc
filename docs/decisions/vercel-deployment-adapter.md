@@ -19,9 +19,9 @@ Ship a first-class Vercel adapter surface:
 - `bunVersion`: `1.x`
 - immutable cache headers for `/assets/*`
 - short cache headers for discovery files
-- optional `site.json.vercel.analytics` and `site.json.vercel.speedInsights` flags for future injection/docs
+- `site.json.vercel.analytics` and `site.json.vercel.speedInsights` are advisory flags for docs/checks, not automatic script injection
 - component-level `track="Event name"` compiles to `data-snz-track="Event name"`
-- runtime exposes `snz.track(event, data?)` and emits `snz:track` when Vercel analytics is not loaded
+- runtime exposes `snz.track(event, data?)` and emits `snz:track` when Vercel Analytics is not loaded
 
 ## Why
 
@@ -30,7 +30,8 @@ Vercel is the deployment default. The framework should own deploy contracts the 
 ## Consequences
 
 - Static sites remain static; no Vercel Functions or Routing Middleware by default.
-- Analytics and Speed Insights still require enabling in the Vercel dashboard.
+- Analytics and Speed Insights require explicit Vercel setup before client sites load their scripts.
+- `site.json.vercel.*` can document intent and let future `doctor` checks warn about missing setup, but build output stays unchanged.
 - Custom events may require Vercel Pro/Enterprise; the runtime helper no-ops/fires `snz:track` when unavailable.
 - Deployment concerns stay in adapter config/docs, not scattered through renderer internals.
 

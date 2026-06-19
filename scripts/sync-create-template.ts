@@ -8,7 +8,7 @@ const repoRoot = join(import.meta.dir, '..')
 const source = join(repoRoot, 'templates', 'default')
 const target = join(repoRoot, 'packages', 'create-snz-bp', 'template', 'default')
 const checkOnly = process.argv.slice(2).includes('--check')
-const ignoredEntries = new Set(['.DS_Store', 'dist', 'bun.lock'])
+const ignoredEntries = new Set(['.DS_Store', 'dist', 'node_modules', 'bun.lock'])
 
 async function copyTree(src: string, dest: string) {
   await mkdir(dest, { recursive: true })

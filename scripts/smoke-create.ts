@@ -50,6 +50,8 @@ async function assertStarterSurface(target: string) {
     'src/site.json',
     'src/styles.css',
     'src/app.js',
+    'tsconfig.json',
+    'vercel.json',
     'src/pages/index.html',
     'src/pages/404.html',
     'src/pages/components.html',
@@ -68,7 +70,7 @@ async function assertStarterSurface(target: string) {
   }
 
   const scripts = (await packageJson(target)).scripts ?? {}
-  for (const script of ['check', 'new', 'add']) {
+  for (const script of ['build', 'check', 'doctor', 'typecheck', 'new', 'add', 'migrate']) {
     if (typeof scripts[script] !== 'string') {
       throw new Error(`created starter missing package script "${script}"`)
     }
@@ -92,7 +94,7 @@ try {
 </head>
 <HeroSection />
 `)
-  await run(['bun', 'run', 'check'], localTarget)
+  await run(['bun', 'run', 'doctor'], localTarget)
 
   await run(['bun', creator, packagedTarget], repoRoot, { SNZ_BP_CREATE_MODE: 'packaged' })
   await assertStarterSurface(packagedTarget)
@@ -100,7 +102,7 @@ try {
   if (packagedDependency !== expectedVersion) {
     throw new Error(`packaged create wrote ${packagedDependency}; expected ${expectedVersion}`)
   }
-  await run(['bun', join(repoRoot, 'bin', 'snz-bp.ts'), 'check'], packagedTarget)
+  await run(['bun', join(repoRoot, 'bin', 'snz-bp.ts'), 'doctor'], packagedTarget)
 
   await mkdir(dotTarget)
   await run(['bun', creator, '.'], dotTarget)

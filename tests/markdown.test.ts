@@ -69,4 +69,18 @@ Body`)
     expect(fmString(data, 'draft')).toBe('false')
     expect(body.trim()).toBe('Body')
   })
+
+  test('keeps malformed front matter fallback safe', () => {
+    const { data, body } = parseFrontMatter(`---
+title: "Fallback"
+ignored
+empty:
+---
+
+Body`)
+
+    expect(fmString(data, 'title')).toBe('Fallback')
+    expect(fmString(data, 'empty')).toBe('')
+    expect(body.trim()).toBe('Body')
+  })
 })

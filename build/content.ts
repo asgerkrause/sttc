@@ -114,9 +114,36 @@ export function normalizeContentTags(tags: string[]) {
 }
 
 
+const CONTENT_MEDIA_REF_RE = /\/(?:media|assets)\/images\/([^\s)"']+)/gi
+const CONTENT_MEDIA_EXT_RE = /\.(jpe?g|png|webp)$/i
+
 function normalizeContentMediaRefs(value: string) {
-  return value.replace(/\/(?:media|assets)\/images\/([^\s)"']+)\.(jpe?g|png|webp)\b/gi, (_m, name) => {
+  return value.replace(CONTENT_MEDIA_REF_RE, (match, file) => {
+    if (!CONTENT_MEDIA_EXT_RE.test(file)) return match
+    const name = file.split('/').pop()!.replace(CONTENT_MEDIA_EXT_RE, '')
     return `/assets/images/${name}.webp`
+  })
+}
+
+function assertValidContentMediaRefs(value: string, file: string, source: string, offset = 0) {
+  for (const match of value.matchAll(CONTENT_MEDIA_REF_RE)) {
+    const ref = match[0]
+    const image = match[1]
+    if (CONTENT_MEDIA_EXT_RE.test(image)) continue
+    throw new BuildError(`Unsupported CMS media reference "${ref}"`, {
+      file,
+      line: lineOf(source, offset + (match.index ?? 0)),
+      hint: 'Use /media/images/name.jpg, .png, or .webp. CMS media is optimized to /assets/images/name.webp at build time.',
+    })
+  }
+}
+
+function assertNoFrontMatterSlug(data: Record<string, unknown>, file: string, source: string) {
+  if (data.slug == null) return
+  throw new BuildError(`${file} uses unsupported front-matter "slug"`, {
+    file,
+    line: lineOf(source, source.indexOf('slug:')),
+    hint: 'Rename the markdown file instead. Filename basename is the URL slug.',
   })
 }
 
@@ -129,7 +156,8 @@ export function assertSafeContentMarkdown(raw: string, file: string) {
   const body = raw.slice(bodyStart)
   const unsafe = body.match(/<\s*\/?\s*(script|style)\b/i)
   if (!unsafe || unsafe.index == null) return
-  const tag = unsafe[1].toLowerCase()
+  const tag = unsafe[1]?.toLowerCase()
+  if (!tag) return
   throw new BuildError(`Unsafe <${tag}> tag in CMS markdown`, {
     file,
     line: lineOf(raw, bodyStart + unsafe.index),
@@ -286,6 +314,7 @@ async function compileFile(
   const sourceRel = `${collection.path}/${filename}`
   const raw = await readFile(fullPath, 'utf8')
   const { data, body } = parseFrontMatter(raw)
+  assertNoFrontMatterSlug(data, sourceRel, raw)
   const basename = filename.replace(/\.md$/i, '')
   assertSafeBasename(basename, sourceRel)
   const slug = routeSlugFor(collection.route, basename)
@@ -299,6 +328,7 @@ async function compileFile(
   }
 
   assertSafeContentMarkdown(raw, sourceRel)
+  assertValidContentMediaRefs(body, sourceRel, raw, markdownBodyStart(raw))
   const normalizedBody = normalizeContentMediaRefs(body)
   const html = renderMarkdown(normalizedBody, { file: sourceRel })
   const frontMatterTags = fmStringArray(data, 'tags')
@@ -306,7 +336,9 @@ async function compileFile(
   const draft = fmString(data, 'draft') === 'true' || fmString(data, 'draft') === '1'
   const flat: Record<string, string> = {}
   for (const [k, v] of Object.entries(data)) {
-    flat[k] = normalizeContentMediaRefs(typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v))
+    const value = typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v)
+    assertValidContentMediaRefs(value, sourceRel, raw, Math.max(0, raw.indexOf(String(v))))
+    flat[k] = normalizeContentMediaRefs(value)
   }
   const escapedFlat = Object.fromEntries(Object.entries(flat).map(([k, v]) => [k, escapeHtml(v)]))
   const vars: Record<string, string> = {

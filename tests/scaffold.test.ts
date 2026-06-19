@@ -168,6 +168,20 @@ describe('collection scaffold', () => {
 })
 
 describe('component preset scaffold', () => {
+  test('creates nested route with basename title', async () => {
+    const dir = await tempProject()
+    try {
+      const result = await runScaffold(['route', 'work/case-study'], dir)
+      const html = await readFile(join(dir, 'src', 'pages', 'work', 'case-study.html'), 'utf8')
+
+      expect(result.code).toBe(0)
+      expect(html).toContain('<SEO title="Case Study" description="..." />')
+      expect(html).toContain('<h1>Case Study</h1>')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
   test('keeps new component scaffold separate from presets', async () => {
     const dir = await tempProject()
     try {

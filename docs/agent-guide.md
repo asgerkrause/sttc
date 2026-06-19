@@ -262,6 +262,12 @@ Full contract: `docs/components.md`.
 
 `src/app.js` or `src/app.ts` is bundled with `Bun.build`, so author code can use imports and TypeScript. Shell head scripts, component lifecycle scripts, and route top scripts are appended to the same hashed `dist/assets/js/app.{hash}.js` output. Only `PUBLIC_*` env vars are inlined.
 
+## Vercel analytics intent
+
+`src/site.json` may include `vercel.analytics` and `vercel.speedInsights`, but those flags are docs/check intent only. Do not add Analytics or Speed Insights scripts automatically from the renderer. Enable Vercel features per client project, then wire any required package/script explicitly.
+
+Use component `track="Event name"` for simple marketing events. It compiles to `data-snz-track`; `snz.track(event, data?)` calls Vercel Analytics when `window.va` exists and otherwise emits `snz:track` for custom adapters.
+
 ## Router API
 
 Available in browser as `window.snz`:

@@ -65,6 +65,40 @@ describe('custom content collections', () => {
     })
   })
 
+  test('rejects front-matter slug overrides', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
+      await writeFile(join(dir, 'content', 'posts', 'hello-world.md'), '---\ntitle: Hello\nslug: surprise\n---\nBody')
+
+      await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('unsupported front-matter "slug"')
+    })
+  })
+
+  test('normalizes nested CMS media refs to optimized image basename', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'post.html'), '<img src="{{image}}">{{body}}')
+      await writeFile(join(dir, 'content', 'posts', 'media-post.md'), '---\ntitle: Media\nimage: /media/images/projects/hero.png\n---\n![Alt](/assets/images/nested/team.jpg)')
+
+      const [route] = await compileContentFrom({ rootDir: dir, includeDrafts: false })
+
+      expect(route.data.image).toBe('/assets/images/hero.webp')
+      expect(route.body).toContain('src="/assets/images/hero.webp"')
+      expect(route.body).toContain('src="/assets/images/team.webp"')
+    })
+  })
+
+  test('rejects unsupported CMS media extensions in front-matter and body', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
+      await writeFile(join(dir, 'content', 'posts', 'bad-media.md'), '---\ntitle: Bad media\nimage: /media/images/file.svg\n---\nBody')
+
+      await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('Unsupported CMS media reference "/media/images/file.svg"')
+    })
+  })
+
   test('compiles configured project collection through custom template', async () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'projects'), { recursive: true })

@@ -9,6 +9,7 @@ import { BuildError } from '../build/errors'
 import { mediaInputCopyExclusions, shouldSkipMediaCopy } from '../build/assets'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs } from '../build/images'
 import { publicPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
+import { checkVercelConfig } from '../build/check'
 
 async function composeRoute(slug: string, fileHint: string) {
   const seoTemplate = await readFile('src/components/SEO.html', 'utf8')
@@ -59,6 +60,65 @@ content:
   - name: posts
     path: content/posts
 `)).toEqual(['media/images', 'uploads/portraits'])
+  })
+
+  test('accepts canonical Vercel static deploy config', async () => {
+    const dir = await tempProject()
+    try {
+      await writeFile(join(dir, 'vercel.json'), JSON.stringify({
+        installCommand: 'bun install',
+        buildCommand: 'bun run build',
+        devCommand: 'bun run dev',
+        outputDirectory: 'dist',
+        bunVersion: '1.x',
+        headers: [
+          { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+          { source: '/(llms|llms-full|robots|sitemap).(txt|xml)', headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }] },
+        ],
+      }))
+      const warnings: string[] = []
+
+      await checkVercelConfig(dir, (warning) => warnings.push(warning))
+
+      expect(warnings).toEqual([])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('keeps root and starter Vercel config in parity', async () => {
+    const rootConfig = JSON.parse(await readFile('vercel.json', 'utf8'))
+    const starterConfig = JSON.parse(await readFile('templates/default/vercel.json', 'utf8'))
+    const keys = ['installCommand', 'buildCommand', 'devCommand', 'outputDirectory', 'bunVersion', 'headers']
+
+    for (const key of keys) {
+      expect(starterConfig[key]).toEqual(rootConfig[key])
+    }
+  })
+
+  test('warns on Vercel deploy config drift', async () => {
+    const dir = await tempProject()
+    try {
+      await writeFile(join(dir, 'vercel.json'), JSON.stringify({
+        installCommand: 'npm install',
+        buildCommand: 'npm run build',
+        outputDirectory: 'public',
+        headers: [],
+      }))
+      const warnings: string[] = []
+
+      await checkVercelConfig(dir, (warning) => warnings.push(warning))
+
+      expect(warnings).toContain('vercel.json: installCommand should be "bun install" for snz-bp Bun static deploys')
+      expect(warnings).toContain('vercel.json: buildCommand should be "bun run build" for snz-bp Bun static deploys')
+      expect(warnings).toContain('vercel.json: devCommand should be "bun run dev" for snz-bp Bun static deploys')
+      expect(warnings).toContain('vercel.json: outputDirectory should be "dist" for snz-bp Bun static deploys')
+      expect(warnings).toContain('vercel.json: bunVersion should be "1.x" for snz-bp Bun static deploys')
+      expect(warnings).toContain('vercel.json: /assets/(.*) should use immutable Cache-Control headers')
+      expect(warnings).toContain('vercel.json: discovery files should use short Cache-Control headers')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 
   test('uses PagesCMS media.input as image source root', async () => {

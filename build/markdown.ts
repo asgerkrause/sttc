@@ -14,7 +14,7 @@ export type MarkdownOptions = {
   headingIds?: boolean
 }
 
-function esc(s: string) { return s.replace(/[&<>\"]/g, (c) => ESC[c]) }
+function esc(s: string) { return s.replace(/[&<>\"]/g, (c) => ESC[c] ?? c) }
 
 function slugify(s: string) {
   return stripTags(s)
@@ -50,6 +50,7 @@ function assertNoUnsafeHtml(src: string, opts: MarkdownOptions) {
   const unsafeNames = new Set(['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select'])
   for (const match of src.matchAll(/<\s*\/?\s*([A-Za-z][A-Za-z0-9]*)\b/g)) {
     const tag = match[1]
+    if (!tag) continue
     const lower = tag.toLowerCase()
     if (!unsafeNames.has(lower)) continue
     const looksLikeComponent = /^[A-Z][A-Za-z0-9]*$/.test(tag) && tag !== tag.toUpperCase()
@@ -213,9 +214,11 @@ function parseFrontMatterLines(block: string): Record<string, string> {
   for (const line of block.split('\n')) {
     const kv = line.match(/^(\w+):\s*(.*)$/)
     if (!kv) continue
-    let value = kv[2].trim()
+    const key = kv[1]
+    if (!key) continue
+    let value = kv[2]?.trim() ?? ''
     if (/^["'].*["']$/.test(value)) value = value.slice(1, -1)
-    data[kv[1]] = value
+    data[key] = value
   }
   return data
 }
@@ -225,12 +228,14 @@ export function parseFrontMatter(src: string): { data: Record<string, unknown>; 
   const m = src.match(FRONT_MATTER_RE)
   if (!m) return { data: {}, body: src }
   try {
-    const parsed = Bun.YAML.parse(m[1])
+    const block = m[1] ?? ''
+    const parsed = Bun.YAML.parse(block)
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       return { data: parsed as Record<string, unknown>, body: src.slice(m[0].length) }
     }
   } catch { /* fall through */ }
-  return { data: parseFrontMatterLines(m[1]), body: src.slice(m[0].length) }
+  const block = m[1] ?? ''
+  return { data: parseFrontMatterLines(block), body: src.slice(m[0].length) }
 }
 
 export function fmString(data: Record<string, unknown>, key: string): string {
