@@ -32,12 +32,22 @@ describe('runtime ownership contracts', () => {
 
   test('router announces client route changes through shell live region', async () => {
     const router = await readFile('runtime/router.js', 'utf8')
-    const shell = await readFile('src/shell.html', 'utf8')
+    const rootShell = await readFile('src/shell.html', 'utf8')
+    const starterShell = await readFile('templates/default/src/shell.html', 'utf8')
+    const rootStyles = await readFile('src/styles.css', 'utf8')
+    const starterStyles = await readFile('templates/default/src/styles.css', 'utf8')
 
-    expect(shell).toContain('data-snz-announcer')
-    expect(shell).toContain('aria-live="polite"')
-    expect(shell).toContain('aria-atomic="true"')
+    for (const shell of [rootShell, starterShell]) {
+      expect(shell).toContain('<Footer />\n  <div data-snz-announcer aria-live="polite" aria-atomic="true"></div>')
+      expect(shell).not.toContain('data-snz-announcer aria-live="polite" aria-atomic="true" style=')
+    }
+    for (const styles of [rootStyles, starterStyles]) {
+      expect(styles).toContain('[data-snz-announcer]')
+      expect(styles).toContain('clip-path: inset(50%)')
+    }
     expect(router).toContain("document.querySelector('[data-snz-announcer]')")
+    expect(router).toContain('routeAnnouncer.hidden = true')
+    expect(router).not.toContain('routeAnnouncer.style.cssText')
     expect(router).toContain('function routeAnnouncementLabel')
     expect(router).toContain('announceRoute()')
   })
