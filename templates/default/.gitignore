@@ -2,3 +2,5 @@ dist/
 .DS_Store
 pi-session-*.html
 docs/components-catalog.md
+
+node_modules/

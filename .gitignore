@@ -11,3 +11,5 @@ dist/
 
 # Pi session exports
 pi-session-*.html
+
+node_modules/
