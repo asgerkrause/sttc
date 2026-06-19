@@ -4,6 +4,7 @@
 -->
 <footer data-theme="invert">
   <div class="c">
+    <Logo size="2.5lh" />
     <p class="footer-copy">
       <span>©</span>
       <span data-snz-year></span>
@@ -17,6 +18,10 @@
   body > footer {
     padding: var(--bx);
     padding-top: var(--by);
+
+    .c {
+      gap: var(--gp);
+    }
   }
 
   .footer-copy {
@@ -24,7 +29,7 @@
     flex-wrap: wrap;
     gap: 0.35em;
     margin: 0;
-    font-size: var(--fs-sm, 0.875rem);
+    font-size: var(--sm-fs, 0.875rem);
   }
 </style>
 

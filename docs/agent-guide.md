@@ -61,18 +61,22 @@ URL becomes `/pricing/`. Build also emits sitemap, manifest, llms, and `/routes/
 
 ### Add component
 
-Add a private section preset when a common landing-page block is enough:
+Add a private slot-first preset when a common landing-page pattern is enough:
 
 ```bash
-snz-bp add component hero       # HeroSection.html
-snz-bp add component logos      # LogoCloud.html
-snz-bp add component pricing    # PricingSection.html
-snz-bp add component testimonial # TestimonialSection.html
-snz-bp add component faq        # FAQSection.html
-snz-bp add component hero --demo # also append <HeroSection /> to styles page when present
+snz-bp add component hero         # Hero.html
+snz-bp add component cta          # CTA.html
+snz-bp add component features     # Features.html + Feature.html
+snz-bp add component partners     # Partners.html + Partner.html
+snz-bp add component pricing      # Pricing.html + Plan.html
+snz-bp add component testimonials # Testimonials.html + Testimonial.html
+snz-bp add component stats        # Stats.html + Stat.html
+snz-bp add component process      # Process.html + Step.html
+snz-bp add component faq          # Questions.html
+snz-bp add component hero --demo  # also append <Section><Hero /></Section>
 ```
 
-Presets write normal PascalCase component files under `src/components/` and refuse to overwrite existing files unless `--force` is passed. Add `--demo` to append invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present.
+Presets write normal PascalCase component files under `src/components/` and refuse to overwrite existing files unless `--force` is passed. Add `--demo` to append invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present. Prefer content nouns: plural wrappers (`Features`, `Testimonials`, `Partners`) and singular items (`Feature`, `Testimonial`, `Partner`). Keep presets slot-first so existing `Grid`, `Card`, `Button`, and `Image` compose inside them.
 
 Add private token theme packs when a starter needs a quick visual direction:
 
@@ -129,8 +133,8 @@ Or via component:
 
 ```html
 <Grid cols="4-2">
-  <Card title="One">...</Card>
-  <Card title="Two">...</Card>
+  <Card><h3>One</h3><p>...</p></Card>
+  <Card><h3>Two</h3><p>...</p></Card>
 </Grid>
 ```
 
@@ -221,14 +225,22 @@ Optional custom collections live in `content/collections.json`:
 
 Global CSS files:
 
-- `src/styles.css` — tokens, reset/base/type, theme tokens, `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`, page overrides.
-- Legacy support: `src/styles/styles.css`, `src/styles/grid.css`, and `src/styles/lenis.css` can still be used.
+- `src/styles.css` — import shell and layer order.
+- `src/styles/system.css` — editable token config, fluid engine, color/theme tokens.
+- `src/styles/reset.css` — reset and base element rules.
+- `src/styles/type.css` — heading/body type utilities.
+- `src/styles/grid.css` — `[g]`, `[c]`, `[r]`, `[o]`.
+- `src/styles/wrappers.css` — `.c`, `.w`, `.btns`, `.lnks`, tiny global wrappers.
+- `src/styles/motion.css` — scroll/view-transition hooks.
+- Legacy support: `src/styles/styles.css` can still be migrated, but new work uses the split files.
 
 Component CSS:
 
 - Lives inside component file `<style>`.
 - Bundled to `dist/assets/css/components.{hash}.css`.
 - Loads after global CSS.
+
+Token legend: layout uses `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Use `data-theme="accent"`, `tone`, and `invert` for section themes.
 
 Audit boundary:
 

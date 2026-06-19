@@ -14,18 +14,11 @@ Each component file may start with a single `<!-- ... -->` HTML comment that dec
 
 ```html
 <!--
-  @desc Article card with title, body, optional CTA, and a default slot.
-  @attr title! Card heading.
-  @attr body Body paragraph. Optional — also supports children via default slot.
-  @attr variant=[default|elevated|ghost|subtle] :class Visual variant.
+  @desc Flexible styled container for grouped content.
+  @attr variant=[default|outlined|ghost] :class Visual variant.
+  @attr theme=[tone|accent|invert] Optional data-theme value.
 -->
-<article class="card">
-  <h2>{{title}}</h2>
-  <div class="card-body">
-    <p>{{body}}</p>
-    {{slot}}
-  </div>
-</article>
+<article class="card">{{slot}}</article>
 
 <style>
   .card { /* ... */ }
@@ -43,7 +36,7 @@ Each component file may start with a single `<!-- ... -->` HTML comment that dec
 | `@attr name :class <text>` | Value is auto-appended as a class on the template root. |
 | `@schema TypeName field=attr,...` | Optional: emit JSON-LD per instance (for structured-data components). |
 
-Combinations work: `@attr variant=[primary|ghost|subtle] :class Visual style.`
+Combinations work: `@attr variant=[primary|outlined|ghost] :class Visual style.`
 
 Unknown `@tags` are silently ignored — the format can grow without breaking old files.
 
@@ -74,30 +67,32 @@ Usage:
 
 ```html
 <!--
-  @attr variant=[default|elevated|ghost] :class
+  @attr variant=[default|outlined|ghost] :class
+  @attr theme=[tone|accent|invert]
 -->
-<article class="card">
+<article class="card" data-theme="{{theme}}">
   ...
 </article>
 
 <style>
   .card {
     /* base */
-    &.elevated { box-shadow: var(--shadow-md); }
+    &.outlined { border-color: var(--b); background: transparent; }
     &.ghost { background: transparent; }
+    &[data-theme] { background: var(--s); color: var(--i); }
   }
 </style>
 ```
 
-`<Card variant="elevated">` produces `<article class="card elevated">`.
+`<Card theme="accent">` produces `<article class="card" data-theme="accent">`.
 
 ## Styles
 
 Colocate component-specific `<style>` in the component file. The build extracts it into `dist/assets/css/components.{hash}.css` (loaded after the global stylesheet so component rules win at equal specificity).
 
-`src/styles.css` owns tokens, reset/base type, `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.card`, `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
+Global CSS is split by owner: `src/styles.css` imports `src/styles/system.css`, `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css`. Global CSS owns tokens, reset/base type, `.c`, `.w`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.card`, `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
 
-Use design tokens from `src/styles.css`. Don't hardcode spacing or colors.
+Use design tokens from the global system. Layout: `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`. Type: `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`. Color: `--s`, `--i`, `--t`, `--b`, `--g`, `--a`, `--ai`, `--c`, `--ci`. Don't hardcode spacing, font weights, or colors.
 
 ## Lifecycle scripts
 
@@ -128,21 +123,59 @@ Optional `<script>` block runs once per instance. `el` is bound to the root elem
 
 The build auto-injects `data-snz-component="{Name}"` on the template root. Runtime walks `[data-snz-component]:not([data-snz-mounted])` after each navigation and runs the wrapper.
 
-## Built-in components (14)
+## Slot-first preset naming
+
+Core components stay small and generic. New content presets should read like content, not framework taxonomy:
+
+- plural = collection/layout wrapper (`Features`, `Testimonials`, `Stats`, `Partners`)
+- singular = item (`Feature`, `Testimonial`, `Stat`, `Partner`)
+- standalone nouns for one-off sections (`Hero`, `CTA`, `Contact`)
+- `Logo` stays the site mark used by shell chrome; use `Partners` / `Partner` for logo-wall patterns
+
+Prefer slots for preset content so existing primitives compose inside them:
+
+```html
+<Section>
+  <Features>
+    <Feature>
+      <Card>
+        <h3>Fast</h3>
+        <p>Static output, tiny runtime.</p>
+      </Card>
+    </Feature>
+  </Features>
+</Section>
+```
+
+Use attrs only for stable configuration: variant, theme, href, image source, accessible labels, IDs. Avoid prop-heavy presets that duplicate `Card`, `Grid`, `Button`, `Image`, or raw HTML.
+
+## Built-in components (16)
 
 | Component | Purpose |
 |---|---|
 | `Header`, `Footer` | Shell chrome. |
+| `Logo` | Text-first site logo. Defaults to site.json name; slot can hold an SVG or img mark. |
 | `SEO` | Per-route head injection (title, meta, OG, JSON-LD). |
 | `Image` | Lazy webp with responsive srcset, blurhash placeholder. |
+| `Embed` | Responsive iframe wrapper for video/maps/rich media. |
 | `Button`, `Link` | Action / inline link primitives. |
-| `Card` | Article card with title/body/CTA/slot. |
+| `Card` | Flexible styled container. Put headings, copy, media, and actions in the slot. |
 | `Accordion`, `FAQ` | Native `<details>` disclosure + demo composite. |
 | `Section` | Semantic section + `.c` container. No root class. |
 | `Markdown` | Inline build-time markdown (use slot for source). Supports headings, lists, tables, code, safe links/images, and PascalCase components. |
 | `Grid` | Attribute grid wrapper. `cols` maps to `[g]`; `span`/`rows`/`order` map to `[c]`/`[r]`/`[o]` for nested grid children. |
 | `Stack` | Deprecated compatibility wrapper. Prefer `<div class="w">…</div>`. |
 | `Code` | `<pre><code>` block with optional language label. |
+
+`<Logo />` is text-first. For an SVG or image mark, put the mark in the slot and keep sizing on the wrapper:
+
+```html
+<Logo size="2lh">
+  <img src="/assets/images/logo.svg" alt="">
+</Logo>
+```
+
+The logo wrapper owns `height`; nested `img`/`svg` uses `height: 100%; width: auto;`.
 
 Anything else, you write yourself. That's the point.
 

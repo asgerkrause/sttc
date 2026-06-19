@@ -8,14 +8,16 @@ See `docs/components.md` for the authoring contract.
 
 - [`<Accordion />`](#accordion) — Native <details> disclosure. Multiple accordions sharing the same group name are mutually exclusive.
 - [`<Button />`](#button) — Link styled as an action button.
-- [`<Card />`](#card) — Article card with title, body, optional CTA, and a default slot for additional content.
+- [`<Card />`](#card) — Flexible styled container for grouped content. Put headings, copy, media, and actions in the default slot.
 - [`<Code />`](#code) — Code block with optional language label. Put the code in the default slot.
+- [`<Embed />`](#embed) — Responsive external embed wrapper for iframes and rich media.
 - [`<FAQ />`](#faq) — Demo FAQ block. Prefer assembling <Accordion> tags directly in routes — this is a starting-point copy.
 - [`<Footer />`](#footer) — Site footer with dynamic year and site name.
 - [`<Grid />`](#grid) — Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
-- [`<Header />`](#header) — Site header. Pulls siteName from site.json by default.
+- [`<Header />`](#header) — Site header.
 - [`<Image />`](#image) — Lazy-loaded image with blurhash placeholder and responsive srcset. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
 - [`<Link />`](#link) — Underlined inline link.
+- [`<Logo />`](#logo) — Text-first site logo. Uses site.json name by default; slot can hold an SVG or img mark.
 - [`<Markdown />`](#markdown) — Inline markdown rendered at build time. Put markdown source in the default slot.
 - [`<SEO />`](#seo) — Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or rely on defaults.
 - [`<Section />`](#section) — Semantic section with a .c container. No root class.
@@ -29,14 +31,14 @@ Native <details> disclosure. Multiple accordions sharing the same group name are
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `summary` | ✓ | string | Visible summary text (the toggle row). |
-| `body` | ✓ | string | Disclosed body content. May be HTML. |
+| `summary` |  | string | Visible summary text (the toggle row). Defaults to Details. |
+| `body` |  | string | Disclosed body content. May be HTML. |
 | `group` |  | string | Optional shared name for exclusive grouping (uses <details name>). |
 
 ### Example
 
 ```html
-<Accordion summary="..." body="..." />
+<Accordion />
 ```
 
 ## Button
@@ -47,8 +49,8 @@ Link styled as an action button.
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `href` | ✓ | string | Destination URL or path. |
-| `label` | ✓ | string | Visible button text. |
+| `href` |  | string | Destination URL or path. Defaults to #. |
+| `label` |  | string | Visible button text. Defaults to Learn more. |
 | `variant` |  | `default \| ghost \| tone \| accent \| complimentary` | Visual style. |
 | `size` |  | `sm \| md \| lg` | Size variant. |
 | `track` |  | string | Optional analytics event name; emits data-snz-track on the root. |
@@ -56,27 +58,24 @@ Link styled as an action button.
 ### Example
 
 ```html
-<Button href="..." label="..." />
+<Button />
 ```
 
 ## Card
 
-Article card with title, body, optional CTA, and a default slot for additional content.
+Flexible styled container for grouped content. Put headings, copy, media, and actions in the default slot.
 
 ### Attributes
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `title` | ✓ | string | Card heading. |
-| `body` |  | string | Body paragraph. Optional — also supports children via default slot. |
-| `linkHref` |  | string | Optional CTA destination. |
-| `linkLabel` |  | string | Optional CTA label. |
-| `variant` |  | `default \| elevated \| ghost \| subtle` | Visual variant. |
+| `variant` |  | `default \| outlined \| ghost` | Visual variant. |
+| `theme` |  | `tone \| accent \| invert` | Optional data-theme value. |
 
 ### Example
 
 ```html
-<Card title="..." />
+<Card />
 ```
 
 ## Code
@@ -93,6 +92,24 @@ Code block with optional language label. Put the code in the default slot.
 
 ```html
 <Code />
+```
+
+## Embed
+
+Responsive external embed wrapper for iframes and rich media.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `src` | ✓ | string | Embed URL. |
+| `title` | ✓ | string | Accessible title for the embedded content. |
+| `ratio` |  | `16/9 \| 4/3 \| 1/1 \| auto` | Aspect ratio. Defaults to 16/9. |
+
+### Example
+
+```html
+<Embed src="..." title="..." />
 ```
 
 ## FAQ
@@ -142,13 +159,7 @@ Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] w
 
 ## Header
 
-Site header. Pulls siteName from site.json by default.
-
-### Attributes
-
-| Name | Required | Type / enum | Description |
-|---|---|---|---|
-| `siteName` |  | string | Override site name. Defaults to site.json name. |
+Site header.
 
 ### Example
 
@@ -188,13 +199,31 @@ Underlined inline link.
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `href` | ✓ | string | Destination URL or path. |
-| `label` | ✓ | string | Link text. |
+| `href` |  | string | Destination URL or path. Defaults to #. |
+| `label` |  | string | Link text. Defaults to Learn more. |
 
 ### Example
 
 ```html
-<Link href="..." label="..." />
+<Link />
+```
+
+## Logo
+
+Text-first site logo. Uses site.json name by default; slot can hold an SVG or img mark.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `siteName` |  | string | Site or business name. Defaults to site.json name. |
+| `href` |  | string | Destination URL. Defaults to /. |
+| `size` |  | string | CSS height for the logo wrapper. Defaults to 1lh. |
+
+### Example
+
+```html
+<Logo />
 ```
 
 ## Markdown

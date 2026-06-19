@@ -1,0 +1,66 @@
+@layer site {
+  :root {
+    --mw-max: 84;
+    --a: #315cff;
+    --c: #6b3df5;
+    --ai: var(--l);
+    --ci: var(--l);
+  }
+
+  .hero {
+    min-height: 72svh;
+    align-items: center;
+
+    &.compact {
+      min-height: 48svh;
+    }
+  }
+
+  .hero-panel,
+  .step {
+    border: var(--bw) solid var(--b);
+    border-radius: var(--br-lg);
+    background: color-mix(in srgb, var(--s) 70%, transparent);
+    padding: var(--pd-lg);
+  }
+
+  .hero-panel {
+    align-self: stretch;
+    justify-content: end;
+
+    span {
+      color: var(--g);
+      font-size: var(--sm-fs);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    strong {
+      display: block;
+      font-size: var(--h2-fs);
+      font-weight: var(--h2-fw);
+      letter-spacing: var(--h2-ls);
+      line-height: var(--h2-lh);
+    }
+  }
+
+  .step {
+    min-height: 22rem;
+
+    span {
+      color: var(--a);
+      font-size: var(--sm-fs);
+      font-weight: var(--fw-b);
+    }
+  }
+
+  .section-head {
+    max-width: 72rem;
+  }
+
+  @media (width < 60rem) {
+    .hero {
+      min-height: auto;
+    }
+  }
+}

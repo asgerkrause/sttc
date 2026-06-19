@@ -7,6 +7,7 @@
     <p class="eyebrow">Component gallery</p>
     <h1>Copy-ready patterns using built-in pieces.</h1>
     <p class="f-lg">These examples cover common page needs: actions, cards, media, disclosures, markdown, code, and layout primitives.</p>
+    <p>Slot-first patterns stay flexible: compose primitives inside <code>Section</code>, <code>Grid</code>, and <code>Card</code> instead of locking content into too many props.</p>
     <div class="btns">
       <Button label="Back home" href="/" variant="ghost" />
       <Link label="Component docs" href="https://github.com/sanitizestudio/snz-bp" />
@@ -33,24 +34,40 @@
     <p class="eyebrow">Content groups</p>
     <h2>Card</h2>
   </div>
-  <Grid cols="3-2">
-    <Card title="Default" body="Group a feature, service, note, or summary with optional action." linkHref="/" linkLabel="Home" />
-    <Card title="Elevated" body="Use variants when content needs stronger visual weight." linkHref="/components/" linkLabel="Stay here" variant="elevated" />
-    <Card title="Ghost" body="Quiet cards keep supporting content present without adding much surface." variant="ghost" />
+  <Grid cols="4-2">
+    <Card>
+      <h3>Default</h3>
+      <p>Group a feature, service, note, or summary with optional action.</p>
+      <Link href="/" label="Home" />
+    </Card>
+    <Card variant="outlined">
+      <h3>Outlined</h3>
+      <p>Use variants when content needs clear separation without extra surface.</p>
+      <Link href="/components/" label="Stay here" />
+    </Card>
+    <Card variant="ghost">
+      <h3>Ghost</h3>
+      <p>Quiet cards keep supporting content present without adding much surface.</p>
+    </Card>
+    <Card theme="accent">
+      <h3>Accent</h3>
+      <p>Use themed cards for high-contrast callouts.</p>
+    </Card>
   </Grid>
 </Section>
 
 <Section id="media">
   <div class="section-head w">
     <p class="eyebrow">Media</p>
-    <h2>Image</h2>
+    <h2>Image + Embed</h2>
   </div>
   <Grid cols="2">
-    <Image src="showcase" alt="Abstract starter site preview" max="1200" />
+    <Image src="showcase" alt="Abstract starter site preview" max="1200" loading="eager" />
     <div class="w">
       <h3>Responsive by default</h3>
       <p>Place source images in <code>src/images</code> or <code>media/images</code>. Build emits optimized WebP sizes and keeps route markup clean.</p>
       <Code lang="html">&lt;Image src="showcase" alt="Abstract starter site preview" max="1200" /&gt;</Code>
+      <Embed src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Example video embed" />
     </div>
   </Grid>
 </Section>
@@ -88,9 +105,22 @@
 <Section id="code">
   <div class="section-head w">
     <p class="eyebrow">Snippets</p>
-    <h2>Code</h2>
+    <h2>Code + SEO</h2>
   </div>
   <Code lang="html">&lt;Button label="Go" href="/" variant="accent" /&gt;</Code>
+  <Code lang="html">&lt;SEO title="Components" description="Simple built-in component showcase." /&gt;</Code>
+</Section>
+
+<Section id="themes" theme="tone">
+  <div class="section-head w">
+    <p class="eyebrow">Themes</p>
+    <h2>Section themes</h2>
+  </div>
+  <Grid cols="3-2">
+    <Card><h3>Tone</h3><p><code>Section theme="tone"</code> remaps semantic tokens.</p></Card>
+    <Card theme="accent"><h3>Accent card</h3><p><code>Card theme="accent"</code> uses the same data-theme contract.</p></Card>
+    <Card theme="invert"><h3>Invert card</h3><p>Theme attrs compose with card variants.</p></Card>
+  </Grid>
 </Section>
 
 <Section id="layout">
@@ -99,8 +129,40 @@
     <h2>Section, Grid, Stack</h2>
   </div>
   <Grid cols="3-2">
-    <div class="w"><h3>Section</h3><p>Semantic wrapper with container spacing.</p></div>
-    <div class="w"><h3>Grid</h3><p>Maps to global <code>[g]</code> primitives for responsive columns.</p></div>
+    <div class="w"><h3>Section</h3><p>Section owns the semantic band, container, and optional theme.</p></div>
+    <div class="w"><h3>Grid</h3><p>Maps to global <code>[g]</code> primitives and can be used inside components.</p></div>
     <Stack><h3>Stack</h3><p>Compatibility wrapper for vertical rhythm. Prefer <code>.w</code> in new work.</p></Stack>
   </Grid>
+</Section>
+
+<Section id="shell">
+  <div class="section-head w">
+    <p class="eyebrow">Shell</p>
+    <h2>Shell components</h2>
+  </div>
+  <Grid cols="2">
+    <Card>
+      <Logo />
+      <p><code>Logo</code> is the site mark used by Header and Footer.</p>
+    </Card>
+    <Card>
+      <h3>Header + Footer</h3>
+      <p>Shell components usually live in <code>src/shell.html</code>, not inside route bodies.</p>
+    </Card>
+  </Grid>
+</Section>
+
+<Section id="future">
+  <div class="section-head w">
+    <p class="eyebrow">Naming</p>
+    <h2>Preset naming</h2>
+  </div>
+  <p>Future content presets use readable nouns. Plural components wrap collections; singular components are items. Most should stay slot-first so existing primitives compose inside them.</p>
+  <Code lang="html">&lt;Section&gt;
+  &lt;Features&gt;
+    &lt;Feature&gt;
+      &lt;Card&gt;...&lt;/Card&gt;
+    &lt;/Feature&gt;
+  &lt;/Features&gt;
+&lt;/Section&gt;</Code>
 </Section>

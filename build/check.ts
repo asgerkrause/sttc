@@ -3,7 +3,7 @@
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { join } from 'path'
-import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, src, stylesDir, appDir } from './paths'
+import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, src } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError } from './errors'
 import { compileContent, loadCustomContentCollections } from './content'
@@ -240,8 +240,8 @@ export async function checkVercelConfig(projectRoot: string, warn: (m: string) =
 async function checkSourceLayout(warn: (m: string) => void) {
   const legacy = [
     ['src/routes', routesDir],
-    ['src/styles', stylesDir],
-    ['src/app', appDir],
+    ['src/styles/styles.css', join(src, 'styles', 'styles.css')],
+    ['src/app/app.js', join(src, 'app', 'app.js')],
     ['src/assets/js', legacyAppDir],
     ['src/assets/css', legacyStylesDir],
     ['src/assets/images', legacyImagesDir],

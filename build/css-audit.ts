@@ -1,7 +1,6 @@
-import { readFile } from 'fs/promises'
-import { sourceStylesFile } from './paths'
-
-const stylesPath = await sourceStylesFile()
+import { readdir, readFile } from 'fs/promises'
+import { join } from 'path'
+import { sourceStylesDir, sourceStylesFile } from './paths'
 
 const blocked = [
   { selector: '.card', owner: 'src/components/Card.html' },
@@ -26,23 +25,42 @@ const allowed = [
   { selector: '[o]', owner: 'grid order primitive' },
 ]
 
+async function collectCssFiles(dir: string, base = ''): Promise<string[]> {
+  const out: string[] = []
+  let entries
+  try { entries = await readdir(join(dir, base), { withFileTypes: true }) } catch { return out }
+  for (const entry of entries) {
+    const rel = base ? join(base, entry.name) : entry.name
+    if (entry.isDirectory()) out.push(...await collectCssFiles(dir, rel))
+    else if (entry.isFile() && entry.name.endsWith('.css')) out.push(join(dir, rel))
+  }
+  return out
+}
+
 function selectorRe(selector: string) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return new RegExp(`(^|[\\s,{])${escaped}(?=[\\s.#:[,{>])`, 'm')
 }
 
-const css = await readFile(stylesPath, 'utf8')
-const findings = blocked.filter(({ selector }) => selectorRe(selector).test(css))
+const roots = new Set([await sourceStylesFile(), ...await collectCssFiles(await sourceStylesDir())])
+const findings: { selector: string, owner: string, file: string }[] = []
+for (const file of roots) {
+  const css = await readFile(file, 'utf8').catch(() => '')
+  for (const item of blocked) {
+    if (selectorRe(item.selector).test(css)) findings.push({ ...item, file })
+  }
+}
 
 console.log('CSS ownership audit')
 console.log('Allowed primitives:')
 for (const item of allowed) console.log(`- ${item.selector} — ${item.owner}`)
 
 if (!findings.length) {
-  console.log('\nNo component-owned selectors found in styles.css.')
+  console.log('\nNo component-owned selectors found in global CSS.')
   process.exit(0)
 }
 
-console.log('\nComponent-owned selectors in styles.css:')
-for (const item of findings) console.log(`- ${item.selector} → ${item.owner}`)
+console.log('\nComponent-owned selectors in global CSS:')
+for (const item of findings) console.log(`- ${item.selector} in ${item.file} → ${item.owner}`)
 console.log('\nMove these into component <style> blocks or delete stale global rules.')
+process.exit(1)

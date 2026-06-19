@@ -1,0 +1,308 @@
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  ::placeholder {
+    color: var(--g, #8884);
+  }
+
+  ::selection {
+    background-color: var(--i, CanvasText);
+    color: var(--s, Canvas);
+  }
+
+  :target {
+    scroll-margin-block: 6lh;
+  }
+
+  :focus-visible {
+    outline: var(--bw) solid var(--a);
+    outline-offset: calc(var(--bw) * 2);
+    border-radius: var(--bw);
+  }
+
+  :where(strong, b) {
+    font-weight: var(--fw-b);
+  }
+
+  :where(mark) {
+    background: var(--a);
+    color: var(--ai);
+  }
+
+  :where(a) {
+    color: currentColor;
+    text-decoration: none;
+  }
+
+  :where(a, button, label) {
+    transition-property: background-size, background-color, color, border, transform, opacity;
+    transition-duration: var(--td);
+    transition-timing-function: var(--tf-o);
+  }
+
+  :where(ul, ol, [role="list"]) {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+  }
+
+  :where(li) {
+    display: flex;
+    align-items: center;
+    gap: var(--gp-sm);
+  }
+
+  :where(ul[role="list"]) li::before {
+    content: "/";
+  }
+
+  :where(ul[role="list"] ul, ol[role="list"] ol) {
+    padding-left: var(--pd);
+  }
+
+  :where(ol[role="list"]) li {
+    counter-increment: li1;
+  }
+
+  :where(ol[role="list"]) li::before {
+    content: counter(li1);
+  }
+
+  :where(small) {
+    font-size: 75%;
+  }
+
+  :where(sub, sup) {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: initial;
+  }
+
+  :where(code, pre, kbd) {
+    font: inherit;
+    font-family: var(--ff-mono);
+    font-weight: var(--fw-r);
+  }
+
+  :where(img, video, picture, canvas, svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: none;
+    block-size: auto;
+    object-fit: cover;
+    user-select: none;
+    max-inline-size: 100%;
+    shape-margin: 0.75rem;
+  }
+
+  :where(button, input, progress, select, textarea) {
+    appearance: none;
+    background: transparent;
+    border: none;
+    outline-color: transparent;
+    color: inherit;
+    font: inherit;
+    hanging-punctuation: none;
+    line-height: inherit;
+    text-align: start;
+    touch-action: manipulation;
+  }
+
+  :where(input, textarea) {
+    -webkit-user-select: auto;
+  }
+
+  :where(textarea) {
+    white-space: revert;
+    resize: none;
+    field-sizing: content;
+  }
+
+  :where(button) {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  :where(fieldset, iframe) {
+    border: none;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6, p, q, blockquote, td, th, dd, dt, textarea, select) {
+    font: inherit;
+    font-feature-settings: inherit;
+  }
+
+  :where(h1, h2, h3, h4) {
+    text-wrap: balance;
+  }
+
+  :where(abbr[title]) {
+    border: none;
+    text-decoration: none;
+  }
+
+  :where(blockquote, q) {
+    padding: var(--pd);
+    border-radius: var(--br);
+    background: var(--t);
+  }
+
+  :where(blockquote cite, q cite) {
+    display: block;
+    font: inherit;
+    color: var(--g, #8884);
+  }
+
+  :where(kbd) {
+    padding: 0.2em 0.4em;
+    background: var(--t);
+    border-radius: var(--br-xs);
+    color: var(--g);
+    text-transform: uppercase;
+    font-size: 75%;
+  }
+
+  :where(figure) {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-radius: var(--br);
+    overflow: hidden;
+    background: var(--t);
+  }
+
+  :where(figcaption) {
+    contain: inline-size;
+    font: inherit;
+    font-size: var(--sm-fs);
+    padding: var(--pd-sm);
+    color: var(--g);
+  }
+
+  @supports selector(details::details-content) {
+    :where(details) {
+      overflow: hidden;
+
+      &::details-content {
+        transition-property: block-size, content-visibility, padding;
+        transition-timing-function: var(--tf-o);
+        transition-duration: var(--td);
+        transition-behavior: allow-discrete;
+        color: var(--g);
+        block-size: 0;
+        opacity: 0;
+      }
+
+      & summary {
+        display: flex;
+        align-items: start;
+        gap: var(--gp-sm);
+        cursor: pointer;
+        user-select: none;
+        list-style: none;
+        padding-block: var(--pd-sm);
+
+        &::-webkit-details-marker {
+          display: none;
+        }
+
+        & .icn {
+          transition: color var(--tf-o) var(--td-f), transform var(--tf-s) var(--td-s);
+          margin-left: auto;
+          position: relative;
+          aspect-ratio: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          width: 1lh;
+          color: var(--g);
+
+          &::before,
+          &::after {
+            transition: transform var(--tf-o) var(--td-s);
+            content: "";
+            position: absolute;
+            width: calc(1lh - 0.5cap);
+            border-radius: 100vw;
+            height: var(--bw);
+            background: currentColor;
+          }
+
+          &::after {
+            transform: rotate(90deg);
+          }
+        }
+
+        @media (hover: hover) {
+          &:hover .icn {
+            color: var(--i);
+          }
+        }
+
+        &:focus-visible .icn {
+          color: var(--a);
+        }
+      }
+
+      &:open {
+        &::details-content {
+          block-size: auto;
+          padding-top: var(--pd-sm);
+          opacity: 1;
+        }
+
+        & summary .icn {
+          transform: rotate(90deg);
+          color: var(--a);
+
+          &::before {
+            transform: rotate(90deg);
+          }
+        }
+      }
+
+      &:not(:last-child):not(:only-child):open::details-content {
+        padding-bottom: var(--pd-lg);
+      }
+    }
+  }
+
+  html {
+    font-size: 100%;
+    tab-size: 2;
+    scroll-behavior: smooth;
+    -moz-text-size-adjust: none;
+    -webkit-text-size-adjust: none;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    word-break: break-word;
+    text-size-adjust: none;
+    scrollbar-gutter: stable;
+    accent-color: var(--a, #07e);
+    caret-color: var(--a, #07e);
+    overscroll-behavior: none;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+    scrollbar-color: color-mix(in srgb, var(--i) 20%, transparent) color-mix(in srgb, var(--a) 0%, transparent);
+    scrollbar-width: thin;
+  }
+
+  body {
+    background: var(--s, white);
+    color: var(--i, black);
+  }
+}

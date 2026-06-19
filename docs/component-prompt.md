@@ -17,7 +17,7 @@ Produce exactly one file: `src/components/<PascalName>.html`. It must contain:
 
 Rules:
 
-- Use design tokens (`--mw`, `--bx`, `--by`, `--ffs`, `--fs`, the color system). Never hardcode spacing or colors.
+- Use design tokens (`--mw`, `--bx`, `--by`, `--gp`, `--fw-l/r/b`, type tokens, the color system). Never hardcode spacing, font weights, or colors.
 - Semantic HTML first. ARIA only when no native equivalent exists.
 - Visible focus via `:focus-visible`. Never `outline: none` without a replacement.
 - Honor `prefers-reduced-motion` if you animate.

@@ -92,7 +92,7 @@ try {
   await Bun.write(join(localTarget, 'src', 'pages', 'smoke.html'), `<head>
   <SEO title="Smoke" description="Smoke route." path="/smoke/" />
 </head>
-<HeroSection />
+<Section><Hero /></Section>
 `)
   await run(['bun', 'run', 'doctor'], localTarget)
 

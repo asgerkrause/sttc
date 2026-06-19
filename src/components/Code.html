@@ -9,28 +9,29 @@
 
 <style>
   .code {
-    margin: 1rem 0;
-    border: 1px solid color-mix(in oklab, var(--fg) 10%, transparent);
-    border-radius: .5rem;
+    border: var(--bw) solid var(--b);
+    border-radius: var(--br);
     overflow: hidden;
-    background: color-mix(in oklab, var(--fg) 4%, var(--bg));
+    background: var(--t);
 
     .code-lang {
-      padding: .25rem .75rem;
-      font-size: .75rem;
-      letter-spacing: .05em;
+      padding: var(--pd-xs) var(--pd-sm);
+      color: var(--g);
+      font-size: var(--sm-fs);
+      font-weight: var(--fw-b);
+      letter-spacing: var(--sm-ls);
+      line-height: var(--sm-lh);
       text-transform: uppercase;
-      opacity: .6;
-      border-bottom: 1px solid color-mix(in oklab, var(--fg) 8%, transparent);
+      border-bottom: var(--bw) solid var(--b);
     }
     .code-lang:empty { display: none; }
     pre {
       margin: 0;
-      padding: 1rem;
+      padding: var(--pd);
       overflow-x: auto;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: .875rem;
-      line-height: 1.5;
+      font-family: var(--ff-mono);
+      font-size: var(--sm-fs);
+      line-height: var(--sm-lh);
     }
     code { font-family: inherit; }
   }

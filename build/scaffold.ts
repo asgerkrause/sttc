@@ -25,7 +25,7 @@ function usage(): never {
   console.error('Usage: bun run new <component|route|post|page> <name> [--force] [--demo]')
   console.error('       bun run new cms [--force]')
   console.error('       bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]')
-  console.error('       snz-bp add component <hero|logos|pricing|testimonial|faq> [--force] [--demo]')
+  console.error('       snz-bp add component <hero|cta|features|partners|pricing|testimonials|stats|process|faq> [--force] [--demo]')
   process.exit(1)
 }
 

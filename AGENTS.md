@@ -25,7 +25,7 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | `src/pages/**/*.html` | Static routes; one file → one URL |
 | `src/components/*.html` | One HTML file per component. Schema inline at top as `<!-- @desc / @attr -->` comment. |
 | `src/site.json` | Site config: name, url, description, ogImage, locale, scroll |
-| `src/styles.css` | Global tokens, reset, layout primitives, page overrides |
+| `src/styles.css`, `src/styles/*.css` | Global CSS import shell, tokens, reset, type, grid, wrappers, motion |
 | `src/app.js` / `src/app.ts` | Site code entry |
 | `src/images/` | Raster masters → built to webp at multiple sizes |
 | `src/routes/**/*.html` | Legacy static route input; `src/pages` wins on collisions |
@@ -77,7 +77,7 @@ Read **`docs/agent-guide.md`** for framework orientation and **`docs/components.
 - Optional `<script>` block runs once per instance; `el` bound to the root, return a function for cleanup.
 - `<style>` colocated and auto-bundled into `dist/assets/css/components.{hash}.css`.
 
-Built-in components (14): `Header`, `Footer`, `SEO`, `Image`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
+Built-in components (16): `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
 
 To spawn a new component via LLM, hand it `docs/component-prompt.md`. Or just write the file yourself.
 
@@ -168,8 +168,9 @@ Structured data auto-emitted:
 
 ## CSS
 
-- Base tokens + reset: `src/styles.css` (`--mw`, `--bx`, `--by`, `--ffs`, `--fs`, color system).
-- Global layout primitives: `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]`.
+- Base tokens + reset: `src/styles.css` imports split CSS under `src/styles/`.
+- Token legend: `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`, then semantic `--s`, `--i`, `--t`, `--b`, `--g`.
+- Global layout primitives: `.c`, `.w`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`.
 - `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`). Small stacks by default.
 - Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).
 - Component CSS loads **after** base so component rules win at equal specificity.

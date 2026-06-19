@@ -34,8 +34,8 @@ describe('runtime ownership contracts', () => {
     const router = await readFile('runtime/router.js', 'utf8')
     const rootShell = await readFile('src/shell.html', 'utf8')
     const starterShell = await readFile('templates/default/src/shell.html', 'utf8')
-    const rootStyles = await readFile('src/styles.css', 'utf8')
-    const starterStyles = await readFile('templates/default/src/styles.css', 'utf8')
+    const rootStyles = await readFile('src/styles/wrappers.css', 'utf8')
+    const starterStyles = await readFile('templates/default/src/styles/wrappers.css', 'utf8')
 
     for (const shell of [rootShell, starterShell]) {
       expect(shell).toContain('<Footer />\n  <div data-snz-announcer aria-live="polite" aria-atomic="true"></div>')

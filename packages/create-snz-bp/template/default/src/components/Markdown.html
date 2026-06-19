@@ -5,18 +5,21 @@
 
 <style>
   .md {
-    line-height: 1.6;
+    line-height: var(--md-lh);
 
-    h2, h3, h4 { text-wrap: balance; margin-top: 1.5em; margin-bottom: .5em; }
-    p { margin: 0 0 1em; text-wrap: pretty; }
-    ul, ol { margin: 0 0 1em; padding-left: 1.5em; }
-    li + li { margin-top: .25em; }
-    table { width: 100%; margin: 0 0 1em; border-collapse: collapse; font-size: .95em; }
-    th, td { padding: .65em .75em; border-bottom: 1px solid color-mix(in oklab, var(--fg) 14%, transparent); text-align: left; vertical-align: top; }
-    th { font-weight: 650; }
-    code { padding: .125em .25em; font-size: .9em; background: color-mix(in oklab, var(--fg) 6%, transparent); border-radius: .25em; }
+    h2, h3, h4 { text-wrap: balance; margin-top: var(--ss); margin-bottom: var(--gp-sm); }
+    p { margin: 0 0 var(--gp); text-wrap: pretty; }
+    ul, ol { display: block; margin: 0 0 var(--gp); padding-left: var(--pd); }
+    ul { list-style: disc; }
+    ol { list-style: decimal; }
+    li { display: list-item; }
+    li + li { margin-top: var(--gp-xs); }
+    table { width: 100%; margin: 0 0 var(--gp); border-collapse: collapse; font-size: var(--sm-fs); }
+    th, td { padding: var(--pd-xs) var(--pd-sm); border-bottom: var(--bw) solid var(--b); text-align: left; vertical-align: top; }
+    th { font-weight: var(--fw-b); }
+    code { padding: 0.125em 0.25em; font-size: var(--sm-fs); background: var(--t); border-radius: var(--br-xs); }
     pre code { padding: 0; background: none; }
-    a { color: inherit; text-decoration: underline; text-underline-offset: .2em; }
-    blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 2px solid currentColor; opacity: .8; }
+    a { color: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
+    blockquote { margin: 0 0 var(--gp); padding-left: var(--pd); border-left: calc(var(--bw) * 2) solid var(--b); color: var(--g); }
   }
 </style>

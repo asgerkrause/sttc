@@ -146,7 +146,7 @@ Built-ins (14):
 
 Add a new component by handing [`docs/component-prompt.md`](./docs/component-prompt.md) to Claude, or just write it yourself.
 
-Add a private section preset with `snz-bp add component <preset>`. Presets: `hero`, `logos`, `pricing`, `testimonial`, `faq`. They write normal PascalCase component files in `src/components/` and refuse to overwrite existing files unless `--force` is passed. Pass `--demo` to append component invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present.
+Add private slot-first presets with `snz-bp add component <preset>`. Presets include `hero`, `cta`, `features`, `partners`, `pricing`, `testimonials`, `stats`, `process`, and `faq`. They use content nouns: plural wrappers (`Features`, `Testimonials`, `Partners`) and singular items (`Feature`, `Testimonial`, `Partner`). Generated files compose existing `Grid`, `Card`, `Button`, and `Image`; edit them locally after scaffolding. Pass `--demo` to append component invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present.
 
 Theme token packs are private starter shortcuts, not design systems:
 
@@ -158,7 +158,9 @@ snz-bp add theme brutalist    # bold/high-contrast
 
 Theme packs append a marked `snz-bp theme` block to `src/styles.css`. Existing theme blocks are not replaced unless `--force` is passed.
 
-CSS ownership: global CSS owns tokens, reset/base, `.c`, `.w`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Component-specific selectors live in component `<style>` blocks.
+CSS ownership: `src/styles.css` is the import shell. `src/styles/system.css` owns the editable token config + fluid engine; `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css` own their matching layers. Global primitives are `.c`, `.w`, `.btns`, `.lnks`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Component-specific selectors live in component `<style>` blocks.
+
+Token legend: layout uses `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Accent sections use `data-theme="accent"`.
 
 ## Routes
 
@@ -276,7 +278,7 @@ Starter projects include `vercel.json` for Bun-first static deploys: `bun instal
 
 1. Drop `src/pages/pricing.html` (or `bun run new route pricing`). Use nested files for nested URLs.
 2. Optional `<head><SEO title="..." description="..." /></head>` wrapper.
-3. Use components: `<Card title="..."><Button href="..." label="..." />...</Card>`.
+3. Use components: `<Card><h2>...</h2><Button href="..." label="..." /></Card>`.
 4. `bun run build`. Page is at `/pricing/`, in manifest, sitemap, llms.txt, and `/routes/pricing.json`.
 
 ## Adding a component

@@ -1,0 +1,45 @@
+<!--
+  @desc Text-first site logo. Uses site.json name by default; slot can hold an SVG or img mark.
+  @attr siteName Site or business name. Defaults to site.json name.
+  @attr href Destination URL. Defaults to /.
+  @attr size CSS height for the logo wrapper. Defaults to 1lh.
+-->
+<a class="logo" href="{{href}}" style="--logo-size: {{size}}">
+  <span class="logo-mark">{{slot}}</span>
+  <span class="logo-text">{{siteName}}</span>
+</a>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    height: var(--logo-size, 1lh);
+    line-height: 1;
+    color: inherit;
+    font-weight: var(--fw-b);
+    text-decoration: none;
+    width: fit-content;
+  }
+
+  .logo-mark:empty {
+    display: none;
+  }
+
+  .logo:has(.logo-mark:not(:empty)) .logo-text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .logo img,
+  .logo svg {
+    display: block;
+    height: 100%;
+    width: auto;
+    max-width: none;
+  }
+</style>

@@ -79,7 +79,7 @@ async function writeMinimalSite(root: string) {
 </html>
 `)
 
-  await writeFile(join(root, 'src', 'styles.css'), ':root{--by:4rem;--bx:1rem;--gp:1rem;--pd:.75rem;--pd-sm:.5rem;--pd-lg:1.25rem;--br:.5rem;--bw:1px;--b:#ddd;--i:#111;--s:#fff;--g:#555;--t:#f6f6f6;--n05:#f6f6f6;--a:#111;--a05:#eee;--a10:#ddd;--a60:#555;--a80:#333;--a-i:#fff;--c:#111;--c05:#eee;--c10:#ddd;--c60:#555;--c-i:#fff;--fmw:60ch;--fs-sm:.875rem;--h0-fs:4rem;--h0-lh:1;--h2-fs:2rem;--h2-lh:1.1}.c{max-width:72rem;margin-inline:auto;padding-inline:var(--bx)}.w>*+*{margin-top:var(--gp)}[g]{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--gp)}[g]>*{grid-column:span 4}@media(width < 60rem){[g]>*{grid-column:1/-1}}')
+  await writeFile(join(root, 'src', 'styles.css'), ':root{--by:4rem;--bx:1rem;--gp:1rem;--pd:.75rem;--pd-sm:.5rem;--pd-lg:1.25rem;--br:.5rem;--bw:1px;--b:#ddd;--i:#111;--s:#fff;--g:#555;--t:#f6f6f6;--n05:#f6f6f6;--a:#111;--a05:#eee;--a10:#ddd;--a60:#555;--a80:#333;--ai:#fff;--c:#111;--c05:#eee;--c10:#ddd;--c60:#555;--ci:#fff;--md-mw:60ch;--sm-fs:.875rem;--h0-fs:4rem;--h0-lh:1;--h2-fs:2rem;--h2-lh:1.1}.c{max-width:72rem;margin-inline:auto;padding-inline:var(--bx)}.w>*+*{margin-top:var(--gp)}[g]{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--gp)}[g]>*{grid-column:span 4}@media(width < 60rem){[g]>*{grid-column:1/-1}}')
   await writeFile(join(root, 'src', 'app.js'), '')
 }
 
@@ -202,12 +202,12 @@ describe('component preset scaffold', () => {
     const dir = await tempProject()
     try {
       const result = await runScaffold(['add', 'component', 'hero'], dir)
-      const html = await readFile(join(dir, 'src', 'components', 'HeroSection.html'), 'utf8')
+      const html = await readFile(join(dir, 'src', 'components', 'Hero.html'), 'utf8')
 
       expect(result.code).toBe(0)
-      expect(result.stdout).toContain('Added HeroSection')
-      expect(html).toContain('@desc Hero section preset')
-      expect(html).toContain('<Section>')
+      expect(result.stdout).toContain('Added Hero')
+      expect(html).toContain('@desc Slot-first hero preset')
+      expect(html).toContain('<div class="hero">')
       expect(html).toContain('<Button href="/" label="Start project" />')
     } finally {
       await rm(dir, { recursive: true, force: true })
@@ -217,12 +217,12 @@ describe('component preset scaffold', () => {
   test('snz-bp add dispatches to preset scaffold', async () => {
     const dir = await tempProject()
     try {
-      const result = await runBun(binPath, ['add', 'component', 'logos'], dir)
-      const html = await readFile(join(dir, 'src', 'components', 'LogoCloud.html'), 'utf8')
+      const result = await runBun(binPath, ['add', 'component', 'partners'], dir)
+      const html = await readFile(join(dir, 'src', 'components', 'Partners.html'), 'utf8')
 
       expect(result.code).toBe(0)
-      expect(result.stdout).toContain('Added LogoCloud')
-      expect(html).toContain('@desc Logo cloud preset')
+      expect(result.stdout).toContain('Added Partners')
+      expect(html).toContain('@desc Partner/client mark collection wrapper')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -275,15 +275,16 @@ describe('component preset scaffold', () => {
       await mkdir(join(dir, 'src', 'pages'), { recursive: true })
       await writeFile(join(dir, 'src', 'pages', 'styles.html'), '<Section><h1>Styles</h1></Section>\n')
 
-      const result = await runScaffold(['add', 'component', 'testimonial', '--demo'], dir)
-      const html = await readFile(join(dir, 'src', 'components', 'TestimonialSection.html'), 'utf8')
+      const result = await runScaffold(['add', 'component', 'testimonials', '--demo'], dir)
+      const html = await readFile(join(dir, 'src', 'components', 'Testimonials.html'), 'utf8')
       const styles = await readFile(join(dir, 'src', 'pages', 'styles.html'), 'utf8')
 
       expect(result.code).toBe(0)
       expect(result.stdout).toContain('appended demo to')
-      expect(result.stdout).toContain('Added TestimonialSection')
-      expect(html).toContain('@desc Testimonial section preset')
-      expect(styles).toContain('<TestimonialSection />')
+      expect(result.stdout).toContain('Added Testimonials')
+      expect(html).toContain('@desc Testimonial collection wrapper')
+      expect(styles).toContain('<Testimonials>')
+      expect(styles).toContain('<Testimonial>')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -296,7 +297,7 @@ describe('component preset scaffold', () => {
 
       expect(result.code).toBe(1)
       expect(result.stderr).toContain('unknown component preset "gallery"')
-      expect(result.stderr).toContain('Available presets: hero, logos, pricing, testimonial, faq')
+      expect(result.stderr).toContain('Available presets: hero, cta, features, partners, pricing, testimonials, stats, process, faq')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -306,13 +307,13 @@ describe('component preset scaffold', () => {
     const dir = await tempProject()
     try {
       await mkdir(join(dir, 'src', 'components'), { recursive: true })
-      await writeFile(join(dir, 'src', 'components', 'HeroSection.html'), 'existing')
+      await writeFile(join(dir, 'src', 'components', 'Hero.html'), 'existing')
 
       const result = await runScaffold(['add', 'component', 'hero'], dir)
 
       expect(result.code).toBe(2)
       expect(result.stderr).toContain('refusing to overwrite')
-      expect(result.stderr).toContain('HeroSection.html')
+      expect(result.stderr).toContain('Hero.html')
       expect(result.stderr).toContain('pass --force to overwrite')
     } finally {
       await rm(dir, { recursive: true, force: true })
@@ -325,16 +326,20 @@ describe('component preset scaffold', () => {
       await copyBuiltInComponents(dir)
       await writeMinimalSite(dir)
 
-      for (const preset of ['hero', 'logos', 'pricing', 'testimonial', 'faq']) {
+      for (const preset of ['hero', 'cta', 'features', 'partners', 'pricing', 'testimonials', 'stats', 'process', 'faq']) {
         const result = await runScaffold(['add', 'component', preset], dir)
         expect(result.code).toBe(0)
       }
 
-      await writeFile(join(dir, 'src', 'pages', 'index.html'), `<HeroSection />
-<LogoCloud />
-<PricingSection />
-<TestimonialSection />
-<FAQSection />
+      await writeFile(join(dir, 'src', 'pages', 'index.html'), `<Section><Hero /></Section>
+<Section theme="accent"><CTA /></Section>
+<Section><Features><Feature><h3>Fast</h3><p>Copy.</p></Feature></Features></Section>
+<Section><Partners><Partner>Northstar</Partner></Partners></Section>
+<Section><Pricing><Plan><h3>Starter</h3><p>Copy.</p></Plan></Pricing></Section>
+<Section><Testimonials><Testimonial><blockquote>Quote.</blockquote><p>Name</p></Testimonial></Testimonials></Section>
+<Section><Stats><Stat><strong>1</strong><span>Thing</span></Stat></Stats></Section>
+<Section><Process><Step><h3>Plan</h3><p>Copy.</p></Step></Process></Section>
+<Section><Questions /></Section>
 `)
 
       const result = await runBun(join(packageRoot, 'build', 'index.ts'), [], dir)

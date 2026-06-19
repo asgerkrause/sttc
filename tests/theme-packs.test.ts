@@ -42,7 +42,8 @@ describe('theme packs', () => {
       const css = await readFile(stylesPath, 'utf8')
       expect(css.startsWith('@import "grid.css";\n\nbody { color: var(--i); }')).toBe(true)
       expect(css).toContain('/* editorial token pack. Safe to edit after applying. */')
-      expect(css).toContain('--ff: var(--ff-serif);')
+      expect(css).toContain('--h0-ff: var(--ff-serif);')
+      expect(css).toContain('--md-mw: 72ch;')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

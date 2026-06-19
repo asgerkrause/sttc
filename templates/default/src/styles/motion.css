@@ -1,0 +1,104 @@
+@layer motion {
+  @supports (animation-timeline: view()) {
+    @property --sp-t {
+      syntax: '<number>';
+      inherits: true;
+      initial-value: 0;
+    }
+
+    @property --sp-f {
+      syntax: '<number>';
+      inherits: true;
+      initial-value: 1;
+    }
+
+    @property --sp-ft {
+      syntax: '<number>';
+      inherits: true;
+      initial-value: 0;
+    }
+
+    @property --sp-tf {
+      syntax: '<number>';
+      inherits: true;
+      initial-value: 1;
+    }
+
+    @keyframes sp-t {
+      from { --sp-t: 0; }
+      to { --sp-t: 1; }
+    }
+
+    @keyframes sp-f {
+      from { --sp-f: 1; }
+      to { --sp-f: 0; }
+    }
+
+    @keyframes sp-ft {
+      0% { --sp-ft: 0; }
+      50% { --sp-ft: 1; }
+      100% { --sp-ft: 0; }
+    }
+
+    @keyframes sp-tf {
+      0% { --sp-tf: 1; }
+      50% { --sp-tf: 0; }
+      100% { --sp-tf: 1; }
+    }
+
+    [data-scrub] {
+      animation-name: sp-t, sp-f, sp-ft, sp-tf;
+      animation-fill-mode: both;
+      animation-timeline: view();
+      animation-timing-function: linear;
+      animation-range: cover 0% cover 100%;
+    }
+  }
+
+  @supports (view-transition-name: none) {
+    @view-transition {
+      navigation: auto;
+    }
+
+    :root {
+      --pt-b: 0.2em;
+
+      @media (orientation: portrait) {
+        --pt-x: 1em;
+        --pt-y: 0%;
+      }
+
+      @media (orientation: landscape) {
+        --pt-x: 0%;
+        --pt-y: 1em;
+      }
+    }
+
+    @keyframes o-in {
+      from {
+        transform: translateX(calc(var(--pt-x) * 1)) translateY(calc(var(--pt-y) * 1));
+        filter: blur(var(--pt-b));
+        opacity: 0;
+      }
+    }
+
+    @keyframes o-out {
+      to {
+        transform: translateX(calc(var(--pt-x) * -1)) translateY(calc(var(--pt-y) * -1));
+        filter: blur(var(--pt-b));
+        opacity: 0;
+      }
+    }
+
+    ::view-transition-old(root),
+    ::view-transition-old(current) {
+      animation: var(--td) var(--tf-i) both o-out;
+    }
+
+    ::view-transition-new(root),
+    ::view-transition-new(current) {
+      animation: var(--td-f) var(--tf-o) both o-in;
+      animation-delay: var(--td);
+    }
+  }
+}

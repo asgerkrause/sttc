@@ -1,7 +1,7 @@
 <!--
   @desc Link styled as an action button.
-  @attr href! Destination URL or path.
-  @attr label! Visible button text.
+  @attr href Destination URL or path. Defaults to #.
+  @attr label Visible button text. Defaults to Learn more.
   @attr variant=[default|ghost|tone|accent|complimentary] :class Visual style.
   @attr size=[sm|md|lg] :class Size variant.
   @attr track Optional analytics event name; emits data-snz-track on the root.
@@ -37,7 +37,7 @@
 
     &.accent {
       --btn-s: var(--a);
-      --btn-i: var(--a-i);
+      --btn-i: var(--ai);
 
       &.tone {
         --btn-s: var(--a05);
@@ -48,7 +48,7 @@
 
     &.complimentary {
       --btn-s: var(--c);
-      --btn-i: var(--c-i);
+      --btn-i: var(--ci);
 
       &.tone {
         --btn-s: var(--c05);
@@ -59,7 +59,7 @@
 
     &:hover {
       --btn-s: var(--a);
-      --btn-i: var(--a-i);
+      --btn-i: var(--ai);
 
       &.ghost {
         --btn-s: var(--t);
@@ -93,13 +93,13 @@
     &.sm {
       padding: var(--pd-xs) var(--pd-sm);
       border-radius: var(--br-sm);
-      font-size: var(--fs-sm);
+      font-size: var(--sm-fs);
     }
 
     &.lg {
       padding: var(--pd) var(--pd-lg);
       border-radius: var(--br-lg);
-      font-size: var(--fs-lg);
+      font-size: var(--lg-fs);
     }
   }
 </style>

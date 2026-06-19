@@ -10,70 +10,74 @@ const themeEnd = '/* snz-bp theme:end */'
 
 const themePacks: Record<ThemePackName, string> = {
   minimal: `:root {
-  --mw: 168rem;
-  --by: 7rem;
-  --bx: 2rem;
-  --gp: 1rem;
-  --pd: 1.4rem;
-  --br: 0.6rem;
-  --ss: 3.6rem;
+  --mw-max: 84;
+  --by-max: 7;
+  --by-min: 4;
+  --bx-max: 2;
+  --bx-min: 1;
+  --gp-max: 1;
+  --gp-min: 0.625;
+  --pd-max: 1.4;
+  --pd-min: 0.875;
+  --br-max: 0.6;
+  --br-min: 0.35;
+  --ss-max: 3.6;
+  --ss-min: 2.25;
 
-  --ff: var(--ff-sans);
   --ff-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --ff-serif: ui-serif, Georgia, serif;
   --ff-mono: "SFMono-Regular", Consolas, monospace;
-  --fs: 1.6rem;
-  --fw: 400;
-  --ls: -0.015em;
-  --lh: 1.45;
-  --fmw: 68ch;
+  --md-fw: var(--fw-r);
+  --md-ls: -0.015em;
+  --md-lh: 1.45;
+  --md-mw: 68ch;
 
-  --h0-fs: 7.2rem;
-  --h1-fs: 5.6rem;
-  --h2-fs: 3.8rem;
-  --h3-fs: 2.6rem;
-  --h4-fs: 2rem;
+  --h0-max: 7.2;
+  --h1-max: 5.6;
+  --h2-max: 3.8;
+  --h3-max: 2.6;
+  --h4-max: 2;
   --h0-ls: -0.035em;
   --h1-ls: -0.035em;
   --h2-ls: -0.025em;
 
-  --li: hsl(40 24% 98%);
-  --da: hsl(220 14% 10%);
+  --l: #fff;
+  --d: #111;
   --a: #245cff;
   --c: #6855d9;
-}
-
-body {
-  background: var(--s);
 }`,
   editorial: `:root {
-  --mw: 148rem;
-  --by: 9rem;
-  --bx: 2.4rem;
-  --gp: 1.4rem;
-  --pd: 1.8rem;
-  --br: 0.3rem;
-  --ss: 5rem;
+  --mw-max: 74;
+  --by-max: 9;
+  --by-min: 5;
+  --bx-max: 2.4;
+  --bx-min: 1;
+  --gp-max: 1.4;
+  --gp-min: 0.75;
+  --pd-max: 1.8;
+  --pd-min: 1;
+  --br-max: 0.3;
+  --br-min: 0.2;
+  --ss-max: 5;
+  --ss-min: 3;
 
-  --ff: var(--ff-serif);
   --ff-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --ff-serif: Charter, "Iowan Old Style", Georgia, serif;
   --ff-mono: "SFMono-Regular", Consolas, monospace;
-  --fs: 1.9rem;
-  --fw: 400;
-  --ls: -0.005em;
-  --lh: 1.62;
-  --fmw: 72ch;
+  --md-fw: var(--fw-r);
+  --md-ls: -0.005em;
+  --md-lh: 1.62;
+  --md-mw: 72ch;
 
   --h0-ff: var(--ff-serif);
   --h1-ff: var(--ff-serif);
   --h2-ff: var(--ff-serif);
   --h3-ff: var(--ff-serif);
-  --h0-fs: 8.8rem;
-  --h1-fs: 6.8rem;
-  --h2-fs: 4.4rem;
-  --h3-fs: 3rem;
-  --h4-fs: 2rem;
+  --h0-max: 8.8;
+  --h1-max: 6.8;
+  --h2-max: 4.4;
+  --h3-max: 3;
+  --h4-max: 2;
   --h0-ls: -0.045em;
   --h1-ls: -0.04em;
   --h2-ls: -0.025em;
@@ -81,8 +85,8 @@ body {
   --h1-lh: 0.96;
   --h2-lh: 1.02;
 
-  --li: hsl(43 35% 96%);
-  --da: hsl(28 18% 11%);
+  --l: #fff;
+  --d: #211;
   --a: #9a3412;
   --c: #365314;
 }
@@ -91,42 +95,48 @@ body {
   font-variant-numeric: oldstyle-nums;
 }`,
   brutalist: `:root {
-  --mw: 180rem;
-  --by: 6rem;
-  --bx: 1.6rem;
-  --gp: 1.2rem;
-  --pd: 1.2rem;
-  --br: 0;
-  --ss: 3rem;
+  --mw-max: 90;
+  --by-max: 6;
+  --by-min: 3;
+  --bx-max: 1.6;
+  --bx-min: 0.75;
+  --gp-max: 1.2;
+  --gp-min: 0.6;
+  --pd-max: 1.2;
+  --pd-min: 0.75;
+  --br-max: 0;
+  --br-min: 0;
+  --ss-max: 3;
+  --ss-min: 2;
   --bw: 0.2rem;
 
-  --ff: var(--ff-sans);
   --ff-sans: Arial, Helvetica, sans-serif;
   --ff-serif: Georgia, serif;
   --ff-mono: "SFMono-Regular", Consolas, monospace;
-  --fs: 1.8rem;
-  --fw: 500;
-  --ls: -0.03em;
-  --lh: 1.18;
-  --fmw: 60ch;
+  --fw-r: 500;
+  --fw-b: 800;
+  --md-fw: var(--fw-r);
+  --md-ls: -0.03em;
+  --md-lh: 1.18;
+  --md-mw: 60ch;
 
-  --h0-fs: 9.6rem;
-  --h1-fs: 7.2rem;
-  --h2-fs: 4.8rem;
-  --h3-fs: 3.2rem;
-  --h4-fs: 2.2rem;
-  --h0-fw: 800;
-  --h1-fw: 800;
-  --h2-fw: 800;
-  --h3-fw: 800;
+  --h0-max: 9.6;
+  --h1-max: 7.2;
+  --h2-max: 4.8;
+  --h3-max: 3.2;
+  --h4-max: 2.2;
+  --h0-fw: var(--fw-b);
+  --h1-fw: var(--fw-b);
+  --h2-fw: var(--fw-b);
+  --h3-fw: var(--fw-b);
   --h0-ls: -0.07em;
   --h1-ls: -0.06em;
   --h2-ls: -0.045em;
   --h0-lh: 0.88;
   --h1-lh: 0.9;
 
-  --li: hsl(58 100% 96%);
-  --da: hsl(0 0% 0%);
+  --l: #fff;
+  --d: #000;
   --a: #d60000;
   --c: #0047ff;
 }

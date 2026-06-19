@@ -143,8 +143,30 @@ export function createComposer(
     if (name === 'Image') return resolveImageAttrs(getImageMeta(), attrs)
 
     const site = await loadSiteConfig()
-    if (name === 'Header' && !attrs.siteName) attrs.siteName = site.name
-    if (name === 'Footer' && !attrs.siteName) attrs.siteName = site.name
+    if ((name === 'Header' || name === 'Footer' || name === 'Logo') && !attrs.siteName) attrs.siteName = site.name
+    if (name === 'Logo') {
+      attrs.href ??= '/'
+      attrs.size ??= '1lh'
+    }
+    if (name === 'Button') {
+      attrs.href ??= '#'
+      attrs.label ??= 'Learn more'
+    }
+    if (name === 'Link') {
+      attrs.href ??= '#'
+      attrs.label ??= 'Learn more'
+    }
+    if (name === 'Accordion') {
+      attrs.summary ??= 'Details'
+      attrs.body ??= ''
+    }
+    if (name === 'Embed') attrs.ratio ??= '16/9'
+    if (name === 'Features') attrs.cols ??= '3-2'
+    if (name === 'Partners') attrs.label ??= 'Trusted organizations'
+    if (name === 'Pricing') attrs.cols ??= '3-3'
+    if (name === 'Plan') attrs.featured ??= 'false'
+    if (name === 'Testimonials') attrs.cols ??= '2'
+    if (name === 'Stats') attrs.cols ??= '3-3'
     return attrs
   }
 
@@ -188,7 +210,7 @@ export function createComposer(
         // built-in enrichers may add keys post-validate; allow common ones for SEO/Image
         if (declared[key] !== undefined) continue
         if (key === 'track') continue
-        if (name === 'SEO' || name === 'Image' || name === 'Header' || name === 'Footer') continue
+        if (name === 'SEO' || name === 'Image' || name === 'Header' || name === 'Footer' || name === 'Logo') continue
         throw buildErrorAt(`<${name} /> has unknown attribute "${key}"`, source, index, {
           file: fileHint,
           hint: `Declared attrs: ${Object.keys(declared).join(', ') || '(none)'} — add it to the inline schema comment if intended.`,
@@ -216,10 +238,10 @@ export function createComposer(
     if (m.name === 'SEO' && m.selfClosing === false) {
       throw new BuildError('<SEO> must be self-closing', { file: fileHint })
     }
-    validateAttrs(m.name, m.attrs, fileHint, source, m.index)
     let attrs: Record<string, string>
     try {
       attrs = await enrichComponentAttrs(m.name, { ...m.attrs })
+      validateAttrs(m.name, attrs, fileHint, source, m.index)
     } catch (err) {
       if (err instanceof BuildError && err.line) throw err
       throw buildErrorAt(err instanceof Error ? err.message : String(err), source, m.index, {

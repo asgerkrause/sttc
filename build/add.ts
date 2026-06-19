@@ -13,7 +13,7 @@ const commands: Record<string, string[]> = {
 }
 
 function usage(): never {
-  console.error('Usage: snz-bp add component <hero|logos|pricing|testimonial|faq> [--force] [--demo]')
+  console.error('Usage: snz-bp add component <hero|cta|features|partners|pricing|testimonials|stats|process|faq> [--force] [--demo]')
   console.error('       snz-bp add theme <minimal|editorial|brutalist> [--force]')
   process.exit(1)
 }
