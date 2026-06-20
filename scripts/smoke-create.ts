@@ -48,6 +48,12 @@ async function assertNoFile(target: string, relativePath: string) {
   }
 }
 
+async function assertNoGeneratedOrIgnoredArtifacts(target: string) {
+  for (const path of ['dist', 'node_modules', 'bun.lock', 'docs/components-catalog.md']) {
+    await assertNoFile(target, path)
+  }
+}
+
 async function assertStarterSurface(target: string) {
   for (const file of [
     'AGENTS.md',
@@ -77,6 +83,7 @@ async function assertStarterSurface(target: string) {
   }
 
   await assertNoFile(target, 'src/app.js')
+  await assertNoGeneratedOrIgnoredArtifacts(target)
 
   const scripts = (await packageJson(target)).scripts ?? {}
   for (const script of ['build', 'check', 'doctor', 'typecheck', 'new', 'add', 'migrate']) {

@@ -479,10 +479,10 @@ const processPreset: ComponentPreset = {
       html: `<!--
   @desc Single process step. Slot owns heading and copy.
 -->
-<li class="step">{{slot}}</li>
+<li class="stp">{{slot}}</li>
 
 <style>
-  .step {
+  .stp {
     counter-increment: steps;
     display: grid;
     gap: calc(var(--gp) / 2);

@@ -3,7 +3,6 @@ import { join } from 'path'
 import { sourceStylesDir, sourceStylesFile } from './paths'
 
 const blocked = [
-  { selector: '.card', owner: 'src/components/Card.html' },
   { selector: '.grid', owner: 'src/components/Grid.html (use [g])' },
   { selector: '.stack', owner: 'deprecated (use .w)' },
   { selector: '.section', owner: 'src/components/Section.html (no root class)' },
@@ -15,6 +14,7 @@ const blocked = [
 const allowed = [
   { selector: '.c', owner: 'global container primitive' },
   { selector: '.w', owner: 'global wrap primitive' },
+  { selector: '.crd', owner: 'global card primitive' },
   { selector: '.btn', owner: 'button primitive may be global or component-owned' },
   { selector: '.btns', owner: 'button group primitive' },
   { selector: '.lnk', owner: 'link primitive may be global or component-owned' },

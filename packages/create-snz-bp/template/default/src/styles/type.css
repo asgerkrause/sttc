@@ -39,6 +39,21 @@
     max-width: var(--sm-mw);
   }
 
+  .fw-l {
+    font-weight: var(--fw-l);
+    font-variation-settings: "wght" var(--fw-l);
+  }
+
+  .fw-r {
+    font-weight: var(--fw-r);
+    font-variation-settings: "wght" var(--fw-r);
+  }
+
+  .fw-b {
+    font-weight: var(--fw-b);
+    font-variation-settings: "wght" var(--fw-b);
+  }
+
   .c-i { color: var(--i); }
   .c-g { color: var(--g); }
   .c-s { color: var(--s); }

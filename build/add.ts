@@ -2,13 +2,13 @@
 
 import { spawn } from 'bun'
 import { join } from 'path'
+import { addComponentPreset } from './component-presets'
 
 const packageRoot = join(import.meta.dir, '..')
 const args = process.argv.slice(2)
 const type = args[0]
 
 const commands: Record<string, string[]> = {
-  component: ['bun', join(packageRoot, 'build', 'scaffold.ts'), 'add'],
   theme: ['bun', join(packageRoot, 'build', 'theme-packs.ts')],
 }
 
@@ -19,6 +19,17 @@ function usage(): never {
 }
 
 if (!type) usage()
+
+if (type === 'component') {
+  const name = args[1]
+  if (!name) usage()
+  await addComponentPreset(name, {
+    force: args.includes('--force'),
+    demo: args.includes('--demo'),
+  })
+  process.exit(0)
+}
+
 const command = commands[type]
 if (!command) usage()
 

@@ -7,9 +7,9 @@ import { outFileFromSlug, slugFromPageRel } from '../build/source-files'
 import { slugifyTag } from '../build/content'
 import { BuildError } from '../build/errors'
 import { mediaInputCopyExclusions, shouldSkipMediaCopy } from '../build/assets'
-import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, resolveImageAttrs } from '../build/images'
+import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, resolveImageAttrs } from '../build/images'
 import { publicPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
-import { checkVercelConfig } from '../build/check'
+import { checkBuiltImageRefs, checkPagesCmsConfig, checkVercelConfig, extractBuiltImageRefs } from '../build/check'
 import { selectAppEntry } from '../build/paths'
 
 async function composeRoute(slug: string, fileHint: string) {
@@ -57,29 +57,36 @@ describe('build path contracts', () => {
     expect(() => selectAppEntry(paths, new Set([paths.appTs, paths.appJs]))).toThrow(BuildError)
   })
 
-  test('parses PagesCMS media inputs from .pages.yml', () => {
-    expect(parsePagesCmsMediaInputs(`
+  test('parses PagesCMS media inputs and outputs from .pages.yml', () => {
+    const yaml = `
 media:
   - name: images
     input: media/images
     output: /assets/images
   - name: portraits
     input: uploads/portraits # editor uploads
+    output: "/assets/portraits" # wrong on purpose
 content:
   - name: posts
     path: content/posts
-`)).toEqual(['media/images', 'uploads/portraits'])
+`
+
+    expect(parsePagesCmsMediaInputs(yaml)).toEqual(['media/images', 'uploads/portraits'])
+    expect(parsePagesCmsMediaOutputs(yaml)).toEqual(['/assets/images', '/assets/portraits'])
   })
 
   test('accepts canonical Vercel static deploy config', async () => {
     const dir = await tempProject()
     try {
       await writeFile(join(dir, 'vercel.json'), JSON.stringify({
+        framework: null,
         installCommand: 'bun install',
         buildCommand: 'bun run build',
         devCommand: 'bun run dev',
         outputDirectory: 'dist',
         bunVersion: '1.x',
+        cleanUrls: true,
+        trailingSlash: true,
         headers: [
           { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
           { source: '/(llms|llms-full|robots|sitemap).(txt|xml)', headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }] },
@@ -98,7 +105,7 @@ content:
   test('keeps root and starter Vercel config in parity', async () => {
     const rootConfig = JSON.parse(await readFile('vercel.json', 'utf8'))
     const starterConfig = JSON.parse(await readFile('templates/default/vercel.json', 'utf8'))
-    const keys = ['installCommand', 'buildCommand', 'devCommand', 'outputDirectory', 'bunVersion', 'headers']
+    const keys = ['framework', 'installCommand', 'buildCommand', 'devCommand', 'outputDirectory', 'bunVersion', 'cleanUrls', 'trailingSlash', 'headers']
 
     for (const key of keys) {
       expect(starterConfig[key]).toEqual(rootConfig[key])
@@ -118,13 +125,63 @@ content:
 
       await checkVercelConfig(dir, (warning) => warnings.push(warning))
 
+      expect(warnings).toContain('vercel.json: framework should be null for snz-bp Bun static deploys')
       expect(warnings).toContain('vercel.json: installCommand should be "bun install" for snz-bp Bun static deploys')
       expect(warnings).toContain('vercel.json: buildCommand should be "bun run build" for snz-bp Bun static deploys')
       expect(warnings).toContain('vercel.json: devCommand should be "bun run dev" for snz-bp Bun static deploys')
       expect(warnings).toContain('vercel.json: outputDirectory should be "dist" for snz-bp Bun static deploys')
       expect(warnings).toContain('vercel.json: bunVersion should be "1.x" for snz-bp Bun static deploys')
+      expect(warnings).toContain('vercel.json: cleanUrls should be true for snz-bp Bun static deploys')
+      expect(warnings).toContain('vercel.json: trailingSlash should be true for snz-bp Bun static deploys')
       expect(warnings).toContain('vercel.json: /assets/(.*) should use immutable Cache-Control headers')
       expect(warnings).toContain('vercel.json: discovery files should use short Cache-Control headers')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('warns on PagesCMS media output drift', () => {
+    const warnings: string[] = []
+
+    checkPagesCmsConfig(`media:\n  - name: images\n    input: media/images\n    output: /media/images\n`, (warning) => warnings.push(warning))
+
+    expect(warnings).toContain('.pages.yml: media.output "/media/images" should be /assets/images because CMS images publish as optimized assets')
+  })
+
+  test('extracts built image refs from HTML attrs, meta content, srcset, and JSON', () => {
+    const refs = extractBuiltImageRefs(`<img src="/assets/images/hero.webp">
+<meta property="og:image" content="/assets/images/og.webp">
+<video poster="/assets/images/poster.webp"></video>
+<img srcset="/assets/images/hero-320.webp 320w, /assets/images/hero-640.webp 640w">
+{"image":"/assets/images/team.webp","template":"/assets/images/{src}.webp"}`)
+
+    expect(refs).toEqual([
+      '/assets/images/hero-320.webp',
+      '/assets/images/hero-640.webp',
+      '/assets/images/hero.webp',
+      '/assets/images/og.webp',
+      '/assets/images/poster.webp',
+      '/assets/images/team.webp',
+    ])
+  })
+
+  test('fails missing built image refs after CMS media normalization', async () => {
+    const dir = await tempProject()
+    try {
+      await mkdir(join(dir, 'assets', 'images'), { recursive: true })
+      await mkdir(join(dir, 'routes'), { recursive: true })
+      await writeFile(join(dir, 'index.html'), '<meta property="og:image" content="/assets/images/og.webp"><img src="/assets/images/hero.webp">')
+      await writeFile(join(dir, 'assets', 'images', 'og.webp'), 'ok')
+      await writeFile(join(dir, 'assets', 'images', 'hero.webp'), 'ok')
+      await writeFile(join(dir, 'routes', 'team.json'), JSON.stringify({ image: '/assets/images/team.webp' }))
+      const errors: string[] = []
+
+      await checkBuiltImageRefs(dir, (error) => errors.push(error))
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).toContain('missing image asset /assets/images/team.webp')
+      expect(errors[0]).toContain('PagesCMS media.input')
+      expect(errors[0]).toContain('CMS /media/images/* refs publish as /assets/images/*.webp')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -137,6 +194,17 @@ content:
       const roots = await imageSourceRoots(dir)
 
       expect(roots.map((root) => root.label)).toContain('uploads/images')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects unsafe PagesCMS media.input paths', async () => {
+    const dir = await tempProject()
+    try {
+      await writeFile(join(dir, '.pages.yml'), `media:\n  - name: images\n    input: ../outside\n    output: /assets/images\n`)
+
+      await expect(imageSourceRoots(dir)).rejects.toThrow('Invalid PagesCMS media.input "../outside"')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

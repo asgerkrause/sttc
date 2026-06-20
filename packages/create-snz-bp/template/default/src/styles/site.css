@@ -10,21 +10,17 @@
   .hero {
     min-height: 72svh;
     align-items: center;
-
-    &.compact {
-      min-height: 48svh;
-    }
   }
 
-  .hero-panel,
-  .step {
+  .hero-pn,
+  .stp {
     border: var(--bw) solid var(--b);
     border-radius: var(--br-lg);
     background: color-mix(in srgb, var(--s) 70%, transparent);
     padding: var(--pd-lg);
   }
 
-  .hero-panel {
+  .hero-pn {
     align-self: stretch;
     justify-content: end;
 
@@ -44,7 +40,7 @@
     }
   }
 
-  .step {
+  .stp {
     min-height: 22rem;
 
     span {
@@ -52,10 +48,6 @@
       font-size: var(--sm-fs);
       font-weight: var(--fw-b);
     }
-  }
-
-  .section-head {
-    max-width: 72rem;
   }
 
   @media (width < 60rem) {

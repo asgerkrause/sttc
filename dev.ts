@@ -150,9 +150,11 @@ const HMR_CLIENT = `
           cur.parentNode.insertBefore(next, cur.nextSibling)
         }
       }
-      // Re-render current route via snz router if possible.
-      if (window.snz?.navigate) await window.snz.navigate(location.pathname)
+      // Re-render current route via snz router if possible without adding history entries.
+      if (window.snz?._reload) await window.snz._reload()
+      else if (window.snz?.navigate) await window.snz.navigate(location.pathname, { replace: true })
       else location.reload()
+      delete document.documentElement.dataset.snzBuilding
       lastApplied = Date.now()
     } catch {
       location.reload()
@@ -302,7 +304,8 @@ for (const rel of ['pages', 'routes', 'components', 'assets', 'templates', 'styl
 }
 watchTree(src, false) // shell.html, site.json, styles.css, app.js/app.ts — watch dir, not file (file watches die on save+rename)
 watchTree(join(root, 'build'), true)
-watchTree(root, false) // router.js, .pages.yml
+watchTree(join(root, 'runtime'), true)
+watchTree(root, false) // .pages.yml and legacy top-level runtime files
 watchTree(join(root, 'lib'), true)
 for (const rel of ['content', 'media']) {
   watchTree(join(root, rel), true)

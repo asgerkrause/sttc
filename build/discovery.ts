@@ -6,7 +6,7 @@
 
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { absoluteUrl, type SiteConfig } from './seo'
+import { absoluteUrl, type JsonLdNode, type SiteConfig } from './seo'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import type { ComponentSchema, ComposeInstance } from './compose'
 import type { ContentRoute } from './content'
@@ -32,9 +32,19 @@ export const scanInternalLinks = scanHtmlInternalLinks
 export const extractTitle = extractHtmlTitle
 export const extractDescription = extractHtmlDescription
 
+export type RouteSchemaExtras = {
+  schemas: string[]
+  extraJsonLd: JsonLdNode[]
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.filter(Boolean))]
+}
+
 /** Build per-route JSON-LD additions based on what components the route contains. */
-export function detectSchemas(record: RouteRecord, schemas: Map<string, ComponentSchema>): unknown[] {
-  const out: unknown[] = []
+function componentSchemaExtras(record: RouteRecord, schemas: Map<string, ComponentSchema>): RouteSchemaExtras {
+  const extraJsonLd: JsonLdNode[] = []
+  const schemaTypes: string[] = []
   const faqQuestions: { name: string; acceptedAnswer: { text: string } }[] = []
   const howToSteps: { name: string; text: string }[] = []
 
@@ -60,44 +70,68 @@ export function detectSchemas(record: RouteRecord, schemas: Map<string, Componen
     // schema mapping declared in ComponentSchema.schema (future hook)
     const decl = schemas.get(inst.name)?.schema
     if (decl) {
-      const node: Record<string, unknown> = { '@type': decl.type }
+      const node: JsonLdNode = { '@type': decl.type }
       for (const [out_key, in_key] of Object.entries(decl.map ?? {})) {
         if (inst.attrs[in_key]) node[out_key] = inst.attrs[in_key]
       }
-      out.push(node)
+      schemaTypes.push(decl.type)
+      extraJsonLd.push(node)
     }
   }
 
   if (faqQuestions.length) {
-    record.schemas.push('FAQPage')
-    out.push({
+    schemaTypes.push('FAQPage')
+    extraJsonLd.push({
       '@type': 'FAQPage',
       mainEntity: faqQuestions.map((q) => ({ '@type': 'Question', name: q.name, acceptedAnswer: { '@type': 'Answer', text: q.acceptedAnswer.text } })),
     })
   }
   if (howToSteps.length) {
-    record.schemas.push('HowTo')
-    out.push({
+    schemaTypes.push('HowTo')
+    extraJsonLd.push({
       '@type': 'HowTo',
       step: howToSteps.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.name, text: s.text })),
     })
   }
-  return out
+  return { schemas: uniqueStrings([...record.schemas, ...schemaTypes]), extraJsonLd }
+}
+
+export function detectSchemas(record: RouteRecord, schemas: Map<string, ComponentSchema>): JsonLdNode[] {
+  return componentSchemaExtras(record, schemas).extraJsonLd
 }
 
 function stripTags(s: string) {
   return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
 }
 
-function blogPostingFor(record: RouteRecord, content: ContentRoute, site: SiteConfig) {
+function blogPostingFor(record: RouteRecord, content: ContentRoute, site: SiteConfig): JsonLdNode {
   return {
     '@type': 'BlogPosting',
     headline: record.title,
     description: record.description,
-    datePublished: content.data.date ?? record.lastModified,
+    datePublished: content.date ?? content.data.date,
     author: { '@type': 'Organization', name: site.name },
     url: absoluteUrl(site.url, publicPathFromSlug(record.slug)),
   }
+}
+
+export function routeSchemaExtras(
+  record: RouteRecord,
+  schemas: Map<string, ComponentSchema>,
+  content: ContentRoute | undefined,
+  site: SiteConfig,
+): RouteSchemaExtras {
+  const componentExtras = componentSchemaExtras(record, schemas)
+  const schemaTypes = [...componentExtras.schemas]
+  const extraJsonLd = [...componentExtras.extraJsonLd]
+
+  if (content?.collection === 'posts') {
+    schemaTypes.push('BlogPosting')
+    extraJsonLd.push(blogPostingFor(record, content, site))
+  }
+  if (record.slug.startsWith('insights/') && !content) schemaTypes.push('WebPage')
+
+  return { schemas: uniqueStrings(schemaTypes), extraJsonLd }
 }
 
 export type DiscoveryInput = {
@@ -111,13 +145,13 @@ export type DiscoveryInput = {
 export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
   const { site, routes, componentSchemas, contentByslug } = input
 
-  // Augment each route's JSON-LD with detected schemas and write per-route json.
-  for (const r of routes) {
-    const extras = detectSchemas(r, componentSchemas)
-    const content = contentByslug.get(r.slug)
-    if (content?.collection === 'posts') extras.push(blogPostingFor(r, content, site))
-    if (r.slug.startsWith('insights/') && !content) r.schemas.push('WebPage')
+  const enrichedRoutes = routes.map((record) => ({
+    ...record,
+    ...routeSchemaExtras(record, componentSchemas, contentByslug.get(record.slug), site),
+  }))
 
+  // Augment each route's JSON-LD with detected schemas and write per-route json.
+  for (const r of enrichedRoutes) {
     const routeJsonPath = join(distDir, 'routes', `${r.slug}.json`)
     await mkdir(join(routeJsonPath, '..'), { recursive: true })
     await writeFile(routeJsonPath, JSON.stringify({
@@ -134,13 +168,13 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
       components: r.components.map((c) => ({ name: c.name, attrs: c.attrs })),
       internalLinks: r.internalLinks,
       schemas: r.schemas,
-      extraJsonLd: extras,
+      extraJsonLd: r.extraJsonLd,
     }, null, 2))
   }
 
   await writeLlmsTxt(distDir, site, routes, contentByslug)
   await writeAiPlugin(distDir, site)
-  await writeManifest(distDir, input)
+  await writeManifest(distDir, { ...input, routes: enrichedRoutes })
 }
 
 function siteContactEmail(site: SiteConfig) {

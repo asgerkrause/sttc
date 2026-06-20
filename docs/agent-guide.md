@@ -31,7 +31,7 @@ No third-party runtime framework. No virtual DOM. No hydration. No npm dependenc
 |---|---|
 | Edit `src/`, `content/`, `media/`, `docs/`, `build/` when needed. | Edit `dist/`; generated and gitignored. |
 | Use Bun commands. | Add npm/Vite/framework assumptions. |
-| Put component CSS in component `<style>`. | Put `.card`, `.faq`, `.code`, private roots in `styles.css`. |
+| Put component CSS in component `<style>`. | Put `.faq`, `.code`, private roots in `styles.css`. |
 | Use `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]` as global primitives. | Recreate grid/stack utility classes. |
 | Use semantic HTML first. | Add wrapper/classes without need. |
 | Run `bun run build` after structural edits. | Claim success without build/check evidence. |
@@ -88,35 +88,29 @@ snz-bp add theme brutalist
 
 Theme packs append a marked `snz-bp theme` block to `src/styles.css` and refuse to replace an existing theme block unless `--force` is passed.
 
-Create `src/components/FeatureCard.html`:
+Create `src/components/Feature.html`:
 
 ```html
 <!--
-  @desc Feature card with heading, body, and optional link.
+  @desc Feature item with heading, body, and optional link.
   @attr title! Heading text.
   @attr href Optional CTA URL.
   @attr variant=[default|accent] :class Visual style.
 -->
-<article class="feature-card">
+<article class="crd">
   <h2>{{title}}</h2>
   <div>{{slot}}</div>
   <a class="lnk" href="{{href}}">Learn more</a>
 </article>
 
 <style>
-  .feature-card {
-    padding: var(--pd);
-    border: var(--bw) solid var(--b);
-    border-radius: var(--br);
-  }
-
-  .feature-card.accent {
+  .crd.accent {
     background: var(--a05);
   }
 </style>
 ```
 
-Use it in routes as `<FeatureCard title="Fast">Body</FeatureCard>`.
+Use it in routes as `<Feature title="Fast">Body</Feature>`.
 
 ### Add layout
 
@@ -228,9 +222,9 @@ Global CSS files:
 - `src/styles.css` — import shell and layer order.
 - `src/styles/system.css` — editable token config, fluid engine, color/theme tokens.
 - `src/styles/reset.css` — reset and base element rules.
-- `src/styles/type.css` — heading/body type utilities.
+- `src/styles/type.css` — heading/body type utilities, including `.fw-l`, `.fw-r`, `.fw-b`.
 - `src/styles/grid.css` — `[g]`, `[c]`, `[r]`, `[o]`.
-- `src/styles/wrappers.css` — `.c`, `.w`, `.btns`, `.lnks`, tiny global wrappers.
+- `src/styles/wrappers.css` — `.c`, `.w`, `.crd`, `.btns`, `.lnks`, tiny global wrappers.
 - `src/styles/motion.css` — scroll/view-transition hooks.
 - Legacy support: `src/styles/styles.css` can still be migrated, but new work uses the split files.
 
@@ -240,7 +234,7 @@ Component CSS:
 - Bundled to `dist/assets/css/components.{hash}.css`.
 - Loads after global CSS.
 
-Token legend: layout uses `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Use `data-theme="accent"`, `tone`, and `invert` for section themes.
+Token legend: layout uses `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; weight utilities are `.fw-l`, `.fw-r`, `.fw-b`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Use `data-theme="accent"`, `tone`, and `invert` for section themes. Class language is semantic-first and short: `.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`, `.eb`; private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
 
 Audit boundary:
 

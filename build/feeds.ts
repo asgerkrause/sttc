@@ -11,12 +11,12 @@ function esc(s: string) {
 }
 
 export async function writeFeeds(distDir: string, site: SiteConfig, posts: ContentRoute[]) {
-  const sorted = [...posts].sort((a, b) => (b.data.date ?? '').localeCompare(a.data.date ?? ''))
+  const sorted = [...posts].sort((a, b) => (b.date ?? b.data.date).localeCompare(a.date ?? a.data.date))
 
   // RSS 2.0
   const items = sorted.map((p) => {
     const url = absoluteUrl(site.url, publicPathFromSlug(p.slug))
-    const pub = p.data.date ? new Date(p.data.date).toUTCString() : new Date().toUTCString()
+    const pub = new Date(p.date ?? p.data.date).toUTCString()
     return `    <item>
       <title>${esc(p.data.title)}</title>
       <link>${url}</link>
@@ -53,7 +53,7 @@ ${items}
       title: p.data.title,
       content_text: p.markdown,
       summary: p.data.description ?? '',
-      date_published: p.data.date ? new Date(p.data.date).toISOString() : new Date().toISOString(),
+      date_published: new Date(p.date ?? p.data.date).toISOString(),
       tags: p.tags,
     })),
   }

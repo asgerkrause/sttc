@@ -67,13 +67,23 @@ async function assertEmpty(path: string) {
   }
 }
 
-async function copyTree(src: string, dest: string) {
+const ignoredEntries = new Set(['.DS_Store', 'dist', 'node_modules', 'bun.lock'])
+const ignoredFiles = new Set(['docs/components-catalog.md'])
+
+function shouldIgnore(relativePath: string) {
+  const normalized = relativePath.split('\\').join('/')
+  const [topLevel] = normalized.split('/')
+  return ignoredEntries.has(topLevel ?? normalized) || ignoredFiles.has(normalized)
+}
+
+async function copyTree(src: string, dest: string, prefix = '') {
   await mkdir(dest, { recursive: true })
   for (const entry of await readdir(src, { withFileTypes: true })) {
-    if (entry.name === '.DS_Store' || entry.name === 'dist' || entry.name === 'bun.lock') continue
+    const relativePath = prefix ? join(prefix, entry.name) : entry.name
+    if (shouldIgnore(relativePath)) continue
     const srcPath = join(src, entry.name)
     const destPath = join(dest, entry.name)
-    if (entry.isDirectory()) await copyTree(srcPath, destPath)
+    if (entry.isDirectory()) await copyTree(srcPath, destPath, relativePath)
     else if (entry.isFile()) await Bun.write(destPath, Bun.file(srcPath))
   }
 }

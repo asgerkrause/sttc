@@ -3,70 +3,18 @@
   @attr variant=[default|outlined|ghost] :class Visual variant.
   @attr theme=[tone|accent|invert] Optional data-theme value.
 -->
-<article class="card" data-theme="{{theme}}">{{slot}}</article>
+<article class="crd" data-theme="{{theme}}">{{slot}}</article>
 
 <style>
-  .card {
-    --crd-s: var(--t);
-    --crd-i: var(--i);
-    --crd-b: transparent;
-    --crd-g: var(--g);
-    padding: var(--pd);
-    background: var(--crd-s);
-    color: var(--crd-i);
-    border: var(--bw) var(--crd-b) solid;
-    border-radius: var(--br);
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    overflow: hidden;
-    gap: var(--gp);
-
-    &:is(a) {
-      --crd-b: var(--b);
-      background-image: none;
-
-      &:hover {
-        --crd-s: var(--s);
-      }
+  .crd:has(.img-w) {
+    & .img-w:is(:first-child) {
+      margin: calc(var(--pd) * -1);
+      margin-bottom: calc(var(--pd) / 2);
     }
 
-    &.outlined {
-      --crd-s: transparent;
-      --crd-b: var(--b);
-    }
-
-    &.ghost { --crd-s: transparent; }
-
-    &[data-theme] {
-      --crd-s: var(--s);
-      --crd-i: var(--i);
-      --crd-g: var(--g);
-    }
-
-    p { color: var(--crd-g); }
-
-    h2,
-    h3 {
-      font: inherit;
-    }
-
-    .lnks,
-    .btns {
-      margin-top: auto;
-      padding-top: var(--pd);
-    }
-
-    &:has(.img-w) {
-      & .img-w:is(:first-child) {
-        margin: calc(var(--pd) * -1);
-        margin-bottom: calc(var(--pd) / 2);
-      }
-
-      & .img-w:is(:last-child) {
-        margin: calc(var(--pd) * -1);
-        margin-top: calc(var(--pd) / 2);
-      }
+    & .img-w:is(:last-child) {
+      margin: calc(var(--pd) * -1);
+      margin-top: calc(var(--pd) / 2);
     }
   }
 </style>

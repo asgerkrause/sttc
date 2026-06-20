@@ -5,6 +5,7 @@ import { tmpdir } from 'os'
 
 const packageRoot = join(import.meta.dir, '..')
 const scaffoldPath = join(packageRoot, 'build', 'scaffold.ts')
+const addPath = join(packageRoot, 'build', 'add.ts')
 const binPath = join(packageRoot, 'bin', 'snz-bp.ts')
 
 type RunResult = {
@@ -37,6 +38,10 @@ async function runBun(entry: string, args: string[], cwd: string): Promise<RunRe
 
 async function runScaffold(args: string[], cwd: string) {
   return runBun(scaffoldPath, args, cwd)
+}
+
+async function runAdd(args: string[], cwd: string) {
+  return runBun(addPath, args, cwd)
 }
 
 async function copyBuiltInComponents(destRoot: string) {
@@ -167,6 +172,60 @@ describe('collection scaffold', () => {
   })
 })
 
+describe('create template surface', () => {
+  async function withIgnoredTemplateArtifacts(fn: () => Promise<void>) {
+    const templateRoot = join(packageRoot, 'templates', 'default')
+    const docsDir = join(templateRoot, 'docs')
+    const artifacts = [
+      join(templateRoot, 'dist'),
+      join(templateRoot, 'node_modules'),
+      join(templateRoot, 'docs', 'components-catalog.md'),
+      join(templateRoot, 'bun.lock'),
+    ]
+
+    try {
+      await mkdir(join(templateRoot, 'dist'), { recursive: true })
+      await writeFile(join(templateRoot, 'dist', 'ignored.html'), 'ignored')
+      await mkdir(join(templateRoot, 'node_modules', 'ignored'), { recursive: true })
+      await writeFile(join(templateRoot, 'node_modules', 'ignored', 'package.json'), '{}')
+      await mkdir(join(templateRoot, 'docs'), { recursive: true })
+      await writeFile(join(templateRoot, 'docs', 'components-catalog.md'), '# ignored\n')
+      await writeFile(join(templateRoot, 'bun.lock'), 'ignored')
+      await fn()
+    } finally {
+      for (const artifact of artifacts) await rm(artifact, { recursive: true, force: true })
+      const docsEntries = await readdir(docsDir).catch(() => [])
+      if (docsEntries.length === 0) await rm(docsDir, { recursive: true, force: true })
+    }
+  }
+
+  test('create skips ignored template artifacts', async () => {
+    const dir = await tempProject()
+    try {
+      await withIgnoredTemplateArtifacts(async () => {
+        const target = join(dir, 'site')
+        const result = await runBun(join(packageRoot, 'packages', 'create-snz-bp', 'bin', 'create-snz-bp.ts'), [target], packageRoot)
+
+        expect(result.code).toBe(0)
+        for (const artifact of ['dist', 'node_modules', 'docs/components-catalog.md', 'bun.lock']) {
+          expect(await Bun.file(join(target, artifact)).exists()).toBe(false)
+        }
+      })
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('template sync check ignores generated starter artifacts', async () => {
+    await withIgnoredTemplateArtifacts(async () => {
+      const result = await runBun(join(packageRoot, 'scripts', 'sync-create-template.ts'), ['--check'], packageRoot)
+
+      expect(result.code).toBe(0)
+      expect(result.stdout).toContain('create template sync ok')
+    })
+  })
+})
+
 describe('component preset scaffold', () => {
   test('creates nested route with basename title', async () => {
     const dir = await tempProject()
@@ -201,7 +260,7 @@ describe('component preset scaffold', () => {
   test('adds hero preset as PascalCase component file', async () => {
     const dir = await tempProject()
     try {
-      const result = await runScaffold(['add', 'component', 'hero'], dir)
+      const result = await runAdd(['component', 'hero'], dir)
       const html = await readFile(join(dir, 'src', 'components', 'Hero.html'), 'utf8')
 
       expect(result.code).toBe(0)
@@ -275,7 +334,7 @@ describe('component preset scaffold', () => {
       await mkdir(join(dir, 'src', 'pages'), { recursive: true })
       await writeFile(join(dir, 'src', 'pages', 'styles.html'), '<Section><h1>Styles</h1></Section>\n')
 
-      const result = await runScaffold(['add', 'component', 'testimonials', '--demo'], dir)
+      const result = await runAdd(['component', 'testimonials', '--demo'], dir)
       const html = await readFile(join(dir, 'src', 'components', 'Testimonials.html'), 'utf8')
       const styles = await readFile(join(dir, 'src', 'pages', 'styles.html'), 'utf8')
 
@@ -293,7 +352,7 @@ describe('component preset scaffold', () => {
   test('rejects unknown preset with available list', async () => {
     const dir = await tempProject()
     try {
-      const result = await runScaffold(['add', 'component', 'gallery'], dir)
+      const result = await runAdd(['component', 'gallery'], dir)
 
       expect(result.code).toBe(1)
       expect(result.stderr).toContain('unknown component preset "gallery"')
@@ -309,7 +368,7 @@ describe('component preset scaffold', () => {
       await mkdir(join(dir, 'src', 'components'), { recursive: true })
       await writeFile(join(dir, 'src', 'components', 'Hero.html'), 'existing')
 
-      const result = await runScaffold(['add', 'component', 'hero'], dir)
+      const result = await runAdd(['component', 'hero'], dir)
 
       expect(result.code).toBe(2)
       expect(result.stderr).toContain('refusing to overwrite')
@@ -327,7 +386,7 @@ describe('component preset scaffold', () => {
       await writeMinimalSite(dir)
 
       for (const preset of ['hero', 'cta', 'features', 'partners', 'pricing', 'testimonials', 'stats', 'process', 'faq']) {
-        const result = await runScaffold(['add', 'component', preset], dir)
+        const result = await runAdd(['component', preset], dir)
         expect(result.code).toBe(0)
       }
 

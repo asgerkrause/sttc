@@ -26,7 +26,7 @@ describe('theme packs', () => {
       expect(css).toContain(':root {')
       expect(css).toContain('--a:')
       expect(css).toContain('/* snz-bp theme:end */')
-      expect(css).not.toContain('.card')
+      expect(css).not.toContain('.crd')
       expect(css).not.toContain('.accordion')
     }
   })

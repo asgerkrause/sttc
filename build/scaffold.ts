@@ -1,6 +1,5 @@
 // CLI: bun run new <kind> <name> [--force] [--demo]
 //      bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]
-//      snz-bp add component <preset> [--force] [--demo]
 // kind: component | route | post | page | cms | collection
 // route writes src/pages/*.html. page remains CMS content page. cms has no name.
 // collection writes config/folder/template/editor scaffold; compiler owns compile.
@@ -10,12 +9,9 @@
 import { mkdir, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { root } from './paths'
-import { addComponentPreset } from './component-presets'
 
 type Kind = 'component' | 'route' | 'post' | 'page' | 'cms' | 'collection'
-const rawArgs = process.argv.slice(2)
-const isAdd = rawArgs[0] === 'add'
-const args = isAdd ? rawArgs.slice(1) : rawArgs
+const args = process.argv.slice(2)
 const kind = args[0] as Kind | undefined
 const name = args[1]
 const force = args.includes('--force')
@@ -25,14 +21,12 @@ function usage(): never {
   console.error('Usage: bun run new <component|route|post|page> <name> [--force] [--demo]')
   console.error('       bun run new cms [--force]')
   console.error('       bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]')
-  console.error('       snz-bp add component <hero|cta|features|partners|pricing|testimonials|stats|process|faq> [--force] [--demo]')
   process.exit(1)
 }
 
 if (!kind) usage()
 if (!['component', 'route', 'post', 'page', 'cms', 'collection'].includes(kind)) usage()
 if (kind !== 'cms' && !name) usage()
-if (isAdd && kind !== 'component') usage()
 
 const requiredName = name ?? ''
 
@@ -354,9 +348,7 @@ async function upsertPagesCollection(collectionName: string, label: string) {
   console.log(`updated ${path}`)
 }
 
-if (isAdd) {
-  await addComponentPreset(requiredName, { force, demo })
-} else if (kind === 'cms') {
+if (kind === 'cms') {
   await writeIfMissing(join(root, '.pages.yml'), pagesYml)
   await writeIfMissing(join(root, 'content', 'README.md'), contentReadme)
   await writeIfMissing(join(root, 'content', 'posts', '.gitkeep'), '')

@@ -77,16 +77,47 @@
 <Section id="markdown">
   <h2>Markdown</h2>
   <Markdown>
-## Rendered markdown
+## Markdown should feel like authored content
 
-| Feature | Status |
+Use markdown for prose-heavy pages: notes, case studies, docs, changelogs, and CMS posts. It renders at build time, so output stays static and readable.
+
+### What this example proves
+
+Markdown supports paragraphs with **strong emphasis**, *quiet emphasis*, inline `code`, and [safe internal links](/components/). It should be easy to scan as real writing, not just a fixture.
+
+> Blockquotes are useful for pull quotes, source notes, or short client testimonials.
+
+### HTML examples inside prose
+
+You can explain markup directly:
+
+```html
+<Section theme="tone">
+  <h2>Services</h2>
+  <p>Content stays semantic first.</p>
+</Section>
+```
+
+And show component usage without leaving the markdown flow:
+
+```html
+<Grid cols="3-2">
+  <Card>
+    <h3>Strategy</h3>
+    <p>Plan the page around intent.</p>
+  </Card>
+</Grid>
+```
+
+| Feature | Why it matters |
 | --- | --- |
-| Tables | Supported |
-| Heading anchors | Supported |
+| Tables | Compare facts without custom components. |
+| Code fences | Document HTML, CSS, and shell snippets. |
+| Component passthrough | Keep long-form content close to site primitives. |
 
-- Safe links
-- Code fences
-- Component passthrough
+- Write natural paragraphs first.
+- Use headings to create page rhythm.
+- Add code examples where authors need exact syntax.
   </Markdown>
 </Section>
 

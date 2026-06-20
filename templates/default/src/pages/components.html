@@ -2,9 +2,9 @@
   <SEO title="Components" description="Built-in component examples for a SANITIZE Boilerplate starter site." />
 </head>
 
-<section class="hero compact">
+<section class="hero">
   <div class="c w">
-    <p class="eyebrow">Component gallery</p>
+    <p class="eb">Component gallery</p>
     <h1>Copy-ready patterns using built-in pieces.</h1>
     <p class="f-lg">These examples cover common page needs: actions, cards, media, disclosures, markdown, code, and layout primitives.</p>
     <p>Slot-first patterns stay flexible: compose primitives inside <code>Section</code>, <code>Grid</code>, and <code>Card</code> instead of locking content into too many props.</p>
@@ -16,11 +16,11 @@
 </section>
 
 <Section id="actions">
-  <div class="section-head w">
-    <p class="eyebrow">Actions</p>
+  <header class="w">
+    <p class="eb">Actions</p>
     <h2>Button + Link</h2>
     <p>Use buttons for primary calls to action and links for lower-emphasis navigation.</p>
-  </div>
+  </header>
   <div class="btns">
     <Button label="Default" href="/components/" />
     <Button label="Accent" href="/components/" variant="accent" />
@@ -30,10 +30,10 @@
 </Section>
 
 <Section id="cards">
-  <div class="section-head w">
-    <p class="eyebrow">Content groups</p>
+  <header class="w">
+    <p class="eb">Content groups</p>
     <h2>Card</h2>
-  </div>
+  </header>
   <Grid cols="4-2">
     <Card>
       <h3>Default</h3>
@@ -57,10 +57,10 @@
 </Section>
 
 <Section id="media">
-  <div class="section-head w">
-    <p class="eyebrow">Media</p>
+  <header class="w">
+    <p class="eb">Media</p>
     <h2>Image + Embed</h2>
-  </div>
+  </header>
   <Grid cols="2">
     <div class="w">
       <h3>Eager image</h3>
@@ -80,20 +80,20 @@
 </Section>
 
 <Section id="disclosure">
-  <div class="section-head w">
-    <p class="eyebrow">Disclosure</p>
+  <header class="w">
+    <p class="eb">Disclosure</p>
     <h2>Accordion + FAQ</h2>
-  </div>
+  </header>
   <Accordion summary="Where do routes live?" body="Author route files in src/pages. Home is index.html, nested folders become nested URLs." group="showcase" />
   <Accordion summary="Can markdown render components?" body="Yes. Markdown renders at build time and can pass through safe PascalCase component tags." group="showcase" />
   <FAQ />
 </Section>
 
 <Section id="markdown">
-  <div class="section-head w">
-    <p class="eyebrow">Content</p>
+  <header class="w">
+    <p class="eb">Content</p>
     <h2>Markdown</h2>
-  </div>
+  </header>
   <Markdown>
 ## Rendered markdown
 
@@ -110,19 +110,19 @@
 </Section>
 
 <Section id="code">
-  <div class="section-head w">
-    <p class="eyebrow">Snippets</p>
+  <header class="w">
+    <p class="eb">Snippets</p>
     <h2>Code + SEO</h2>
-  </div>
+  </header>
   <Code lang="html">&lt;Button label="Go" href="/" variant="accent" /&gt;</Code>
   <Code lang="html">&lt;SEO title="Components" description="Simple built-in component showcase." /&gt;</Code>
 </Section>
 
 <Section id="themes" theme="tone">
-  <div class="section-head w">
-    <p class="eyebrow">Themes</p>
+  <header class="w">
+    <p class="eb">Themes</p>
     <h2>Section themes</h2>
-  </div>
+  </header>
   <Grid cols="3-2">
     <Card><h3>Tone</h3><p><code>Section theme="tone"</code> remaps semantic tokens.</p></Card>
     <Card theme="accent"><h3>Accent card</h3><p><code>Card theme="accent"</code> uses the same data-theme contract.</p></Card>
@@ -131,10 +131,10 @@
 </Section>
 
 <Section id="layout">
-  <div class="section-head w">
-    <p class="eyebrow">Layout</p>
+  <header class="w">
+    <p class="eb">Layout</p>
     <h2>Section, Grid, Stack</h2>
-  </div>
+  </header>
   <Grid cols="3-2">
     <div class="w"><h3>Section</h3><p>Section owns the semantic band, container, and optional theme.</p></div>
     <div class="w"><h3>Grid</h3><p>Maps to global <code>[g]</code> primitives and can be used inside components.</p></div>
@@ -143,10 +143,10 @@
 </Section>
 
 <Section id="shell">
-  <div class="section-head w">
-    <p class="eyebrow">Shell</p>
+  <header class="w">
+    <p class="eb">Shell</p>
     <h2>Shell components</h2>
-  </div>
+  </header>
   <Grid cols="2">
     <Card>
       <Logo />
@@ -160,10 +160,10 @@
 </Section>
 
 <Section id="future">
-  <div class="section-head w">
-    <p class="eyebrow">Naming</p>
+  <header class="w">
+    <p class="eb">Naming</p>
     <h2>Preset naming</h2>
-  </div>
+  </header>
   <p>Future content presets use readable nouns. Plural components wrap collections; singular components are items. Most should stay slot-first so existing primitives compose inside them.</p>
   <Code lang="html">&lt;Section&gt;
   &lt;Features&gt;

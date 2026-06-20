@@ -51,4 +51,59 @@ describe('runtime ownership contracts', () => {
     expect(router).toContain('function routeAnnouncementLabel')
     expect(router).toContain('announceRoute()')
   })
+
+  test('router clears stale route head state even when next route has empty head', async () => {
+    const router = await readFile('runtime/router.js', 'utf8')
+
+    expect(router).toContain('mergeHead(head)')
+    expect(router).not.toContain('if (head?.children.length) mergeHead(head)')
+  })
+
+  test('router preserves URL search and hash while fetching route pathname', async () => {
+    const router = await readFile('runtime/router.js', 'utf8')
+
+    expect(router).toContain('function routeTarget')
+    expect(router).toContain('new URL(path, location.href)')
+    expect(router).toContain("history.pushState(null, '', href)")
+    expect(router).toContain('await render(pathname, { focus: true })')
+    expect(router).toContain('go(`${a.pathname}${a.search}${a.hash}`)')
+  })
+
+  test('router aborts stale route fetches and guards stale DOM applies', async () => {
+    const router = await readFile('runtime/router.js', 'utf8')
+
+    expect(router).toContain('let navigationId = 0')
+    expect(router).toContain('navigationController?.abort()')
+    expect(router).toContain('new AbortController()')
+    expect(router).toContain('fetchRouteHtml(pathname, { signal: navigation.signal })')
+    expect(router).toContain('if (!isActiveNavigation(navigation)) return')
+    expect(router).toContain("return render('/404/', { is404: true, transition, focus, navigation })")
+  })
+
+  test('router exposes no-history reload path for dev HMR', async () => {
+    const router = await readFile('runtime/router.js', 'utf8')
+
+    expect(router).toContain('function reloadCurrentRoute')
+    expect(router).toContain('render(publicPath(location.pathname), { transition: false })')
+    expect(router).toContain('_reload: reloadCurrentRoute')
+    expect(router).toContain('navigate: (path, options) => go(path, options)')
+    expect(router).toContain("if (replace) history.replaceState(null, '', href)")
+  })
+})
+
+describe('dev server runtime contracts', () => {
+  test('HMR reloads through router without pushing history and clears building state', async () => {
+    const dev = await readFile('dev.ts', 'utf8')
+
+    expect(dev).toContain('window.snz?._reload')
+    expect(dev).toContain("window.snz.navigate(location.pathname, { replace: true })")
+    expect(dev).toContain('delete document.documentElement.dataset.snzBuilding')
+  })
+
+  test('dev watcher includes canonical runtime directory', async () => {
+    const dev = await readFile('dev.ts', 'utf8')
+
+    expect(dev).toContain("watchTree(join(root, 'runtime'), true)")
+    expect(dev).toContain('legacy top-level runtime files')
+  })
 })

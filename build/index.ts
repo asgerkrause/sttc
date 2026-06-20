@@ -37,29 +37,79 @@ import {
   sourceStylesDir,
   src,
 } from './paths'
-import { writeRobots, writeSitemap, type SiteConfig } from './seo'
+import { absoluteUrl, buildSchemaGraph, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
 import { compileContent, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
 import { copyAssets, copyMediaFolder, copyTree } from './assets'
 import { autoGenerateIndexes } from './generated-routes'
 import { runChecks, failOnReport } from './check'
-import { writeDiscovery } from './discovery'
+import { routeSchemaExtras, writeDiscovery, type RouteRecord } from './discovery'
 import type { ComposeInstance } from './compose'
 import { writeComponentsReadme } from './docs'
 import { discoverSourceRoutes } from './source-files'
-import { RouteGraph } from './route-graph'
+import { RouteGraph, type ComposedRoute } from './route-graph'
+import { publicPathFromSlug } from '../runtime/lib/paths.js'
 
-async function writeComposed(
-  srcPath: string,
-  destPath: string,
-  prepare: (raw: string, name: string) => Promise<string>,
+function splitRouteHtml(html: string) {
+  const match = html.match(/^<head[^>]*>([\s\S]*?)<\/head>\s*([\s\S]*)$/i)
+  if (!match) return { head: '', body: html }
+  return { head: match[1].trim(), body: match[2].trim() }
+}
+
+function withAppJs(shellHtml: string, appJsFile: string) {
+  return shellHtml.replace(/<script src="\/assets\/js\/app\.js"/, `<script src="/assets/js/${appJsFile}"`)
+}
+
+function replaceSeoHead(shellHtml: string, routeHead: string) {
+  const seoBlock = /<title>[\s\S]*?<script type="application\/ld\+json">[\s\S]*?<\/script>/
+  return seoBlock.test(shellHtml) ? shellHtml.replace(seoBlock, routeHead) : shellHtml
+}
+
+function replaceSchemaJson(routeHead: string, graph: unknown) {
+  const json = JSON.stringify(graph).replace(/</g, '\\u003c')
+  const schemaBlock = /<script type="application\/ld\+json">[\s\S]*?<\/script>/
+  const next = `<script type="application/ld+json">${json}</script>`
+  return schemaBlock.test(routeHead) ? routeHead.replace(schemaBlock, next) : `${routeHead}\n${next}`
+}
+
+function enrichRouteHead(routeHead: string, site: SiteConfig, record: RouteRecord, extraJsonLd: JsonLdNode[]) {
+  if (!extraJsonLd.length) return routeHead
+  const graph = buildSchemaGraph(site, {
+    title: record.title,
+    description: record.description,
+    canonical: absoluteUrl(site.url, publicPathFromSlug(record.slug)),
+  }, extraJsonLd)
+  return replaceSchemaJson(routeHead, graph)
+}
+
+function injectRouteBody(shellHtml: string, routeBody: string) {
+  return shellHtml.replace(/<main data-route-root><\/main>/, `<main data-route-root>\n${routeBody}\n  </main>`)
+}
+
+function publicRoutePath(distDir: string, slug: string) {
+  if (slug === 'index') return join(distDir, 'index.html')
+  return join(distDir, slug, 'index.html')
+}
+
+async function writeStaticRoutes(
+  distDir: string,
+  shellHtml: string,
+  routes: ComposedRoute[],
+  records: RouteRecord[],
+  extrasBySlug: Map<string, JsonLdNode[]>,
+  site: SiteConfig,
 ) {
-  const raw = await readFile(srcPath, 'utf8')
-  const name = srcPath.split('/').pop() ?? ''
-  const html = await prepare(raw, name)
-  await mkdir(join(destPath, '..'), { recursive: true })
-  await writeFile(destPath, html)
+  const recordsBySlug = new Map(records.map((record) => [record.slug, record]))
+  for (const route of routes) {
+    const { head, body } = splitRouteHtml(route.html)
+    const record = recordsBySlug.get(route.slug)
+    const routeHead = record ? enrichRouteHead(head, site, record, extrasBySlug.get(route.slug) ?? []) : head
+    const html = injectRouteBody(replaceSeoHead(shellHtml, routeHead), body)
+    const path = publicRoutePath(distDir, route.slug)
+    await mkdir(join(path, '..'), { recursive: true })
+    await writeFile(path, html)
+  }
 }
 
 async function build() {
@@ -178,9 +228,15 @@ async function build() {
 
   await writeComponentsReadme(root, templates, schemas)
 
+  const routeRecords = routeGraph.records()
+  const schemaExtrasBySlug = new Map(routeRecords.map((record) => [
+    record.slug,
+    routeSchemaExtras(record, schemas, contentByslug.get(record.slug), site).extraJsonLd,
+  ]))
+
   await writeDiscovery(dist, {
     site,
-    routes: routeGraph.records(),
+    routes: routeRecords,
     componentSchemas: schemas,
     componentUseCounts,
     contentByslug,
@@ -193,10 +249,9 @@ async function build() {
     scriptBlocks,
   )
 
-  // Substitute hashed asset paths into the shell, then write index.html.
-  const indexHtml = composedShell
-    .replace(/<script src="\/assets\/js\/app\.js"/, `<script src="/assets/js/${appJsFile}"`)
-  await writeFile(join(dist, 'index.html'), indexHtml)
+  // Substitute hashed asset paths into the shell, then emit full static pages for direct public URLs.
+  const shellWithApp = withAppJs(composedShell, appJsFile)
+  await writeStaticRoutes(dist, shellWithApp, routeGraph.composedRoutes(), routeRecords, schemaExtrasBySlug, site)
 
   await Bun.write(join(dist, 'router.js'), Bun.file(await sourceRouterFile()))
   await copyTree(await sourceRuntimeLibDir(), join(dist, 'lib'))

@@ -28,7 +28,7 @@ describe('custom content collections', () => {
       await mkdir(join(dir, 'content', 'pages'), { recursive: true })
       await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
       await writeFile(join(dir, 'src', 'templates', 'page.html'), '<h1>{{title}}</h1>{{body}}')
-      await writeFile(join(dir, 'content', 'posts', 'hello-world.md'), '---\ntitle: Hello\ndescription: Post\n---\nPost body')
+      await writeFile(join(dir, 'content', 'posts', 'hello-world.md'), '---\ntitle: Hello\ndate: 2026-05-26\ndescription: Post\n---\nPost body')
       await writeFile(join(dir, 'content', 'pages', 'about.md'), '---\ntitle: About\n---\nPage body')
 
       const routes = await compileContentFrom({ rootDir: dir, includeDrafts: false })
@@ -44,7 +44,7 @@ describe('custom content collections', () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'posts'), { recursive: true })
       await writeFile(join(dir, 'src', 'templates', 'post.html'), '<article data-title="{{title}}"><h1>{{title}}</h1><p>{{description}}</p>{{body}}</article>')
-      await writeFile(join(dir, 'content', 'posts', 'safe-post.md'), '---\ntitle: Bad \"><img src=x onerror=alert(1)>\ndescription: Use <script>alert(1)</script> & keep safe\n---\nBody')
+      await writeFile(join(dir, 'content', 'posts', 'safe-post.md'), '---\ntitle: Bad \"><img src=x onerror=alert(1)>\ndate: 2026-05-26\ndescription: Use <script>alert(1)</script> & keep safe\n---\nBody')
 
       const [route] = await compileContentFrom({ rootDir: dir, includeDrafts: false })
 
@@ -65,6 +65,46 @@ describe('custom content collections', () => {
     })
   })
 
+  test('rejects built-in posts missing date with file line and hint', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
+      await writeFile(join(dir, 'content', 'posts', 'missing-date.md'), '---\ntitle: Missing date\n---\nBody')
+
+      try {
+        await compileContentFrom({ rootDir: dir })
+        throw new Error('expected missing date BuildError')
+      } catch (err) {
+        expect(err).toBeInstanceOf(BuildError)
+        const build = err as BuildError
+        expect(build.message).toContain('missing "date"')
+        expect(build.file).toBe('content/posts/missing-date.md')
+        expect(build.line).toBe(1)
+        expect(build.hint).toContain('date: YYYY-MM-DD')
+      }
+    })
+  })
+
+  test('rejects built-in posts with invalid date with file line and hint', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
+      await writeFile(join(dir, 'content', 'posts', 'bad-date.md'), '---\ntitle: Bad date\ndate: 2026-02-31\n---\nBody')
+
+      try {
+        await compileContentFrom({ rootDir: dir })
+        throw new Error('expected invalid date BuildError')
+      } catch (err) {
+        expect(err).toBeInstanceOf(BuildError)
+        const build = err as BuildError
+        expect(build.message).toContain('invalid "date"')
+        expect(build.file).toBe('content/posts/bad-date.md')
+        expect(build.line).toBe(3)
+        expect(build.hint).toContain('real calendar date')
+      }
+    })
+  })
+
   test('rejects front-matter slug overrides', async () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'posts'), { recursive: true })
@@ -79,7 +119,7 @@ describe('custom content collections', () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'posts'), { recursive: true })
       await writeFile(join(dir, 'src', 'templates', 'post.html'), '<img src="{{image}}">{{body}}')
-      await writeFile(join(dir, 'content', 'posts', 'media-post.md'), '---\ntitle: Media\nimage: /media/images/projects/hero.png\n---\n![Alt](/assets/images/nested/team.jpg)')
+      await writeFile(join(dir, 'content', 'posts', 'media-post.md'), '---\ntitle: Media\ndate: 2026-05-26\nimage: /media/images/projects/hero.png\n---\n![Alt](/assets/images/nested/team.jpg)')
 
       const [route] = await compileContentFrom({ rootDir: dir, includeDrafts: false })
 
@@ -93,7 +133,7 @@ describe('custom content collections', () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'posts'), { recursive: true })
       await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
-      await writeFile(join(dir, 'content', 'posts', 'bad-media.md'), '---\ntitle: Bad media\nimage: /media/images/file.svg\n---\nBody')
+      await writeFile(join(dir, 'content', 'posts', 'bad-media.md'), '---\ntitle: Bad media\ndate: 2026-05-26\nimage: /media/images/file.svg\n---\nBody')
 
       await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('Unsupported CMS media reference "/media/images/file.svg"')
     })
@@ -179,6 +219,25 @@ describe('custom content collections', () => {
     })
   })
 
+  test('rejects duplicate generated content slugs across collections', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'pages'), { recursive: true })
+      await mkdir(join(dir, 'content', 'projects'), { recursive: true })
+      await writeCollectionConfig(dir, [{
+        name: 'projects',
+        path: 'content/projects',
+        template: 'project.html',
+        route: '{slug}',
+      }])
+      await writeFile(join(dir, 'src', 'templates', 'page.html'), '<h1>{{title}}</h1>{{body}}')
+      await writeFile(join(dir, 'src', 'templates', 'project.html'), '<h1>{{title}}</h1>{{body}}')
+      await writeFile(join(dir, 'content', 'pages', 'about.md'), '---\ntitle: About\n---\nPage')
+      await writeFile(join(dir, 'content', 'projects', 'about.md'), '---\ntitle: About project\n---\nProject')
+
+      await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('Duplicate content route slug "/about/"')
+    })
+  })
+
   test('checks custom required front-matter fields', async () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'projects'), { recursive: true })
@@ -190,9 +249,18 @@ describe('custom content collections', () => {
         required: ['title', 'client'],
       }])
       await writeFile(join(dir, 'src', 'templates', 'project.html'), '<h1>{{title}}</h1>{{body}}')
-      await writeFile(join(dir, 'content', 'projects', 'acme.md'), '---\ntitle: Acme\n---\nBody')
+      await writeFile(join(dir, 'content', 'projects', 'acme.md'), '---\ntitle: Acme\nclient:\n---\nBody')
 
-      await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('missing "client"')
+      try {
+        await compileContentFrom({ rootDir: dir })
+        throw new Error('expected missing required field BuildError')
+      } catch (err) {
+        expect(err).toBeInstanceOf(BuildError)
+        const build = err as BuildError
+        expect(build.message).toContain('missing "client"')
+        expect(build.line).toBe(3)
+        expect(build.hint).toContain('Add client: ...')
+      }
     })
   })
 

@@ -21,9 +21,16 @@ export type RouteComposeOptions = {
   lastModified?: string
 }
 
+export type ComposedRoute = {
+  slug: string
+  outFile: string
+  html: string
+}
+
 export class RouteGraph {
   #registry = new RouteRegistry()
   #records: RouteRecord[] = []
+  #composed: ComposedRoute[] = []
   #composer: Composer
   #instancesFor: (slug: string) => ComposeInstance[]
   #distDir: string
@@ -43,6 +50,7 @@ export class RouteGraph {
     const outPath = join(this.#distDir, 'routes', route.outFile)
     await mkdir(join(outPath, '..'), { recursive: true })
     await writeFile(outPath, html)
+    this.#composed.push({ slug: route.slug, outFile: route.outFile, html })
 
     this.#records.push({
       slug: route.slug,
@@ -71,5 +79,9 @@ export class RouteGraph {
 
   records() {
     return [...this.#records]
+  }
+
+  composedRoutes() {
+    return [...this.#composed]
   }
 }

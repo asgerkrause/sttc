@@ -28,8 +28,8 @@ function stripYamlScalar(value: string) {
     .replace(/^["']|["']$/g, '')
 }
 
-export function parsePagesCmsMediaInputs(yaml: string): string[] {
-  const inputs: string[] = []
+function parsePagesCmsMediaField(yaml: string, field: 'input' | 'output'): string[] {
+  const values: string[] = []
   let inMedia = false
 
   for (const line of yaml.split(/\r?\n/)) {
@@ -43,13 +43,33 @@ export function parsePagesCmsMediaInputs(yaml: string): string[] {
     }
     if (!inMedia) continue
 
-    const match = trimmed.match(/^input:\s*(.+)$/)
+    const match = trimmed.match(new RegExp(`^${field}:\\s*(.+)$`))
     if (!match) continue
-    const input = stripYamlScalar(match[1])
-    if (input) inputs.push(input)
+    const value = stripYamlScalar(match[1])
+    if (value) values.push(value)
   }
 
-  return [...new Set(inputs)]
+  return [...new Set(values)]
+}
+
+function normalizePagesCmsMediaInput(input: string) {
+  const rel = input.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/g, '')
+  const parts = rel.split('/').filter(Boolean)
+  if (!parts.length || rel.startsWith('/') || parts.includes('..') || parts.includes('.')) {
+    throw new BuildError(`Invalid PagesCMS media.input "${input}"`, {
+      file: '.pages.yml',
+      hint: 'Use a safe repo-relative media path like media/images. Absolute paths and traversal are not allowed.',
+    })
+  }
+  return parts.join('/')
+}
+
+export function parsePagesCmsMediaInputs(yaml: string): string[] {
+  return parsePagesCmsMediaField(yaml, 'input').map(normalizePagesCmsMediaInput)
+}
+
+export function parsePagesCmsMediaOutputs(yaml: string): string[] {
+  return parsePagesCmsMediaField(yaml, 'output')
 }
 
 export async function pagesCmsMediaInputs(projectRoot = process.cwd()): Promise<string[]> {

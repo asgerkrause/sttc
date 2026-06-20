@@ -18,10 +18,10 @@ Each component file may start with a single `<!-- ... -->` HTML comment that dec
   @attr variant=[default|outlined|ghost] :class Visual variant.
   @attr theme=[tone|accent|invert] Optional data-theme value.
 -->
-<article class="card">{{slot}}</article>
+<article class="crd">{{slot}}</article>
 
 <style>
-  .card { /* ... */ }
+  .crd:has(.img-w) { /* component-specific composition edge */ }
 </style>
 ```
 
@@ -70,12 +70,12 @@ Usage:
   @attr variant=[default|outlined|ghost] :class
   @attr theme=[tone|accent|invert]
 -->
-<article class="card" data-theme="{{theme}}">
+<article class="crd" data-theme="{{theme}}">
   ...
 </article>
 
 <style>
-  .card {
+  .crd {
     /* base */
     &.outlined { border-color: var(--b); background: transparent; }
     &.ghost { background: transparent; }
@@ -84,13 +84,15 @@ Usage:
 </style>
 ```
 
-`<Card theme="accent">` produces `<article class="card" data-theme="accent">`.
+`<Card theme="accent">` produces `<article class="crd" data-theme="accent">`.
 
 ## Styles
 
 Colocate component-specific `<style>` in the component file. The build extracts it into `dist/assets/css/components.{hash}.css` (loaded after the global stylesheet so component rules win at equal specificity).
 
-Global CSS is split by owner: `src/styles.css` imports `src/styles/system.css`, `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css`. Global CSS owns tokens, reset/base type, `.c`, `.w`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.card`, `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
+Global CSS is split by owner: `src/styles.css` imports `src/styles/system.css`, `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css`. Global CSS owns tokens, reset/base type, `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
+
+Class language is short and rare. Prefer semantic HTML, ARIA, and data attributes first. Use durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.f-*`, `.fw-*`, `.c-*`, `.h*`), or short private hooks (`.brg`, `.logo-mk`, `.code-lb`) only when useful.
 
 Use design tokens from the global system. Layout: `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`. Type: `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`. Color: `--s`, `--i`, `--t`, `--b`, `--g`, `--a`, `--ai`, `--c`, `--ci`. Don't hardcode spacing, font weights, or colors.
 

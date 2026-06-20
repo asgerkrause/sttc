@@ -2,12 +2,12 @@
 // --allow-broken-links). Also runnable as `bun run check` for an out-of-band scan.
 
 import { readdir, readFile, stat } from 'fs/promises'
-import { join } from 'path'
+import { basename, join } from 'path'
 import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, src } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError } from './errors'
 import { compileContent, loadCustomContentCollections } from './content'
-import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs } from './images'
+import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs } from './images'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
@@ -22,6 +22,7 @@ export async function runChecks(opts: { allowBrokenLinks?: boolean } = {}): Prom
   await checkSourceLayout(warn)
   await checkSeoFiles(fail)
   await checkJsonLd(fail)
+  await checkBuiltImageRefs(dist, fail)
   if (!opts.allowBrokenLinks) await checkInternalLinks(fail)
   await checkComponentTags(warn)
   await checkDiscoveryArtifacts(fail)
@@ -29,16 +30,20 @@ export async function runChecks(opts: { allowBrokenLinks?: boolean } = {}): Prom
   return { errors, warnings }
 }
 
-async function collectHtmlFiles(dir: string, base = ''): Promise<string[]> {
+async function collectFilesByExtension(dir: string, extension: string, base = ''): Promise<string[]> {
   const out: string[] = []
   let entries
   try { entries = await readdir(join(dir, base), { withFileTypes: true }) } catch { return out }
   for (const entry of entries) {
     const rel = base ? `${base}/${entry.name}` : entry.name
-    if (entry.isDirectory()) out.push(...(await collectHtmlFiles(dir, rel)))
-    else if (entry.name.endsWith('.html')) out.push(join(dir, rel))
+    if (entry.isDirectory()) out.push(...(await collectFilesByExtension(dir, extension, rel)))
+    else if (entry.name.endsWith(extension)) out.push(join(dir, rel))
   }
   return out
+}
+
+async function collectHtmlFiles(dir: string, base = ''): Promise<string[]> {
+  return collectFilesByExtension(dir, '.html', base)
 }
 
 function extractLdJson(html: string) {
@@ -88,6 +93,43 @@ async function assetExists(href: string) {
   return stat(join(dist, rel)).then(() => true).catch(() => false)
 }
 
+export function extractBuiltImageRefs(text: string) {
+  const refs = new Set<string>()
+  const re = /\/assets\/images\/[^"'`\s<>)\\]+/g
+  for (const match of text.matchAll(re)) {
+    const ref = match[0].replace(/[.,;:]+$/g, '').replace(/[?#].*$/, '')
+    if (ref.includes('{') || ref.includes('}')) continue
+    refs.add(ref)
+  }
+  return [...refs].sort()
+}
+
+async function builtAssetExists(distRoot: string, ref: string) {
+  const rel = ref.startsWith('/') ? ref.slice(1) : ref
+  return stat(join(distRoot, rel)).then(() => true).catch(() => false)
+}
+
+export async function checkBuiltImageRefs(distRoot: string, fail: (m: string) => void) {
+  const files = [
+    join(distRoot, 'index.html'),
+    ...(await collectHtmlFiles(join(distRoot, 'routes'))),
+    ...(await collectFilesByExtension(distRoot, '.json')),
+  ]
+  const seen = new Set<string>()
+
+  for (const file of files) {
+    if (seen.has(file)) continue
+    seen.add(file)
+    const text = await readFile(file, 'utf8').catch(() => null)
+    if (!text) continue
+    for (const ref of extractBuiltImageRefs(text)) {
+      if (await builtAssetExists(distRoot, ref)) continue
+      const name = basename(ref).replace(/\.webp$/i, '')
+      fail(`${file}: missing image asset ${ref}\n  hint: Add an image master named ${name}.{jpg,png,webp} in src/images or PagesCMS media.input, then rebuild. CMS /media/images/* refs publish as /assets/images/*.webp.`)
+    }
+  }
+}
+
 async function checkInternalLinks(fail: (m: string) => void) {
   const htmlFiles = [join(dist, 'index.html'), ...(await collectHtmlFiles(join(dist, 'routes')))]
   const hrefRe = /href="(\/[^"#?]*)"/g
@@ -114,7 +156,14 @@ async function checkSiteJson(fail: (m: string) => void) {
 async function checkSourceContracts(fail: (m: string) => void, warn: (m: string) => void) {
   await checkVercelConfig(root, warn)
 
-  const imageRoots = await imageSourceRoots(root)
+  const imageRoots = await imageSourceRoots(root).catch((err) => {
+    if (err instanceof BuildError) {
+      fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
+      return []
+    }
+    fail(err instanceof Error ? err.message : String(err))
+    return []
+  })
   await assertUniqueImageNames(...imageRoots).catch((err) => {
     if (err instanceof BuildError) {
       fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
@@ -161,11 +210,29 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
   }
 
   const pages = await readFile(join(root, '.pages.yml'), 'utf8').catch(() => '')
-  if (pages && parsePagesCmsMediaInputs(pages).length === 0) {
+  if (pages) {
+    try {
+      checkPagesCmsConfig(pages, warn)
+    } catch (err) {
+      if (err instanceof BuildError) fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
+      else fail(err instanceof Error ? err.message : String(err))
+    }
+  }
+}
+
+export function checkPagesCmsConfig(pages: string, warn: (m: string) => void) {
+  if (parsePagesCmsMediaInputs(pages).length === 0) {
     warn('.pages.yml: media.input missing; build defaults CMS image input to media/images')
   }
-  if (pages && !/output:\s*\/assets\/images\b/.test(pages)) {
-    warn('.pages.yml: media.output should be /assets/images because CMS images publish as optimized assets')
+
+  const outputs = parsePagesCmsMediaOutputs(pages)
+  if (outputs.length === 0) {
+    warn('.pages.yml: media.output missing; set it to /assets/images so editor previews match optimized build output')
+    return
+  }
+
+  for (const output of outputs) {
+    if (output !== '/assets/images') warn(`.pages.yml: media.output "${output}" should be /assets/images because CMS images publish as optimized assets`)
   }
 }
 
@@ -180,11 +247,14 @@ type VercelHeaderRule = {
 }
 
 type VercelConfig = {
+  framework?: unknown
   installCommand?: unknown
   buildCommand?: unknown
   devCommand?: unknown
   outputDirectory?: unknown
   bunVersion?: unknown
+  cleanUrls?: unknown
+  trailingSlash?: unknown
   headers?: unknown
 }
 
@@ -211,15 +281,18 @@ export async function checkVercelConfig(projectRoot: string, warn: (m: string) =
     return
   }
 
-  const expected: [keyof VercelConfig, string][] = [
-    ['installCommand', 'bun install'],
-    ['buildCommand', 'bun run build'],
-    ['devCommand', 'bun run dev'],
-    ['outputDirectory', 'dist'],
-    ['bunVersion', '1.x'],
+  const expected: [keyof VercelConfig, unknown, string][] = [
+    ['framework', null, 'null'],
+    ['installCommand', 'bun install', '"bun install"'],
+    ['buildCommand', 'bun run build', '"bun run build"'],
+    ['devCommand', 'bun run dev', '"bun run dev"'],
+    ['outputDirectory', 'dist', '"dist"'],
+    ['bunVersion', '1.x', '"1.x"'],
+    ['cleanUrls', true, 'true'],
+    ['trailingSlash', true, 'true'],
   ]
-  for (const [key, value] of expected) {
-    if (config[key] !== value) warn(`${rel}: ${key} should be "${value}" for snz-bp Bun static deploys`)
+  for (const [key, value, label] of expected) {
+    if (config[key] !== value) warn(`${rel}: ${key} should be ${label} for snz-bp Bun static deploys`)
   }
 
   const headers = Array.isArray(config.headers) ? config.headers as VercelHeaderRule[] : []

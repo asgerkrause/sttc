@@ -5,8 +5,8 @@
   @attr size CSS height for the logo wrapper. Defaults to 1lh.
 -->
 <a class="logo" href="{{href}}" style="--logo-size: {{size}}">
-  <span class="logo-mark">{{slot}}</span>
-  <span class="logo-text">{{siteName}}</span>
+  <span class="logo-mk">{{slot}}</span>
+  <span class="logo-tx fw-b">{{siteName}}</span>
 </a>
 
 <style>
@@ -22,11 +22,11 @@
     width: fit-content;
   }
 
-  .logo-mark:empty {
+  .logo-mk:empty {
     display: none;
   }
 
-  .logo:has(.logo-mark:not(:empty)) .logo-text {
+  .logo:has(.logo-mk:not(:empty)) .logo-tx {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;

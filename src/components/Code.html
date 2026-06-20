@@ -3,7 +3,7 @@
   @attr lang Language identifier (e.g. js, ts, html, css).
 -->
 <figure class="code">
-  <figcaption class="code-lang">{{lang}}</figcaption>
+  <figcaption class="code-lb">{{lang}}</figcaption>
   <pre><code class="lang-{{lang}}">{{slot}}</code></pre>
 </figure>
 
@@ -14,7 +14,7 @@
     overflow: hidden;
     background: var(--t);
 
-    .code-lang {
+    .code-lb {
       padding: var(--pd-xs) var(--pd-sm);
       color: var(--g);
       font-size: var(--sm-fs);
@@ -24,7 +24,7 @@
       text-transform: uppercase;
       border-bottom: var(--bw) solid var(--b);
     }
-    .code-lang:empty { display: none; }
+    .code-lb:empty { display: none; }
     pre {
       margin: 0;
       padding: var(--pd);

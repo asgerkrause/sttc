@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildSchemaGraph, type SiteConfig } from '../build/seo'
-import { MANIFEST_SCHEMA_VERSION, writeDiscovery } from '../build/discovery'
+import { MANIFEST_SCHEMA_VERSION, routeSchemaExtras, writeDiscovery } from '../build/discovery'
 import { GENERATOR_NAME, GENERATOR_VERSION } from '../build/version'
 
 const baseSite: SiteConfig = {
@@ -37,6 +37,16 @@ describe('AEO/GEO site facts', () => {
     expect(website.knowsAbout).toBeUndefined()
   })
 
+  test('merges route schema extras into baseline graph', () => {
+    const graph = buildSchemaGraph(baseSite, {
+      title: 'Post',
+      description: 'Post page.',
+      canonical: 'https://example.com/insights/post/',
+    }, [{ '@type': 'BlogPosting', headline: 'Post' }])
+
+    expect(graph['@graph'].map((node) => node['@type'])).toEqual(['Organization', 'WebSite', 'WebPage', 'BlogPosting'])
+  })
+
   test('emits rich organization and topic facts when configured', () => {
     const graph = buildSchemaGraph({
       ...baseSite,
@@ -65,6 +75,31 @@ describe('AEO/GEO site facts', () => {
     expect(website.knowsAbout).toEqual(['Bun', 'Static sites'])
   })
 
+  test('computes canonical FAQ and component schema extras without mutating route record', () => {
+    const record = {
+      slug: 'faq',
+      title: 'FAQ',
+      description: 'Questions.',
+      components: [
+        { name: 'Accordion', attrs: { summary: 'Question?', body: '<p>Answer.</p>' } as Record<string, string> },
+        { name: 'ServiceCard', attrs: { title: 'Design', href: '/design/' } as Record<string, string> },
+      ],
+      internalLinks: [],
+      schemas: ['WebPage'],
+    }
+    const extras = routeSchemaExtras(record, new Map([['ServiceCard', {
+      schema: { type: 'Service', map: { name: 'title', url: 'href' } },
+    }]]), undefined, baseSite)
+
+    expect(record.schemas).toEqual(['WebPage'])
+    expect(extras.schemas).toEqual(['WebPage', 'Service', 'FAQPage'])
+    expect(extras.extraJsonLd.map((node) => node['@type'])).toEqual(['Service', 'FAQPage'])
+    expect(extras.extraJsonLd[1]).toMatchObject({
+      '@type': 'FAQPage',
+      mainEntity: [{ '@type': 'Question', name: 'Question?', acceptedAnswer: { '@type': 'Answer', text: 'Answer.' } }],
+    })
+  })
+
   test('writes discovery version metadata without requiring rich site config', async () => {
     await withTempDir(async (distDir) => {
       await writeDiscovery(distDir, {
@@ -91,6 +126,44 @@ describe('AEO/GEO site facts', () => {
       expect(manifest.generator).toEqual({ name: GENERATOR_NAME, version: GENERATOR_VERSION })
       expect(route.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION)
       expect(route.generator).toEqual({ name: GENERATOR_NAME, version: GENERATOR_VERSION })
+    })
+  })
+
+  test('writes BlogPosting extras and schemas for post content', async () => {
+    await withTempDir(async (distDir) => {
+      await writeDiscovery(distDir, {
+        site: baseSite,
+        routes: [{
+          slug: 'insights/hello',
+          title: 'Hello',
+          description: 'Post page.',
+          components: [],
+          internalLinks: [],
+          schemas: ['WebPage'],
+        }],
+        componentSchemas: new Map(),
+        componentUseCounts: new Map(),
+        contentByslug: new Map([['insights/hello', {
+          slug: 'insights/hello',
+          routeFile: 'insights/hello.html',
+          body: '',
+          source: 'content/posts/hello.md',
+          data: { title: 'Hello', date: '2026-05-26', description: 'Post page.' },
+          date: '2026-05-26T00:00:00.000Z',
+          collection: 'posts',
+          markdown: 'Body',
+          tags: [],
+          draft: false,
+        }]]),
+      })
+
+      const route = JSON.parse(await readFile(join(distDir, 'routes', 'insights', 'hello.json'), 'utf8'))
+      expect(route.schemas).toEqual(['WebPage', 'BlogPosting'])
+      expect(route.extraJsonLd).toContainEqual(expect.objectContaining({
+        '@type': 'BlogPosting',
+        headline: 'Hello',
+        datePublished: '2026-05-26T00:00:00.000Z',
+      }))
     })
   })
 

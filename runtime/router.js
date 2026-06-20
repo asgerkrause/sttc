@@ -18,6 +18,8 @@ const beforeHandlers = new Set()
 const afterHandlers = new Set()
 const componentRegistry = new Map() // name -> Set<fn>
 const componentCleanups = new WeakMap() // el -> Array<fn>
+let navigationId = 0
+let navigationController = null
 
 function componentRoots(root, selector) {
   const out = []
@@ -108,10 +110,23 @@ function shouldPreloadLink(a) {
   return true
 }
 
-async function fetchRouteHtml(pathname) {
+async function fetchRouteHtml(pathname, { signal } = {}) {
   const url = fetchPath(pathname)
   const cached = routeCache.get(url)
   if (cached && Date.now() - cached.at < ROUTE_CACHE_TTL_MS) return cached.html
+  if (signal?.aborted) return null
+
+  if (signal) {
+    return fetch(url, { signal })
+      .then(async (res) => {
+        if (!res.ok) return null
+        const text = await res.text()
+        routeCache.set(url, { html: text, at: Date.now() })
+        return text
+      })
+      .catch(() => null)
+  }
+
   if (routePending.has(url)) return routePending.get(url)
 
   const pending = fetch(url)
@@ -285,13 +300,24 @@ async function runBeforeNavigate(detail) {
   return true
 }
 
-async function render(pathname, { is404 = false, transition = true, focus = false } = {}) {
+function beginNavigation() {
+  navigationController?.abort()
+  navigationController = new AbortController()
+  return { id: ++navigationId, signal: navigationController.signal }
+}
+
+function isActiveNavigation(navigation) {
+  return navigation.id === navigationId && !navigation.signal.aborted
+}
+
+async function render(pathname, { is404 = false, transition = true, focus = false, navigation = beginNavigation() } = {}) {
   if (!main) return
 
-  const raw = await fetchRouteHtml(pathname)
+  const raw = await fetchRouteHtml(pathname, { signal: navigation.signal })
+  if (!isActiveNavigation(navigation)) return
   if (raw === null) {
     if (!is404 && slugFromPath(pathname) !== '404') {
-      return render('/404/', { is404: true, transition, focus })
+      return render('/404/', { is404: true, transition, focus, navigation })
     }
     unmountComponents(main)
     main.replaceChildren()
@@ -300,9 +326,10 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
   }
 
   const parsed = wrapPage(raw)
+  if (!isActiveNavigation(navigation)) return
   if (!parsed) {
     if (!is404 && slugFromPath(pathname) !== '404') {
-      return render('/404/', { is404: true, transition, focus })
+      return render('/404/', { is404: true, transition, focus, navigation })
     }
     unmountComponents(main)
     main.replaceChildren()
@@ -315,7 +342,8 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
   const detail = { pathname, slug, main }
 
   const apply = () => {
-    if (head?.children.length) mergeHead(head)
+    if (!isActiveNavigation(navigation)) return
+    mergeHead(head)
     document.documentElement.dataset.page = slug
     unmountComponents(main)
     main.replaceChildren(...body.childNodes)
@@ -329,6 +357,7 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
   } else {
     apply()
   }
+  if (!isActiveNavigation(navigation)) return
   if (focus) {
     focusRouteRoot()
     announceRoute()
@@ -344,13 +373,27 @@ function resetScroll() {
   }
 }
 
-async function go(pathname) {
-  const url = publicPath(pathname)
-  const detail = { pathname: url, slug: slugFromPath(url) }
+function routeTarget(path) {
+  const url = new URL(path, location.href)
+  const pathname = publicPath(url.pathname)
+  return {
+    pathname,
+    href: `${pathname}${url.search}${url.hash}`,
+  }
+}
+
+async function go(path, { replace = false } = {}) {
+  const { pathname, href } = routeTarget(path)
+  const detail = { pathname, slug: slugFromPath(pathname) }
   const ok = await runBeforeNavigate(detail)
   if (!ok) return
-  history.pushState(null, '', url)
-  await render(url, { focus: true })
+  if (replace) history.replaceState(null, '', href)
+  else history.pushState(null, '', href)
+  await render(pathname, { focus: true })
+}
+
+function reloadCurrentRoute() {
+  return render(publicPath(location.pathname), { transition: false })
 }
 
 // ---- public API ----
@@ -370,13 +413,14 @@ function onPage(slug, fn) {
 }
 
 window.snz = {
-  navigate: (path) => go(path),
+  navigate: (path, options) => go(path, options),
   page: () => document.documentElement.dataset.page,
   onPage,
   prefetch: (path) => fetchRouteHtml(path),
   beforeNavigate: (fn) => (beforeHandlers.add(fn), () => beforeHandlers.delete(fn)),
   afterNavigate: (fn) => (afterHandlers.add(fn), () => afterHandlers.delete(fn)),
   track,
+  _reload: reloadCurrentRoute,
   _registerComponent: registerComponent,
   _mountComponents: mountComponents,
   _unmountIn: unmountComponents,
@@ -404,7 +448,7 @@ document.addEventListener('click', (e) => {
   if (a.pathname === location.pathname && a.hash) return
   closeDisclosuresForLink(a)
   e.preventDefault()
-  go(a.pathname)
+  go(`${a.pathname}${a.search}${a.hash}`)
 })
 
 document.addEventListener('keydown', (e) => {

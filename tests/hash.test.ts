@@ -21,9 +21,9 @@ describe('asset hashing', () => {
   test('keeps component css filename contract', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'snz-css-hash-'))
     try {
-      const filename = await bundleComponentCss([{ source: 'Card.html', css: '.card { color: red; }' }], dir)
+      const filename = await bundleComponentCss([{ source: 'Card.html', css: '.crd { color: red; }' }], dir)
       expect(filename).toMatch(/^components\.[a-f0-9]{8}\.css$/)
-      expect(await readFile(join(dir, filename!), 'utf8')).toContain('.card { color: red; }')
+      expect(await readFile(join(dir, filename!), 'utf8')).toContain('.crd { color: red; }')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

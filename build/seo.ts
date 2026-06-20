@@ -84,9 +84,12 @@ function organizationNode(site: SiteConfig): Record<string, unknown> {
   return node
 }
 
+export type JsonLdNode = Record<string, unknown>
+
 export function buildSchemaGraph(
   site: SiteConfig,
   page: { title: string; description: string; canonical: string },
+  extraNodes: JsonLdNode[] = [],
 ) {
   const organization = organizationNode(site)
 
@@ -109,6 +112,7 @@ export function buildSchemaGraph(
         url: page.canonical,
         isPartOf: { '@type': 'WebSite', url: site.url },
       },
+      ...extraNodes,
     ],
   }
 }

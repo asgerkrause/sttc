@@ -170,10 +170,11 @@ Structured data auto-emitted:
 
 - Base tokens + reset: `src/styles.css` imports split CSS under `src/styles/`.
 - Token legend: `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`, then semantic `--s`, `--i`, `--t`, `--b`, `--g`.
-- Global layout primitives: `.c`, `.w`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`.
+- Global layout primitives: `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`.
 - `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`). Small stacks by default.
 - Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).
 - Component CSS loads **after** base so component rules win at equal specificity.
+- Class language is semantic-first and short. Use classes only for durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.f-*`, `.fw-*`, `.c-*`, `.h*`), or concise private hooks (`.brg`, `.logo-mk`, `.code-lb`).
 - Component-specific selectors belong in component files. Run `bun run css:audit` or `bun run doctor` when cleaning CSS boundaries.
 - Per-page overrides: `html[data-page="{slug}"]` selectors in `styles.css`.
 
