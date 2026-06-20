@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { buildErrorAt, BuildError } from './errors'
+import { buildErrorAt, BuildError, lineOf } from './errors'
 import { resolveImageAttrs, type ImageMeta } from './images'
 import { render as renderMarkdown } from './markdown'
 import { componentsDir, src } from './paths'
@@ -234,6 +234,10 @@ export function createComposer(
       .replace(SLOT_DEFAULT_RE, defaultChildren)
   }
 
+  function componentFileHint(name: string) {
+    return `src/components/${name}.html`
+  }
+
   async function expandOne(m: ComponentMatch, fileHint: string, source: string): Promise<string> {
     if (m.name === 'SEO' && m.selfClosing === false) {
       throw new BuildError('<SEO> must be self-closing', { file: fileHint })
@@ -261,7 +265,14 @@ export function createComposer(
     let fragment = expandSlots(template, children)
     fragment = substitute(fragment, attrs)
     fragment = augmentRoot(m.name, fragment, m.attrs)
-    return compose(fragment, fileHint)
+    try {
+      return await compose(fragment, componentFileHint(m.name))
+    } catch (err) {
+      if (err instanceof BuildError) {
+        throw err.addFrame({ file: fileHint, line: lineOf(source, m.index), label: `<${m.name} />` })
+      }
+      throw err
+    }
   }
 
   function augmentRoot(name: string, fragment: string, rawAttrs: Record<string, string>): string {

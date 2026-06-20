@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from 'fs/promises'
+import { mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { createComposer } from './compose'
 import {
@@ -26,22 +26,19 @@ import {
 } from './images'
 import { scanImageEncodeOptions } from './scan-images'
 import {
-  componentsDir,
-  dist,
-  root,
-  shellFile,
-  siteFile,
+  sourceAppDir,
   sourceAppFile,
+  sourceImagesDir,
   sourceRouterFile,
   sourceRuntimeLibDir,
   sourceStylesDir,
-  src,
+  sourceStylesFile,
 } from './paths'
 import { absoluteUrl, buildSchemaGraph, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
 import { compileContent, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
-import { copyAssets, copyMediaFolder, copyTree } from './assets'
+import { copyTree, mediaInputCopyExclusions, shouldSkipMediaCopy } from './assets'
 import { autoGenerateIndexes } from './generated-routes'
 import { runChecks, failOnReport } from './check'
 import { routeSchemaExtras, writeDiscovery, type RouteRecord } from './discovery'
@@ -50,6 +47,7 @@ import { writeComponentsReadme } from './docs'
 import { discoverSourceRoutes } from './source-files'
 import { RouteGraph, type ComposedRoute } from './route-graph'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
+import { createBuildContext, type BuildContext, type BuildContextOptions, type BuildResult } from './build-context'
 
 function splitRouteHtml(html: string) {
   const match = html.match(/^<head[^>]*>([\s\S]*?)<\/head>\s*([\s\S]*)$/i)
@@ -112,7 +110,108 @@ async function writeStaticRoutes(
   }
 }
 
-async function build() {
+export type BuildOptions = BuildContextOptions & {
+  context?: BuildContext
+}
+
+async function exists(path: string) {
+  try { await stat(path); return true } catch { return false }
+}
+
+function stagedDistDir(context: BuildContext) {
+  return `${context.distDir}.__next-${process.pid}-${Date.now()}`
+}
+
+function backupDistDir(context: BuildContext) {
+  return `${context.distDir}.__prev-${process.pid}-${Date.now()}`
+}
+
+function withDistDir(context: BuildContext, distDir: string): BuildContext {
+  return { ...context, distDir }
+}
+
+async function copyAssetsTo(context: BuildContext) {
+  const assetsDist = join(context.distDir, 'assets')
+  await mkdir(assetsDist, { recursive: true })
+
+  const cssDist = join(assetsDist, 'css')
+  const jsDist = join(assetsDist, 'js')
+  await mkdir(cssDist, { recursive: true })
+  await mkdir(jsDist, { recursive: true })
+  await copyTree(await sourceStylesDir(), cssDist, (name) => name === 'styles.css')
+  await Bun.write(join(cssDist, 'styles.css'), Bun.file(await sourceStylesFile()))
+  await copyTree(await sourceAppDir(), jsDist, (name) => name === 'app.js' || name === 'app.ts')
+  const imagesDist = join(assetsDist, 'images')
+  await mkdir(imagesDist, { recursive: true })
+  await copyTree(await sourceImagesDir(), imagesDist, (name) => !name.endsWith('.svg'))
+}
+
+async function copyMediaFolderTo(context: BuildContext) {
+  const mediaSrc = join(context.rootDir, 'media')
+  const exclusions = await mediaInputCopyExclusions(context.rootDir)
+  try {
+    if ((await stat(mediaSrc)).isDirectory()) {
+      await copyTree(mediaSrc, join(context.distDir, 'media'), (relPath) => shouldSkipMediaCopy(relPath, exclusions))
+    }
+  } catch {
+    /* no media folder */
+  }
+}
+
+async function publishStagedDist(context: BuildContext, stageDir: string) {
+  const backupDir = backupDistDir(context)
+  let backedUp = false
+  try {
+    await rm(backupDir, { recursive: true, force: true })
+    if (await exists(context.distDir)) {
+      await rename(context.distDir, backupDir)
+      backedUp = true
+    }
+    await rename(stageDir, context.distDir)
+    return backupDir
+  } catch (err) {
+    await rm(context.distDir, { recursive: true, force: true }).catch(() => {})
+    if (backedUp) await rename(backupDir, context.distDir).catch(() => {})
+    throw err
+  }
+}
+
+async function restorePublishedDist(context: BuildContext, backupDir: string) {
+  await rm(context.distDir, { recursive: true, force: true }).catch(() => {})
+  if (await exists(backupDir)) await rename(backupDir, context.distDir)
+}
+
+export async function build(options: BuildOptions = {}): Promise<BuildResult> {
+  const context = options.context ?? createBuildContext(options)
+  const stageDir = stagedDistDir(context)
+  const stageContext = withDistDir(context, stageDir)
+  let backupDir: string | null = null
+  let result: BuildResult
+  const t0 = performance.now()
+
+  try {
+    result = await buildInto(stageContext)
+    backupDir = await publishStagedDist(context, stageDir)
+    const t = performance.now()
+    const report = await runChecks({ allowBrokenLinks: context.flags.allowBrokenLinks })
+    await failOnReport(report)
+    result.timings.check = Math.round(performance.now() - t)
+    result.totalMs = Math.round(performance.now() - t0)
+    console.log(
+      Object.entries(result.timings).map(([k, v]) => `${k} ${v}ms`).join(' · ') +
+      ` · total ${result.totalMs}ms`,
+    )
+    return { ...result, context }
+  } catch (err) {
+    if (backupDir) await restorePublishedDist(context, backupDir)
+    throw err
+  } finally {
+    await rm(stageDir, { recursive: true, force: true }).catch(() => {})
+    if (backupDir) await rm(backupDir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
+async function buildInto(context: BuildContext): Promise<BuildResult> {
   assertImageApi()
 
   const t0 = performance.now()
@@ -120,7 +219,7 @@ async function build() {
   const tick = (label: string, start: number) => { timings[label] = Math.round(performance.now() - start) }
 
   let t = performance.now()
-  const { cssBlocks, templates, schemas, scripts: componentScripts } = await prepareComponents(componentsDir)
+  const { cssBlocks, templates, schemas, scripts: componentScripts } = await prepareComponents(context.componentsDir)
   tick('components', t)
   let imageMeta: Record<string, ImageMeta> = {}
   const instancesByRoute = new Map<string, ComposeInstance[]>()
@@ -140,38 +239,37 @@ async function build() {
   )
   composer.resetSiteConfig()
 
-  await rm(join(dist, 'routes'), { recursive: true, force: true })
-  await rm(join(dist, 'index.html'), { force: true }).catch(() => {})
-  await mkdir(dist, { recursive: true })
-  await mkdir(join(dist, 'routes'), { recursive: true })
+  await rm(context.distDir, { recursive: true, force: true })
+  await mkdir(context.distDir, { recursive: true })
+  await mkdir(join(context.distDir, 'routes'), { recursive: true })
 
   // Images first — fs.cp(recursive: true) on sibling dirs has been observed to race with
   // subsequent writes (variants get truncated). Encoding before any cp call avoids it.
   t = performance.now()
-  const imageEncode = await scanImageEncodeOptions(src, componentsDir)
-  const imageRoots = await imageSourceRoots(root)
-  const imagesDist = join(dist, 'assets', 'images')
-  const assetsDist = join(dist, 'assets')
+  const imageEncode = await scanImageEncodeOptions(context.srcDir, context.componentsDir)
+  const imageRoots = await imageSourceRoots(context.rootDir)
+  const imagesDist = join(context.distDir, 'assets', 'images')
+  const assetsDist = join(context.distDir, 'assets')
   await mkdir(imagesDist, { recursive: true })
   await assertUniqueImageNames(...imageRoots)
   // (Variant pruning intentionally removed — it raced with the cache check in processImages.
   // Stale variants are harmless: srcset only references widths the current sidecar reports.)
   imageMeta = await processImageSources(imageRoots, imagesDist, imageEncode)
   await pruneStaleImages(imagesDist, Object.keys(imageMeta))
-  await processOgImage(await sourceOgImagePath(root), assetsDist)
+  await processOgImage(await sourceOgImagePath(context.rootDir), assetsDist)
   tick('images', t)
 
   t = performance.now()
-  await copyAssets()
-  await copyMediaFolder()
+  await copyAssetsTo(context)
+  await copyMediaFolderTo(context)
   tick('assets', t)
 
-  const componentsCssDir = join(dist, 'assets', 'css')
+  const componentsCssDir = join(context.distDir, 'assets', 'css')
   const componentsCssFile = await bundleComponentCss(cssBlocks, componentsCssDir)
 
   const scriptBlocks: ScriptBlock[] = []
 
-  const shellRaw = await readFile(shellFile, 'utf8')
+  const shellRaw = await readFile(context.shellFile, 'utf8')
   const { blocks: shellScripts } = extractShellHeadScripts(shellRaw)
   scriptBlocks.push(...shellScripts)
   // Component lifecycle scripts registered before any route scripts run.
@@ -188,6 +286,7 @@ async function build() {
   const routeGraph = new RouteGraph({
     composer,
     instancesFor: (slug) => instancesByRoute.get(slug) ?? [],
+    distDir: context.distDir,
   })
 
   for (const route of await discoverSourceRoutes()) {
@@ -216,17 +315,17 @@ async function build() {
   tick('routes', t)
 
   t = performance.now()
-  const site = JSON.parse(await readFile(siteFile, 'utf8')) as SiteConfig
+  const site = JSON.parse(await readFile(context.siteFile, 'utf8')) as SiteConfig
 
   // Auto-generate /insights/ index + /tags/{tag}/ + /tags/ index if not authored manually.
   const posts = contentRoutes.filter((c) => c.collection === 'posts' && !c.draft)
   await autoGenerateIndexes(routeGraph, posts)
 
-  await writeSitemap(dist, site.url, routeGraph.slugs())
-  await writeRobots(dist, site.url)
-  await writeFeeds(dist, site, posts)
+  await writeSitemap(context.distDir, site.url, routeGraph.slugs())
+  await writeRobots(context.distDir, site.url)
+  await writeFeeds(context.distDir, site, posts)
 
-  await writeComponentsReadme(root, templates, schemas)
+  await writeComponentsReadme(context.rootDir, templates, schemas)
 
   const routeRecords = routeGraph.records()
   const schemaExtrasBySlug = new Map(routeRecords.map((record) => [
@@ -234,7 +333,7 @@ async function build() {
     routeSchemaExtras(record, schemas, contentByslug.get(record.slug), site).extraJsonLd,
   ]))
 
-  await writeDiscovery(dist, {
+  await writeDiscovery(context.distDir, {
     site,
     routes: routeRecords,
     componentSchemas: schemas,
@@ -245,35 +344,33 @@ async function build() {
 
   const appJsFile = await writeAppJs(
     await sourceAppFile(),
-    join(dist, 'assets', 'js'),
+    join(context.distDir, 'assets', 'js'),
     scriptBlocks,
   )
 
   // Substitute hashed asset paths into the shell, then emit full static pages for direct public URLs.
   const shellWithApp = withAppJs(composedShell, appJsFile)
-  await writeStaticRoutes(dist, shellWithApp, routeGraph.composedRoutes(), routeRecords, schemaExtrasBySlug, site)
+  await writeStaticRoutes(context.distDir, shellWithApp, routeGraph.composedRoutes(), routeRecords, schemaExtrasBySlug, site)
 
-  await Bun.write(join(dist, 'router.js'), Bun.file(await sourceRouterFile()))
-  await copyTree(await sourceRuntimeLibDir(), join(dist, 'lib'))
-
-  t = performance.now()
-  const allowBrokenLinks = process.argv.includes('--allow-broken-links')
-  const report = await runChecks({ allowBrokenLinks })
-  await failOnReport(report)
-  tick('check', t)
+  await Bun.write(join(context.distDir, 'router.js'), Bun.file(await sourceRouterFile()))
+  await copyTree(await sourceRuntimeLibDir(), join(context.distDir, 'lib'))
 
   const total = Math.round(performance.now() - t0)
-  console.log(
-    Object.entries(timings).map(([k, v]) => `${k} ${v}ms`).join(' · ') +
-    ` · total ${total}ms`,
-  )
+
+  return {
+    context,
+    timings: { ...timings },
+    totalMs: total,
+    routes: routeGraph.slugs(),
+    appJsFile,
+  }
 }
 
 function escapeHtml(s: string) {
   return s.replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 }
 
-async function writeErrorPage(err: unknown) {
+async function writeErrorPage(err: unknown, context: BuildContext = createBuildContext()) {
   const isBuild = err instanceof BuildError
   const title = isBuild ? 'Build error' : 'Build failed'
   const msg = err instanceof Error ? err.message : String(err)
@@ -312,21 +409,24 @@ pre { background: var(--c); padding: 1em; border-radius: 4px; overflow-x: auto; 
 </body>
 </html>`
   try {
-    await mkdir(dist, { recursive: true })
-    await writeFile(join(dist, '__build-error.html'), html)
+    await mkdir(context.distDir, { recursive: true })
+    await writeFile(join(context.distDir, '__build-error.html'), html)
   } catch {}
 }
 
-try {
-  await build()
-  // Clear any previous error banner
-  try { await rm(join(dist, '__build-error.html'), { force: true }) } catch {}
-} catch (err) {
-  await writeErrorPage(err)
-  if (err instanceof BuildError) {
-    console.error(err.toPretty())
-  } else {
-    console.error(err)
+if (import.meta.main) {
+  const context = createBuildContext()
+  try {
+    await build({ context })
+    // Clear any previous error banner
+    try { await rm(join(context.distDir, '__build-error.html'), { force: true }) } catch {}
+  } catch (err) {
+    await writeErrorPage(err, context)
+    if (err instanceof BuildError) {
+      console.error(err.toPretty())
+    } else {
+      console.error(err)
+    }
+    process.exit(1)
   }
-  process.exit(1)
 }

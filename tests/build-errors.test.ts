@@ -20,6 +20,7 @@ function composer(schemas = new Map<string, ComponentSchema>()) {
       ['SEO', seo],
       ['Card', '<article>{{title}}</article>'],
       ['Image', '<figure>{{imgMain}}</figure>'],
+      ['Wrapper', '<section>\n<Image src="missing" alt="Missing" />\n</section>'],
     ]),
     schemas,
     () => ({ hero: { width: 100, height: 50, placeholder: 'data:image/png;base64,x' } }),
@@ -82,6 +83,35 @@ describe('build error source spans', () => {
       throw new Error('expected BuildError')
     } catch (err) {
       expectBuildError(err, 2, 'src/pages/page.html')
+    }
+  })
+
+  test('pretty prints source stack frames', () => {
+    const err = new BuildError('Nested failure', {
+      file: 'src/components/Card.html',
+      line: 2,
+      hint: 'Fix nested component.',
+      frames: [{ file: 'src/pages/page.html', line: 5, label: '<Card />' }],
+    })
+
+    expect(err.toPretty()).toContain('BuildError: Nested failure (src/components/Card.html:2)')
+    expect(err.toPretty()).toContain('source stack:')
+    expect(err.toPretty()).toContain('<Card /> src/pages/page.html:5')
+    expect(err.toJSON()).toMatchObject({
+      frames: [{ file: 'src/pages/page.html', line: 5, label: '<Card />' }],
+    })
+  })
+
+  test('adds route source frame for nested component errors', async () => {
+    try {
+      await composer().prepareRouteSource('<p>Intro</p>\n<Wrapper />', { slug: 'page', fileHint: 'src/pages/page.html' })
+      throw new Error('expected BuildError')
+    } catch (err) {
+      expectBuildError(err, 2, 'src/components/Wrapper.html')
+      const build = err as BuildError
+      expect(build.frames).toEqual([{ file: 'src/pages/page.html', line: 2, label: '<Wrapper />' }])
+      expect(build.toPretty()).toContain('source stack:')
+      expect(build.toPretty()).toContain('<Wrapper /> src/pages/page.html:2')
     }
   })
 
