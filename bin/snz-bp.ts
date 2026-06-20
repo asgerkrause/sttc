@@ -37,12 +37,14 @@ async function run(command: string[]) {
 }
 
 if (cmd === 'doctor') {
-  const audit = spawn(['bun', join(packageRoot, 'build', 'css-audit.ts'), ...rest], {
+  const checkArgs = rest
+  const auditArgs = rest.filter((arg) => arg !== '--launch')
+  const audit = spawn(['bun', join(packageRoot, 'build', 'css-audit.ts'), ...auditArgs], {
     cwd: process.cwd(), stdout: 'inherit', stderr: 'inherit', stdin: 'inherit', env: process.env,
   })
   const auditCode = await audit.exited
   if (auditCode !== 0) process.exit(auditCode)
-  const check = spawn(['bun', join(packageRoot, 'build', 'check.ts'), ...rest], {
+  const check = spawn(['bun', join(packageRoot, 'build', 'check.ts'), ...checkArgs], {
     cwd: process.cwd(), stdout: 'inherit', stderr: 'inherit', stdin: 'inherit', env: process.env,
   })
   process.exit(await check.exited)

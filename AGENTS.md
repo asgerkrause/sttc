@@ -12,6 +12,7 @@ bun run build    # writes dist/, runs strict checks at the end
 bun run check    # rebuild + validate without serving
 bun run css:audit # report component-owned selectors left in global CSS
 bun run doctor   # CSS ownership audit + strict check
+bun run doctor -- --launch # launch-ready SEO/a11y/site gate
 bun run new      # scaffolder: component|route|post|page <name>, collection <name>, or cms
 ```
 
@@ -40,6 +41,8 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | `build/` | Build pipeline (TypeScript, runs in Bun) |
 | `dev.ts` | Dev server with watch + SSE hot reload + in-page error banner |
 | `docs/agent-guide.md` | Fast orientation for LLMs: mental model, tasks, CSS ownership, checks |
+| `docs/client-site-playbook.md` | End-to-end client-site build playbook for agents and humans |
+| `docs/agent-recipes.md` | Short task recipes for common framework work |
 | `docs/components.md` | Component authoring contract |
 | `docs/component-prompt.md` | Copy-paste prompt for LLM-spawned components |
 | `docs/components-catalog.md` | **Auto-generated** catalog — do not hand-edit |

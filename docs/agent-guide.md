@@ -2,6 +2,10 @@
 
 Fast orientation for LLMs working in SANITIZE Boilerplate (`@snz/bp`).
 
+Need an end-to-end client build path? Read `docs/client-site-playbook.md`.
+Need task cards? Read `docs/agent-recipes.md`.
+Need built-in component contracts/examples? Read generated `docs/components-catalog.md`.
+
 ## Mental model
 
 SANITIZE Boilerplate (`@snz/bp`) is an HTML-first, Bun-native static site framework. Authors edit normal HTML/CSS/JS/markdown; Bun compiles it into static files with routing, components, images, SEO, feeds, llms files, and discovery JSON.
@@ -297,7 +301,10 @@ bun run build      # full build + strict checks
 bun run check      # rebuild + validate
 bun run css:audit  # CSS ownership only
 bun run doctor     # css audit + check
+bun run doctor -- --launch # pre-launch SEO/a11y/site gate
 ```
+
+Use `--launch` before deploy/client handoff. It keeps normal check behavior intact, then adds stricter launch blockers/warnings: public `site.url`, OG image, titles/descriptions, H1s, missing image alt, vague or icon-only links, private URLs, and discovery artifacts. Warnings still need human review.
 
 Build errors should include file, line, and hint. Fix source, not `dist/`.
 

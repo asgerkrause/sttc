@@ -5,13 +5,15 @@ import { readdir, readFile, stat } from 'fs/promises'
 import { basename, join } from 'path'
 import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, src } from './paths'
 import { discoverSourceRoutes } from './source-files'
-import { BuildError } from './errors'
+import { BuildError, lineOf } from './errors'
 import { compileContent, loadCustomContentCollections } from './content'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs } from './images'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
-export async function runChecks(opts: { allowBrokenLinks?: boolean } = {}): Promise<CheckReport> {
+type CheckOptions = { allowBrokenLinks?: boolean; launch?: boolean }
+
+export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   const errors: string[] = []
   const warnings: string[] = []
   const fail = (m: string) => errors.push(m)
@@ -26,6 +28,7 @@ export async function runChecks(opts: { allowBrokenLinks?: boolean } = {}): Prom
   if (!opts.allowBrokenLinks) await checkInternalLinks(fail)
   await checkComponentTags(warn)
   await checkDiscoveryArtifacts(fail)
+  if (opts.launch) await checkLaunchReadiness(fail, warn)
 
   return { errors, warnings }
 }
@@ -134,7 +137,8 @@ async function checkInternalLinks(fail: (m: string) => void) {
   const htmlFiles = [join(dist, 'index.html'), ...(await collectHtmlFiles(join(dist, 'routes')))]
   const hrefRe = /href="(\/[^"#?]*)"/g
   for (const file of htmlFiles) {
-    const html = await readFile(file, 'utf8')
+    const html = await readFile(file, 'utf8').catch(() => null)
+    if (!html) { fail(`missing ${file}`); continue }
     for (const m of html.matchAll(hrefRe)) {
       const href = m[1]
       if (href.startsWith('/assets/') || href.startsWith('/media/') || href.startsWith('/lib/')) {
@@ -356,6 +360,118 @@ async function checkComponentTags(warn: (m: string) => void) {
   }
 }
 
+function htmlText(value: string) {
+  return value.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function attrValue(attrs: string, name: string) {
+  const re = new RegExp(`\\s${name}=("([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i')
+  const m = attrs.match(re)
+  return m ? (m[2] ?? m[3] ?? m[4] ?? '') : undefined
+}
+
+function prettyFileLine(file: string, html: string, index: number) {
+  return `${file}:${lineOf(html, index)}`
+}
+
+function weakDescription(description: string) {
+  const text = description.trim()
+  return !text || text.length < 50 || /^(\.\.\.|todo|tbd|description|home page\.?|page\.?|coming soon\.?)$/i.test(text)
+}
+
+async function checkRouteSemantics(file: string, fail: (m: string) => void, warn: (m: string) => void) {
+  const html = await readFile(file, 'utf8').catch(() => '')
+  if (!html) return
+
+  const titleMatches = [...html.matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)]
+  const titles = titleMatches.map((m) => htmlText(m[1]))
+  if (titles.length === 0 || !titles[0]) fail(`${file}: missing page title\n  hint: Add <SEO title="Meaningful title" description="..." /> to the route head.`)
+  if (titles.length > 1) fail(`${file}: multiple page titles\n  hint: Keep one <SEO /> entry per route.`)
+
+  const descMatches = [...html.matchAll(/<meta\s+[^>]*name=["']description["'][^>]*>/gi)]
+  const descriptions = descMatches.map((m) => attrValue(m[0], 'content') ?? '')
+  if (descriptions.length === 0) fail(`${file}: missing meta description\n  hint: Add <SEO description="Specific 50–160 character summary" />.`)
+  if (descriptions.length > 1) fail(`${file}: multiple meta descriptions\n  hint: Keep one route description.`)
+  if (descriptions[0] !== undefined && weakDescription(descriptions[0])) warn(`${file}: weak meta description\n  hint: Use a specific 50–160 character summary; do not ship placeholders.`)
+
+  const h1Matches = [...html.matchAll(/<h1\b[^>]*>/gi)]
+  if (h1Matches.length === 0) fail(`${file}: missing H1\n  hint: Add one visible <h1> that names the page.`)
+  if (h1Matches.length > 1) fail(`${file}: multiple H1s\n  hint: Keep one primary <h1>; demote section headings to <h2>.`)
+
+  for (const m of html.matchAll(/<img\b([^>]*)>/gi)) {
+    const attrs = m[1]
+    const alt = attrValue(attrs, 'alt')
+    if (alt === undefined) fail(`${prettyFileLine(file, html, m.index)}: image missing alt\n  hint: Add descriptive alt text, or alt="" for decorative images.`)
+  }
+
+  for (const m of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
+    const attrs = m[1]
+    const text = htmlText(m[2]).toLowerCase()
+    const aria = attrValue(attrs, 'aria-label')?.trim()
+    const title = attrValue(attrs, 'title')?.trim()
+    const accessible = aria || text || title
+    if (!accessible) fail(`${prettyFileLine(file, html, m.index)}: link has no accessible name\n  hint: Add visible text or aria-label for icon-only links.`)
+    if (/^(click here|read more|learn more|more|here)$/i.test(text) && !aria) warn(`${prettyFileLine(file, html, m.index)}: vague link text "${text}"\n  hint: Make link text specific, or add aria-label with context.`)
+  }
+}
+
+async function checkLaunchSiteConfig(fail: (m: string) => void) {
+  const rel = 'src/site.json'
+  const raw = await readFile(join(src, 'site.json'), 'utf8').catch(() => '')
+  let site: Record<string, unknown>
+  try { site = JSON.parse(raw) } catch { return }
+  const url = typeof site.url === 'string' ? site.url : ''
+  if (!/^https:\/\/[^\s/$.?#].[^\s]*$/i.test(url) || /localhost|127\.0\.0\.1|0\.0\.0\.0|\.local\b|example\.com/i.test(url)) {
+    fail(`${rel}: launch site.url must be a public https URL\n  hint: Set site.url to the production origin before launch.`)
+  }
+  const og = typeof site.ogImage === 'string' ? site.ogImage : ''
+  if (!og) fail(`${rel}: launch ogImage missing\n  hint: Set ogImage to a real social preview image path.`)
+}
+
+async function checkPrivateOutputUrls(fail: (m: string) => void) {
+  const files = [join(dist, 'index.html'), ...(await collectHtmlFiles(join(dist, 'routes'))), ...(await collectFilesByExtension(dist, '.json'))]
+  const privateUrl = /https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|[^\s"'<>]+\.local\b)/i
+  for (const file of files) {
+    const text = await readFile(file, 'utf8').catch(() => '')
+    const m = text.match(privateUrl)
+    if (m?.index !== undefined) fail(`${prettyFileLine(file, text, m.index)}: private URL in output\n  hint: Replace localhost/private URLs with production URLs before launch.`)
+  }
+}
+
+async function checkDraftLeakage(fail: (m: string) => void) {
+  const content = await compileContent().catch(() => [])
+  for (const route of content) {
+    if (route.draft) fail(`${route.source}: draft content included in production build\n  hint: Draft content must not emit during launch checks.`)
+  }
+}
+
+async function checkLaunchReadiness(fail: (m: string) => void, warn: (m: string) => void) {
+  await checkLaunchSiteConfig(fail)
+  const routeFiles = (await collectHtmlFiles(join(dist, 'routes'))).filter((file) => file !== join(dist, 'routes', 'index.html'))
+  const files = [join(dist, 'index.html'), ...routeFiles]
+  const titleOwners = new Map<string, string>()
+  const descOwners = new Map<string, string>()
+  for (const file of files) {
+    await checkRouteSemantics(file, fail, warn)
+    const html = await readFile(file, 'utf8').catch(() => '')
+    const title = htmlText(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')
+    const descTag = html.match(/<meta\s+[^>]*name=["']description["'][^>]*>/i)?.[0] ?? ''
+    const desc = attrValue(descTag, 'content') ?? ''
+    if (title) {
+      const existing = titleOwners.get(title)
+      if (existing && title !== 'Not found') fail(`${file}: duplicate page title also used by ${existing}\n  hint: Give each launch route a unique title.`)
+      else titleOwners.set(title, file)
+    }
+    if (desc) {
+      const existing = descOwners.get(desc)
+      if (existing) warn(`${file}: duplicate meta description also used by ${existing}\n  hint: Give each launch route a route-specific description.`)
+      else descOwners.set(desc, file)
+    }
+  }
+  await checkPrivateOutputUrls(fail)
+  await checkDraftLeakage(fail)
+}
+
 async function checkDiscoveryArtifacts(fail: (m: string) => void) {
   const required = [
     'llms.txt',
@@ -384,13 +500,14 @@ if (import.meta.main) {
     if (code !== 0) process.exit(code)
   }
   const allowBrokenLinks = process.argv.includes('--allow-broken-links')
-  const report = await runChecks({ allowBrokenLinks })
+  const launch = process.argv.includes('--launch')
+  const report = await runChecks({ allowBrokenLinks, launch })
   for (const w of report.warnings) console.warn(`warn: ${w}`)
   if (report.errors.length) {
     for (const e of report.errors) console.error(`error: ${e}`)
     process.exit(1)
   }
-  console.log('check ok')
+  console.log(launch ? 'launch check ok' : 'check ok')
 }
 
 // Used by the build pipeline as the final step.

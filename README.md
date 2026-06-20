@@ -23,6 +23,7 @@ bun run dev       # http://localhost:3000, watch + SSE hot reload + in-page erro
 bun run build     # produce dist/, run strict checks at the end
 bun run check     # rebuild + validate without serving
 bun run doctor    # CSS ownership audit + strict check
+bun run doctor -- --launch # pre-launch SEO/a11y/site gate
 bun run new       # scaffolder: component|route|post|page <name>, collection <name>, or cms
 bun run add       # add component preset or theme pack
 ```
@@ -34,6 +35,7 @@ snz-bp dev                         # dev server + hot reload
 snz-bp build                       # build dist/ + strict checks
 snz-bp check                       # rebuild + validate
 snz-bp doctor                      # CSS audit + check
+snz-bp doctor --launch             # launch-ready SEO/a11y/site gate
 snz-bp new route pricing           # scaffold src/pages/pricing.html
 snz-bp new component Hero          # scaffold src/components/Hero.html
 snz-bp new post hello-world        # scaffold content/posts/hello-world.md
@@ -131,6 +133,8 @@ build/                    Build pipeline (TypeScript, runs in Bun)
 dev.ts                    Dev server with file watcher
 docs/
   agent-guide.md          Fast orientation for LLM agents
+  client-site-playbook.md End-to-end client-site build playbook
+  agent-recipes.md        Short recipes for common framework tasks
   components.md           Component authoring contract
   component-prompt.md     Copy-paste prompt for spawning components via LLM
   components-catalog.md   Auto-generated catalog (do not hand-edit)
@@ -139,10 +143,10 @@ docs/
 
 ## Components
 
-Invoked as `<PascalName />` or `<PascalName>children</PascalName>`. **One file per component.** Schema lives in a leading `<!-- @desc / @attr -->` comment at the top of each `.html`. Agent orientation is in [`docs/agent-guide.md`](./docs/agent-guide.md). Authoring contract is in [`docs/components.md`](./docs/components.md).
+Invoked as `<PascalName />` or `<PascalName>children</PascalName>`. **One file per component.** Schema lives in a leading `<!-- @desc / @attr -->` comment at the top of each `.html`. Agent orientation is in [`docs/agent-guide.md`](./docs/agent-guide.md), client build flow in [`docs/client-site-playbook.md`](./docs/client-site-playbook.md), task recipes in [`docs/agent-recipes.md`](./docs/agent-recipes.md), and authoring contract in [`docs/components.md`](./docs/components.md).
 
-Built-ins (14):
-`Header`, `Footer`, `SEO`, `Image`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
+Built-ins (16):
+`Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
 
 Add a new component by handing [`docs/component-prompt.md`](./docs/component-prompt.md) to Claude, or just write it yourself.
 
