@@ -45,6 +45,16 @@
 }
 
 @layer motion {
+  :where(a, button) {
+    --is-f: 1;
+    --is-t: 0;
+  }
+
+  :where(a, button):is(:hover, :focus-visible) {
+    --is-f: 0;
+    --is-t: 1;
+  }
+
   @supports (view-transition-name: none) {
     @view-transition {
       navigation: auto;

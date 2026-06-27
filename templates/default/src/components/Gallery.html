@@ -1,0 +1,143 @@
+<!--
+  @desc Single-item media gallery with previous/next controls and live counter.
+  @attr label! Accessible gallery label.
+  @attr variant=[default|bleed] :class Visual variant.
+-->
+<figure class="gallery" role="group" aria-roledescription="carousel" aria-label="{{label}}">
+  <output aria-live="polite" aria-atomic="true">
+    <span data-gallery="current">1</span><span aria-hidden="true">/</span><span data-gallery="length">0</span>
+  </output>
+
+  <div data-gallery="viewport">
+    {{slot}}
+  </div>
+
+  <div data-gallery="controls" role="group" aria-label="Gallery controls">
+    <button type="button" aria-label="Previous item" data-gallery="prev">Prev</button>
+    <button type="button" aria-label="Next item" data-gallery="next">Next</button>
+  </div>
+</figure>
+
+<script>
+  const viewport = el.querySelector('[data-gallery="viewport"]')
+  const current = el.querySelector('[data-gallery="current"]')
+  const length = el.querySelector('[data-gallery="length"]')
+  const prev = el.querySelector('[data-gallery="prev"]')
+  const next = el.querySelector('[data-gallery="next"]')
+  const controls = el.querySelector('[data-gallery="controls"]')
+  const slides = viewport ? viewport.children : []
+  const total = slides.length
+  let index = 1
+
+  function update() {
+    if (current) current.textContent = String(index)
+    if (length) length.textContent = String(total)
+  }
+
+  if (total < 2) {
+    if (controls) controls.hidden = true
+    update()
+    return
+  }
+
+  function goNext() {
+    viewport.appendChild(slides[0])
+    index = (index % total) + 1
+    update()
+  }
+
+  function goPrev() {
+    viewport.insertBefore(slides[total - 1], slides[0])
+    index = ((index - 2 + total) % total) + 1
+    update()
+  }
+
+  next.addEventListener('click', goNext)
+  prev.addEventListener('click', goPrev)
+  update()
+
+  return () => {
+    next.removeEventListener('click', goNext)
+    prev.removeEventListener('click', goPrev)
+  }
+</script>
+
+<style>
+  .gallery {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--br);
+    background: var(--t);
+  }
+
+  .gallery.bleed {
+    border-radius: 0;
+  }
+
+  .gallery [data-gallery="viewport"] {
+    display: flex;
+    overflow: hidden;
+  }
+
+  .gallery [data-gallery="viewport"] > * {
+    flex: 0 0 100%;
+    min-width: 0;
+  }
+
+  .gallery [data-gallery="viewport"] > *:not(:first-child) {
+    display: none;
+  }
+
+  .gallery output,
+  .gallery [data-gallery="controls"] {
+    color: var(--l);
+    mix-blend-mode: difference;
+    padding: var(--pd-xs) var(--pd-sm);
+  }
+
+  .gallery output {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+  }
+
+  .gallery [data-gallery="controls"] {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    user-select: none;
+  }
+
+  .gallery [data-gallery="controls"][hidden] {
+    display: none;
+  }
+
+  .gallery button {
+    all: unset;
+    flex: 1;
+    display: flex;
+    align-items: end;
+    min-width: 0;
+    cursor: w-resize;
+    color: inherit;
+  }
+
+  .gallery button[data-gallery="next"] {
+    justify-content: end;
+    cursor: e-resize;
+  }
+
+  .gallery button:focus-visible {
+    outline: var(--bw) solid currentColor;
+    outline-offset: calc(var(--bw) * -2);
+  }
+
+  @media (hover: hover) {
+    .gallery button:not(:hover, :focus-visible) {
+      color: transparent;
+    }
+  }
+</style>

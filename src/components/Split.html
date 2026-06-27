@@ -1,0 +1,40 @@
+<!--
+  @desc Text splitter that wraps words for animation or styling.
+  @attr label Optional accessible label. Defaults to text content.
+-->
+<span class="split" data-split aria-label="{{label}}">{{slot}}</span>
+
+<script>
+  const text = el.textContent?.trim() || ''
+  if (!text) return
+
+  const label = el.getAttribute('aria-label')?.trim() || text
+  const words = text.split(/\s+/)
+  el.textContent = ''
+  el.setAttribute('aria-label', label)
+
+  for (const [index, word] of words.entries()) {
+    if (index) el.append(' ')
+    const wrap = document.createElement('span')
+    const inner = document.createElement('span')
+    wrap.setAttribute('data-split-word', '')
+    inner.style.setProperty('--x', index)
+    inner.textContent = word
+    wrap.append(inner)
+    el.append(wrap)
+  }
+</script>
+
+<style>
+  .split {
+    display: inline-block;
+  }
+
+  .split [data-split-word] {
+    display: inline-flex;
+  }
+
+  .split [data-split-word] > span {
+    display: inline-block;
+  }
+</style>

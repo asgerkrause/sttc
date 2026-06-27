@@ -1,4 +1,5 @@
 dist/
+.snz/
 
 # Pi agent (SANITIZE)
 .pi/scratch/

@@ -1,10 +1,10 @@
 # Pages CMS — https://pagescms.org/docs/configuration/
-# Content compiles at build time. CMS uploads feed optimized /assets/images output.
+# Content compiles at build time. CMS uploads land in src/images and feed optimized /assets/images output.
 
 media:
   - name: images
     label: Images
-    input: media/images
+    input: src/images
     output: /assets/images
     extensions: [png, jpg, jpeg, webp]
     rename: safe

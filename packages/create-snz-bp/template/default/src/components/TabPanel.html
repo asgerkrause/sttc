@@ -1,0 +1,20 @@
+<!--
+  @desc Tab panel for use inside Tabs. Match id with a Tab id.
+  @attr id! Stable panel id shared with the matching Tab.
+-->
+<div role="tabpanel" id="panel-{{id}}" aria-labelledby="tab-{{id}}">
+  {{slot}}
+</div>
+
+<style>
+  [role="tabpanel"] {
+    border: var(--bw) solid var(--b);
+    border-radius: var(--br);
+    padding: var(--pd);
+    background: var(--t);
+  }
+
+  [role="tabpanel"][hidden] {
+    display: none;
+  }
+</style>

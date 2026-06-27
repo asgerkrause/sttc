@@ -1,0 +1,88 @@
+<!--
+  @desc Masonry-style grid that keeps source order and measures item row spans.
+  @attr cols Column count as large-medium split value. Defaults to 3 large / 2 medium.
+  @attr gap=[default|sm|lg] :class Gap size.
+-->
+<div class="masonry" data-cols="{{cols}}">{{slot}}</div>
+
+<script>
+  const items = [...el.children]
+  let frame
+
+  function layout() {
+    cancelAnimationFrame(frame)
+    frame = requestAnimationFrame(() => {
+      const row = Number.parseFloat(getComputedStyle(el).getPropertyValue('--masonry-row')) || 8
+      const gap = Number.parseFloat(getComputedStyle(el).rowGap) || 0
+      for (const item of items) {
+        item.style.removeProperty('--masonry-span')
+        const height = item.getBoundingClientRect().height
+        const span = Math.ceil((height + gap) / (row + gap))
+        item.style.setProperty('--masonry-span', span)
+      }
+    })
+  }
+
+  const observer = new ResizeObserver(layout)
+  observer.observe(el)
+  for (const item of items) observer.observe(item)
+
+  const images = items.flatMap((item) => [...item.querySelectorAll('img')])
+  for (const image of images) {
+    if (!image.complete) image.addEventListener('load', layout, { once: true })
+  }
+
+  layout()
+
+  return () => {
+    cancelAnimationFrame(frame)
+    observer.disconnect()
+  }
+</script>
+
+<style>
+  .masonry {
+    --gc: 3;
+    --masonry-row: var(--gp-xs);
+    display: grid;
+    grid-template-columns: repeat(var(--gc), minmax(0, 1fr));
+    grid-auto-rows: var(--masonry-row);
+    gap: var(--gp);
+    align-items: start;
+  }
+
+  .masonry.sm {
+    gap: var(--gp-sm);
+  }
+
+  .masonry.lg {
+    gap: var(--gp-lg);
+  }
+
+  .masonry > * {
+    grid-row-end: span var(--masonry-span, 1);
+  }
+
+  .masonry[data-cols$="1"] { --gc: 1; }
+  .masonry[data-cols$="2"] { --gc: 2; }
+  .masonry[data-cols$="3"] { --gc: 3; }
+  .masonry[data-cols$="4"] { --gc: 4; }
+  .masonry[data-cols$="5"] { --gc: 5; }
+  .masonry[data-cols$="6"] { --gc: 6; }
+
+  @media (width < 30rem) {
+    .masonry {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  @media (width >= 60rem) {
+    .masonry[data-cols^="1"] { --gc: 1; }
+    .masonry[data-cols^="2"] { --gc: 2; }
+    .masonry[data-cols^="3"] { --gc: 3; }
+    .masonry[data-cols^="4"] { --gc: 4; }
+    .masonry[data-cols^="5"] { --gc: 5; }
+    .masonry[data-cols^="6"] { --gc: 6; }
+  }
+</style>

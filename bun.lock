@@ -28,7 +28,7 @@
     },
   },
   "packages": {
-    "@snz/bp": ["@snz/bp@root:", { "bin": { "snz-bp": "./bin/snz-bp.ts" } }],
+    "@snz/bp": ["@snz/bp@root:", { "bin": { "snz-bp": "./framework/cli/snz-bp.ts" } }],
 
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 

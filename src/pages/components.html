@@ -1,15 +1,16 @@
 <head>
-  <SEO title="Components" description="Simple built-in component showcase for SANITIZE Boilerplate." />
+  <SEO title="Components" description="Built-in component examples for SANITIZE Boilerplate." />
 </head>
 
 <section>
   <div class="c w">
+    <p class="eb">Component gallery</p>
     <h1>Component showcase</h1>
-    <p class="f-md">Simple examples for every built-in component. Copy sections into routes and adjust content.</p>
-    <p>Slot-first patterns stay flexible: compose primitives inside <code>Section</code>, <code>Grid</code>, and <code>Card</code> instead of locking content into too many props.</p>
+    <p class="f-md">Copy-ready examples for every built-in component. Use these patterns inside routes and adjust content.</p>
+    <p>Slot-first components stay flexible: compose primitives inside <code>Section</code>, <code>Grid</code>, and <code>Card</code> instead of locking content into too many props.</p>
     <div class="btns">
-      <Button label="Back home" href="/" variant="ghost" />
-      <Link label="Read component docs" href="https://github.com/sanitizestudio/snz-bp" />
+      <Button label="Back home" href="/" />
+      <Button label="Read docs" href="https://github.com/sanitizestudio/snz-bp" color="ghost" />
     </div>
   </div>
 </section>
@@ -17,10 +18,35 @@
 <Section id="buttons">
   <h2>Button + Link</h2>
   <div class="btns">
-    <Button label="Default" href="/components/" />
-    <Button label="Accent" href="/components/" variant="accent" />
-    <Button label="Ghost" href="/components/" variant="ghost" />
+    <Button label="Default" href="#" />
+    <Button label="Tone" href="#" color="tone" />
+    <Button label="Accent" href="#" color="accent" />
+    <Button label="Accent tone" href="#" color="accent" tone="tone" />
+    <Button label="Complimentary" href="#" color="complimentary" />
+    <Button label="Complimentary tone" href="#" color="complimentary" tone="tone" />
+    <Button label="Ghost" href="#" color="ghost" />
   </div>
+
+  <div class="btns">
+    <Button label="Default" href="#"><slot name="vis"><span>→</span><span>→</span></slot></Button>
+    <Button label="Tone" href="#" color="tone"><slot name="vis"><span>→</span><span>→</span></slot></Button>
+    <Button label="Accent" href="#" color="accent"><slot name="vis"><span>→</span><span>→</span></slot></Button>
+    <Button label="Accent tone" href="#" color="accent" tone="tone"><slot name="vis"><span>→</span><span>→</span></slot></Button>
+    <Button label="Complimentary" href="#" color="complimentary"><slot name="vis"><span>→</span><span>→</span></slot></Button>
+    <Button label="Complimentary tone" href="#" color="complimentary" tone="tone"><slot name="vis"><span>→</span><span>→</span></slot></Button>
+    <Button label="Ghost" href="#" color="ghost"><slot name="vis"><span>→</span><span>→</span></slot></Button>
+  </div>
+
+  <div class="btns">
+    <Button label="Default" href="#"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
+    <Button label="Tone" href="#" color="tone"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
+    <Button label="Accent" href="#" color="accent"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
+    <Button label="Accent tone" href="#" color="accent" tone="tone"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
+    <Button label="Complimentary" href="#" color="complimentary"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
+    <Button label="Complimentary tone" href="#" color="complimentary" tone="tone"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
+    <Button label="Ghost" href="#" color="ghost"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
+  </div>
+
   <p><Link label="Inline link" href="/" /></p>
 </Section>
 
@@ -29,23 +55,119 @@
   <Grid cols="4-2">
     <Card>
       <h3>Default card</h3>
-      <p>Grouped content with an optional action.</p>
+      <p>Grouped content with optional actions.</p>
       <Link href="/" label="Home" />
     </Card>
     <Card variant="outlined">
       <h3>Outlined card</h3>
-      <p>Variant styles stay inside the component.</p>
-      <Link href="/components/" label="Stay here" />
+      <p>Clear separation without a heavier surface.</p>
     </Card>
     <Card variant="ghost">
       <h3>Ghost card</h3>
-      <p>Use variants for quieter supporting content.</p>
+      <p>Use sparingly for quiet supporting content.</p>
     </Card>
     <Card theme="accent">
       <h3>Accent card</h3>
-      <p>Use themed cards for high-contrast callouts.</p>
+      <p>High-contrast callout using the theme contract.</p>
     </Card>
   </Grid>
+</Section>
+
+<Section id="editorial" theme="tone">
+  <h2>Statement + Split</h2>
+  <Statement variant="accent">Static sites should feel sharp, fast, and easy to reshape.</Statement>
+  <p class="f-lg"><Split>Split wraps words for animation-ready text while preserving an accessible label.</Split></p>
+  <Grid cols="2">
+    <div class="w">
+      <h3>Layout still uses Grid</h3>
+      <p>Use layout primitives for two-column content. Use <code>Split</code> for text splitting.</p>
+      <Button label="Primary action" href="/components/" color="accent" />
+    </div>
+    <Image src="r6" alt="Abstract component media example" max="1200" />
+  </Grid>
+</Section>
+
+<Section id="badges-icons">
+  <h2>Badge + Icon + Socials</h2>
+  <div class="btns">
+    <Badge>Default</Badge>
+    <Badge variant="tone">Tone</Badge>
+    <Badge variant="accent">Accent</Badge>
+    <Badge variant="complimentary">Complimentary</Badge>
+  </div>
+  <div class="btns">
+    <Icon label="Decorative dot" />
+    <span><Icon label="Inline marker" /> Inline icon wrapper</span>
+  </div>
+  <Socials label="Example social links">
+    <Social href="https://github.com/sanitizestudio" label="GitHub">GitHub</Social>
+    <Social href="mailto:hello@example.com" label="Email">Email</Social>
+  </Socials>
+</Section>
+
+<Section id="counter">
+  <h2>Counter</h2>
+  <Grid cols="3-2">
+    <Card><Counter value="24" label="Routes shipped" suffix="+" /></Card>
+    <Card><Counter value="98" label="Performance score" suffix="%" /></Card>
+    <Card><Counter value="1200" label="Optimized image variants" /></Card>
+  </Grid>
+</Section>
+
+<Section id="tabs">
+  <h2>Tabs</h2>
+  <Tabs label="Component tabs">
+    <Tab id="overview" selected="true">Overview</Tab>
+    <Tab id="details">Details</Tab>
+    <Tab id="shipping">Shipping</Tab>
+    <TabPanel id="overview"><p>Tabs keep related panels close while preserving keyboard navigation.</p></TabPanel>
+    <TabPanel id="details"><p>Use stable ids on <code>Tab</code> and matching <code>TabPanel</code> components.</p></TabPanel>
+    <TabPanel id="shipping"><p>Panels stay in source order. JavaScript only manages ARIA state and visibility.</p></TabPanel>
+  </Tabs>
+</Section>
+
+<Section id="slider">
+  <h2>Slider</h2>
+  <p>Native scroll-snap gallery with previous/next controls.</p>
+  <Slider label="Example scroll-snap gallery" cols="3-2">
+    <Image src="r6" alt="Slider example image one" max="1200" />
+    <Image src="test-img" alt="Slider example image two" max="1200" />
+    <Image src="r6" alt="Slider example image three" max="1200" />
+    <Image src="test-img" alt="Slider example image four" max="1200" />
+    <Image src="r6" alt="Slider example image five" max="1200" />
+  </Slider>
+</Section>
+
+<Section id="gallery">
+  <h2>Gallery</h2>
+  <p>Single-item gallery with a live counter and previous/next zones.</p>
+  <Gallery label="Example image gallery">
+    <Image src="r6" alt="Gallery example image one" max="1200" />
+    <Image src="test-img" alt="Gallery example image two" max="1200" />
+    <Image src="r6" alt="Gallery example image three" max="1200" />
+  </Gallery>
+</Section>
+
+<Section id="marquee" theme="invert">
+  <h2>Marquee</h2>
+  <Marquee label="Component marquee" speed="25" scroll="100" fade="true">
+    <span>Fast output</span>
+    <span>Slot-first components</span>
+    <span>Static by default</span>
+    <span>No runtime framework</span>
+  </Marquee>
+</Section>
+
+<Section id="masonry">
+  <h2>Masonry</h2>
+  <Masonry cols="4-2" gap="sm">
+    <Card><h3>One</h3><p>Short card.</p></Card>
+    <Card><h3>Two</h3><p>Longer card with extra copy to prove row-span measurement keeps the grid packed without reordering source content.</p></Card>
+    <Image src="r6" alt="Masonry image one" max="800" />
+    <Card theme="accent"><h3>Four</h3><p>Theme card.</p></Card>
+    <Image src="test-img" alt="Masonry image two" max="800" />
+    <Card variant="outlined"><h3>Six</h3><p>Outlined card.</p></Card>
+  </Masonry>
 </Section>
 
 <Section id="media">
@@ -69,7 +191,7 @@
 
 <Section id="accordion">
   <h2>Accordion + FAQ</h2>
-  <Accordion summary="Where do routes live?" body="Author HTML files in src/routes. One file becomes one URL." group="showcase" />
+  <Accordion summary="Where do routes live?" body="Author HTML files in src/pages. One file becomes one URL." group="showcase" />
   <Accordion summary="Can markdown render to HTML?" body="Yes. Markdown renders at build time with safe links, tables, code blocks, and component passthrough." group="showcase" />
   <FAQ />
 </Section>
@@ -80,34 +202,6 @@
 ## Markdown should feel like authored content
 
 Use markdown for prose-heavy pages: notes, case studies, docs, changelogs, and CMS posts. It renders at build time, so output stays static and readable.
-
-### What this example proves
-
-Markdown supports paragraphs with **strong emphasis**, *quiet emphasis*, inline `code`, and [safe internal links](/components/). It should be easy to scan as real writing, not just a fixture.
-
-> Blockquotes are useful for pull quotes, source notes, or short client testimonials.
-
-### HTML examples inside prose
-
-You can explain markup directly:
-
-```html
-<Section theme="tone">
-  <h2>Services</h2>
-  <p>Content stays semantic first.</p>
-</Section>
-```
-
-And show component usage without leaving the markdown flow:
-
-```html
-<Grid cols="3-2">
-  <Card>
-    <h3>Strategy</h3>
-    <p>Plan the page around intent.</p>
-  </Card>
-</Grid>
-```
 
 | Feature | Why it matters |
 | --- | --- |
@@ -123,7 +217,7 @@ And show component usage without leaving the markdown flow:
 
 <Section id="code">
   <h2>Code + SEO</h2>
-  <Code lang="html">&lt;Button label="Go" href="/" /&gt;</Code>
+  <Code lang="html">&lt;Button label="Go" href="/" color="ghost" /&gt;</Code>
   <Code lang="html">&lt;SEO title="Components" description="Simple built-in component showcase." /&gt;</Code>
 </Section>
 
@@ -157,16 +251,4 @@ And show component usage without leaving the markdown flow:
       <p>Shell components usually live in <code>src/shell.html</code>, not inside route bodies.</p>
     </Card>
   </Grid>
-</Section>
-
-<Section id="future">
-  <h2>Preset naming</h2>
-  <p>Future content presets use readable nouns. Plural components wrap collections; singular components are items. Most should stay slot-first so existing primitives compose inside them.</p>
-  <Code lang="html">&lt;Section&gt;
-  &lt;Features&gt;
-    &lt;Feature&gt;
-      &lt;Card&gt;...&lt;/Card&gt;
-    &lt;/Feature&gt;
-  &lt;/Features&gt;
-&lt;/Section&gt;</Code>
 </Section>

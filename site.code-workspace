@@ -7,24 +7,21 @@
   ],
   "settings": {
     "files.exclude": {
-      "build": true,
-      "runtime": true,
-      "bin": true,
+      "framework": true,
       "packages": true,
       ".github": true,
       ".pi": true,
-      "docs/decisions": true,
+      ".snz": true,
       "templates": true,
       "dist": true,
       "node_modules": true
     },
     "search.exclude": {
-      "build": true,
-      "runtime": true,
-      "bin": true,
+      "framework": true,
       "packages": true,
       ".github": true,
       ".pi": true,
+      ".snz": true,
       "templates": true,
       "dist": true,
       "node_modules": true

@@ -1,0 +1,40 @@
+<!--
+  @desc Small inline label.
+  @attr variant=[default|tone|accent|complimentary] :class Visual style.
+-->
+<span class="badge">{{slot}}</span>
+
+<style>
+  .badge {
+    align-items: center;
+    align-self: start;
+    background: var(--t);
+    border: var(--bw) solid var(--b);
+    border-radius: var(--br-sm);
+    color: var(--g);
+    display: inline-flex;
+    font-size: var(--sm-fs);
+    font-weight: var(--fw-b);
+    gap: var(--pd-xs);
+    line-height: 1;
+    padding: var(--pd-xs) var(--pd-sm);
+    white-space: nowrap;
+  }
+
+  .badge.tone {
+    background: var(--t);
+    color: var(--i);
+  }
+
+  .badge.accent {
+    background: var(--a);
+    border-color: var(--a);
+    color: var(--ai);
+  }
+
+  .badge.complimentary {
+    background: var(--c);
+    border-color: var(--c);
+    color: var(--ci);
+  }
+</style>

@@ -6,11 +6,11 @@
   <div class="c w">
     <p class="eb">Component gallery</p>
     <h1>Copy-ready patterns using built-in pieces.</h1>
-    <p class="f-lg">These examples cover common page needs: actions, cards, media, disclosures, markdown, code, and layout primitives.</p>
+    <p class="f-lg">These examples cover common page needs: actions, cards, media, motion, tabs, counters, markdown, code, and layout primitives.</p>
     <p>Slot-first patterns stay flexible: compose primitives inside <code>Section</code>, <code>Grid</code>, and <code>Card</code> instead of locking content into too many props.</p>
     <div class="btns">
-      <Button label="Back home" href="/" variant="ghost" />
-      <Link label="Component docs" href="https://github.com/sanitizestudio/snz-bp" />
+      <Button label="Back home" href="/" />
+      <Button label="Component docs" href="https://github.com/sanitizestudio/snz-bp" color="ghost" />
     </div>
   </div>
 </section>
@@ -23,8 +23,9 @@
   </header>
   <div class="btns">
     <Button label="Default" href="/components/" />
-    <Button label="Accent" href="/components/" variant="accent" />
-    <Button label="Ghost" href="/components/" variant="ghost" />
+    <Button label="Tone" href="/components/" color="tone" />
+    <Button label="Accent" href="/components/" color="accent" />
+    <Button label="Ghost" href="/components/" color="ghost" />
   </div>
   <p><Link label="Inline link example" href="/" /></p>
 </Section>
@@ -35,25 +36,129 @@
     <h2>Card</h2>
   </header>
   <Grid cols="4-2">
-    <Card>
-      <h3>Default</h3>
-      <p>Group a feature, service, note, or summary with optional action.</p>
-      <Link href="/" label="Home" />
-    </Card>
-    <Card variant="outlined">
-      <h3>Outlined</h3>
-      <p>Use variants when content needs clear separation without extra surface.</p>
-      <Link href="/components/" label="Stay here" />
-    </Card>
-    <Card variant="ghost">
-      <h3>Ghost</h3>
-      <p>Quiet cards keep supporting content present without adding much surface.</p>
-    </Card>
-    <Card theme="accent">
-      <h3>Accent</h3>
-      <p>Use themed cards for high-contrast callouts.</p>
-    </Card>
+    <Card><h3>Default</h3><p>Group a feature, service, note, or summary with optional action.</p></Card>
+    <Card variant="outlined"><h3>Outlined</h3><p>Clear separation without extra surface.</p></Card>
+    <Card variant="ghost"><h3>Ghost</h3><p>Quiet cards keep supporting content present without adding much surface.</p></Card>
+    <Card theme="accent"><h3>Accent</h3><p>Use themed cards for high-contrast callouts.</p></Card>
   </Grid>
+</Section>
+
+<Section id="editorial" theme="tone">
+  <header class="w">
+    <p class="eb">Editorial</p>
+    <h2>Statement + Split</h2>
+  </header>
+  <Statement variant="accent">Static sites should feel sharp, fast, and easy to reshape.</Statement>
+  <p class="f-lg"><Split>Split wraps words for animation-ready text while preserving an accessible label.</Split></p>
+  <Grid cols="2">
+    <div class="w">
+      <h3>Layout still uses Grid</h3>
+      <p>Use layout primitives for two-column content. Use <code>Split</code> for text splitting.</p>
+      <Button label="Primary action" href="/components/" color="accent" />
+    </div>
+    <Image src="showcase" alt="Abstract starter site preview" max="1200" />
+  </Grid>
+</Section>
+
+<Section id="identity">
+  <header class="w">
+    <p class="eb">Small pieces</p>
+    <h2>Badge + Icon + Socials</h2>
+  </header>
+  <div class="btns">
+    <Badge>Default</Badge>
+    <Badge variant="tone">Tone</Badge>
+    <Badge variant="accent">Accent</Badge>
+    <Icon label="Decorative dot" />
+    <span><Icon label="Inline marker" /> Inline icon wrapper</span>
+  </div>
+  <Socials label="Example social links">
+    <Social href="https://github.com/sanitizestudio" label="GitHub">GitHub</Social>
+    <Social href="mailto:hello@example.com" label="Email">Email</Social>
+  </Socials>
+</Section>
+
+<Section id="counter">
+  <header class="w">
+    <p class="eb">Numbers</p>
+    <h2>Counter</h2>
+  </header>
+  <Grid cols="3-2">
+    <Card><Counter value="24" label="Routes shipped" suffix="+" /></Card>
+    <Card><Counter value="98" label="Performance score" suffix="%" /></Card>
+    <Card><Counter value="1200" label="Optimized image variants" /></Card>
+  </Grid>
+</Section>
+
+<Section id="tabs">
+  <header class="w">
+    <p class="eb">Panels</p>
+    <h2>Tabs</h2>
+  </header>
+  <Tabs label="Component tabs">
+    <Tab id="overview" selected="true">Overview</Tab>
+    <Tab id="details">Details</Tab>
+    <Tab id="shipping">Shipping</Tab>
+    <TabPanel id="overview"><p>Tabs keep related panels close while preserving keyboard navigation.</p></TabPanel>
+    <TabPanel id="details"><p>Use stable ids on <code>Tab</code> and matching <code>TabPanel</code> components.</p></TabPanel>
+    <TabPanel id="shipping"><p>Panels stay in source order. JavaScript only manages ARIA state and visibility.</p></TabPanel>
+  </Tabs>
+</Section>
+
+<Section id="slider">
+  <header class="w">
+    <p class="eb">Gallery</p>
+    <h2>Slider</h2>
+    <p>Native scroll-snap gallery with previous/next controls.</p>
+  </header>
+  <Slider label="Example scroll-snap gallery" cols="3-2">
+    <Image src="showcase" alt="Slider image one" max="1200" />
+    <Image src="showcase" alt="Slider image two" max="1200" />
+    <Image src="showcase" alt="Slider image three" max="1200" />
+    <Image src="showcase" alt="Slider image four" max="1200" />
+    <Image src="showcase" alt="Slider image five" max="1200" />
+  </Slider>
+</Section>
+
+<Section id="gallery">
+  <header class="w">
+    <p class="eb">Gallery</p>
+    <h2>Gallery</h2>
+    <p>Single-item gallery with a live counter and previous/next zones.</p>
+  </header>
+  <Gallery label="Example image gallery">
+    <Image src="showcase" alt="Gallery image one" max="1200" />
+    <Image src="showcase" alt="Gallery image two" max="1200" />
+    <Image src="showcase" alt="Gallery image three" max="1200" />
+  </Gallery>
+</Section>
+
+<Section id="marquee" theme="invert">
+  <header class="w">
+    <p class="eb">Motion</p>
+    <h2>Marquee</h2>
+  </header>
+  <Marquee label="Component marquee" speed="25" scroll="2" fade="true">
+    <span>Fast output</span>
+    <span>Slot-first components</span>
+    <span>Static by default</span>
+    <span>No runtime framework</span>
+  </Marquee>
+</Section>
+
+<Section id="masonry">
+  <header class="w">
+    <p class="eb">Packed layout</p>
+    <h2>Masonry</h2>
+  </header>
+  <Masonry cols="4-2" gap="sm">
+    <Card><h3>One</h3><p>Short card.</p></Card>
+    <Card><h3>Two</h3><p>Longer card with extra copy to prove row-span measurement keeps the grid packed without reordering source content.</p></Card>
+    <Image src="showcase" alt="Masonry image one" max="800" />
+    <Card theme="accent"><h3>Four</h3><p>Theme card.</p></Card>
+    <Image src="showcase" alt="Masonry image two" max="800" />
+    <Card variant="outlined"><h3>Six</h3><p>Outlined card.</p></Card>
+  </Masonry>
 </Section>
 
 <Section id="media">
@@ -73,7 +178,7 @@
   </Grid>
   <div class="w">
     <h3>Responsive by default</h3>
-    <p>Place source images in <code>src/images</code> or <code>media/images</code>. Build emits optimized WebP sizes and keeps route markup clean.</p>
+    <p>Place source images in <code>src/images</code>. Build emits optimized WebP sizes and keeps route markup clean.</p>
     <Code lang="html">&lt;Image src="showcase" alt="Abstract starter site preview" max="1200" /&gt;</Code>
     <Embed src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Example video embed" />
   </div>
@@ -114,7 +219,7 @@
     <p class="eb">Snippets</p>
     <h2>Code + SEO</h2>
   </header>
-  <Code lang="html">&lt;Button label="Go" href="/" variant="accent" /&gt;</Code>
+  <Code lang="html">&lt;Button label="Go" href="/" color="ghost" /&gt;</Code>
   <Code lang="html">&lt;SEO title="Components" description="Simple built-in component showcase." /&gt;</Code>
 </Section>
 
@@ -157,19 +262,4 @@
       <p>Shell components usually live in <code>src/shell.html</code>, not inside route bodies.</p>
     </Card>
   </Grid>
-</Section>
-
-<Section id="future">
-  <header class="w">
-    <p class="eb">Naming</p>
-    <h2>Preset naming</h2>
-  </header>
-  <p>Future content presets use readable nouns. Plural components wrap collections; singular components are items. Most should stay slot-first so existing primitives compose inside them.</p>
-  <Code lang="html">&lt;Section&gt;
-  &lt;Features&gt;
-    &lt;Feature&gt;
-      &lt;Card&gt;...&lt;/Card&gt;
-    &lt;/Feature&gt;
-  &lt;/Features&gt;
-&lt;/Section&gt;</Code>
 </Section>

@@ -11,7 +11,7 @@
     border: 0;
   }
 
-  body > main {
+  body>main {
     position: relative;
     z-index: 1;
     border-bottom: var(--bw) solid var(--b);
@@ -22,14 +22,14 @@
     min-height: 100svh;
     overflow: clip;
 
-    > section {
-      padding: var(--by) var(--bx);
+    >section {
+      padding: var(--py) var(--px);
       display: flex;
       flex-direction: column;
       gap: var(--gp-xl);
     }
 
-    > section:first-child {
+    >section:first-child {
       margin-top: 8rem;
     }
   }
@@ -41,13 +41,18 @@
     display: flex;
     flex-direction: column;
     gap: var(--ss);
-    max-width: var(--mw);
+    /* max-width: var(--mw); */
 
-    &.sm { max-width: var(--mw-sm); }
-    &.lg { max-width: var(--mw-lg); }
+    &.sm {
+      max-width: var(--mw-sm);
+    }
+
+    &.lg {
+      max-width: var(--mw-lg);
+    }
 
     &.center,
-    &.center > * {
+    &.center>* {
       align-items: center;
       justify-content: center;
       text-align: center;
@@ -96,7 +101,9 @@
       --crd-b: var(--b);
       background-image: none;
 
-      &:hover { --crd-s: var(--s); }
+      &:hover {
+        --crd-s: var(--s);
+      }
     }
 
     &.outlined {
@@ -104,7 +111,9 @@
       --crd-b: var(--b);
     }
 
-    &.ghost { --crd-s: transparent; }
+    &.ghost {
+      --crd-s: transparent;
+    }
 
     &[data-theme] {
       --crd-s: var(--s);
@@ -112,12 +121,10 @@
       --crd-g: var(--g);
     }
 
-    p { color: var(--crd-g); }
-
-    h2,
-    h3 {
-      font: inherit;
+    p {
+      color: var(--crd-g);
     }
+
 
     .lnks,
     .btns {

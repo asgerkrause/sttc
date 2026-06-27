@@ -20,13 +20,8 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": [
-    "bin/**/*.ts",
-    "build/**/*.ts",
+    "framework/**/*.ts",
     "src/**/*.ts",
-    "dev.ts",
-    "scripts/**/*.ts",
-    "tests/**/*.ts",
-    "packages/**/*.ts",
-    "types/**/*.d.ts"
+    "packages/**/*.ts"
   ]
 }

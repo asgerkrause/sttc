@@ -2,7 +2,7 @@
 
 `@snz/bp` — HTML-first, Bun-native static site framework. Author normal HTML in `src/`; the Bun build turns it into a static `dist/` site with components, routed pages, optimized images, structured data, llms.txt, feeds, and a machine-readable manifest.
 
-It is not a React/Vue/Svelte/Vite wrapper. There is no runtime app framework, virtual DOM, or hydration layer. The tiny client framework is `runtime/router.js`, exposed as `window.snz` for navigation hooks and page swaps.
+It is not a React/Vue/Svelte/Vite wrapper. There is no runtime app framework, virtual DOM, or hydration layer. The tiny client framework is `framework/runtime/router.js`, exposed as `window.snz` for navigation hooks and page swaps.
 
 Repo: `sanitizestudio/snz-bp`.
 
@@ -12,8 +12,9 @@ Private review status: packages are intentionally unpublished and marked `"priva
 
 - **Runtime**: Bun (>= 1.3.14, for `Bun.Image`).
 - **Output**: a static `dist/` you can host anywhere.
-- **Author surface**: `src/`, `content/`, `media/`, and `src/site.json`.
-- **Framework surface**: `build/`, `runtime/`, `bin/`, `packages/`, and `templates/default/`.
+- **Author surface**: `src/`, optional `content/`, and `src/site.json`.
+- **Framework surface**: `framework/`, `packages/`, and `templates/default/`.
+- **Local state**: `.snz/` is cache/state only; never source code.
 - Markdown, image processing, hashing, server — all Bun stdlib.
 
 ## Commands
@@ -52,7 +53,7 @@ snz-bp migrate                     # migrate legacy component sidecars
 
 ## Built-in boilerplate
 
-`templates/default/` is the starter site copied into new client projects. It includes the authoring surface (`src/`, starter pages/components/styles, `src/site.json`, optional content/media folders, and `site.code-workspace`) without copying framework internals into every client repo.
+`templates/default/` is the starter site copied into new client projects. It includes the authoring surface (`src/`, starter pages/components/styles/images, `src/site.json`, optional content folders, and `site.code-workspace`) without copying framework internals into every client repo.
 
 Client projects run framework commands through `@snz/bp`. The starter stays editable; framework behavior can update from the package boundary later.
 
@@ -63,7 +64,7 @@ New client project starter lives in `templates/default/`. Creator package lives 
 Private local UX:
 
 ```bash
-bun scripts/install-local-creator.ts
+bun framework/scripts/install-local-creator.ts
 create-snz-bp my-client
 cd my-client
 bun install
@@ -92,16 +93,16 @@ Current local verification:
 ```bash
 bun run check:create-template
 cd templates/default
-bun ../../bin/snz-bp.ts check
+bun ../../framework/cli/snz-bp.ts check
 cd ../..
 bun run smoke:create
 ```
 
-Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install` must run before `bun dev`. Packaged creator uses `packages/create-snz-bp/template/default` and writes the matching published `@snz/bp` semver range for smoke testing. Run `bun run prepare:create-template` before packaging. Publish steps and private guard removal live in [`docs/publish-checklist.md`](./docs/publish-checklist.md).
+Private local creator rewrites `@snz/bp` to `file:<this repo>`, so `bun install` must run before `bun dev`. Packaged creator uses `packages/create-snz-bp/template/default` and writes the matching published `@snz/bp` semver range for smoke testing. Run `bun run prepare:create-template` before packaging. Publish steps and private guard removal live in [`framework/docs/publish-checklist.md`](./framework/docs/publish-checklist.md).
 
 ## Workspace modes
 
-- Framework mode: open the repo root to edit `build/`, `runtime/`, `packages/`, docs, and the starter.
+- Framework mode: open the repo root to edit `framework/`, `packages/`, docs, and the starter.
 - Author mode: open `site.code-workspace` in Cursor/VS Code to focus on `src/`, content, media, and site docs while hiding framework internals.
 
 Generated starter projects also include `site.code-workspace` for authoring-only work.
@@ -124,31 +125,28 @@ Opt-in/legacy:
   src/app/app.js          Legacy app entry
   src/templates/          CMS render shells
   content/                PagesCMS markdown
-  media/images/           Default PagesCMS media.input; optimized to /assets/images/
+  src/images/           Default PagesCMS media.input; optimized to /assets/images/
 
-runtime/
-  router.js               Client framework, exposes window.snz
-  lib/paths.js            Shared by router + build
-build/                    Build pipeline (TypeScript, runs in Bun)
-dev.ts                    Dev server with file watcher
-docs/
-  agent-guide.md          Fast orientation for LLM agents
-  client-site-playbook.md End-to-end client-site build playbook
-  agent-recipes.md        Short recipes for common framework tasks
-  components.md           Component authoring contract
-  component-prompt.md     Copy-paste prompt for spawning components via LLM
-  components-catalog.md   Auto-generated catalog (do not hand-edit)
-  decisions/              Short ADRs
+framework/
+  cli/snz-bp.ts           Package CLI wrapper
+  runtime/router.js       Client framework, exposes window.snz
+  runtime/lib/paths.js    Shared by router + build
+  build/                  Build pipeline (TypeScript, runs in Bun)
+  dev.ts                  Dev server with file watcher
+  tests/                  Framework tests
+  scripts/                Private maintenance scripts
+  docs/                   Framework docs, recipes, component contract, decisions
+.snz/                     Local cache/state only; never source code
 ```
 
 ## Components
 
-Invoked as `<PascalName />` or `<PascalName>children</PascalName>`. **One file per component.** Schema lives in a leading `<!-- @desc / @attr -->` comment at the top of each `.html`. Agent orientation is in [`docs/agent-guide.md`](./docs/agent-guide.md), client build flow in [`docs/client-site-playbook.md`](./docs/client-site-playbook.md), task recipes in [`docs/agent-recipes.md`](./docs/agent-recipes.md), and authoring contract in [`docs/components.md`](./docs/components.md).
+Invoked as `<PascalName />` or `<PascalName>children</PascalName>`. **One file per component.** Schema lives in a leading `<!-- @desc / @attr -->` comment at the top of each `.html`. Agent orientation is in [`framework/docs/agent-guide.md`](./framework/docs/agent-guide.md), client build flow in [`framework/docs/client-site-playbook.md`](./framework/docs/client-site-playbook.md), task recipes in [`framework/docs/agent-recipes.md`](./framework/docs/agent-recipes.md), and authoring contract in [`framework/docs/components.md`](./framework/docs/components.md).
 
 Built-ins (16):
 `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
 
-Add a new component by handing [`docs/component-prompt.md`](./docs/component-prompt.md) to Claude, or just write it yourself.
+Add a new component by handing [`framework/docs/component-prompt.md`](./framework/docs/component-prompt.md) to Claude, or just write it yourself.
 
 Add private slot-first presets with `snz-bp add component <preset>`. Presets include `hero`, `cta`, `features`, `partners`, `pricing`, `testimonials`, `stats`, `process`, and `faq`. They use content nouns: plural wrappers (`Features`, `Testimonials`, `Partners`) and singular items (`Feature`, `Testimonial`, `Partner`). Generated files compose existing `Grid`, `Card`, `Button`, and `Image`; edit them locally after scaffolding. Pass `--demo` to append component invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present.
 
@@ -164,7 +162,7 @@ Theme packs append a marked `snz-bp theme` block to `src/styles.css`. Existing t
 
 CSS ownership: `src/styles.css` is the import shell. `src/styles/system.css` owns the editable token config + fluid engine; `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css` own their matching layers. Global primitives are `.c`, `.w`, `.btns`, `.lnks`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Component-specific selectors live in component `<style>` blocks.
 
-Token legend: layout uses `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Accent sections use `data-theme="accent"`.
+Token legend: layout uses `--mw`, `--px`, `--py`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Accent sections use `data-theme="accent"`.
 
 ## Routes
 
@@ -186,7 +184,7 @@ Override SEO per route with a `<head>` wrapper:
 
 ## Content pipeline
 
-CMS support is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `media/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Minimal markdown subset.
+CMS support is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `src/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Minimal markdown subset.
 
 Custom collections are opt-in too. `snz-bp new collection projects --route work/{slug} --template project` creates `content/projects/`, `src/templates/project.html`, a `content/collections.json` compiler entry, and a matching `.pages.yml` editor entry. Omit flags for defaults: `route: projects/{slug}`, `template: project.html`.
 
@@ -251,7 +249,7 @@ window.snz = {
 
 Route scripts at the top of a route file are auto-wrapped with `snz.onPage('{slug}', ...)` at build time.
 
-Component `<script>` blocks become per-instance mount functions (see [`docs/components.md`](./docs/components.md) → Lifecycle scripts).
+Component `<script>` blocks become per-instance mount functions (see [`framework/docs/components.md`](./framework/docs/components.md) → Lifecycle scripts).
 
 `src/app.ts` is the default site code entry and is bundled with `Bun.build`. Author code can use imports and TypeScript directly; starter projects include `src/snz.d.ts` for the `window.snz` API and `snz:page` events. `src/app.js` still works as an escape hatch, but do not keep both files; the build fails on ambiguous root app entries. Only `PUBLIC_*` env vars are inlined.
 
@@ -287,14 +285,14 @@ Starter projects include `vercel.json` for Bun-first static deploys: `bun instal
 
 ## Adding a component
 
-1. Read [`docs/components.md`](./docs/components.md).
-2. Or copy [`docs/component-prompt.md`](./docs/component-prompt.md) and hand it to Claude.
+1. Read [`framework/docs/components.md`](./framework/docs/components.md).
+2. Or copy [`framework/docs/component-prompt.md`](./framework/docs/component-prompt.md) and hand it to Claude.
 3. Drop `src/components/MyThing.html`.
 4. `bun run build`. Build refuses if the contract is violated.
 
 ## See also
 
 - [`AGENTS.md`](./AGENTS.md) — orchestration guide for agents working in this repo.
-- [`docs/agent-guide.md`](./docs/agent-guide.md) — quick framework mental model for LLMs.
-- [`docs/decisions/`](./docs/decisions/) — architectural decisions worth knowing.
-- [`future-desires/todo.md`](./future-desires/todo.md) — parked ideas.
+- [`framework/docs/agent-guide.md`](./framework/docs/agent-guide.md) — quick framework mental model for LLMs.
+- [`framework/docs/decisions/`](./framework/docs/decisions/) — architectural decisions worth knowing.
+- Roadmap lives in GitHub Issues.

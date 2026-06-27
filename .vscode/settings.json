@@ -1,11 +1,14 @@
 {
   "files.exclude": {
-    "dist": true
+    "dist": true,
+    ".snz": true
   },
   "search.exclude": {
-    "dist": true
+    "dist": true,
+    ".snz": true
   },
   "files.watcherExclude": {
-    "**/dist/**": true
+    "**/dist/**": true,
+    "**/.snz/**": true
   }
 }

@@ -3,7 +3,9 @@
   @attr lang Language identifier (e.g. js, ts, html, css).
 -->
 <figure class="code">
+  {#if lang}
   <figcaption class="code-lb">{{lang}}</figcaption>
+  {/if}
   <pre><code class="lang-{{lang}}">{{slot}}</code></pre>
 </figure>
 
@@ -24,7 +26,6 @@
       text-transform: uppercase;
       border-bottom: var(--bw) solid var(--b);
     }
-    .code-lb:empty { display: none; }
     pre {
       margin: 0;
       padding: var(--pd);

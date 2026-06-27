@@ -68,7 +68,7 @@ async function assertEmpty(path: string) {
 }
 
 const ignoredEntries = new Set(['.DS_Store', 'dist', 'node_modules', 'bun.lock'])
-const ignoredFiles = new Set(['docs/components-catalog.md'])
+const ignoredFiles = new Set(['.snz/components-catalog.md'])
 
 function shouldIgnore(relativePath: string) {
   const normalized = relativePath.split('\\').join('/')

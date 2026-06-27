@@ -1,8 +1,8 @@
 # AGENTS.md — SANITIZE Boilerplate
 
-SANITIZE Boilerplate (`@snz/bp`) static site builder. Repo: `sanitizestudio/snz-bp`. Edit `src/`. Build writes `dist/` (gitignored). Never edit `dist/`. Loud errors with file/line/hint.
+SANITIZE Boilerplate (`@snz/bp`) static site builder. Repo: `sanitizestudio/snz-bp`. Site work edits `src/` and optional `content/`. Framework work edits `framework/`. Build writes `dist/` (gitignored). Never edit `dist/`. Never put source in `.snz/`; `.snz/` is cache/state only. Loud errors with file/line/hint.
 
-Need quick framework mental model? Read `docs/agent-guide.md` first, then `docs/components.md` for component work.
+Need quick framework mental model? Read `framework/docs/agent-guide.md` first, then `framework/docs/components.md` for component work.
 
 ## Commands
 
@@ -28,26 +28,27 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | `src/site.json` | Site config: name, url, description, ogImage, locale, scroll |
 | `src/styles.css`, `src/styles/*.css` | Global CSS import shell, tokens, reset, type, grid, wrappers, motion |
 | `src/app.ts` (`src/app.js` escape hatch) | Site code entry |
-| `src/images/` | Raster masters → built to webp at multiple sizes |
+| `src/images/` | Raster masters and opt-in PagesCMS uploads → built to webp at multiple sizes |
 | `src/routes/**/*.html` | Legacy static route input; `src/pages` wins on collisions |
 | `src/styles/styles.css` | Legacy global CSS path |
 | `src/app/app.js` | Legacy app entry + optional runtime helpers |
 | `src/templates/{post,page}.html` | Opt-in CMS render shells |
 | `content/posts/*.md` | Opt-in PagesCMS posts → `/insights/{slug}/` |
 | `content/pages/*.md` | Opt-in PagesCMS pages → `/{slug}/` |
-| `media/images/` | Opt-in PagesCMS image uploads |
-| `runtime/lib/paths.js` | Shared by router (browser) + build (Bun) |
-| `runtime/router.js` | Client framework, exposes `window.snz` |
-| `build/` | Build pipeline (TypeScript, runs in Bun) |
-| `dev.ts` | Dev server with watch + SSE hot reload + in-page error banner |
-| `docs/agent-guide.md` | Fast orientation for LLMs: mental model, tasks, CSS ownership, checks |
-| `docs/client-site-playbook.md` | End-to-end client-site build playbook for agents and humans |
-| `docs/agent-recipes.md` | Short task recipes for common framework work |
-| `docs/components.md` | Component authoring contract |
-| `docs/component-prompt.md` | Copy-paste prompt for LLM-spawned components |
-| `docs/components-catalog.md` | **Auto-generated** catalog — do not hand-edit |
-| `docs/decisions/` | Short ADRs |
-| `bin/snz-bp.ts` | Package CLI wrapper |
+| `framework/runtime/lib/paths.js` | Shared by router (browser) + build (Bun) |
+| `framework/runtime/router.js` | Client framework, exposes `window.snz` |
+| `framework/build/` | Build pipeline (TypeScript, runs in Bun) |
+| `framework/dev.ts` | Dev server with watch + SSE hot reload + in-page error banner |
+| `framework/docs/agent-guide.md` | Fast orientation for LLMs: mental model, tasks, CSS ownership, checks |
+| `framework/docs/client-site-playbook.md` | End-to-end client-site build playbook for agents and humans |
+| `framework/docs/agent-recipes.md` | Short task recipes for common framework work |
+| `framework/docs/components.md` | Component authoring contract |
+| `framework/docs/component-prompt.md` | Copy-paste prompt for LLM-spawned components |
+| `framework/docs/components-catalog.md` | **Auto-generated** catalog — do not hand-edit |
+| `framework/docs/decisions/` | Short ADRs |
+| `framework/cli/snz-bp.ts` | Package CLI wrapper |
+| `framework/tests/` | Framework test suite |
+| `framework/scripts/` | Private maintenance scripts |
 | `templates/default/` | Starter client site |
 | `site.code-workspace` | Authoring-focused Cursor/VS Code workspace |
 | `.pages.yml` | Opt-in PagesCMS config |
@@ -71,7 +72,7 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 
 ## Components
 
-Read **`docs/agent-guide.md`** for framework orientation and **`docs/components.md`** for the full component contract. Highlights:
+Read **`framework/docs/agent-guide.md`** for framework orientation and **`framework/docs/components.md`** for the full component contract. Highlights:
 
 - One file per component: `src/components/PascalName.html`. No JSON sidecars.
 - Leading `<!-- @desc ... @attr name! ... -->` comment declares the contract.
@@ -80,19 +81,19 @@ Read **`docs/agent-guide.md`** for framework orientation and **`docs/components.
 - Optional `<script>` block runs once per instance; `el` bound to the root, return a function for cleanup.
 - `<style>` colocated and auto-bundled into `dist/assets/css/components.{hash}.css`.
 
-Built-in components (16): `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
+Built-in components (30): `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`.
 
-To spawn a new component via LLM, hand it `docs/component-prompt.md`. Or just write the file yourself.
+To spawn a new component via LLM, hand it `framework/docs/component-prompt.md`. Or just write the file yourself.
 
 ## Routes
 
 Drop `src/pages/{slug}.html`. Home is `index.html` (→ `/`). Nested pages map by path: `blog/index.html` → `/blog/`, `work/case.html` → `/work/case/`. 404 is `404.html`. Legacy `src/routes/` still works.
 
-Inline `<script>` allowed only at the top of a route — auto-extracted and wrapped with `snz.onPage('{slug}', ...)` at build time. `<style>` not allowed in routes (use a component `<style>` or `html[data-page="{slug}"]` rules in `styles.css`).
+Inline `<script>` allowed only at the top of a route — auto-extracted and wrapped with `snz.onPage('{slug}', ...)` at build time. Route `<style>` is allowed for one-off page CSS; build extracts it to route-owned CSS under `@layer snz.pages.{slug}`.
 
 ## Content pipeline
 
-CMS is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `media/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Front-matter must include `title`.
+CMS is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `src/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Front-matter must include `title`.
 
 ```yaml
 ---
@@ -110,7 +111,7 @@ Drafts (`draft: true`) are excluded from production builds, included in dev. Tag
 
 ## Images
 
-- Masters live in `src/images/` or `media/images/` (PagesCMS).
+- Masters and PagesCMS uploads live in `src/images/`.
 - Build encodes to `dist/assets/images/{name}.webp` via `Bun.Image`, with responsive variants (320, 640, 1024, {max}).
 - `<Image src="hero" alt="..." max="1200" quality="82" />` — `max`/`quality` are pre-scanned to choose the largest needed size.
 - Lazy by default. Lazy images render a temporary `.img-tmp` preview over the main image; `loading="eager"` skips that preview for above-fold images. Main image has no private `.img-main` class.
@@ -172,14 +173,14 @@ Structured data auto-emitted:
 ## CSS
 
 - Base tokens + reset: `src/styles.css` imports split CSS under `src/styles/`.
-- Token legend: `--mw`, `--bx`, `--by`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`, then semantic `--s`, `--i`, `--t`, `--b`, `--g`.
+- Token legend: `--mw`, `--px`, `--py`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`, then semantic `--s`, `--i`, `--t`, `--b`, `--g`.
 - Global layout primitives: `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`.
 - `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`). Small stacks by default.
 - Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).
 - Component CSS loads **after** base so component rules win at equal specificity.
 - Class language is semantic-first and short. Use classes only for durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.f-*`, `.fw-*`, `.c-*`, `.h*`), or concise private hooks (`.brg`, `.logo-mk`, `.code-lb`).
 - Component-specific selectors belong in component files. Run `bun run css:audit` or `bun run doctor` when cleaning CSS boundaries.
-- Per-page overrides: `html[data-page="{slug}"]` selectors in `styles.css`.
+- Per-page route CSS: use `<style>` in authored routes for one-off page rules; build extracts to `@layer snz.pages.{slug}`. Use `html[data-page="{slug}"]` in global CSS only for durable cross-route overrides.
 
 ## JS bundling
 
@@ -209,8 +210,8 @@ Dev server writes `dist/__build-error.html` and serves it instead of routes unti
 
 ## Adding a component
 
-1. Read `docs/components.md`.
-2. Or copy `docs/component-prompt.md` and hand it to Claude.
+1. Read `framework/docs/components.md`.
+2. Or copy `framework/docs/component-prompt.md` and hand it to Claude.
 3. `bun run new component MyThing` (or drop `src/components/MyThing.html` by hand).
 4. `bun run build`. Build refuses if the contract is violated.
 
@@ -222,6 +223,6 @@ Dev server writes `dist/__build-error.html` and serves it instead of routes unti
 
 ## Decisions
 
-`docs/agent-guide.md` — canonical quickstart for LLM agents.
+`framework/docs/agent-guide.md` — canonical quickstart for LLM agents.
 
-`docs/decisions/` — short notes on architectural choices worth knowing.
+`framework/docs/decisions/` — short notes on architectural choices worth knowing.

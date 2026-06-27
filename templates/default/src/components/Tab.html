@@ -1,0 +1,44 @@
+<!--
+  @desc Tab trigger for use inside Tabs. Match id with a TabPanel id.
+  @attr id! Stable tab id shared with the matching TabPanel.
+  @attr selected=[true|false] Initial selected state.
+-->
+<button type="button" role="tab" id="tab-{{id}}" aria-controls="panel-{{id}}" aria-selected="{{selected}}">
+  {{slot}}
+</button>
+
+<style>
+  .tabs [role="tab"] {
+    width: 100%;
+    justify-content: flex-start;
+    border: var(--bw) solid transparent;
+    border-left-color: var(--b);
+    background: transparent;
+    color: var(--g);
+    cursor: pointer;
+    display: inline-flex;
+    gap: var(--pd-xs);
+    padding: var(--pd-sm) var(--pd);
+    text-align: left;
+    border-radius: var(--br-sm);
+  }
+
+  .tabs [role="tab"][aria-selected="true"] {
+    border-color: var(--b);
+    border-left-color: var(--a);
+    background: var(--t);
+    color: var(--i);
+  }
+
+  .tabs [role="tab"]:focus-visible {
+    outline: var(--bw) solid currentColor;
+    outline-offset: calc(var(--bw) * 2);
+  }
+
+  @media (hover: hover) {
+    .tabs [role="tab"]:hover {
+      color: var(--i);
+      background: var(--t);
+    }
+  }
+</style>

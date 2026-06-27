@@ -1,0 +1,29 @@
+<!--
+  @desc Text-first social/contact link. Add an <Icon> or custom SVG in the slot when needed.
+  @attr href! Destination URL.
+  @attr label! Accessible link label.
+-->
+<a class="social" href="{{href}}" aria-label="{{label}}">
+  {{slot}}
+</a>
+
+<style>
+  .social {
+    align-items: center;
+    border: var(--bw) solid var(--b);
+    border-radius: var(--br-full);
+    color: var(--g);
+    display: inline-flex;
+    gap: var(--pd-xs);
+    min-height: 2.25rem;
+    padding: var(--pd-xs) var(--pd-sm);
+    text-decoration: none;
+  }
+
+  @media (hover: hover) {
+    .social:hover {
+      border-color: var(--i);
+      color: var(--i);
+    }
+  }
+</style>

@@ -7,10 +7,13 @@
     <div class="w">
       <h1>HTML-first sites, composed at build time.</h1>
       <p class="f-md">Write routes, drop in components, and ship static output. No runtime framework required.</p>
-      <div class="btns">
-        <Button label="View components" href="/components/" />
-        <Button label="About" href="/about/" variant="ghost" />
-      </div>
+    </div>
+    <div class="btns">
+      <Button label="Get started" href="#">
+        <slot name="vis"><span>→</span><span>→</span></slot>
+      </Button>
+      <Button label="View components" href="/components/" />
+      <Button label="About" href="/about/" color="ghost" />
     </div>
   </div>
 </section>

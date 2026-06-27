@@ -1,0 +1,79 @@
+<!--
+  @desc Animated number that counts up once when visible.
+  @attr value! Target number.
+  @attr label Optional label text under the value.
+  @attr prefix Text before the number.
+  @attr suffix Text after the number.
+  @attr duration Animation duration in milliseconds. Default 1200.
+-->
+<span class="counter" data-value="{{value}}" data-duration="{{duration}}">
+  <span class="counter-value">
+    {#if prefix}<span>{{prefix}}</span>{/if}
+    <span data-counter-value>0</span>
+    {#if suffix}<span>{{suffix}}</span>{/if}
+  </span>
+  {#if label}
+  <span class="counter-label">{{label}}</span>
+  {/if}
+</span>
+
+<script>
+const valueEl = el.querySelector('[data-counter-value]')
+const target = Number(el.dataset.value ?? '0')
+const duration = Number(el.dataset.duration || 1200)
+const decimals = (String(el.dataset.value ?? '').split('.')[1] ?? '').length
+let frame = 0
+let done = false
+
+const format = (value) => decimals ? value.toFixed(decimals) : Math.round(value).toLocaleString('en-US')
+const finish = () => {
+  done = true
+  if (valueEl) valueEl.textContent = format(target)
+}
+
+if (matchMedia('(prefers-reduced-motion: reduce)').matches || !Number.isFinite(target)) {
+  finish()
+} else {
+  const observer = new IntersectionObserver((entries) => {
+    if (done || !entries.some((entry) => entry.isIntersecting)) return
+    observer.disconnect()
+    const start = performance.now()
+    const tick = (now) => {
+      const progress = Math.min(1, (now - start) / Math.max(duration, 1))
+      const eased = 1 - Math.pow(1 - progress, 3)
+      if (valueEl) valueEl.textContent = format(target * eased)
+      if (progress < 1) frame = requestAnimationFrame(tick)
+      else finish()
+    }
+    frame = requestAnimationFrame(tick)
+  })
+  observer.observe(el)
+
+  return () => {
+    observer.disconnect()
+    cancelAnimationFrame(frame)
+  }
+}
+</script>
+
+<style>
+  .counter {
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--pd-xs);
+  }
+
+  .counter-value {
+    color: var(--i);
+    font-size: var(--h2-fs);
+    font-weight: var(--fw-b);
+    letter-spacing: var(--h2-ls);
+    line-height: var(--h2-lh);
+  }
+
+  .counter-label {
+    color: var(--g);
+    font-size: var(--sm-fs);
+  }
+
+</style>

@@ -1,4 +1,12 @@
 @layer global {
+  @font-face {
+    font-family: "Aspekta";
+    src: url("fonts/aspekta.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+  }
+
   :root {
     color-scheme: dark;
     interpolate-size: allow-keywords;
@@ -29,13 +37,13 @@
     }
 
     /* Editable type config. */
-    --ff-sans: system-ui,
+    --ff-sans: "Aspekta", system-ui,
     sans-serif;
     --ff-serif: serif;
     --ff-mono: monospace;
     --ff-hand: cursive;
     --ff-display: var(--ff-sans);
-    --ffs: normal;
+    --ffs: "ss02" on, "ss04" on, "ss05" on, "ss08" on, "ss12" on;
     --fw-l: 300;
     --fw-r: 400;
     --fw-b: 600;
