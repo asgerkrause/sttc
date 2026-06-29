@@ -12,32 +12,41 @@ See `framework/docs/components.md` in the framework package for the authoring co
 - [`<Badge />`](#badge) — Small inline label.
 - [`<Button />`](#button) — Link styled as an action button.
 - [`<Card />`](#card) — Flexible styled container for grouped content. Put headings, copy, media, and actions in the default slot.
+- [`<Checkbox />`](#checkbox) — Labeled native checkbox option.
 - [`<Code />`](#code) — Code block with optional language label. Put the code in the default slot.
 - [`<Counter />`](#counter) — Animated number that counts up once when visible.
 - [`<Embed />`](#embed) — Responsive external embed wrapper for iframes and rich media.
 - [`<FAQ />`](#faq) — Demo FAQ block. Prefer assembling <Accordion> tags directly in routes — this is a starting-point copy.
+- [`<Fieldset />`](#fieldset) — Native fieldset wrapper for grouped form controls.
 - [`<Footer />`](#footer) — Site footer with dynamic year and site name.
+- [`<Form />`](#form) — Native form wrapper with framework form spacing and validation states.
+- [`<FormStatus />`](#formstatus) — Polite live region for form feedback or enhanced submit status.
 - [`<Gallery />`](#gallery) — Single-item media gallery with previous/next controls and live counter.
 - [`<Grid />`](#grid) — Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
 - [`<Header />`](#header) — Site header.
 - [`<Icon />`](#icon) — Minimal inline icon slot wrapper. Bring your own SVG/icon font until an icon library is chosen.
 - [`<Image />`](#image) — Responsive WebP image. Lazy by default with temporary .img-tmp preview; eager images skip preview. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
+- [`<Input />`](#input) — Labeled native input field.
 - [`<Link />`](#link) — Underlined inline link.
 - [`<Logo />`](#logo) — Text-first site logo. Uses site.json name by default; slot can hold an SVG or img mark.
 - [`<Markdown />`](#markdown) — Inline markdown rendered at build time. Put markdown source in the default slot.
 - [`<Marquee />`](#marquee) — Continuous slot-first marquee with scroll-reactive direction/speed and reduced-motion fallback.
 - [`<Masonry />`](#masonry) — Masonry-style grid that keeps source order and measures item row spans.
+- [`<Radio />`](#radio) — Labeled native radio option.
 - [`<SEO />`](#seo) — Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or rely on defaults.
 - [`<Section />`](#section) — Semantic section with a .c container. No root class.
+- [`<Select />`](#select) — Labeled native select field. Put option tags in the slot.
 - [`<Slider />`](#slider) — Native scroll-snap gallery with previous/next controls.
 - [`<Social />`](#social) — Text-first social/contact link. Add an <Icon> or custom SVG in the slot when needed.
 - [`<Socials />`](#socials) — Social link navigation wrapper. Put <Social> items in the default slot.
 - [`<Split />`](#split) — Text splitter that wraps words for animation or styling.
 - [`<Stack />`](#stack) — Deprecated compatibility wrapper. Prefer <div class="w">…</div> directly.
 - [`<Statement />`](#statement) — Large editorial statement block.
+- [`<Submit />`](#submit) — Native submit button using the shared button visual style.
 - [`<Tab />`](#tab) — Tab trigger for use inside Tabs. Match id with a TabPanel id.
 - [`<TabPanel />`](#tabpanel) — Tab panel for use inside Tabs. Match id with a Tab id.
 - [`<Tabs />`](#tabs) — Accessible tab set. Put <Tab> and matching <TabPanel> items in the default slot.
+- [`<Textarea />`](#textarea) — Labeled native textarea field.
 - [`<Video />`](#video) — Responsive native video. Add `auto` or `auto="true"` for muted looping inline autoplay that the runtime pauses offscreen.
 
 ## Accordion
@@ -162,6 +171,33 @@ Flexible styled container for grouped content. Put headings, copy, media, and ac
 <Card><h2>Feature</h2><p>Short copy.</p></Card>
 ```
 
+## Checkbox
+
+Labeled native checkbox option.
+
+### Contract
+
+- Tag: `<Checkbox>` can be self-closing.
+- Slots: none detected.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `name` | yes | string | Checkbox name. |
+| `label` | yes | string | Visible label. |
+| `value` | no | string | Checkbox value. |
+| `required` | no | string | Adds native required validation. |
+| `checked` | no | string | Initial checked state. |
+| `disabled` | no | string | Disables the checkbox. |
+
+### Example
+
+```html
+<Checkbox name="Example" label="Example" />
+```
+
 ## Code
 
 Code block with optional language label. Put the code in the default slot.
@@ -259,6 +295,29 @@ Demo FAQ block. Prefer assembling <Accordion> tags directly in routes — this i
 <FAQ />
 ```
 
+## Fieldset
+
+Native fieldset wrapper for grouped form controls.
+
+### Contract
+
+- Tag: `<Fieldset>` wraps default slot content.
+- Slots: `default`.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `legend` | yes | string | Visible group legend. |
+| `required` | no | string | Marks the group as required for visual/a11y state. |
+
+### Example
+
+```html
+<Fieldset legend="Example">Content</Fieldset>
+```
+
 ## Footer
 
 Site footer with dynamic year and site name.
@@ -279,6 +338,52 @@ Site footer with dynamic year and site name.
 
 ```html
 <Footer siteName="Example Studio" />
+```
+
+## Form
+
+Native form wrapper with framework form spacing and validation states.
+
+### Contract
+
+- Tag: `<Form>` wraps default slot content.
+- Slots: `default`.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `action` | yes | string | Submission endpoint URL. |
+| `method` | no | `get \| post` | Form submit method. Defaults to post. |
+| `name` | no | string | Optional form name. |
+| `autocomplete` | no | `on \| off` | Browser autocomplete behavior. |
+
+### Variants / enums
+
+- `method`: `get`, `post`
+- `autocomplete`: `on`, `off`
+
+### Example
+
+```html
+<Form action="Example">Content</Form>
+```
+
+## FormStatus
+
+Polite live region for form feedback or enhanced submit status.
+
+### Contract
+
+- Tag: `<FormStatus>` wraps default slot content.
+- Slots: `default`.
+- Unknown attributes: rejected when schema exists.
+
+### Example
+
+```html
+<FormStatus>Content</FormStatus>
 ```
 
 ## Gallery
@@ -414,6 +519,48 @@ Responsive WebP image. Lazy by default with temporary .img-tmp preview; eager im
 <Image src="hero" alt="Product interface" max="1200" />
 ```
 
+## Input
+
+Labeled native input field.
+
+### Contract
+
+- Tag: `<Input>` can be self-closing.
+- Slots: none detected.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `name` | yes | string | Input name. |
+| `label` | yes | string | Visible label. |
+| `type` | no | `text \| email \| tel \| url \| number \| password \| search \| date \| time \| datetime-local` | Input type. Defaults to text. |
+| `required` | no | string | Adds native required validation. |
+| `placeholder` | no | string | Placeholder text. |
+| `value` | no | string | Initial value. |
+| `autocomplete` | no | string | Browser autocomplete hint. |
+| `inputmode` | no | `none \| text \| decimal \| numeric \| tel \| search \| email \| url` | Virtual keyboard hint. |
+| `pattern` | no | string | Native validation pattern. |
+| `minlength` | no | string | Native minimum text length. |
+| `maxlength` | no | string | Native maximum text length. |
+| `min` | no | string | Native minimum value. |
+| `max` | no | string | Native maximum value. |
+| `step` | no | string | Native number/date step. |
+| `readonly` | no | string | Makes the input read-only. |
+| `disabled` | no | string | Disables the input. |
+
+### Variants / enums
+
+- `type`: `text`, `email`, `tel`, `url`, `number`, `password`, `search`, `date`, `time`, `datetime-local`
+- `inputmode`: `none`, `text`, `decimal`, `numeric`, `tel`, `search`, `email`, `url`
+
+### Example
+
+```html
+<Input name="Example" label="Example" />
+```
+
 ## Link
 
 Underlined inline link.
@@ -544,6 +691,33 @@ Masonry-style grid that keeps source order and measures item row spans.
 <Masonry>Content</Masonry>
 ```
 
+## Radio
+
+Labeled native radio option.
+
+### Contract
+
+- Tag: `<Radio>` can be self-closing.
+- Slots: none detected.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `name` | yes | string | Radio group name. |
+| `label` | yes | string | Visible label. |
+| `value` | yes | string | Radio value. |
+| `required` | no | string | Adds native required validation. |
+| `checked` | no | string | Initial checked state. |
+| `disabled` | no | string | Disables the radio. |
+
+### Example
+
+```html
+<Radio name="Example" label="Example" value="Example" />
+```
+
 ## SEO
 
 Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or rely on defaults.
@@ -601,6 +775,32 @@ Semantic section with a .c container. No root class.
   <h1>Intro</h1>
   <p>Page copy.</p>
 </Section>
+```
+
+## Select
+
+Labeled native select field. Put option tags in the slot.
+
+### Contract
+
+- Tag: `<Select>` wraps default slot content.
+- Slots: `default`.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `name` | yes | string | Select name. |
+| `label` | yes | string | Visible label. |
+| `required` | no | string | Adds native required validation. |
+| `autocomplete` | no | string | Browser autocomplete hint. |
+| `disabled` | no | string | Disables the select. |
+
+### Example
+
+```html
+<Select name="Example" label="Example">Content</Select>
 ```
 
 ## Slider
@@ -738,6 +938,37 @@ Large editorial statement block.
 <Statement>Content</Statement>
 ```
 
+## Submit
+
+Native submit button using the shared button visual style.
+
+### Contract
+
+- Tag: `<Submit>` can be self-closing.
+- Slots: none detected.
+- Unknown attributes: rejected when schema exists.
+- Class-mapped attrs: `color`, `size` append value to root class.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `label` | no | string | Visible button text. Defaults to Submit. |
+| `color` | no | `default \| ghost \| tone \| accent \| accent tone \| complimentary \| complimentary tone` | Visual color treatment. |
+| `size` | no | `sm \| md \| lg` | Size variant. |
+| `disabled` | no | string | Disables the submit button. |
+
+### Variants / enums
+
+- `color`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `complimentary`, `complimentary tone`
+- `size`: `sm`, `md`, `lg`
+
+### Example
+
+```html
+<Submit />
+```
+
 ## Tab
 
 Tab trigger for use inside Tabs. Match id with a TabPanel id.
@@ -813,6 +1044,37 @@ Accessible tab set. Put <Tab> and matching <TabPanel> items in the default slot.
 
 ```html
 <Tabs>Content</Tabs>
+```
+
+## Textarea
+
+Labeled native textarea field.
+
+### Contract
+
+- Tag: `<Textarea>` wraps default slot content.
+- Slots: `default`.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `name` | yes | string | Textarea name. |
+| `label` | yes | string | Visible label. |
+| `required` | no | string | Adds native required validation. |
+| `placeholder` | no | string | Placeholder text. |
+| `autocomplete` | no | string | Browser autocomplete hint. |
+| `minlength` | no | string | Native minimum text length. |
+| `maxlength` | no | string | Native maximum text length. |
+| `rows` | no | string | Visible row count. |
+| `readonly` | no | string | Makes the textarea read-only. |
+| `disabled` | no | string | Disables the textarea. |
+
+### Example
+
+```html
+<Textarea name="Example" label="Example">Content</Textarea>
 ```
 
 ## Video

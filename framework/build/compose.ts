@@ -187,6 +187,9 @@ export function createComposer(
       attrs.href ??= '#'
       attrs.label ??= 'Learn more'
     }
+    if (name === 'Form') attrs.method ??= 'post'
+    if (name === 'Input') attrs.type ??= 'text'
+    if (name === 'Submit') attrs.label ??= 'Submit'
     if (name === 'Accordion') {
       attrs.summary ??= 'Details'
       attrs.body ??= ''

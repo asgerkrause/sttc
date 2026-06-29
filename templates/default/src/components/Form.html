@@ -1,0 +1,192 @@
+<!--
+  @desc Native form wrapper with framework form spacing and validation states.
+  @attr action! Submission endpoint URL.
+  @attr method=[get|post] Form submit method. Defaults to post.
+  @attr name Optional form name.
+  @attr autocomplete=[on|off] Browser autocomplete behavior.
+-->
+<form action="{{action}}" method="{{method}}" {#if name}name="{{name}}"{/if} {#if autocomplete}autocomplete="{{autocomplete}}"{/if}>
+  {{slot}}
+</form>
+
+<style>
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gp-xl);
+    width: 100%;
+
+    fieldset {
+      border: 0;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--gp);
+
+      legend {
+        color: var(--g);
+        padding-bottom: var(--gp);
+        font-size: var(--sm-fs);
+        letter-spacing: .04em;
+      }
+
+      &:has(input[type="radio"]:required:invalid) > legend::after,
+      &[aria-required="true"]:has(input[type="checkbox"]):not(:has(input[type="checkbox"]:checked)) > legend::after {
+        content: " *";
+        color: #e33;
+      }
+
+      > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gp);
+      }
+    }
+
+    label {
+      display: flex;
+      gap: var(--gp-sm);
+      padding: var(--pd-sm) var(--pd);
+      background: var(--t);
+      border: var(--bw) solid var(--b);
+      border-radius: var(--br);
+      color: var(--g);
+      transition: border-color var(--td) var(--tf-o), background var(--td) var(--tf-o), color var(--td) var(--tf-o);
+
+      &:has(:focus-visible) {
+        border-color: var(--a);
+        background: var(--a05);
+        color: var(--a80);
+      }
+
+      &:has(> input:not([type="radio"]):not([type="checkbox"]):user-invalid),
+      &:has(> textarea:user-invalid),
+      &:has(> select:user-invalid) {
+        border-color: #e33;
+        background: color-mix(in srgb, #e33 8%, transparent);
+      }
+
+      &:has(> input:not([type="radio"]):not([type="checkbox"])),
+      &:has(> textarea),
+      &:has(> select) {
+        flex-direction: column;
+        cursor: text;
+      }
+
+      &:has(> input[type="radio"]),
+      &:has(> input[type="checkbox"]) {
+        position: relative;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+
+        span::after {
+          content: none;
+        }
+
+        @media (hover: hover) {
+          &:hover {
+            border-color: var(--a60);
+            color: var(--i);
+          }
+        }
+      }
+
+      &:has(> input[type="radio"]:checked),
+      &:has(> input[type="checkbox"]:checked) {
+        background: var(--a10);
+        border-color: var(--a60);
+        color: var(--i);
+      }
+
+      &:has(> input:not([type="radio"]):not([type="checkbox"]):required:invalid) > span::after,
+      &:has(> textarea:required:invalid) > span::after,
+      &:has(> select:required:invalid) > span::after {
+        content: " *";
+        color: #e33;
+      }
+
+      span {
+        font-size: var(--sm-fs);
+        letter-spacing: .04em;
+      }
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      outline: 0;
+      color: var(--i);
+      font: inherit;
+
+      &::placeholder {
+        color: var(--g);
+        opacity: .45;
+      }
+    }
+
+    textarea {
+      min-height: 8lh;
+      resize: vertical;
+    }
+
+    input[type="radio"],
+    input[type="checkbox"] {
+      width: 1.25em;
+      height: 1.25em;
+      accent-color: var(--a);
+      margin: 0;
+      flex: none;
+    }
+
+    button {
+      align-self: flex-start;
+    }
+
+    [aria-live] {
+      color: var(--g);
+    }
+  }
+
+  @supports not selector(:user-invalid) {
+    form {
+      fieldset:has(:required:invalid) > legend::after,
+      label:has(> input:not([type="radio"]):not([type="checkbox"]):required:invalid) > span::after,
+      label:has(> textarea:required:invalid) > span::after,
+      label:has(> select:required:invalid) > span::after {
+        content: " *";
+        color: #e33;
+      }
+    }
+  }
+</style>
+
+<script>
+  const cleanups = []
+
+  for (const fieldset of el.querySelectorAll('fieldset[aria-required="true"]')) {
+    const boxes = [...fieldset.querySelectorAll('input[type="checkbox"]')]
+    if (!boxes.length) continue
+
+    const first = boxes[0]
+    const sync = () => {
+      const valid = boxes.some((box) => box.checked)
+      first.setCustomValidity(valid ? '' : 'Choose at least one option.')
+      fieldset.setAttribute('aria-invalid', valid ? 'false' : 'true')
+    }
+
+    sync()
+    for (const box of boxes) {
+      box.addEventListener('change', sync)
+      cleanups.push(() => box.removeEventListener('change', sync))
+    }
+  }
+
+  return () => {
+    for (const cleanup of cleanups) cleanup()
+  }
+</script>

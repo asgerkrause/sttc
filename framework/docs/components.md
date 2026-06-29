@@ -250,6 +250,7 @@ Use attrs only for stable configuration: variant, theme, href, image source, acc
 | `Code` | `<pre><code>` block with optional language label. |
 | `Badge`, `Icon` | Small label and tiny built-in SVG icon primitives. |
 | `Socials`, `Social` | Social/link group wrapper and item. |
+| `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus` | Native form primitives. Static-first; endpoint and provider handling stay explicit. |
 | `Statement`, `Split` | Editorial statement and two-column content/media layout. |
 | `Counter` | Animated number for lightweight stats. |
 | `Tabs`, `Tab`, `TabPanel` | Accessible tab set with component-owned ARIA state. |

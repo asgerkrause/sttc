@@ -83,9 +83,13 @@ Read **`framework/docs/agent-guide.md`** for framework orientation and **`framew
 - Optional `<script>` block runs once per instance; `el` bound to the root, return a function for cleanup.
 - `<style>` colocated and auto-bundled into `dist/assets/css/components.{hash}.css`.
 
-Built-in components: `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`.
+Built-in components: `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`, `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus`.
 
 To spawn a new component via LLM, hand it `framework/docs/component-prompt.md`. Or just write the file yourself.
+
+## Forms
+
+Use form primitives for repeated contact/newsletter UI: `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus`. Components stay flat in `src/components/` — no `src/components/form/` folder unless the framework gains recursive component loading. Forms are static-first: set an explicit `action`, use native validation attrs (`required`, `type`, `pattern`, `minlength`, etc.), and keep endpoints/provider secrets outside frontend code. `Button` is a link CTA; use `Submit` for real `<button type="submit">` controls.
 
 ## Routes
 

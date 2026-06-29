@@ -70,6 +70,33 @@
   </Grid>
 </Section>
 
+<Section id="forms">
+  <h2>Forms</h2>
+  <Form action="#" method="post">
+    <div g="2">
+      <Input name="name" label="Full Name" required autocomplete="name" placeholder="Jane Doe" />
+      <Input name="company" label="Company Name" required autocomplete="organization" placeholder="Acme Corp" />
+    </div>
+    <div g="2">
+      <Input type="email" name="email" label="Work Email" required autocomplete="email" placeholder="jane@acmecorp.com" />
+      <Input type="tel" name="phone" label="Phone Number" required autocomplete="tel" inputmode="tel" placeholder="+1 (555) 000-0000" />
+    </div>
+    <Fieldset legend="Company Size" required>
+      <Radio name="size" value="1-10" label="1-10" required />
+      <Radio name="size" value="11-50" label="11-50" />
+      <Radio name="size" value="50+" label="50+" />
+    </Fieldset>
+    <Fieldset legend="Services Required" required>
+      <Checkbox name="services" value="design" label="Design System" />
+      <Checkbox name="services" value="dev" label="Web Development" />
+      <Checkbox name="services" value="brand" label="Brand Strategy" />
+    </Fieldset>
+    <Textarea name="message" label="Project Notes" required rows="4" placeholder="Tell us what you need." />
+    <Submit label="Submit Inquiry" color="accent" />
+    <FormStatus>Native browser validation handles required fields before submit.</FormStatus>
+  </Form>
+</Section>
+
 <Section id="editorial" theme="tone">
   <h2>Statement + Split</h2>
   <Statement variant="accent">Static sites should feel sharp, fast, and easy to reshape.</Statement>

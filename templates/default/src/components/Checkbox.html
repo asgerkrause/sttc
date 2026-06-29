@@ -1,0 +1,13 @@
+<!--
+  @desc Labeled native checkbox option.
+  @attr name! Checkbox name.
+  @attr label! Visible label.
+  @attr value Checkbox value.
+  @attr required Adds native required validation.
+  @attr checked Initial checked state.
+  @attr disabled Disables the checkbox.
+-->
+<label>
+  <input type="checkbox" name="{{name}}" {#if value}value="{{value}}"{/if} {#if required}required{/if} {#if checked}checked{/if} {#if disabled}disabled{/if}>
+  <span>{{label}}</span>
+</label>

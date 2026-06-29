@@ -1,6 +1,6 @@
 # Forms and embeds
 
-SANITIZE Boilerplate stays static by default. Forms and embeds use platform HTML, components, or explicit third-party services.
+SANITIZE Boilerplate stays static by default. Forms use native HTML semantics, small form primitives, or explicit third-party services. Embeds use platform iframes through `<Embed>`.
 
 ## Forms
 
@@ -11,27 +11,51 @@ There is no built-in backend form handler. Use one of these patterns:
 - custom component wrapping provider-specific markup
 - plain contact links when no form processing exists
 
-Example static form:
+Use built-in form primitives when form markup repeats or needs consistent local styling:
 
 ```html
-<form action="https://example.com/forms/contact" method="post">
-  <label>
-    Name
-    <input name="name" autocomplete="name" required>
-  </label>
-  <label>
-    Email
-    <input name="email" type="email" autocomplete="email" required>
-  </label>
-  <label>
-    Message
-    <textarea name="message" required></textarea>
-  </label>
-  <button type="submit">Send</button>
-</form>
+<Form action="https://example.com/forms/contact" method="post">
+  <div g="2">
+    <Input name="name" label="Full Name" required autocomplete="name" placeholder="Jane Doe" />
+    <Input name="company" label="Company Name" required autocomplete="organization" placeholder="Acme Corp" />
+  </div>
+
+  <div g="2">
+    <Input type="email" name="email" label="Work Email" required autocomplete="email" placeholder="jane@acmecorp.com" />
+    <Input type="tel" name="phone" label="Phone Number" autocomplete="tel" inputmode="tel" placeholder="+1 (555) 000-0000" />
+  </div>
+
+  <Fieldset legend="Company Size">
+    <Radio name="size" value="1-10" label="1-10" required />
+    <Radio name="size" value="11-50" label="11-50" required />
+    <Radio name="size" value="50+" label="50+" required />
+  </Fieldset>
+
+  <Fieldset legend="Services Required">
+    <Checkbox name="services" value="design" label="Design System" />
+    <Checkbox name="services" value="dev" label="Web Development" />
+    <Checkbox name="services" value="brand" label="Brand Strategy" />
+  </Fieldset>
+
+  <Textarea name="message" label="Message" required placeholder="Tell us what you need." />
+  <Submit label="Submit Inquiry" color="accent" />
+  <FormStatus>Native browser validation handles required fields before submit.</FormStatus>
+</Form>
 ```
 
-Keep validation native first: `required`, `type`, `minlength`, `maxlength`, `pattern`, and useful labels.
+The primitives render native markup:
+
+- `<Form>` → `<form>`
+- `<Input>` / `<Textarea>` / `<Select>` → `<label><span>Label</span><control></label>`
+- `<Checkbox>` / `<Radio>` → `<label><control><span>Label</span></label>`
+- `<Fieldset>` → `<fieldset><legend>Legend</legend><div>…</div></fieldset>`
+- `<Submit>` → `<button class="btn" type="submit">…</button>`
+
+Keep validation native first: `required`, `type`, `minlength`, `maxlength`, `pattern`, `min`, `max`, `step`, `inputmode`, `autocomplete`, and useful labels. `type="email"` handles email validation. For phone fields, prefer `type="tel"`, `inputmode="tel"`, and `autocomplete="tel"`; only add `pattern` when the project has an exact regional format requirement.
+
+Radio groups are required by putting `required` on one radio in the shared `name` group. Checkbox groups have no pure-HTML “at least one checked” constraint; when `Fieldset required` wraps checkbox controls, the form component adds a small progressive `setCustomValidity()` check on the first checkbox.
+
+`Button` renders a link CTA. Use `Submit` inside forms for real submit buttons.
 
 ## Form placement
 
@@ -55,6 +79,20 @@ Do not put form controls inside markdown. Markdown safety rules reject form tags
 - submit button has clear action text
 - success/failure state is announced or visible after submit
 - do not trap focus in custom UI
+
+## Submit handling
+
+By default, forms submit natively to the configured `action`. The framework does not auto-create `/api/contact`, send email, add CAPTCHA, or load provider scripts. For email delivery later, use a server-side endpoint with a provider such as Resend, Postmark, or the hosting/provider form backend; never put provider API keys in frontend code.
+
+If a project needs enhanced submit behavior later, keep it progressive:
+
+- listen for form submit in `src/app.ts`
+- use `FormData(form)` and `fetch(form.action, { method: form.method, body })`
+- disable submit while pending
+- update `FormStatus` via its `aria-live` region
+- fall back to native submit if JavaScript fails
+
+Do not expose private provider keys through frontend code.
 
 ## Embeds
 

@@ -1,0 +1,17 @@
+<!--
+  @desc Labeled native textarea field.
+  @attr name! Textarea name.
+  @attr label! Visible label.
+  @attr required Adds native required validation.
+  @attr placeholder Placeholder text.
+  @attr autocomplete Browser autocomplete hint.
+  @attr minlength Native minimum text length.
+  @attr maxlength Native maximum text length.
+  @attr rows Visible row count.
+  @attr readonly Makes the textarea read-only.
+  @attr disabled Disables the textarea.
+-->
+<label>
+  <span>{{label}}</span>
+  <textarea name="{{name}}" {#if required}required{/if} {#if placeholder}placeholder="{{placeholder}}"{/if} {#if autocomplete}autocomplete="{{autocomplete}}"{/if} {#if minlength}minlength="{{minlength}}"{/if} {#if maxlength}maxlength="{{maxlength}}"{/if} {#if rows}rows="{{rows}}"{/if} {#if readonly}readonly{/if} {#if disabled}disabled{/if}>{{slot}}</textarea>
+</label>

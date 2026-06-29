@@ -1,0 +1,14 @@
+<!--
+  @desc Labeled native select field. Put option tags in the slot.
+  @attr name! Select name.
+  @attr label! Visible label.
+  @attr required Adds native required validation.
+  @attr autocomplete Browser autocomplete hint.
+  @attr disabled Disables the select.
+-->
+<label>
+  <span>{{label}}</span>
+  <select name="{{name}}" {#if required}required{/if} {#if autocomplete}autocomplete="{{autocomplete}}"{/if} {#if disabled}disabled{/if}>
+    {{slot}}
+  </select>
+</label>

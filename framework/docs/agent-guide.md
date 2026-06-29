@@ -162,6 +162,28 @@ Place master in `src/images/hero.png` or a PagesCMS `media.input` image root (de
 
 Build emits responsive WebP variants under `/assets/images/`. Lazy images include a temporary `.img-tmp` preview that site code removes after the main image loads. `loading="eager"` skips the preview for above-fold images. The main image has no private `.img-main` class; target `.img-w img` or `.img-tmp` when styling. Keep each logical basename unique across image roots.
 
+### Add form
+
+Use form primitives for repeated contact or newsletter UI. The framework stays static-first: `Form` needs an explicit endpoint in `action`, and native browser validation owns required/email/pattern checks.
+
+```html
+<Form action="https://example.com/contact" method="post">
+  <div g="2">
+    <Input name="name" label="Full Name" required autocomplete="name" placeholder="Jane Doe" />
+    <Input type="email" name="email" label="Work Email" required autocomplete="email" placeholder="jane@company.com" />
+  </div>
+  <Fieldset legend="Services Required">
+    <Checkbox name="services" value="design" label="Design System" />
+    <Checkbox name="services" value="dev" label="Web Development" />
+  </Fieldset>
+  <Textarea name="message" label="Project Notes" />
+  <Submit label="Submit Inquiry" color="accent" />
+  <FormStatus>Native validation handles missing required fields before submit.</FormStatus>
+</Form>
+```
+
+`Button` renders a link CTA. Use `Submit` inside forms for a real `<button type="submit">`. Add `pattern`, `minlength`, `maxlength`, `inputmode`, `autocomplete`, and related native attrs on `Input` when a field needs stricter client-side validation. Do not add provider secrets or private keys to frontend code.
+
 ### Add public media files
 
 Use source roots by media class:
