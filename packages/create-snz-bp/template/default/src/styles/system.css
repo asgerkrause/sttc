@@ -16,18 +16,18 @@
     /* Editable rhythm config. Unit = rem. */
     --mw-max: 90;
     --mw-min: 30;
-    --by-max: 10;
-    --by-min: 6;
-    --bx-max: 5;
-    --bx-min: 1;
+    --py-max: 10;
+    --py-min: 6;
+    --px-max: 5;
+    --px-min: 1;
     --ss-max: 4;
     --ss-min: 2.5;
     --gp-max: 1.5;
     --gp-min: 0.625;
     --pd-max: 1.5;
     --pd-min: 1;
-    --br-max: 1;
-    --br-min: 0.625;
+    --br-max: .5;
+    --br-min: 0.375;
     --gc: 12;
     --cs: 1;
     --st: 8lh;
@@ -130,12 +130,12 @@
   }
 
   :root {
-    --mw-total: calc(var(--mw-max) + var(--bx-max) * 2);
+    --mw-total: calc(var(--mw-max) + var(--px-max) * 2);
     --fluid: calc((100vw - var(--mw-min) * 1rem) / (var(--mw-total) - var(--mw-min)));
 
-    --mw: calc((var(--mw-total) * 1rem) - (var(--bx) * 2));
-    --by: clamp(var(--by-min) * 1rem, var(--by-min) * 1rem + (var(--by-max) - var(--by-min)) * var(--fluid), var(--by-max) * 1rem);
-    --bx: clamp(var(--bx-min) * 1rem, var(--bx-min) * 1rem + (var(--bx-max) - var(--bx-min)) * var(--fluid), var(--bx-max) * 1rem);
+    --mw: calc((var(--mw-total) * 1rem) - (var(--px) * 2));
+    --py: clamp(var(--py-min) * 1rem, var(--py-min) * 1rem + (var(--py-max) - var(--py-min)) * var(--fluid), var(--py-max) * 1rem);
+    --px: clamp(var(--px-min) * 1rem, var(--px-min) * 1rem + (var(--px-max) - var(--px-min)) * var(--fluid), var(--px-max) * 1rem);
     --ss: clamp(var(--ss-min) * 1rem, var(--ss-min) * 1rem + (var(--ss-max) - var(--ss-min)) * var(--fluid), var(--ss-max) * 1rem);
     --gp: clamp(var(--gp-min) * 1rem, var(--gp-min) * 1rem + (var(--gp-max) - var(--gp-min)) * var(--fluid), var(--gp-max) * 1rem);
     --pd: clamp(var(--pd-min) * 1rem, var(--pd-min) * 1rem + (var(--pd-max) - var(--pd-min)) * var(--fluid), var(--pd-max) * 1rem);
@@ -231,11 +231,11 @@
 
 @layer themes {
   :root {
-    --l: #fff;
-    --d: #111;
-    --a: #07e;
+    --l: #fbfbfa;
+    --d: #121416;
+    --a: #cf7;
     --ai: var(--l);
-    --c: #70e;
+    --c: #cbf;
     --ci: var(--d);
   }
 

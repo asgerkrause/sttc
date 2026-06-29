@@ -99,6 +99,13 @@ Put source images in one of:
 - `src/images/` for project-owned images
 - `src/images/` for PagesCMS uploads
 
+Use media roots for other public files:
+
+- `src/videos/` for video files published at `/assets/videos/`
+- `src/files/` for PDFs, audio, zips, and downloads published at `/assets/files/`
+
+Anything in these roots is public; keep drafts/private files elsewhere.
+
 Use logical unique basenames:
 
 ```html

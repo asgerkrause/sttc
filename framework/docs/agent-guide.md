@@ -162,6 +162,15 @@ Place master in `src/images/hero.png` or a PagesCMS `media.input` image root (de
 
 Build emits responsive WebP variants under `/assets/images/`. Lazy images include a temporary `.img-tmp` preview that site code removes after the main image loads. `loading="eager"` skips the preview for above-fold images. The main image has no private `.img-main` class; target `.img-w img` or `.img-tmp` when styling. Keep each logical basename unique across image roots.
 
+### Add public media files
+
+Use source roots by media class:
+
+- `src/videos/` → `/assets/videos/` for public video files. Passthrough today; future compression/transcoding belongs here.
+- `src/files/` → `/assets/files/` for public PDFs, audio, zips, and downloads.
+
+Anything in `src/images/`, `src/videos/`, or `src/files/` is publishable. Build validates authored `/assets/images/*`, `/assets/videos/*`, and `/assets/files/*` refs exist; it does not publish only detected usage.
+
 ### Add inline markdown
 
 Use `<Markdown>` for build-time markdown inside routes/components:

@@ -73,8 +73,11 @@ Route slug source:
 
 Template variables:
 
-- `{{body}}` = rendered markdown body
-- `{{title}}`, `{{description}}`, etc. = front-matter fields
+- `{{body}}` = rendered markdown body, inserted as trusted build HTML
+- `{{title}}`, `{{description}}`, etc. = front-matter fields, escaped by default
+- dotted paths work for typed front matter, e.g. `{{service.title}}` inside loops
+- `{#if field}{:else}{/if}` conditionally renders non-empty fields
+- `{#each services as service, i}{/each}` loops YAML front-matter arrays
 - `{{slug}}` = full route slug, e.g. `work/acme`
 - `{{basename}}` = filename slug, e.g. `acme`
 - `{{collection}}` = collection name

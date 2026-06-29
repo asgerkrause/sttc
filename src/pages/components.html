@@ -2,6 +2,26 @@
   <SEO title="Components" description="Built-in component examples for SANITIZE Boilerplate." />
 </head>
 
+<script type="application/json" data-snz>
+{
+  "buttons": [
+    { "label": "Default", "color": "default", "image": "r1" },
+    { "label": "Tone", "color": "tone", "image": "r2" },
+    { "label": "Accent", "color": "accent", "image": "r3" },
+    { "label": "Accent tone", "color": "accent tone", "image": "r4" },
+    { "label": "Complimentary", "color": "complimentary", "image": "r5" },
+    { "label": "Complimentary tone", "color": "complimentary tone", "image": "r6" },
+    { "label": "Ghost", "color": "ghost", "image": "r1" }
+  ],
+  "cards": [
+    { "title": "Default card", "body": "Grouped content with optional actions.", "variant": "", "theme": "" },
+    { "title": "Outlined card", "body": "Clear separation without a heavier surface.", "variant": "outlined", "theme": "" },
+    { "title": "Ghost card", "body": "Use sparingly for quiet supporting content.", "variant": "ghost", "theme": "" },
+    { "title": "Accent card", "body": "High-contrast callout using the theme contract.", "variant": "", "theme": "accent" }
+  ]
+}
+</script>
+
 <section>
   <div class="c w">
     <p class="eb">Component gallery</p>
@@ -18,33 +38,21 @@
 <Section id="buttons">
   <h2>Button + Link</h2>
   <div class="btns">
-    <Button label="Default" href="#" />
-    <Button label="Tone" href="#" color="tone" />
-    <Button label="Accent" href="#" color="accent" />
-    <Button label="Accent tone" href="#" color="accent" tone="tone" />
-    <Button label="Complimentary" href="#" color="complimentary" />
-    <Button label="Complimentary tone" href="#" color="complimentary" tone="tone" />
-    <Button label="Ghost" href="#" color="ghost" />
+    {#each buttons as button}
+    <Button label="{{button.label}}" href="#" color="{{button.color}}" />
+    {/each}
   </div>
 
   <div class="btns">
-    <Button label="Default" href="#"><slot name="vis"><span>→</span><span>→</span></slot></Button>
-    <Button label="Tone" href="#" color="tone"><slot name="vis"><span>→</span><span>→</span></slot></Button>
-    <Button label="Accent" href="#" color="accent"><slot name="vis"><span>→</span><span>→</span></slot></Button>
-    <Button label="Accent tone" href="#" color="accent" tone="tone"><slot name="vis"><span>→</span><span>→</span></slot></Button>
-    <Button label="Complimentary" href="#" color="complimentary"><slot name="vis"><span>→</span><span>→</span></slot></Button>
-    <Button label="Complimentary tone" href="#" color="complimentary" tone="tone"><slot name="vis"><span>→</span><span>→</span></slot></Button>
-    <Button label="Ghost" href="#" color="ghost"><slot name="vis"><span>→</span><span>→</span></slot></Button>
+    {#each buttons as button}
+    <Button label="{{button.label}}" href="#" color="{{button.color}}" icon="→" />
+    {/each}
   </div>
 
   <div class="btns">
-    <Button label="Default" href="#"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
-    <Button label="Tone" href="#" color="tone"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
-    <Button label="Accent" href="#" color="accent"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
-    <Button label="Accent tone" href="#" color="accent" tone="tone"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
-    <Button label="Complimentary" href="#" color="complimentary"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
-    <Button label="Complimentary tone" href="#" color="complimentary" tone="tone"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
-    <Button label="Ghost" href="#" color="ghost"><slot name="vis"><img src="https://placehold.co/600x400/444/aaa" alt=""></slot></Button>
+    {#each buttons as button}
+    <Button label="{{button.label}}" href="#" color="{{button.color}}" image="{{button.image}}" />
+    {/each}
   </div>
 
   <p><Link label="Inline link" href="/" /></p>
@@ -53,23 +61,12 @@
 <Section id="cards">
   <h2>Card</h2>
   <Grid cols="4-2">
-    <Card>
-      <h3>Default card</h3>
-      <p>Grouped content with optional actions.</p>
-      <Link href="/" label="Home" />
+    {#each cards as card}
+    <Card variant="{{card.variant}}" theme="{{card.theme}}">
+      <h3>{{card.title}}</h3>
+      <p>{{card.body}}</p>
     </Card>
-    <Card variant="outlined">
-      <h3>Outlined card</h3>
-      <p>Clear separation without a heavier surface.</p>
-    </Card>
-    <Card variant="ghost">
-      <h3>Ghost card</h3>
-      <p>Use sparingly for quiet supporting content.</p>
-    </Card>
-    <Card theme="accent">
-      <h3>Accent card</h3>
-      <p>High-contrast callout using the theme contract.</p>
-    </Card>
+    {/each}
   </Grid>
 </Section>
 
@@ -83,7 +80,7 @@
       <p>Use layout primitives for two-column content. Use <code>Split</code> for text splitting.</p>
       <Button label="Primary action" href="/components/" color="accent" />
     </div>
-    <Image src="r6" alt="Abstract component media example" max="1200" />
+    <Image src="r1" alt="Abstract component media example" max="1200" />
   </Grid>
 </Section>
 
@@ -130,11 +127,12 @@
   <h2>Slider</h2>
   <p>Native scroll-snap gallery with previous/next controls.</p>
   <Slider label="Example scroll-snap gallery" cols="3-2">
-    <Image src="r6" alt="Slider example image one" max="1200" />
-    <Image src="test-img" alt="Slider example image two" max="1200" />
-    <Image src="r6" alt="Slider example image three" max="1200" />
-    <Image src="test-img" alt="Slider example image four" max="1200" />
-    <Image src="r6" alt="Slider example image five" max="1200" />
+    <Image src="r1" alt="Slider example image one" max="1200" />
+    <Image src="r2" alt="Slider example image two" max="1200" />
+    <Image src="r3" alt="Slider example image three" max="1200" />
+    <Image src="r4" alt="Slider example image four" max="1200" />
+    <Image src="r5" alt="Slider example image five" max="1200" />
+    <Image src="r6" alt="Slider example image six" max="1200" />
   </Slider>
 </Section>
 
@@ -142,9 +140,12 @@
   <h2>Gallery</h2>
   <p>Single-item gallery with a live counter and previous/next zones.</p>
   <Gallery label="Example image gallery">
-    <Image src="r6" alt="Gallery example image one" max="1200" />
-    <Image src="test-img" alt="Gallery example image two" max="1200" />
-    <Image src="r6" alt="Gallery example image three" max="1200" />
+    <Image src="r1" alt="Gallery example image one" max="1200" />
+    <Image src="r2" alt="Gallery example image two" max="1200" />
+    <Image src="r3" alt="Gallery example image three" max="1200" />
+    <Image src="r4" alt="Gallery example image four" max="1200" />
+    <Image src="r5" alt="Gallery example image five" max="1200" />
+    <Image src="r6" alt="Gallery example image six" max="1200" />
   </Gallery>
 </Section>
 
@@ -163,9 +164,9 @@
   <Masonry cols="4-2" gap="sm">
     <Card><h3>One</h3><p>Short card.</p></Card>
     <Card><h3>Two</h3><p>Longer card with extra copy to prove row-span measurement keeps the grid packed without reordering source content.</p></Card>
-    <Image src="r6" alt="Masonry image one" max="800" />
+    <Image src="r3" alt="Masonry image one" max="800" />
     <Card theme="accent"><h3>Four</h3><p>Theme card.</p></Card>
-    <Image src="test-img" alt="Masonry image two" max="800" />
+    <Image src="r5" alt="Masonry image two" max="800" />
     <Card variant="outlined"><h3>Six</h3><p>Outlined card.</p></Card>
   </Masonry>
 </Section>
@@ -175,11 +176,11 @@
   <Grid cols="2">
     <div class="w">
       <h3>Eager image</h3>
-      <Image src="r6" alt="Rainbow Six Siege artwork" loading="eager" max="1200" />
+      <Image src="r2" alt="Eager media example" loading="eager" max="1200" />
     </div>
     <div class="w">
       <h3>Lazy image with tmp preview</h3>
-      <Image src="r6" alt="Rainbow Six Siege artwork lazy example" max="1200" />
+      <Image src="r4" alt="Lazy media example" max="1200" />
     </div>
   </Grid>
   <div class="w">

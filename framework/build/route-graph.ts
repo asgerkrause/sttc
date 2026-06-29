@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import type { Composer, ComposeInstance } from './compose'
+import type { TemplateContext } from './template-directives'
 import {
   extractDescription,
   extractTitle,
@@ -20,6 +21,7 @@ export type RouteComposeOptions = {
   schemas?: string[]
   lastModified?: string
   headLinks?: string[]
+  data?: TemplateContext
 }
 
 export type ComposedRoute = {
@@ -48,6 +50,7 @@ export class RouteGraph {
       slug: route.slug,
       fileHint: route.source,
       headLinks: options.headLinks,
+      data: options.data,
     })
     const outPath = join(this.#distDir, 'routes', route.outFile)
     await mkdir(join(outPath, '..'), { recursive: true })

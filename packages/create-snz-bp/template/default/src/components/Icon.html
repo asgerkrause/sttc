@@ -2,7 +2,11 @@
   @desc Minimal inline icon slot wrapper. Bring your own SVG/icon font until an icon library is chosen.
   @attr label Accessible label. Leave empty when decorative.
 -->
+{#if label}
 <span class="icon" role="img" aria-label="{{label}}">{{slot}}</span>
+{:else}
+<span class="icon" aria-hidden="true">{{slot}}</span>
+{/if}
 
 <style>
   .icon {

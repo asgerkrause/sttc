@@ -1,7 +1,7 @@
 import { mkdir, readdir, rm, stat } from 'fs/promises'
 import { isAbsolute, join, relative, resolve, sep } from 'path'
 import { pagesCmsMediaInputs } from './images'
-import { dist, root, sourceAppDir, sourceImagesDir, sourceStylesDir, sourceStylesFile } from './paths'
+import { dist, root, sourceAppDir, sourceFilesDir, sourceImagesDir, sourceStylesDir, sourceStylesFile, sourceVideosDir } from './paths'
 
 // Recursive copy implemented with sequential per-file writes. fs.cp(recursive: true) was
 // observed to race with adjacent writes (image variants would vanish), so we walk + Bun.write.
@@ -52,6 +52,8 @@ export async function copyAssets() {
   const imagesDist = join(assetsDist, 'images')
   await mkdir(imagesDist, { recursive: true })
   await copyTree(await sourceImagesDir(), imagesDist, (name) => !name.endsWith('.svg'))
+  await copyTree(await sourceVideosDir(), join(assetsDist, 'videos'))
+  await copyTree(await sourceFilesDir(), join(assetsDist, 'files'))
 }
 
 function slashPath(path: string) {

@@ -68,6 +68,38 @@ Allowed transition values:
 
 Router sets `html[data-transition="..."]` during navigation.
 
+## Build-time JSON data
+
+Small local lists can live in a build-only JSON script. The script is stripped from output and never runs in the browser.
+
+```html
+<script type="application/json" data-snz>
+{
+  "services": [
+    { "title": "Strategy", "body": "Positioning and structure." },
+    { "title": "Build", "body": "Static site implementation." }
+  ]
+}
+</script>
+
+<Grid>
+  {#each services as service, i}
+  <Card>
+    <h2>{{service.title}}</h2>
+    <p>{{service.body}}</p>
+  </Card>
+  {/each}
+</Grid>
+```
+
+Reusable data can live under `src/data/`:
+
+```html
+<script type="application/json" data-snz src="services.json"></script>
+```
+
+`src` is JSON-only, local-only, and resolves inside `src/data/`. Values escape by default.
+
 ## SEO
 
 Use `<SEO>` once inside route `<head>` when page needs custom title, description, canonical path, or OG image.

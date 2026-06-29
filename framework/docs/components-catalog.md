@@ -103,7 +103,7 @@ Link styled as an action button.
 - Tag: `<Button>` can be self-closing.
 - Slots: `vis`.
 - Unknown attributes: rejected when schema exists.
-- Class-mapped attrs: `color`, `tone`, `size` append value to root class.
+- Class-mapped attrs: `color`, `size` append value to root class.
 
 ### Attributes
 
@@ -111,15 +111,15 @@ Link styled as an action button.
 |---|---|---|---|
 | `href` | no | string | Destination URL or path. Defaults to #. |
 | `label` | no | string | Visible button text. Defaults to Learn more. |
-| `color` | no | `default \| ghost \| tone \| accent \| complimentary` | Visual color treatment. |
-| `tone` | no | `tone` | Optional muted treatment for accent/complimentary colors. |
+| `color` | no | `default \| ghost \| tone \| accent \| accent tone \| complimentary \| complimentary tone` | Visual color treatment. |
 | `size` | no | `sm \| md \| lg` | Size variant. |
+| `icon` | no | string | Optional decorative literal icon/glyph. Provider syntax like lucide:arrow-right is reserved. |
+| `image` | no | string | Optional decorative local image name from src/images, without extension. |
 | `track` | no | string | Optional analytics event name; emits data-snz-track on the root. |
 
 ### Variants / enums
 
-- `color`: `default`, `ghost`, `tone`, `accent`, `complimentary`
-- `tone`: `tone`
+- `color`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `complimentary`, `complimentary tone`
 - `size`: `sm`, `md`, `lg`
 
 ### Accessibility notes

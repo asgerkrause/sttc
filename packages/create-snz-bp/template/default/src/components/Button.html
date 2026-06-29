@@ -2,14 +2,21 @@
   @desc Link styled as an action button.
   @attr href Destination URL or path. Defaults to #.
   @attr label Visible button text. Defaults to Learn more.
-  @attr color=[default|ghost|tone|accent|complimentary] :class Visual color treatment.
-  @attr tone=[tone] :class Optional muted treatment for accent/complimentary colors.
+  @attr color=[default|ghost|tone|accent|accent tone|complimentary|complimentary tone] :class Visual color treatment.
   @attr size=[sm|md|lg] :class Size variant.
+  @attr icon Optional decorative literal icon/glyph. Provider syntax like lucide:arrow-right is reserved.
+  @attr image Optional decorative local image name from src/images, without extension.
   @attr track Optional analytics event name; emits data-snz-track on the root.
 -->
 <a class="btn" href="{{href}}" aria-label="{{label}}">
   {#if slot:vis}
   <span class="btn-vis-w" aria-hidden="true">{{slot:vis}}</span>
+  {/if}
+  {#if image}
+  <span class="btn-vis-w" aria-hidden="true"><img src="/assets/images/{{image}}-320.webp" alt="" loading="lazy" decoding="async"></span>
+  {/if}
+  {#if icon}
+  <span class="btn-vis-w" aria-hidden="true"><span>{{icon}}</span><span>{{icon}}</span></span>
   {/if}
   <span class="btn-txt-w" aria-hidden="true">
     <span>{{label}}</span>

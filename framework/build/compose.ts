@@ -7,6 +7,7 @@ import { componentsDir, src } from './paths'
 import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { COMPONENT_OPEN_RE, nextComponent, parseAttrs, type ComponentMatch } from './tags'
+import { renderTemplate, type TemplateContext } from './template-directives'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
 const LEGACY_COMMENT_RE = /<!--\s*@(component|seo)\b/
@@ -14,9 +15,6 @@ const HEAD_WRAPPER_RE = /^<head[^>]*>([\s\S]*?)<\/head>\s*/i
 const SLOT_DEFAULT_RE = /\{\{slot\}\}/g
 const SLOT_NAMED_RE = /\{\{slot:([\w-]+)\}\}/g
 const NAMED_SLOT_TAG_RE = /<slot\s+name=["']([\w-]+)["']\s*>([\s\S]*?)<\/slot>/gi
-const IF_OPEN_RE = /\{#if\s+([^}]+)\}/g
-const IF_BLOCK_RE = /\{#if\s+([^}]+)\}([\s\S]*?)\{\/if\}/g
-const IF_TOKEN_RE = /\{#if\b|\{\/if\}|\{:(?:else|else\s+if)\b/
 
 export type SchemaAttr = {
   required?: boolean
@@ -49,6 +47,7 @@ export type RouteComposeInput = {
   slug: string
   fileHint: string
   headLinks?: string[]
+  data?: TemplateContext
 }
 
 export type Composer = ReturnType<typeof createComposer>
@@ -60,6 +59,7 @@ export function createComposer(
   onInstance?: (inst: ComposeInstance) => void,
   /** Names of components that have a lifecycle <script>. Their root gets data-snz-component. */
   scriptsByComponent?: Set<string>,
+  dataByComponent?: Map<string, TemplateContext>,
 ) {
   let siteConfig: SiteConfig | null = null
   let currentRoute: string | undefined
@@ -155,6 +155,30 @@ export function createComposer(
     if (name === 'Button') {
       attrs.href ??= '#'
       attrs.label ??= 'Learn more'
+      const icon = attrs.icon?.trim()
+      if (icon && /^[a-z][a-z0-9-]*:/i.test(icon)) {
+        throw new BuildError(`Button icon provider syntax is reserved but not implemented: "${icon}"`, {
+          hint: 'Use a literal decorative icon like icon="→", or slot:vis for custom SVG/markup until an icon provider is added.',
+        })
+      }
+      const image = attrs.image?.trim()
+      if (image) {
+        if (/^(https?:)?\/\//i.test(image) || image.startsWith('/')) {
+          throw new BuildError(`Button image must be a local image name: "${image}"`, {
+            hint: 'Use image="r4" for src/images/r4.webp. Use slot:vis only for intentional raw remote markup.',
+          })
+        }
+        if (!/^[A-Za-z0-9][\w-]*$/.test(image)) {
+          throw new BuildError(`Button image must omit folders and extensions: "${image}"`, {
+            hint: 'Use the logical image name, e.g. image="r4" for src/images/r4.webp.',
+          })
+        }
+        if (!getImageMeta()[image]) {
+          throw new BuildError(`Button image "${image}": add an image master named ${image}.{jpg,png,webp} and rebuild`, {
+            hint: `Add src/images/${image}.jpg, .png, or .webp; or upload ${image} through PagesCMS media.input.`,
+          })
+        }
+      }
     }
     if (name === 'Link') {
       attrs.href ??= '#'
@@ -200,7 +224,7 @@ export function createComposer(
           hint: rule.description,
         })
       }
-      if (rule.enum && attrs[key] !== undefined && !rule.enum.includes(attrs[key])) {
+      if (rule.enum && attrs[key] !== undefined && attrs[key] !== '' && !rule.enum.includes(attrs[key])) {
         throw buildErrorAt(
           `<${name} /> attribute "${key}" must be one of ${rule.enum.join(', ')} — got "${attrs[key]}"`,
           source,
@@ -223,51 +247,35 @@ export function createComposer(
     }
   }
 
-  function readSlots(children: string) {
+  function templateSlotNames(template: string) {
+    return new Set([...template.matchAll(SLOT_NAMED_RE)].map((m) => m[1]))
+  }
+
+  function readSlots(children: string, template: string) {
+    const ownSlots = templateSlotNames(template)
     const named: Record<string, string> = {}
-    const defaultChildren = children.replace(NAMED_SLOT_TAG_RE, (_, n, body) => {
+    const defaultChildren = children.replace(NAMED_SLOT_TAG_RE, (full, n, body) => {
+      if (!ownSlots.has(n)) return full
       named[n] = body
       return ''
     }).trim()
     return { defaultChildren, named }
   }
 
-  function conditionValue(expr: string, attrs: Record<string, string>, slots: ReturnType<typeof readSlots>): string {
-    const key = expr.trim()
-    if (!key) throw new BuildError('Empty component conditional', { hint: 'Use {#if attr}, {#if slot}, or {#if slot:name}.' })
-    if (key === 'slot') return slots.defaultChildren
-    const slot = key.match(/^slot:([\w-]+)$/)
-    if (slot) return slots.named[slot[1]] ?? ''
-    if (/^[\w-]+$/.test(key)) return attrs[key] ?? ''
-    throw new BuildError(`Invalid component conditional "${key}"`, {
-      hint: 'Supported conditions: attr, slot, slot:name. No expressions yet.',
+  function renderConditionals(name: string, template: string, attrs: Record<string, string>, slots: ReturnType<typeof readSlots>) {
+    const componentData = dataByComponent?.get(name)
+    const context: TemplateContext = {
+      ...(componentData ?? {}),
+      ...attrs,
+      slot: slots.defaultChildren,
+      ...Object.fromEntries(Object.entries(slots.named).map(([name, value]) => [`slot:${name}`, value])),
+    }
+    return renderTemplate(template, context, {
+      allowEach: !!componentData,
+      placeholders: !!componentData,
+      preserveUnknownPlaceholders: true,
+      preservePlaceholders: (path) => path === 'slot' || path.startsWith('slot:'),
     })
-  }
-
-  function renderConditionals(template: string, attrs: Record<string, string>, slots: ReturnType<typeof readSlots>) {
-    if (!IF_TOKEN_RE.test(template)) return template
-    IF_TOKEN_RE.lastIndex = 0
-    let out = template
-    while (IF_OPEN_RE.test(out)) {
-      IF_OPEN_RE.lastIndex = 0
-      const next = out.replace(IF_BLOCK_RE, (_, expr, body) => {
-        if (/\{#if\b/.test(body)) throw new BuildError('Nested component conditionals are not supported yet')
-        return conditionValue(expr, attrs, slots).trim() ? body : ''
-      })
-      if (next === out) {
-        throw new BuildError('Unclosed component conditional', { hint: 'Every {#if ...} needs a matching {/if}.' })
-      }
-      out = next
-    }
-    IF_OPEN_RE.lastIndex = 0
-    IF_BLOCK_RE.lastIndex = 0
-    if (/\{\/if\}/.test(out)) {
-      throw new BuildError('Unexpected component conditional close', { hint: 'Remove unmatched {/if}.' })
-    }
-    if (/\{:(?:else|else\s+if)\b/.test(out)) {
-      throw new BuildError('Unsupported component conditional branch', { hint: '{:else} and {:else if ...} are not supported yet.' })
-    }
-    return out
   }
 
   function expandSlots(template: string, slots: ReturnType<typeof readSlots>): string {
@@ -304,8 +312,16 @@ export function createComposer(
       attrs.rendered = renderMarkdown(children, { file: fileHint })
       children = ''
     }
-    const slots = readSlots(children)
-    let fragment = renderConditionals(template, attrs, slots)
+    const slots = readSlots(children, template)
+    if (m.name === 'Button') {
+      if (slots.named.vis) {
+        delete attrs.image
+        delete attrs.icon
+      } else if (attrs.image) {
+        delete attrs.icon
+      }
+    }
+    let fragment = renderConditionals(m.name, template, attrs, slots)
     fragment = expandSlots(fragment, slots)
     fragment = substitute(fragment, attrs)
     fragment = augmentRoot(m.name, fragment, m.attrs)
@@ -325,8 +341,14 @@ export function createComposer(
       ? Object.entries(schema.attrs).filter(([, rule]) => rule.asClass).map(([k]) => k)
       : []
     const extraClasses = asClassAttrs
-      .map((k) => rawAttrs[k])
-      .filter((v) => v && v.length > 0)
+      .flatMap((k) => (rawAttrs[k] ?? '').trim().split(/\s+/).filter(Boolean))
+    for (const cls of extraClasses) {
+      if (!/^[A-Za-z_][\w-]*$/.test(cls)) {
+        throw new BuildError(`Invalid class token "${cls}" from <${name} /> attribute`, {
+          hint: 'Class-backed attrs may contain space-separated class tokens only.',
+        })
+      }
+    }
     const track = rawAttrs.track?.trim()
 
     // Built-in components don't get data-snz-component injected (chrome, primitives).
@@ -410,13 +432,21 @@ export function createComposer(
   }
 
   async function prepareRouteSource(raw: string, route: RouteComposeInput) {
-    const { slug, fileHint, headLinks = [] } = route
+    const { slug, fileHint, headLinks = [], data = {} } = route
     currentRoute = slug
     try {
-      rejectLegacySyntax(raw, fileHint)
-      rejectStyleInRoute(raw, fileHint)
+      const routedRaw = Object.keys(data).length
+        ? renderTemplate(raw, data, {
+            allowEach: true,
+            placeholders: true,
+            preserveUnknownPlaceholders: true,
+            file: fileHint,
+          })
+        : raw
+      rejectLegacySyntax(routedRaw, fileHint)
+      rejectStyleInRoute(routedRaw, fileHint)
 
-      const stripped = stripHeadWrapper(raw.trim())
+      const stripped = stripHeadWrapper(routedRaw.trim())
       const inline = extractInlineSeo(stripped.body)
       const seoOverrides = { ...stripped.seoAttrs, ...inline.attrs }
       const body = inline.rest

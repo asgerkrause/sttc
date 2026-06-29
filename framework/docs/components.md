@@ -63,12 +63,14 @@ Usage:
 
 ## Conditional template blocks
 
-Use Svelte-style `{#if ...}{/if}` blocks to omit optional markup at build time.
+Use Svelte-style `{#if ...}{/if}` blocks to omit optional markup at build time. Add `{:else}` for fallback markup.
 
 ```html
 <a class="btn" href="{{href}}" aria-label="{{label}}">
   {#if slot:vis}
   <span class="btn-vis-w" aria-hidden="true">{{slot:vis}}</span>
+  {:else}
+  <span class="btn-vis-w" aria-hidden="true">→</span>
   {/if}
   <span>{{label}}</span>
 </a>
@@ -80,7 +82,27 @@ Supported conditions:
 - `{#if slot}` — true when the default slot has content.
 - `{#if slot:name}` — true when a named slot has content.
 
-Keep v1 simple: no expressions, nesting, `{:else}`, or `{:else if ...}` yet.
+Use `{:else}` for accessibility-sensitive fallbacks:
+
+```html
+{#if label}
+<span class="icon" role="img" aria-label="{{label}}">{{slot}}</span>
+{:else}
+<span class="icon" aria-hidden="true">{{slot}}</span>
+{/if}
+```
+
+Keep v1 simple: no expressions, nesting, or `{:else if ...}`. Components support `{#each}` when they define build-time JSON data with `<script type="application/json" data-snz>` or `src="..."` from `src/data/`.
+
+```html
+<script type="application/json" data-snz>
+{ "items": [{ "summary": "Question", "body": "Answer" }] }
+</script>
+
+{#each items as item}
+<Accordion summary="{{item.summary}}" body="{{item.body}}" />
+{/each}
+```
 
 ## Variants (combo classes + nested CSS, no BEM)
 

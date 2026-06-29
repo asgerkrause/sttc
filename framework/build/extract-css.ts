@@ -4,6 +4,9 @@ import { buildErrorAt, BuildError } from './errors'
 import type { ComponentSchema } from './compose'
 import { parseInlineSchema } from './component-meta'
 import { assetHash } from './hash'
+import { root } from './paths'
+import { extractTemplateData } from './template-data'
+import type { TemplateContext } from './template-directives'
 
 const STYLE_RE = /<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi
 const STYLES_LINK = '<link rel="stylesheet" href="/assets/css/styles.css">'
@@ -92,16 +95,18 @@ export async function prepareComponents(componentsDir: string): Promise<{
   templates: Map<string, string>
   schemas: Map<string, ComponentSchema>
   scripts: Map<string, string[]>
+  data: Map<string, TemplateContext>
 }> {
   const cssBlocks: CssBlock[] = []
   const templates = new Map<string, string>()
   const schemas = new Map<string, ComponentSchema>()
   const scripts = new Map<string, string[]>()
+  const data = new Map<string, TemplateContext>()
   let entries: string[]
   try {
     entries = await readdir(componentsDir)
   } catch {
-    return { cssBlocks, templates, schemas, scripts }
+    return { cssBlocks, templates, schemas, scripts, data }
   }
 
   const htmlFiles = entries.filter((f) => f.endsWith('.html')).sort()
@@ -109,15 +114,18 @@ export async function prepareComponents(componentsDir: string): Promise<{
     const path = join(componentsDir, file)
     const raw = await readFile(path, 'utf8')
     const name = file.replace(/\.html$/i, '')
-    // 1. Pull <script> first (so its content isn't swept by stripStyleBlocks comment regex)
-    const { html: noScript, scripts: blocks } = extractComponentScripts(raw)
+    // 1. Pull build-time JSON data before runtime scripts so it never ships or mounts.
+    const { html: noData, data: componentData } = await extractTemplateData(raw, { file: `src/components/${file}`, projectRoot: root })
+    if (Object.keys(componentData).length) data.set(name, componentData)
+    // 2. Pull <script> (so its content isn't swept by stripStyleBlocks comment regex)
+    const { html: noScript, scripts: blocks } = extractComponentScripts(noData)
     if (blocks.length) scripts.set(name, blocks)
-    // 2. Pull leading <!-- @desc / @attr / @schema --> comment (inline schema)
+    // 3. Pull leading <!-- @desc / @attr / @schema --> comment (inline schema)
     const { html: noComment, schema } = parseInlineSchema(noScript)
     if (schema.description || (schema.attrs && Object.keys(schema.attrs).length) || schema.schema) {
       schemas.set(name, schema)
     }
-    // 3. Pull <style>
+    // 4. Pull <style>
     const { html, css } = stripStyleBlocks(noComment)
     templates.set(name, html)
     for (const chunk of css) cssBlocks.push({ source: file, css: chunk })
@@ -136,7 +144,7 @@ export async function prepareComponents(componentsDir: string): Promise<{
     )
   }
 
-  return { cssBlocks, templates, schemas, scripts }
+  return { cssBlocks, templates, schemas, scripts, data }
 }
 
 /**

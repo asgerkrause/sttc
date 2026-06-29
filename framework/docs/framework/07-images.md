@@ -20,6 +20,17 @@ dist/assets/images/
 
 Do not edit `dist/`.
 
+## Other media
+
+Use public source roots by media class:
+
+```txt
+src/videos/intro.mp4       -> dist/assets/videos/intro.mp4
+src/files/menu.pdf         -> dist/assets/files/menu.pdf
+```
+
+Anything in `src/images/`, `src/videos/`, or `src/files/` is publishable. Build validates authored `/assets/images/*`, `/assets/videos/*`, and `/assets/files/*` references exist. Videos/files are passthrough today; video compression/transcoding can be added later without changing author paths.
+
 ## Image component
 
 `<Image>` renders responsive image markup inside `.img-w` wrapper.

@@ -9,7 +9,7 @@ import { BuildError } from '../build/errors'
 import { mediaInputCopyExclusions, shouldSkipMediaCopy } from '../build/assets'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, resolveImageAttrs } from '../build/images'
 import { publicPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
-import { checkBuiltImageRefs, checkPagesCmsConfig, checkVercelConfig, extractBuiltImageRefs } from '../build/check'
+import { checkBuiltImageRefs, checkPagesCmsConfig, checkVercelConfig, extractBuiltImageRefs, extractBuiltPublicAssetRefs } from '../build/check'
 import { selectAppEntry, sourceRuntimeLibDir } from '../build/paths'
 
 async function composeRoute(slug: string, fileHint: string) {
@@ -172,6 +172,20 @@ content:
     ])
   })
 
+  test('extracts built public asset refs for images, videos, and files', () => {
+    const refs = extractBuiltPublicAssetRefs(`<img src="/assets/images/hero.webp">
+<video src="/assets/videos/intro.mp4" poster="/assets/images/poster.webp"></video>
+<a href="/assets/files/menu.pdf">Menu</a>
+{"template":"/assets/files/{slug}.pdf"}`)
+
+    expect(refs).toEqual([
+      '/assets/files/menu.pdf',
+      '/assets/images/hero.webp',
+      '/assets/images/poster.webp',
+      '/assets/videos/intro.mp4',
+    ])
+  })
+
   test('fails missing built image refs after CMS media normalization', async () => {
     const dir = await tempProject()
     try {
@@ -181,14 +195,20 @@ content:
       await writeFile(join(dir, 'assets', 'images', 'og.webp'), 'ok')
       await writeFile(join(dir, 'assets', 'images', 'hero.webp'), 'ok')
       await writeFile(join(dir, 'routes', 'team.json'), JSON.stringify({ image: '/assets/images/team.webp' }))
+      await writeFile(join(dir, 'routes', 'media.html'), '<video src="/assets/videos/intro.mp4"></video><a href="/assets/files/menu.pdf">Menu</a>')
       const errors: string[] = []
 
       await checkBuiltImageRefs(dir, (error) => errors.push(error))
 
-      expect(errors).toHaveLength(1)
-      expect(errors[0]).toContain('missing image asset /assets/images/team.webp')
-      expect(errors[0]).toContain('PagesCMS media.input')
-      expect(errors[0]).toContain('CMS /src/images/* refs publish as /assets/images/*.webp')
+      expect(errors).toHaveLength(3)
+      const joined = errors.join('\n')
+      expect(joined).toContain('missing public asset /assets/images/team.webp')
+      expect(joined).toContain('PagesCMS media.input')
+      expect(joined).toContain('CMS /src/images/* refs publish as /assets/images/*.webp')
+      expect(joined).toContain('missing public asset /assets/files/menu.pdf')
+      expect(joined).toContain('src/files')
+      expect(joined).toContain('missing public asset /assets/videos/intro.mp4')
+      expect(joined).toContain('src/videos')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

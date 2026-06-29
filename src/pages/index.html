@@ -9,9 +9,7 @@
       <p class="f-md">Write routes, drop in components, and ship static output. No runtime framework required.</p>
     </div>
     <div class="btns">
-      <Button label="Get started" href="#">
-        <slot name="vis"><span>→</span><span>→</span></slot>
-      </Button>
+      <Button label="Get started" href="#" icon="→" />
       <Button label="View components" href="/components/" />
       <Button label="About" href="/about/" color="ghost" />
     </div>
@@ -36,6 +34,55 @@
         <h3>Publishing</h3>
         <p>Build emits static HTML, optimized images, feeds, sitemap, and discovery files.</p>
         <Link href="/components/" label="Inspect output" />
+      </Card>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="c w">
+    <div class="w">
+      <h2>Template directives</h2>
+      <p>Use conditionals inside components, and loops inside CMS templates.</p>
+    </div>
+    <div g="2-2">
+      <Card>
+        <h3>Component fallback</h3>
+        <p>`{:else}` renders fallback markup when an optional attr or slot is empty.</p>
+        <Code lang="html">
+&lt;!-- src/components/Badge.html --&gt;
+&lt;span class="badge"&gt;
+  {#if icon}
+  &lt;span&gt;&#123;&#123;icon&#125;&#125;&lt;/span&gt;
+  {:else}
+  &lt;span&gt;•&lt;/span&gt;
+  {/if}
+  &#123;&#123;label&#125;&#125;
+&lt;/span&gt;
+        </Code>
+      </Card>
+      <Card>
+        <h3>CMS list loop</h3>
+        <p>`{#each}` loops YAML front-matter arrays in `src/templates/*.html`.</p>
+        <Code lang="yaml">
+---
+title: Services
+services:
+  - title: Strategy
+    body: Positioning and structure.
+  - title: Build
+    body: Static site implementation.
+---
+        </Code>
+        <Code lang="html">
+&lt;Grid&gt;
+  {#each services as service, i}
+  &lt;Card title="&#123;&#123;service.title&#125;&#125;"&gt;
+    &lt;p&gt;&#123;&#123;service.body&#125;&#125;&lt;/p&gt;
+  &lt;/Card&gt;
+  {/each}
+&lt;/Grid&gt;
+        </Code>
       </Card>
     </div>
   </div>

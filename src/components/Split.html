@@ -2,7 +2,11 @@
   @desc Text splitter that wraps words for animation or styling.
   @attr label Optional accessible label. Defaults to text content.
 -->
+{#if label}
 <span class="split" data-split aria-label="{{label}}">{{slot}}</span>
+{:else}
+<span class="split" data-split>{{slot}}</span>
+{/if}
 
 <script>
   const text = el.textContent?.trim() || ''

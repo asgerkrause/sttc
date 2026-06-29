@@ -24,7 +24,7 @@ export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   await checkSourceLayout(warn)
   await checkSeoFiles(fail)
   await checkJsonLd(fail)
-  await checkBuiltImageRefs(dist, fail)
+  await checkBuiltPublicAssetRefs(dist, fail)
   if (!opts.allowBrokenLinks) await checkInternalLinks(fail)
   await checkComponentTags(warn)
   await checkDiscoveryArtifacts(fail)
@@ -96,15 +96,24 @@ async function assetExists(href: string) {
   return stat(join(dist, rel)).then(() => true).catch(() => false)
 }
 
-export function extractBuiltImageRefs(text: string) {
+const PUBLIC_ASSET_RE = /\/assets\/(images|videos|files)\/[^"'`\s<>)\\]+/g
+
+function cleanAssetRef(ref: string) {
+  return ref.replace(/[.,;:]+$/g, '').replace(/[?#].*$/, '')
+}
+
+export function extractBuiltPublicAssetRefs(text: string) {
   const refs = new Set<string>()
-  const re = /\/assets\/images\/[^"'`\s<>)\\]+/g
-  for (const match of text.matchAll(re)) {
-    const ref = match[0].replace(/[.,;:]+$/g, '').replace(/[?#].*$/, '')
+  for (const match of text.matchAll(PUBLIC_ASSET_RE)) {
+    const ref = cleanAssetRef(match[0])
     if (ref.includes('{') || ref.includes('}')) continue
     refs.add(ref)
   }
   return [...refs].sort()
+}
+
+export function extractBuiltImageRefs(text: string) {
+  return extractBuiltPublicAssetRefs(text).filter((ref) => ref.startsWith('/assets/images/'))
 }
 
 async function builtAssetExists(distRoot: string, ref: string) {
@@ -112,11 +121,23 @@ async function builtAssetExists(distRoot: string, ref: string) {
   return stat(join(distRoot, rel)).then(() => true).catch(() => false)
 }
 
-export async function checkBuiltImageRefs(distRoot: string, fail: (m: string) => void) {
+function missingPublicAssetHint(ref: string) {
+  if (ref.startsWith('/assets/images/')) {
+    const name = basename(ref).replace(/\.webp$/i, '')
+    return `Add an image master named ${name}.{jpg,png,webp} in src/images or PagesCMS media.input, then rebuild. CMS /src/images/* refs publish as /assets/images/*.webp.`
+  }
+  if (ref.startsWith('/assets/videos/')) return 'Add the public video source file under src/videos, then rebuild.'
+  if (ref.startsWith('/assets/files/')) return 'Add the public file under src/files, then rebuild.'
+  return 'Add the public source file, then rebuild.'
+}
+
+export async function checkBuiltPublicAssetRefs(distRoot: string, fail: (m: string) => void) {
   const files = [
     join(distRoot, 'index.html'),
     ...(await collectHtmlFiles(join(distRoot, 'routes'))),
     ...(await collectFilesByExtension(distRoot, '.json')),
+    ...(await collectFilesByExtension(join(distRoot, 'assets'), '.css')),
+    ...(await collectFilesByExtension(join(distRoot, 'assets'), '.js')),
   ]
   const seen = new Set<string>()
 
@@ -125,12 +146,15 @@ export async function checkBuiltImageRefs(distRoot: string, fail: (m: string) =>
     seen.add(file)
     const text = await readFile(file, 'utf8').catch(() => null)
     if (!text) continue
-    for (const ref of extractBuiltImageRefs(text)) {
+    for (const ref of extractBuiltPublicAssetRefs(text)) {
       if (await builtAssetExists(distRoot, ref)) continue
-      const name = basename(ref).replace(/\.webp$/i, '')
-      fail(`${file}: missing image asset ${ref}\n  hint: Add an image master named ${name}.{jpg,png,webp} in src/images or PagesCMS media.input, then rebuild. CMS /src/images/* refs publish as /assets/images/*.webp.`)
+      fail(`${file}: missing public asset ${ref}\n  hint: ${missingPublicAssetHint(ref)}`)
     }
   }
+}
+
+export async function checkBuiltImageRefs(distRoot: string, fail: (m: string) => void) {
+  await checkBuiltPublicAssetRefs(distRoot, fail)
 }
 
 async function checkInternalLinks(fail: (m: string) => void) {
@@ -328,7 +352,7 @@ async function checkSourceLayout(warn: (m: string) => void) {
   for (const [label, path] of legacy) {
     try {
       await stat(path)
-      warn(`${label} is legacy; prefer src/pages, src/styles.css, src/app.ts, src/images, or runtime instead`)
+      warn(`${label} is legacy; prefer src/pages, src/styles.css, src/app.ts, src/images, src/videos, src/files, or runtime instead`)
     } catch {
       /* canonical layout */
     }

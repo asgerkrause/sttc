@@ -13,6 +13,7 @@
   .f-md {
     font-size: var(--md-fs);
     font-weight: var(--md-fw);
+    font-variation-settings: "wght" var(--md-fw);
     letter-spacing: var(--md-ls);
     line-height: var(--md-lh);
     max-width: var(--md-mw);
@@ -20,12 +21,12 @@
 
   body {
     max-width: none;
-    font-variation-settings: "wght" var(--md-fw);
   }
 
   .f-lg {
     font-size: var(--lg-fs);
     font-weight: var(--lg-fw);
+    font-variation-settings: "wght" var(--lg-fw);
     letter-spacing: var(--lg-ls);
     line-height: var(--lg-lh);
     max-width: var(--lg-mw);
@@ -34,6 +35,7 @@
   .f-sm {
     font-size: var(--sm-fs);
     font-weight: var(--sm-fw);
+    font-variation-settings: "wght" var(--sm-fw);
     letter-spacing: var(--sm-ls);
     line-height: var(--sm-lh);
     max-width: var(--sm-mw);
@@ -64,6 +66,7 @@
     font-family: var(--h0-ff);
     font-size: var(--h0-fs);
     font-weight: var(--h0-fw);
+    font-variation-settings: "wght" var(--h0-fw);
     letter-spacing: var(--h0-ls);
     line-height: var(--h0-lh);
     max-width: var(--h0-mw);
@@ -75,6 +78,7 @@
     font-family: var(--h1-ff);
     font-size: var(--h1-fs);
     font-weight: var(--h1-fw);
+    font-variation-settings: "wght" var(--h1-fw);
     letter-spacing: var(--h1-ls);
     line-height: var(--h1-lh);
     max-width: var(--h1-mw);
@@ -86,6 +90,7 @@
     font-family: var(--h2-ff);
     font-size: var(--h2-fs);
     font-weight: var(--h2-fw);
+    font-variation-settings: "wght" var(--h2-fw);
     letter-spacing: var(--h2-ls);
     line-height: var(--h2-lh);
     max-width: var(--h2-mw);
@@ -97,6 +102,7 @@
     font-family: var(--h3-ff);
     font-size: var(--h3-fs);
     font-weight: var(--h3-fw);
+    font-variation-settings: "wght" var(--h3-fw);
     letter-spacing: var(--h3-ls);
     line-height: var(--h3-lh);
     max-width: var(--h3-mw);
@@ -108,6 +114,7 @@
     font-family: var(--h4-ff);
     font-size: var(--h4-fs);
     font-weight: var(--h4-fw);
+    font-variation-settings: "wght" var(--h4-fw);
     letter-spacing: var(--h4-ls);
     line-height: var(--h4-lh);
     max-width: var(--h4-mw);
@@ -119,6 +126,7 @@
     font-family: var(--h5-ff);
     font-size: var(--h5-fs);
     font-weight: var(--h5-fw);
+    font-variation-settings: "wght" var(--h5-fw);
     letter-spacing: var(--h5-ls);
     line-height: var(--h5-lh);
     max-width: var(--h5-mw);
@@ -130,6 +138,7 @@
     font-family: var(--h6-ff);
     font-size: var(--h6-fs);
     font-weight: var(--h6-fw);
+    font-variation-settings: "wght" var(--h6-fw);
     letter-spacing: var(--h6-ls);
     line-height: var(--h6-lh);
     max-width: var(--h6-mw);

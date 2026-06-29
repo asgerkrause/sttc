@@ -20,6 +20,8 @@ export const stylesFile = join(src, 'styles.css')
 export const appDir = join(src, 'app')
 export const stylesDir = join(src, 'styles')
 export const imagesDir = join(src, 'images')
+export const videosDir = join(src, 'videos')
+export const filesDir = join(src, 'files')
 
 export const legacyAssetsDir = join(src, 'assets')
 export const legacyAppDir = join(legacyAssetsDir, 'js')
@@ -60,6 +62,14 @@ export async function sourceStylesFile() {
 
 export async function sourceImagesDir() {
   return firstExisting(imagesDir, legacyImagesDir)
+}
+
+export async function sourceVideosDir() {
+  return videosDir
+}
+
+export async function sourceFilesDir() {
+  return filesDir
 }
 
 export function selectAppEntry(paths: { appTs: string; appJs: string; legacyAppJs: string }, found: Set<string>) {

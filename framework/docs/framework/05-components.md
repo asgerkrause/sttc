@@ -62,6 +62,36 @@ Combinations work:
 
 Build fails on missing required attrs, invalid enum values, unknown attrs on strict schemas, and PascalCase tag mismatches.
 
+## Build-time JSON data
+
+Components can include local build-only data for small static lists. The script is stripped from output and never runs in the browser.
+
+```html
+<!-- src/components/FeatureList.html -->
+<script type="application/json" data-snz>
+{
+  "items": [
+    { "label": "Fast" },
+    { "label": "Static" }
+  ]
+}
+</script>
+
+<ul>
+  {#each items as item}
+  <li>{{item.label}}</li>
+  {/each}
+</ul>
+```
+
+External component data uses the same `src/data/` rule:
+
+```html
+<script type="application/json" data-snz src="features.json"></script>
+```
+
+Attrs and slots still win over component data when names overlap.
+
 ## Attributes and slots
 
 Use `{{name}}` for attrs and `{{slot}}` for children.

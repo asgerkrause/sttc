@@ -9,6 +9,7 @@ import { join } from 'path'
 import { BuildError, lineOf } from './errors'
 import { fmString, fmStringArray, parseFrontMatter, render as renderMarkdown } from './markdown'
 import { root, src } from './paths'
+import { html as safeHtml, renderTemplate, type TemplateContext, type TemplateValue } from './template-directives'
 
 export type ContentFieldConfig = {
   name: string
@@ -84,10 +85,6 @@ async function loadTemplate(srcDir: string, name: string): Promise<string> {
   return readFile(path, 'utf8')
 }
 
-function substitute(template: string, vars: Record<string, string>) {
-  return template.replace(/\{\{(\w+)\}\}/g, (m, key) => vars[key] ?? m)
-}
-
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 }
@@ -125,6 +122,19 @@ function normalizeContentMediaRefs(value: string) {
     const name = file.split('/').pop()!.replace(CONTENT_MEDIA_EXT_RE, '')
     return `/assets/images/${name}.webp`
   })
+}
+
+function normalizeContentTemplateValue(value: unknown, file: string, source: string): TemplateValue {
+  if (typeof value === 'string') {
+    assertValidContentMediaRefs(value, file, source, Math.max(0, source.indexOf(value)))
+    return normalizeContentMediaRefs(value)
+  }
+  if (typeof value === 'number' || typeof value === 'boolean' || value == null) return value as TemplateValue
+  if (Array.isArray(value)) return value.map((item) => normalizeContentTemplateValue(item, file, source))
+  if (typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeContentTemplateValue(item, file, source)])) as TemplateValue
+  }
+  return String(value)
 }
 
 function assertValidContentMediaRefs(value: string, file: string, source: string, offset = 0) {
@@ -382,22 +392,27 @@ async function compileFile(
   const tags = normalizeContentTags(frontMatterTags.length ? frontMatterTags : parseTags(fmString(data, 'tags')))
   const draft = fmString(data, 'draft') === 'true' || fmString(data, 'draft') === '1'
   const flat: Record<string, string> = {}
+  const typedData: TemplateContext = {}
   for (const [k, v] of Object.entries(data)) {
-    const value = typeof v === 'string' ? v : v == null ? '' : JSON.stringify(v)
-    assertValidContentMediaRefs(value, sourceRel, raw, Math.max(0, raw.indexOf(String(v))))
-    flat[k] = normalizeContentMediaRefs(value)
+    const normalized = normalizeContentTemplateValue(v, sourceRel, raw)
+    typedData[k] = normalized
+    flat[k] = typeof normalized === 'string' ? normalized : normalized == null ? '' : JSON.stringify(normalized)
   }
-  const escapedFlat = Object.fromEntries(Object.entries(flat).map(([k, v]) => [k, escapeHtml(v)]))
-  const vars: Record<string, string> = {
-    ...escapedFlat,
-    title: escapeHtml(fmString(data, 'title')),
+  const vars: TemplateContext = {
+    ...typedData,
+    title: fmString(data, 'title'),
     slug,
     basename,
     collection: collection.name,
-    body: html,
-    tagsHtml: tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${escapeHtml(t)}" />`).join(' '),
+    body: safeHtml(html),
+    tagsHtml: safeHtml(tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${escapeHtml(t)}" />`).join(' ')),
   }
-  let composed = substitute(template, vars)
+  let composed = renderTemplate(template, vars, {
+    allowEach: true,
+    placeholders: true,
+    preserveUnknownPlaceholders: true,
+    file: sourceRel,
+  })
   if (draft && process.env.SNZ_DEV) {
     composed = composed.replace(/(<article[^>]*>)/, '$1\n<aside class="draft-banner">Draft — not in production build</aside>')
   }

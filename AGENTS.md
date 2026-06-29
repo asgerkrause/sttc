@@ -28,7 +28,9 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | `src/site.json` | Site config: name, url, description, ogImage, locale, scroll |
 | `src/styles.css`, `src/styles/*.css` | Global CSS import shell, tokens, reset, type, grid, wrappers, motion |
 | `src/app.ts` (`src/app.js` escape hatch) | Site code entry |
-| `src/images/` | Raster masters and opt-in PagesCMS uploads → built to webp at multiple sizes |
+| `src/images/` | Public raster masters and opt-in PagesCMS uploads → built to webp at multiple sizes |
+| `src/videos/` | Public video files → copied to `/assets/videos/` (future video pipeline source) |
+| `src/files/` | Public raw files (PDF, audio, downloads) → copied to `/assets/files/` |
 | `src/routes/**/*.html` | Legacy static route input; `src/pages` wins on collisions |
 | `src/styles/styles.css` | Legacy global CSS path |
 | `src/app/app.js` | Legacy app entry + optional runtime helpers |
@@ -116,6 +118,13 @@ Drafts (`draft: true`) are excluded from production builds, included in dev. Tag
 - `<Image src="hero" alt="..." max="1200" quality="82" />` — `max`/`quality` are pre-scanned to choose the largest needed size.
 - Lazy by default. Lazy images render a temporary `.img-tmp` preview over the main image; `loading="eager"` skips that preview for above-fold images. Main image has no private `.img-main` class.
 - OG: `src/images/og.png` → `dist/assets/og.webp` (+ `og.png` fallback).
+
+## Media files
+
+- `src/images/`, `src/videos/`, and `src/files/` are public source roots. Anything inside can be published; do not store private drafts there.
+- Videos copy raw from `src/videos/` to `dist/assets/videos/`. Add compression/transcoding later in this folder's pipeline, not as a new source root.
+- Files copy raw from `src/files/` to `dist/assets/files/` for PDFs, audio, zips, and downloads.
+- Build validates authored `/assets/images/*`, `/assets/videos/*`, and `/assets/files/*` references exist.
 
 ## Client framework (`router.js`)
 

@@ -166,6 +166,59 @@ describe('custom content collections', () => {
     })
   })
 
+  test('renders content template each blocks from front-matter arrays', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'projects'), { recursive: true })
+      await writeCollectionConfig(dir, [{
+        name: 'projects',
+        path: 'content/projects',
+        template: 'project.html',
+        route: 'work/{slug}',
+      }])
+      await writeFile(join(dir, 'src', 'templates', 'project.html'), '<ul>{#each services as service, i}<li data-i="{{i}}"><b>{{service.title}}</b><span>{{service.body}}</span></li>{/each}</ul>{{body}}')
+      await writeFile(join(dir, 'content', 'projects', 'acme.md'), '---\ntitle: Acme\nservices:\n  - title: Strategy\n    body: Positioning\n  - title: Build\n    body: "<script>bad()</script>"\n---\nBody')
+
+      const [route] = await compileContentFrom({ rootDir: dir, includeDrafts: false })
+
+      expect(route.body).toContain('<li data-i="0"><b>Strategy</b><span>Positioning</span></li>')
+      expect(route.body).toContain('<li data-i="1"><b>Build</b><span>&lt;script&gt;bad()&lt;/script&gt;</span></li>')
+      expect(route.body).toContain('<p>Body</p>')
+    })
+  })
+
+  test('renders content template else branches', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'pages'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'page.html'), '{#if image}<img src="{{image}}">{:else}<p>No image</p>{/if}{{body}}')
+      await writeFile(join(dir, 'content', 'pages', 'about.md'), '---\ntitle: About\n---\nBody')
+
+      const [route] = await compileContentFrom({ rootDir: dir, includeDrafts: false })
+
+      expect(route.body).toContain('<p>No image</p>')
+      expect(route.body).not.toContain('<img')
+    })
+  })
+
+  test('rejects content each blocks for non-array sources', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'pages'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'page.html'), '{#each title as item}<p>{{item}}</p>{/each}')
+      await writeFile(join(dir, 'content', 'pages', 'about.md'), '---\ntitle: About\n---\nBody')
+
+      await expect(compileContentFrom({ rootDir: dir, includeDrafts: false })).rejects.toThrow('Component each source "title" is not an array')
+    })
+  })
+
+  test('rejects malformed content each blocks', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'pages'), { recursive: true })
+      await writeFile(join(dir, 'src', 'templates', 'page.html'), '{#each services}<p>Bad</p>{/each}')
+      await writeFile(join(dir, 'content', 'pages', 'about.md'), '---\ntitle: About\nservices: [One]\n---\nBody')
+
+      await expect(compileContentFrom({ rootDir: dir, includeDrafts: false })).rejects.toThrow('Invalid component each')
+    })
+  })
+
   test('rejects invalid custom route patterns', async () => {
     await withProject(async (dir) => {
       await writeCollectionConfig(dir, [{

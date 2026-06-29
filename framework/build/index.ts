@@ -31,11 +31,13 @@ import { scanImageEncodeOptions } from './scan-images'
 import {
   sourceAppDir,
   sourceAppFile,
+  sourceFilesDir,
   sourceImagesDir,
   sourceRouterFile,
   sourceRuntimeLibDir,
   sourceStylesDir,
   sourceStylesFile,
+  sourceVideosDir,
 } from './paths'
 import { absoluteUrl, buildSchemaGraph, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
 import { compileContent, type ContentRoute } from './content'
@@ -43,6 +45,7 @@ import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
 import { copyTree, mediaInputCopyExclusions, shouldSkipMediaCopy } from './assets'
 import { autoGenerateIndexes } from './generated-routes'
+import { extractTemplateData } from './template-data'
 import { runChecks, failOnReport } from './check'
 import { routeSchemaExtras, writeDiscovery, type RouteRecord } from './discovery'
 import type { ComposeInstance } from './compose'
@@ -169,6 +172,8 @@ async function copyAssetsTo(context: BuildContext) {
   const imagesDist = join(assetsDist, 'images')
   await mkdir(imagesDist, { recursive: true })
   await copyTree(await sourceImagesDir(), imagesDist, (name) => !name.endsWith('.svg'))
+  await copyTree(await sourceVideosDir(), join(assetsDist, 'videos'))
+  await copyTree(await sourceFilesDir(), join(assetsDist, 'files'))
 }
 
 async function copyMediaFolderTo(context: BuildContext) {
@@ -244,7 +249,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const tick = (label: string, start: number) => { timings[label] = Math.round(performance.now() - start) }
 
   let t = performance.now()
-  const { cssBlocks, templates, schemas, scripts: componentScripts } = await prepareComponents(context.componentsDir)
+  const { cssBlocks, templates, schemas, scripts: componentScripts, data: componentData } = await prepareComponents(context.componentsDir)
   tick('components', t)
   let imageMeta: Record<string, ImageMeta> = {}
   const instancesByRoute = new Map<string, ComposeInstance[]>()
@@ -261,6 +266,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
       componentUseCounts.set(inst.name, (componentUseCounts.get(inst.name) ?? 0) + 1)
     },
     scriptComponentNames,
+    componentData,
   )
   composer.resetSiteConfig()
 
@@ -316,19 +322,24 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
 
   for (const route of await discoverSourceRoutes()) {
     const routeRaw = await readFile(route.sourcePath, 'utf8')
+    const { html: routeHtml, data: routeData } = await extractTemplateData(routeRaw, {
+      file: route.sourceRel,
+      projectRoot: context.rootDir,
+    })
     const owner = {
       slug: route.slug,
       kind: route.legacy ? 'legacy-static' as const : 'static' as const,
       source: route.sourceRel,
       outFile: route.outFile,
     }
-    const { body: withoutScripts, scripts } = extractRouteTopScripts(routeRaw, route.sourceRel)
+    const { body: withoutScripts, scripts } = extractRouteTopScripts(routeHtml, route.sourceRel)
     scriptBlocks.push(...routeScriptBlocks(route.slug, scripts))
 
     const { html: body, css } = extractRouteStyleBlocks(withoutScripts)
     const cssAsset = await bundleRouteCss(route.slug, css, componentsCssDir)
     await routeGraph.compose(owner, body, {
       headLinks: cssAsset ? [routeCssLink(cssAsset)] : undefined,
+      data: routeData,
     })
   }
 

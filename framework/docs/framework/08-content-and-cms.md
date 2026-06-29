@@ -66,16 +66,33 @@ Built-in content renders through:
 - `src/templates/post.html`
 - `src/templates/page.html`
 
-Templates can use front-matter placeholders and `{{body}}`:
+Templates can use front-matter placeholders, `{{body}}`, conditionals, and array loops:
 
 ```html
 <Section>
   <article class="w">
     <h1>{{title}}</h1>
+    {#if image}
+    <Image src="{{image}}" alt="{{title}}" />
+    {:else}
+    <p>No image yet.</p>
+    {/if}
     {{body}}
   </article>
 </Section>
 ```
+
+```html
+<Grid>
+  {#each services as service, i}
+  <Card title="{{service.title}}">
+    <p>{{service.body}}</p>
+  </Card>
+  {/each}
+</Grid>
+```
+
+`{#each}` reads YAML front-matter arrays. Use `as item` plus optional index alias (`as item, i`). No expressions, nesting, or `{:else if ...}` yet.
 
 Use PascalCase components in templates when layout matters. Avoid per-entry route files for posts/pages.
 
