@@ -7,6 +7,7 @@ import { componentsDir, src } from './paths'
 import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { COMPONENT_OPEN_RE, nextComponent, parseAttrs, type ComponentMatch } from './tags'
+import { polarProductsData } from './polar'
 import { renderPlaceholders, renderTemplate, type TemplateContext } from './template-directives'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
@@ -59,10 +60,11 @@ export function createComposer(
   onInstance?: (inst: ComposeInstance) => void,
   /** Names of components that have a lifecycle <script>. Their root gets data-snz-component. */
   scriptsByComponent?: Set<string>,
-  dataByComponent?: Map<string, TemplateContext>,
+  dataByComponent = new Map<string, TemplateContext>(),
 ) {
   let siteConfig: SiteConfig | null = null
   let currentRoute: string | undefined
+  let polarProducts: Promise<TemplateContext> | undefined
 
   async function loadSiteConfig(): Promise<SiteConfig> {
     if (siteConfig) return siteConfig
@@ -98,7 +100,7 @@ export function createComposer(
       preserveUnknownPlaceholders: true,
       preservePlaceholders: (path) => path === 'slot' || path.startsWith('slot:'),
       escapeStrings: false,
-    }).replace(/\s(?:id|data-theme|c|r|o)=""/g, '')
+    }).replace(/\s(?:id|data-theme|data-polar-checkout|c|r|o)=""/g, '')
   }
 
   function titleCase(slug: string) {
@@ -198,6 +200,22 @@ export function createComposer(
     if (name === 'Features') attrs.cols ??= '3-2'
     if (name === 'Partners') attrs.label ??= 'Trusted organizations'
     if (name === 'Pricing') attrs.cols ??= '3-3'
+    if (name === 'Products') {
+      attrs.cols ??= '3-2'
+      attrs.source ??= 'manual'
+      attrs.empty ??= 'No products available.'
+      dataByComponent.set('Products', { products: [] })
+      if (attrs.source === 'polar') {
+        polarProducts ??= polarProductsData()
+        dataByComponent.set('Products', await polarProducts)
+      }
+    }
+    if (name === 'Product') {
+      attrs.cta ??= 'Buy Now'
+      attrs.featured ??= 'false'
+      attrs.checkout ??= 'link'
+      attrs.embed = attrs.checkout === 'embed' ? 'true' : ''
+    }
     if (name === 'Plan') attrs.featured ??= 'false'
     if (name === 'Testimonials') attrs.cols ??= '2'
     if (name === 'Stats') attrs.cols ??= '3-3'
@@ -269,7 +287,7 @@ export function createComposer(
   }
 
   function renderConditionals(name: string, template: string, attrs: Record<string, string>, slots: ReturnType<typeof readSlots>) {
-    const componentData = dataByComponent?.get(name)
+    const componentData = dataByComponent.get(name)
     const context: TemplateContext = {
       ...(componentData ?? {}),
       ...attrs,

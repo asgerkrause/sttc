@@ -4,7 +4,7 @@
   @attr href Destination URL. Defaults to /.
   @attr size CSS height for the logo wrapper. Defaults to 1lh.
 -->
-<a class="logo" href="{{href}}" style="--logo-size: {{size}}">
+<a class="logo fw-b" href="{{href}}" style="--logo-size: {{size}}">
   {#if slot}
   <span class="logo-mark">{{slot}}</span>
   {/if}
@@ -19,7 +19,6 @@
     height: var(--logo-size, 1lh);
     line-height: 1;
     color: inherit;
-    font-weight: var(--fw-b);
     text-decoration: none;
     width: fit-content;
   }

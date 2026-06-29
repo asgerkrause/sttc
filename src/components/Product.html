@@ -1,0 +1,101 @@
+<!--
+  @desc Product card with price, description, and Polar checkout action.
+  @attr name! Product name.
+  @attr description Product description.
+  @attr price Product price label.
+  @attr interval Billing interval label.
+  @attr href Checkout or product URL.
+  @attr cta CTA label. Defaults to Buy Now.
+  @attr featured=[true|false] :class Highlight this product.
+  @attr checkout=[link|embed] Checkout behavior. embed adds Polar embed trigger attributes and loads Polar's embed helper.
+  @attr embed Internal embed flag set by checkout="embed".
+  @schema Product name=name,description=description
+-->
+<article class="product">
+  <div class="product-main">
+    <h3>{{name}}</h3>
+    {#if description}<p>{{description}}</p>{/if}
+  </div>
+  <div class="product-buy">
+    {#if price}<p class="product-price"><strong>{{price}}</strong><span>{{interval}}</span></p>{/if}
+    {#if href}
+    <a class="btn" href="{{href}}" data-polar-checkout="{{embed}}">{{cta}}</a>
+    {:else}
+    <span class="product-unavailable">Unavailable</span>
+    {/if}
+  </div>
+</article>
+
+<script>
+  if (el.querySelector('[data-polar-checkout="true"]') && !document.querySelector('script[data-snz-polar-checkout]')) {
+    const script = document.createElement('script')
+    script.src = 'https://cdn.jsdelivr.net/npm/@polar-sh/checkout@latest/dist/embed.global.js'
+    script.defer = true
+    script.dataset.autoInit = ''
+    script.dataset.snzPolarCheckout = ''
+    document.head.append(script)
+  }
+</script>
+
+<style>
+  .product {
+    display: grid;
+    align-content: space-between;
+    gap: var(--gp-lg);
+    min-height: 100%;
+    padding: var(--pd);
+    border: var(--bw) solid var(--b);
+    border-radius: var(--br);
+    background: var(--t);
+
+    &.true {
+      background: var(--i);
+      color: var(--s);
+      border-color: transparent;
+
+      p,
+      .product-price span { color: color-mix(in srgb, var(--s) 62%, var(--i)); }
+
+      .btn {
+        background: var(--s);
+        color: var(--i);
+      }
+    }
+
+    h3 { margin: 0; }
+
+    p { color: var(--g); }
+  }
+
+  .product-main,
+  .product-buy {
+    display: grid;
+    gap: var(--gp-sm);
+  }
+
+  .product-price {
+    margin: 0;
+
+    strong {
+      color: var(--i);
+      font-size: var(--h3-fs);
+      font-weight: var(--fw-r);
+      letter-spacing: var(--h3-ls);
+      line-height: var(--h3-lh);
+    }
+
+    span {
+      color: var(--g);
+      font-size: var(--sm-fs);
+    }
+  }
+
+  .product .btn {
+    width: fit-content;
+  }
+
+  .product-unavailable {
+    color: var(--g);
+    font-size: var(--sm-fs);
+  }
+</style>

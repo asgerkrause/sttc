@@ -32,6 +32,8 @@ See `framework/docs/components.md` in the framework package for the authoring co
 - [`<Markdown />`](#markdown) — Inline markdown rendered at build time. Put markdown source in the default slot.
 - [`<Marquee />`](#marquee) — Continuous slot-first marquee with scroll-reactive direction/speed and reduced-motion fallback.
 - [`<Masonry />`](#masonry) — Masonry-style grid that keeps source order and measures item row spans.
+- [`<Product />`](#product) — Product card with price, description, and Polar checkout action.
+- [`<Products />`](#products) — Product listing wrapper. Use Product cards in the slot, or source="polar" to render Polar products at build time.
 - [`<Radio />`](#radio) — Labeled native radio option.
 - [`<SEO />`](#seo) — Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or rely on defaults.
 - [`<Section />`](#section) — Semantic section with a .c container. No root class.
@@ -689,6 +691,75 @@ Masonry-style grid that keeps source order and measures item row spans.
 
 ```html
 <Masonry>Content</Masonry>
+```
+
+## Product
+
+Product card with price, description, and Polar checkout action.
+
+### Contract
+
+- Tag: `<Product>` can be self-closing.
+- Slots: none detected.
+- Unknown attributes: rejected when schema exists.
+- Class-mapped attrs: `featured` append value to root class.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `name` | yes | string | Product name. |
+| `description` | no | string | Product description. |
+| `price` | no | string | Product price label. |
+| `interval` | no | string | Billing interval label. |
+| `href` | no | string | Checkout or product URL. |
+| `cta` | no | string | CTA label. Defaults to Buy Now. |
+| `featured` | no | `true \| false` | Highlight this product. |
+| `checkout` | no | `link \| embed` | Checkout behavior. embed adds Polar embed trigger attributes and loads Polar's embed helper. |
+| `embed` | no | string | Internal embed flag set by checkout="embed". |
+
+### Variants / enums
+
+- `featured`: `true`, `false`
+- `checkout`: `link`, `embed`
+
+### Schema metadata
+
+- Emits JSON-LD: `Product`.
+- Field map: `name` ← `name`, `description` ← `description`.
+
+### Example
+
+```html
+<Product name="Example" />
+```
+
+## Products
+
+Product listing wrapper. Use Product cards in the slot, or source="polar" to render Polar products at build time.
+
+### Contract
+
+- Tag: `<Products>` wraps default slot content.
+- Slots: `default`.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `source` | no | `manual \| polar` | Product data source. Defaults to manual. |
+| `cols` | no | string | Grid column split. Defaults to 3-2. |
+| `empty` | no | string | Empty-state text. Defaults to No products available. |
+
+### Variants / enums
+
+- `source`: `manual`, `polar`
+
+### Example
+
+```html
+<Products>Content</Products>
 ```
 
 ## Radio

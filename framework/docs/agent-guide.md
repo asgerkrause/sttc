@@ -162,6 +162,28 @@ Place master in `src/images/hero.png` or a PagesCMS `media.input` image root (de
 
 Build emits responsive WebP variants under `/assets/images/`. Lazy images include a temporary `.img-tmp` preview that site code removes after the main image loads. `loading="eager"` skips the preview for above-fold images. The main image has no private `.img-main` class; target `.img-w img` or `.img-tmp` when styling. Keep each logical basename unique across image roots.
 
+### Add products with Polar
+
+Use product primitives for simple sales pages. Manual cards stay static:
+
+```html
+<Products>
+  <Product name="Starter" description="A focused first offer." price="$29" href="https://polar.sh/checkout/..." />
+</Products>
+```
+
+Polar catalog mode fetches at build time with a server-only organization token:
+
+```bash
+POLAR_ACCESS_TOKEN=polar_oat_... bun run build
+```
+
+```html
+<Products source="polar" />
+```
+
+Optional env: `POLAR_SERVER=sandbox` and `POLAR_ORGANIZATION_ID=...`. Never expose Polar organization tokens with `PUBLIC_*`. For inline checkout, use `<Product checkout="embed" ... />`; otherwise the CTA is a normal hosted checkout link.
+
 ### Add form
 
 Use form primitives for repeated contact or newsletter UI. The framework stays static-first: `Form` needs an explicit endpoint in `action`, and native browser validation owns required/email/pattern checks.

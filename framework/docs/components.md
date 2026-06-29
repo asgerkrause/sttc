@@ -242,6 +242,7 @@ Use attrs only for stable configuration: variant, theme, href, image source, acc
 | `Embed` | Responsive iframe wrapper for video/maps/rich media. |
 | `Button`, `Link` | Action / inline link primitives. |
 | `Card` | Flexible styled container. Put headings, copy, media, and actions in the slot. |
+| `Products`, `Product` | Product listing and card primitives. `Products source="polar"` fetches Polar products at build time with `POLAR_ACCESS_TOKEN`; `Product checkout="embed"` loads Polar's embed helper for inline checkout. |
 | `Accordion`, `FAQ` | Native `<details>` disclosure + demo composite. |
 | `Section` | Semantic section + `.c` container. No root class. |
 | `Markdown` | Inline build-time markdown (use slot for source). Supports headings, lists, tables, code, safe links/images, and PascalCase components. |

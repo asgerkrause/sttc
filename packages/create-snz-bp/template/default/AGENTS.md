@@ -66,7 +66,7 @@ For framework orientation, see package docs in `node_modules/@snz/bp/framework/d
 - Optional `<script>` block runs once per instance; `el` bound to the root, return a function for cleanup.
 - `<style>` colocated and auto-bundled into `dist/assets/css/components.{hash}.css`.
 
-Built-in components: `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`, `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus`.
+Built-in components: `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Product`, `Products`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`, `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus`.
 
 To spawn a new component via LLM, use the component contract in `node_modules/@snz/bp/framework/docs/components.md`. Or just write it yourself.
 
