@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from 'fs/promises'
-import { join } from 'path'
+import { isAbsolute, join } from 'path'
 import type { Composer, ComposeInstance } from './compose'
 import type { TemplateContext } from './template-directives'
 import {
@@ -8,13 +8,16 @@ import {
   scanInternalLinks,
   type RouteRecord,
 } from './discovery'
-import { dist } from './paths'
+import { dist, root } from './paths'
 import { RouteRegistry, type RouteOwner } from './routes'
+import { publicPathFromSlug } from '../runtime/lib/paths.js'
+import { sourceLastModified } from './source-files'
 
 export type RouteGraphOptions = {
   composer: Composer
   instancesFor?: (slug: string) => ComposeInstance[]
   distDir?: string
+  sourceRoot?: string
 }
 
 export type RouteComposeOptions = {
@@ -37,11 +40,27 @@ export class RouteGraph {
   #composer: Composer
   #instancesFor: (slug: string) => ComposeInstance[]
   #distDir: string
+  #sourceRoot: string
 
   constructor(options: RouteGraphOptions) {
     this.#composer = options.composer
     this.#instancesFor = options.instancesFor ?? (() => [])
     this.#distDir = options.distDir ?? dist
+    this.#sourceRoot = options.sourceRoot ?? root
+  }
+
+  async #sourceLastModified(source: string) {
+    if (source.startsWith('generated:')) return undefined
+    return sourceLastModified(isAbsolute(source) ? source : join(this.#sourceRoot, source))
+  }
+
+  #linkedLastModified(links: string[]) {
+    const modified = new Map(this.#records.map((record) => [publicPathFromSlug(record.slug), record.lastModified]))
+    return links
+      .map((link) => modified.get(link))
+      .filter((value): value is string => !!value)
+      .sort()
+      .at(-1)
   }
 
   async compose(owner: RouteOwner, body: string, options: RouteComposeOptions = {}) {
@@ -57,14 +76,18 @@ export class RouteGraph {
     await writeFile(outPath, html)
     this.#composed.push({ slug: route.slug, outFile: route.outFile, html })
 
+    const internalLinks = scanInternalLinks(html)
+    let lastModified = options.lastModified
+    if (!lastModified) lastModified = await this.#sourceLastModified(route.source)
+    if (!lastModified) lastModified = this.#linkedLastModified(internalLinks)
     this.#records.push({
       slug: route.slug,
       title: extractTitle(html),
       description: extractDescription(html),
       components: this.#instancesFor(route.slug),
-      internalLinks: scanInternalLinks(html),
+      internalLinks,
       schemas: options.schemas ?? ['WebPage'],
-      lastModified: options.lastModified ?? new Date().toISOString(),
+      lastModified,
     })
 
     return { route, html }

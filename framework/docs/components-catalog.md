@@ -38,6 +38,7 @@ See `framework/docs/components.md` in the framework package for the authoring co
 - [`<Tab />`](#tab) — Tab trigger for use inside Tabs. Match id with a TabPanel id.
 - [`<TabPanel />`](#tabpanel) — Tab panel for use inside Tabs. Match id with a Tab id.
 - [`<Tabs />`](#tabs) — Accessible tab set. Put <Tab> and matching <TabPanel> items in the default slot.
+- [`<Video />`](#video) — Responsive native video. Add `auto` or `auto="true"` for muted looping inline autoplay that the runtime pauses offscreen.
 
 ## Accordion
 
@@ -812,4 +813,37 @@ Accessible tab set. Put <Tab> and matching <TabPanel> items in the default slot.
 
 ```html
 <Tabs>Content</Tabs>
+```
+
+## Video
+
+Responsive native video. Add `auto` or `auto="true"` for muted looping inline autoplay that the runtime pauses offscreen.
+
+### Contract
+
+- Tag: `<Video>` can be self-closing.
+- Slots: none detected.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `src` | yes | string | Video URL or built video asset path. |
+| `poster` | no | string | Optional poster image URL. |
+| `label` | no | string | Accessible label for decorative/autoplay video. |
+| `title` | no | string | Accessible title when controls are visible. |
+| `auto` | no | string | Emits autoplay muted loop playsinline when present. |
+| `controls` | no | string | Shows native controls when present. |
+| `ratio` | no | string | Optional CSS aspect-ratio value, e.g. 16 / 9. |
+| `active` | no | `manual` | Set manual to opt out of framework activity guard. |
+
+### Variants / enums
+
+- `active`: `manual`
+
+### Example
+
+```html
+<Video src="example" />
 ```

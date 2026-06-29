@@ -84,6 +84,25 @@ Components can include local build-only data for small static lists. The script 
 </ul>
 ```
 
+Loops keep source order unless a sort clause is declared. Sort keys are item-relative dotted paths and can use multiple tie-breakers.
+
+```html
+{#each items sort name asc as item}
+<li>{{item.name}}</li>
+{/each}
+
+{#each cases sort featured desc, date desc as item}
+<Card title="{{item.title}}" />
+{/each}
+```
+
+Placeholders do not run JavaScript. Use built-in filters for common text transforms:
+
+```html
+{{service.name | lower}}
+{{service.name | slug}}
+```
+
 External component data uses the same `src/data/` rule:
 
 ```html
@@ -180,15 +199,7 @@ Build injects `data-snz-component="Name"` on root. Runtime mounts component scri
 
 ## Built-ins
 
-Core components:
-
-- `Header`, `Footer`, `Logo`
-- `SEO`
-- `Image`, `Embed`
-- `Button`, `Link`
-- `Card`, `Section`, `Grid`, `Stack`
-- `Accordion`, `FAQ`
-- `Markdown`, `Code`
+Read generated [`../components-catalog.md`](../components-catalog.md) for current built-in list, contracts, attrs, slots, and examples. Common primitives include `Section`, `Grid`, `Card`, `Button`, `Link`, `Image`, `Markdown`, `Accordion`, `FAQ`, and `SEO`.
 
 `Stack` exists for compatibility. Prefer `.w`.
 

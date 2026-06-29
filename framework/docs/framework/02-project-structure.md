@@ -14,9 +14,9 @@ Common paths in `@snz/bp` projects.
 | `src/app.js` | JavaScript escape hatch; do not keep with `src/app.ts`. |
 | `src/images/` | Source image masters. |
 | `src/routes/**/*.html` | Legacy route input. `src/pages` wins on collisions. |
-| `src/templates/{post,page}.html` | Optional CMS render templates. |
+| `src/templates/post.html` | Optional CMS post render template. |
+| `src/templates/*.html` | Optional custom collection render templates. |
 | `content/posts/*.md` | Optional posts, built under `/insights/{slug}/`. |
-| `content/pages/*.md` | Optional pages, built under `/{slug}/`. |
 | `content/collections.json` | Optional custom content collection config. |
 | `src/images/` | Optional CMS image uploads. |
 | `framework/runtime/router.js` | Client router and `window.snz` API. |

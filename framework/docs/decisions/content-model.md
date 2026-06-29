@@ -19,12 +19,12 @@ Most clones use [Pages CMS](https://pagescms.org/) lightly: marketing shells in 
 
 | Source | Who | URLs |
 | ------ | --- | ---- |
-| `src/routes/` | dev/agent | home, about, contact, 404, … |
+| `src/pages/` | dev/agent | home, about, contact, 404, … |
 | `content/posts/` | client (PagesCMS) | `/insights/{slug}/` after content compile |
-| `content/pages/` | client | `/{slug}/` long-tail routes after content compile |
+| `content/{custom}/` | client (PagesCMS) | configured record routes, e.g. `/work/{slug}/` |
 | `src/site.json` | client via PagesCMS `type: file` | SEO defaults |
 
-**Route templates** compile content at build time (`src/templates/post.html`, `src/templates/page.html`) — not one HTML file per post/page in `src/routes/`.
+**Route templates** compile posts and custom records at build time (`src/templates/post.html`, `src/templates/{custom}.html`) — not one HTML file per post/record in `src/pages/`.
 
 `.pages.yml`: `group` sidebar, `yaml-frontmatter`, `filename: "{primary}.md"`, split `src/images`.
 
@@ -34,7 +34,8 @@ Clean tree for agents; client-friendly editor (Insights + Site settings); router
 
 ## Consequences
 
-- Build compiles `content/posts/` and `content/pages/` into generated route files.
+- Build compiles `content/posts/` and custom collections into generated route files.
+- Generic CMS pages are intentionally removed; authored pages live in `src/pages/` to avoid page-builder drift.
 - Dev watches `content/` and rebuilds on edits.
 - Do not add per-post files under `src/routes/`.
 - Markdown renders at build time through `build/markdown.ts`; unsafe HTML and unsafe URLs fail loudly.

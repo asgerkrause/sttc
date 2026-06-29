@@ -156,7 +156,6 @@ bun run new cms
 
 Paths:
 
-- `content/pages/about.md` → `/about/`
 - `content/posts/intro.md` → `/insights/intro/`
 
 Frontmatter needs `title`.

@@ -9,6 +9,10 @@ const DISCLOSURE_SEL =
 const PRELOAD_DELAY_MS = 100
 const ROUTE_CACHE_TTL_MS = 5 * 60 * 1000
 const BACKGROUND_INVALIDATE_AFTER_MS = 10 * 60 * 1000
+const ACTIVE_MEDIA_SELECTOR = 'video[autoplay], audio[autoplay]'
+const ACTIVE_MANUAL_SELECTOR = '[data-active="manual"]'
+const DEFAULT_ACTIVE_THRESHOLD = 0
+const DEFAULT_MEDIA_THRESHOLD = 0.2
 
 const routeCache = new Map() // url -> { html, at }
 const routePending = new Map()
@@ -18,6 +22,10 @@ const beforeHandlers = new Set()
 const afterHandlers = new Set()
 const componentRegistry = new Map() // name -> Set<fn>
 const componentCleanups = new WeakMap() // el -> Array<fn>
+const visibilityObservers = new Map() // options key -> { observer, counts }
+const visibilitySubscriptions = new Set()
+const activeMediaCleanups = new WeakMap()
+const activeMediaPaused = new WeakMap()
 let navigationId = 0
 let navigationController = null
 
@@ -46,9 +54,11 @@ function mountComponents(root = document) {
     if (teardowns.length) componentCleanups.set(el, teardowns)
     el.setAttribute('data-snz-mounted', '')
   }
+  mountActiveMedia(root)
 }
 
 function unmountComponents(root) {
+  unmountActiveMedia(root)
   for (const el of componentRoots(root, '[data-snz-mounted]')) {
     const teardowns = componentCleanups.get(el)
     if (!teardowns) continue
@@ -64,6 +74,158 @@ function registerComponent(name, fn) {
   componentRegistry.get(name).add(fn)
   mountComponents()
   return () => componentRegistry.get(name)?.delete(fn)
+}
+
+function normalizeThreshold(value, fallback = DEFAULT_ACTIVE_THRESHOLD) {
+  const number = Number.parseFloat(value)
+  if (!Number.isFinite(number)) return fallback
+  return Math.min(1, Math.max(0, number))
+}
+
+function visibilityKey(options) {
+  return `${options.rootMargin}|${options.threshold}`
+}
+
+function isVisibleEntry(entry, threshold) {
+  return entry.isIntersecting && entry.intersectionRatio >= threshold
+}
+
+function getVisibilityObserver(options) {
+  const key = visibilityKey(options)
+  const existing = visibilityObservers.get(key)
+  if (existing) return existing
+
+  const bucket = {
+    counts: new Map(),
+    observer: new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        for (const sub of visibilitySubscriptions) {
+          if (sub.el !== entry.target || sub.key !== key) continue
+          updateVisibilitySubscription(sub, isVisibleEntry(entry, sub.threshold), entry)
+        }
+      }
+    }, { root: null, rootMargin: options.rootMargin, threshold: options.threshold }),
+  }
+  visibilityObservers.set(key, bucket)
+  return bucket
+}
+
+function notifyVisibilitySubscription(sub, entry) {
+  const state = sub.activeMode ? sub.active : sub.visible
+  const previous = sub.lastState
+  const detail = { visible: sub.visible, active: sub.active, entry, ratio: entry?.intersectionRatio ?? (sub.visible ? 1 : 0) }
+  sub.change?.(detail)
+  if (previous === state) return
+  sub.lastState = state
+  if (state) sub.enter?.(detail)
+  else sub.exit?.(detail)
+}
+
+function updateVisibilitySubscription(sub, visible, entry) {
+  sub.visible = visible
+  sub.active = visible && !document.hidden
+  notifyVisibilitySubscription(sub, entry)
+}
+
+function updateActiveSubscriptions() {
+  for (const sub of visibilitySubscriptions) {
+    if (!sub.activeMode) continue
+    sub.active = sub.visible && !document.hidden
+    notifyVisibilitySubscription(sub)
+  }
+}
+
+function observeVisibility(el, handlers = {}, activeMode = false) {
+  if (!(el instanceof Element)) return () => {}
+  const threshold = normalizeThreshold(handlers.threshold)
+  const rootMargin = typeof handlers.margin === 'string' ? handlers.margin : '0px'
+  const key = visibilityKey({ rootMargin, threshold })
+  const sub = { ...handlers, el, key, threshold, rootMargin, activeMode, visible: false, active: false, lastState: undefined }
+  visibilitySubscriptions.add(sub)
+
+  if (!('IntersectionObserver' in window)) {
+    updateVisibilitySubscription(sub, true)
+    return () => visibilitySubscriptions.delete(sub)
+  }
+
+  const bucket = getVisibilityObserver({ rootMargin, threshold })
+  const count = bucket.counts.get(el) ?? 0
+  bucket.counts.set(el, count + 1)
+  if (count === 0) bucket.observer.observe(el)
+
+  return () => {
+    visibilitySubscriptions.delete(sub)
+    const next = (bucket.counts.get(el) ?? 1) - 1
+    if (next <= 0) {
+      bucket.counts.delete(el)
+      bucket.observer.unobserve(el)
+    } else {
+      bucket.counts.set(el, next)
+    }
+  }
+}
+
+function onVisible(el, handlers = {}) {
+  return observeVisibility(el, handlers, false)
+}
+
+function onActive(el, handlers = {}) {
+  return observeVisibility(el, handlers, true)
+}
+
+function isVisible(el, options = {}) {
+  if (!(el instanceof Element)) return false
+  const threshold = normalizeThreshold(options.threshold)
+  const rect = el.getBoundingClientRect()
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+  const visibleWidth = Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0)
+  const visibleHeight = Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0)
+  if (visibleWidth <= 0 || visibleHeight <= 0 || rect.width <= 0 || rect.height <= 0) return false
+  return (visibleWidth * visibleHeight) / (rect.width * rect.height) >= threshold
+}
+
+function isActive(el, options = {}) {
+  return !document.hidden && isVisible(el, options)
+}
+
+function hasManualActive(el) {
+  return Boolean(el.closest?.(ACTIVE_MANUAL_SELECTOR))
+}
+
+function playMedia(media) {
+  const played = media.play()
+  if (played && typeof played.catch === 'function') played.catch(() => {})
+}
+
+function mountActiveMedia(root = document) {
+  for (const media of componentRoots(root, ACTIVE_MEDIA_SELECTOR)) {
+    if (activeMediaCleanups.has(media) || hasManualActive(media)) continue
+    const off = onActive(media, {
+      threshold: DEFAULT_MEDIA_THRESHOLD,
+      exit() {
+        if (media.paused) return
+        activeMediaPaused.set(media, true)
+        media.pause()
+      },
+      enter() {
+        if (!activeMediaPaused.get(media)) return
+        activeMediaPaused.delete(media)
+        playMedia(media)
+      },
+    })
+    activeMediaCleanups.set(media, off)
+  }
+}
+
+function unmountActiveMedia(root) {
+  for (const media of componentRoots(root, ACTIVE_MEDIA_SELECTOR)) {
+    const cleanup = activeMediaCleanups.get(media)
+    if (!cleanup) continue
+    cleanup()
+    activeMediaCleanups.delete(media)
+    activeMediaPaused.delete(media)
+  }
 }
 
 function wrapPage(raw) {
@@ -420,6 +582,10 @@ window.snz = {
   beforeNavigate: (fn) => (beforeHandlers.add(fn), () => beforeHandlers.delete(fn)),
   afterNavigate: (fn) => (afterHandlers.add(fn), () => afterHandlers.delete(fn)),
   track,
+  onVisible,
+  isVisible,
+  onActive,
+  isActive,
   _reload: reloadCurrentRoute,
   _registerComponent: registerComponent,
   _mountComponents: mountComponents,
@@ -494,6 +660,7 @@ window.addEventListener('popstate', () => render(location.pathname, { focus: tru
 // Invalidate route cache after long background
 let hiddenAt = 0
 document.addEventListener('visibilitychange', () => {
+  updateActiveSubscriptions()
   if (document.hidden) {
     hiddenAt = Date.now()
   } else if (hiddenAt && Date.now() - hiddenAt > BACKGROUND_INVALIDATE_AFTER_MS) {

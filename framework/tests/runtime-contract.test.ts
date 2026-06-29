@@ -11,6 +11,20 @@ describe('runtime ownership contracts', () => {
     expect(router).toContain('unmountComponents(main)')
   })
 
+  test('router owns viewport activity API and autoplay media guard', async () => {
+    const router = await readFile('framework/runtime/router.js', 'utf8')
+
+    expect(router).toContain('function onVisible')
+    expect(router).toContain('function onActive')
+    expect(router).toContain('function isVisible')
+    expect(router).toContain('function isActive')
+    expect(router).toContain('ACTIVE_MEDIA_SELECTOR')
+    expect(router).toContain("[data-active=\"manual\"]")
+    expect(router).toContain('video[autoplay], audio[autoplay]')
+    expect(router).toContain('DEFAULT_MEDIA_THRESHOLD = 0.2')
+    expect(router).toContain('updateActiveSubscriptions()')
+  })
+
   test('shells do not depend on site-owned component lifecycle helper', async () => {
     const rootShell = await readFile('src/shell.html', 'utf8')
     const starterShell = await readFile('templates/default/src/shell.html', 'utf8')

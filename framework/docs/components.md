@@ -104,6 +104,25 @@ Keep v1 simple: no expressions, nesting, or `{:else if ...}`. Components support
 {/each}
 ```
 
+Loops keep source order unless a sort clause is declared. Sort keys are item-relative dotted paths. Use one or more `path direction` pairs; missing values sort last.
+
+```html
+{#each items sort name asc as item}
+<p>{{item.name}}</p>
+{/each}
+
+{#each cases sort featured desc, date desc as item, i}
+<Card title="{{item.title}}"><p>{{i}}</p></Card>
+{/each}
+```
+
+Placeholders are data paths, not JavaScript expressions. For common text transforms, use the built-in filters:
+
+```html
+<p>In need of {{service.name | lower}}?</p>
+<a href="#{{service.name | slug}}">{{service.name}}</a>
+```
+
 ## Variants (combo classes + nested CSS, no BEM)
 
 `@attr variant=[...] :class` is the recommended pattern for component-specific variants:
@@ -141,7 +160,7 @@ Use design tokens from the global system. Layout: `--mw`, `--px`, `--py`, `--ss`
 
 ## Lifecycle scripts
 
-Optional `<script>` block runs once per instance. `el` is bound to the root element. Return a function for cleanup.
+Optional `<script>` block runs once per instance. `el` is bound to the root element. Return a function for cleanup. Scripts that run active work must use `snz.onActive` or `snz.onVisible`; build checks warn on loops, timers, media playback, or scroll animation without that guard.
 
 ```html
 <!--
@@ -164,6 +183,24 @@ Optional `<script>` block runs once per instance. `el` is bound to the root elem
 <style>
   .counter { /* ... */ }
 </style>
+```
+
+For animation loops or autoplay-like work, bind execution to activity so offscreen components stop doing work:
+
+```html
+<script>
+  let frame
+  function start() {
+    if (frame) return
+    frame = requestAnimationFrame(tick)
+  }
+  function stop() {
+    cancelAnimationFrame(frame)
+    frame = undefined
+  }
+  const off = window.snz?.onActive?.(el, { enter: start, exit: stop })
+  return () => { off?.(); stop() }
+</script>
 ```
 
 The build auto-injects `data-snz-component="{Name}"` on the template root. Runtime walks `[data-snz-component]:not([data-snz-mounted])` after each navigation and runs the wrapper.
@@ -194,7 +231,7 @@ Prefer slots for preset content so existing primitives compose inside them:
 
 Use attrs only for stable configuration: variant, theme, href, image source, accessible labels, IDs. Avoid prop-heavy presets that duplicate `Card`, `Grid`, `Button`, `Image`, or raw HTML.
 
-## Built-in components (30)
+## Built-in components
 
 | Component | Purpose |
 |---|---|

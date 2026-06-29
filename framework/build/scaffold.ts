@@ -1,7 +1,7 @@
 // CLI: bun run new <kind> <name> [--force] [--demo]
 //      bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]
-// kind: component | route | post | page | cms | collection
-// route writes src/pages/*.html. page remains CMS content page. cms has no name.
+// kind: component | route | post | cms | collection
+// route writes src/pages/*.html. cms has no name.
 // collection writes config/folder/template/editor scaffold; compiler owns compile.
 //
 // Writes the minimum viable shape for each. Refuses to overwrite without --force.
@@ -18,14 +18,18 @@ const force = args.includes('--force')
 const demo = args.includes('--demo')
 
 function usage(): never {
-  console.error('Usage: bun run new <component|route|post|page> <name> [--force] [--demo]')
+  console.error('Usage: bun run new <component|route|post> <name> [--force] [--demo]')
   console.error('       bun run new cms [--force]')
   console.error('       bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]')
   process.exit(1)
 }
 
 if (!kind) usage()
-if (!['component', 'route', 'post', 'page', 'cms', 'collection'].includes(kind)) usage()
+if (kind === 'page') {
+  console.error('CMS pages are not supported. Use `bun run new route <slug>` for authored pages or `bun run new collection <name>` for custom records.')
+  process.exit(1)
+}
+if (!['component', 'route', 'post', 'cms', 'collection'].includes(kind)) usage()
 if (kind !== 'cms' && !name) usage()
 
 const requiredName = name ?? ''
@@ -67,7 +71,7 @@ function singularize(value: string) {
 
 function validateCollectionName(value: string) {
   if (/^[a-z][a-z0-9-]*$/.test(value) && value !== 'posts' && value !== 'pages') return
-  console.error(`collection name must be a lowercase id and not posts/pages (got "${value}")`)
+  console.error(`collection name must be a lowercase id and not reserved (got "${value}")`)
   process.exit(1)
 }
 
@@ -136,20 +140,6 @@ content:
           - name: body
             type: rich-text
             required: true
-      - name: pages
-        label: Extra pages
-        type: collection
-        path: content/pages
-        format: yaml-frontmatter
-        filename: "{primary}.md"
-        subfolders: false
-        fields:
-          - name: title
-            type: string
-            required: true
-          - name: body
-            type: rich-text
-            required: true
   - name: site
     label: Site settings
     type: file
@@ -187,9 +177,8 @@ Editors add files here via [Pages CMS](https://pagescms.org/). Paths match \`.pa
 | Folder | CMS label | Live URL |
 | ------ | --------- | -------- |
 | \`content/posts/\` | Insights | \`/insights/{slug}/\` |
-| \`content/pages/\` | Extra pages | \`/{slug}/\` |
 
-Markdown renders to static HTML at build time. Supported: headings with anchors, lists, tables, blockquotes, code fences, safe links/images, and PascalCase components. Unsafe HTML and unsafe URL protocols fail the build.
+Markdown renders to static HTML at build time. Supported: headings with anchors, lists, tables, blockquotes, code fences, safe links/images, and PascalCase components. Unsafe HTML and unsafe URL protocols fail the build. Authored pages live in \`src/pages/\`, not PagesCMS.
 
 ## Custom collections
 
@@ -217,17 +206,6 @@ const postTemplate = `<head>
   <footer>
     <Link href="/" label="← Home" />
   </footer>
-</article>
-`
-
-const pageTemplate = `<head>
-  <SEO title="{{title}}" description="{{description}}" path="/{{basename}}/" />
-</head>
-<article class="page">
-  <h1>{{title}}</h1>
-  <div class="page-body">
-    {{body}}
-  </div>
 </article>
 `
 
@@ -352,15 +330,13 @@ if (kind === 'cms') {
   await writeIfMissing(join(root, '.pages.yml'), pagesYml)
   await writeIfMissing(join(root, 'content', 'README.md'), contentReadme)
   await writeIfMissing(join(root, 'content', 'posts', '.gitkeep'), '')
-  await writeIfMissing(join(root, 'content', 'pages', '.gitkeep'), '')
   const imageGitkeep = join(root, 'src', 'images', '.gitkeep')
   if (!(await exists(imageGitkeep))) await writeIfMissing(imageGitkeep, '')
   await writeIfMissing(join(root, 'src', 'templates', 'post.html'), postTemplate)
-  await writeIfMissing(join(root, 'src', 'templates', 'page.html'), pageTemplate)
   console.log('\nCMS scaffold ready.')
   console.log('Next steps:')
   console.log('- bun run new post hello-world')
-  console.log('- bun run new page about')
+  console.log('- bun run new route about')
   console.log('- bun run check')
 } else if (kind === 'component') {
   if (!/^[A-Z][A-Za-z0-9]*$/.test(requiredName)) {
@@ -410,21 +386,21 @@ if (kind === 'cms') {
 </Section>
 `
   await writeIfMissing(join(root, 'src', 'pages', `${requiredName}.html`), html)
-} else if (kind === 'post' || kind === 'page') {
+} else if (kind === 'post') {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(requiredName)) {
-    console.error(`${kind} slug must be kebab-case (got "${requiredName}")`)
+    console.error(`post slug must be kebab-case (got "${requiredName}")`)
     process.exit(1)
   }
-  const dir = kind === 'post' ? 'posts' : 'pages'
   const md = `---
 title: ${titleize(requiredName)}
 date: ${today}
 description: TODO
-${kind === 'post' ? 'tags: []\n' : ''}---
+tags: []
+---
 
 Write here.
 `
-  await writeIfMissing(join(root, 'content', dir, `${requiredName}.md`), md)
+  await writeIfMissing(join(root, 'content', 'posts', `${requiredName}.md`), md)
 } else if (kind === 'collection') {
   validateCollectionName(requiredName)
   const route = validateCollectionRoute(optionValue('--route') ?? `${requiredName}/{slug}`)

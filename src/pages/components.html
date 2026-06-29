@@ -151,11 +151,14 @@
 
 <Section id="marquee" theme="invert">
   <h2>Marquee</h2>
-  <Marquee label="Component marquee" speed="25" scroll="100" fade="true">
-    <span>Fast output</span>
-    <span>Slot-first components</span>
-    <span>Static by default</span>
-    <span>No runtime framework</span>
+  <Marquee label="Component marquee" speed="25" scroll="1.5" fade="true">
+    <Card><span>HTML-first authoring</span></Card>
+    <Card><span>Slot-first components</span></Card>
+    <Card><span>Static output</span></Card>
+    <Card><span>SPA feel, no SPA stack</span></Card>
+    <Card><span>Bun-native toolchain</span></Card>
+    <Card><span>Discovery built in</span></Card>
+    <Card><span>Agent-ready builds</span></Card>
   </Marquee>
 </Section>
 
@@ -172,22 +175,17 @@
 </Section>
 
 <Section id="media">
-  <h2>Image + Embed</h2>
+  <h2>Media</h2>
   <Grid cols="2">
     <div class="w">
       <h3>Eager image</h3>
       <Image src="r2" alt="Eager media example" loading="eager" max="1200" />
     </div>
     <div class="w">
-      <h3>Lazy image with tmp preview</h3>
-      <Image src="r4" alt="Lazy media example" max="1200" />
+      <h3>Autoplay video</h3>
+      <Video src="https://r2.snz.st/02.mp4" auto="true" ratio="16 / 9" label="Autoplay component video example" />
     </div>
   </Grid>
-  <div class="w">
-    <h3>Responsive by default</h3>
-    <p>Image masters live in <code>src/images</code> or configured PagesCMS <code>media.input</code> roots. Build emits optimized WebP variants.</p>
-    <Embed src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Example video embed" />
-  </div>
 </Section>
 
 <Section id="accordion">

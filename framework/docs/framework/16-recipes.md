@@ -210,17 +210,15 @@ bun run check
 bun run check
 ```
 
-## Add CMS pages/posts
+## Add CMS posts/records
 
-**Use when:** editable markdown content is needed.
+**Use when:** editable markdown posts or structured records are needed.
 
 **Files:**
 
 - `.pages.yml`
-- `content/pages/*.md`
 - `content/posts/*.md`
 - `src/images/*`
-- `src/templates/page.html`
 - `src/templates/post.html`
 
 **Steps:**
@@ -229,12 +227,13 @@ bun run check
 bun run new cms
 ```
 
-Page:
+Post:
 
 ```md
 ---
-title: About
-description: Company story.
+title: Intro
+date: 2026-05-26
+description: First post.
 ---
 
 Markdown body.
@@ -242,7 +241,6 @@ Markdown body.
 
 Paths:
 
-- `content/pages/about.md` → `/about/`
 - `content/posts/intro.md` → `/insights/intro/`
 
 **Avoid:**

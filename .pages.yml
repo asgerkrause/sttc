@@ -38,20 +38,6 @@ content:
           - name: body
             type: rich-text
             required: true
-      - name: pages
-        label: Extra pages
-        type: collection
-        path: content/pages
-        format: yaml-frontmatter
-        filename: "{primary}.md"
-        subfolders: false
-        fields:
-          - name: title
-            type: string
-            required: true
-          - name: body
-            type: rich-text
-            required: true
   - name: site
     label: Site settings
     type: file

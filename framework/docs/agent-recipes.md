@@ -145,17 +145,15 @@ Verify:
 bun run check
 ```
 
-## Add CMS scaffold/content page/post
+## Add CMS scaffold/content records
 
-Use when client needs editable pages or posts.
+Use when client needs editable posts or structured records.
 
 Likely files:
 
 - `.pages.yml`
-- `content/pages/*.md`
 - `content/posts/*.md`
 - `src/images/*`
-- `src/templates/page.html`
 - `src/templates/post.html`
 
 Steps:
@@ -164,12 +162,13 @@ Steps:
 bun run new cms
 ```
 
-Add page:
+Add post:
 
 ```md
 ---
-title: About
-description: Company story.
+title: Intro
+date: 2026-05-26
+description: First post.
 ---
 
 Markdown body.
@@ -177,7 +176,6 @@ Markdown body.
 
 Paths:
 
-- `content/pages/about.md` -> `/about/`
 - `content/posts/intro.md` -> `/insights/intro/`
 
 Common failures:

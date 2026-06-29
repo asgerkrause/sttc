@@ -104,12 +104,28 @@ function stripTags(s: string) {
   return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
 }
 
+function isoDate(value: string | undefined) {
+  if (!value) return undefined
+  const parsed = new Date(value)
+  return Number.isFinite(parsed.valueOf()) ? parsed.toISOString() : undefined
+}
+
+function contentDateModified(record: RouteRecord, content: ContentRoute) {
+  return isoDate(content.data.dateModified)
+    ?? isoDate(content.data.modified)
+    ?? isoDate(content.data.updated)
+    ?? record.lastModified
+    ?? content.date
+    ?? isoDate(content.data.date)
+}
+
 function blogPostingFor(record: RouteRecord, content: ContentRoute, site: SiteConfig): JsonLdNode {
   return {
     '@type': 'BlogPosting',
     headline: record.title,
     description: record.description,
     datePublished: content.date ?? content.data.date,
+    dateModified: contentDateModified(record, content),
     author: { '@type': 'Organization', name: site.name },
     url: absoluteUrl(site.url, publicPathFromSlug(record.slug)),
   }

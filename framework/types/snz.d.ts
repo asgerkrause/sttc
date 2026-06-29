@@ -12,6 +12,20 @@ declare global {
   type SnzAfterNavigateHandler = (detail: SnzPageDetail) => void
   type SnzComponentCleanup = () => void
   type SnzComponentMount = (el: HTMLElement) => void | SnzComponentCleanup
+  type SnzVisibilityDetail = {
+    visible: boolean
+    active: boolean
+    entry?: IntersectionObserverEntry
+    ratio: number
+  }
+  type SnzVisibilityHandler = (detail: SnzVisibilityDetail) => void
+  type SnzVisibilityOptions = {
+    threshold?: number
+    margin?: string
+    enter?: SnzVisibilityHandler
+    exit?: SnzVisibilityHandler
+    change?: SnzVisibilityHandler
+  }
 
   interface SnzRuntime {
     navigate(path: string): Promise<boolean>
@@ -21,6 +35,10 @@ declare global {
     beforeNavigate(fn: SnzBeforeNavigateHandler): () => void
     afterNavigate(fn: SnzAfterNavigateHandler): () => void
     track(event: string, data?: Record<string, unknown>): void
+    onVisible(el: Element, options?: SnzVisibilityOptions): () => void
+    isVisible(el: Element, options?: Pick<SnzVisibilityOptions, 'threshold'>): boolean
+    onActive(el: Element, options?: SnzVisibilityOptions): () => void
+    isActive(el: Element, options?: Pick<SnzVisibilityOptions, 'threshold'>): boolean
     _registerComponent(name: string, fn: SnzComponentMount): () => void
   }
 

@@ -343,7 +343,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     })
   }
 
-  // Compile content/posts and content/pages via templates → dist/routes/...
+  // Compile posts and configured content records via templates → dist/routes/...
   const contentRoutes = await compileContent()
   const contentByslug = new Map<string, ContentRoute>()
   for (const c of contentRoutes) {
@@ -360,7 +360,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const posts = contentRoutes.filter((c) => c.collection === 'posts' && !c.draft)
   await autoGenerateIndexes(routeGraph, posts)
 
-  await writeSitemap(context.distDir, site.url, routeGraph.slugs())
+  await writeSitemap(context.distDir, site.url, routeGraph.records())
   await writeRobots(context.distDir, site.url)
   await writeFeeds(context.distDir, site, posts)
 

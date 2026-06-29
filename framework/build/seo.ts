@@ -117,9 +117,28 @@ export function buildSchemaGraph(
   }
 }
 
-export async function writeSitemap(distDir: string, siteUrl: string, slugs: string[]) {
-  const paths = [...new Set(slugs.filter((s) => s !== '404').map(publicPathFromSlug))]
-  const lines = paths.map((p) => `  <url><loc>${absoluteUrl(siteUrl, p)}</loc></url>`)
+export type SitemapRoute = string | { slug: string; lastModified?: string }
+
+function sitemapSlug(route: SitemapRoute) {
+  return typeof route === 'string' ? route : route.slug
+}
+
+function sitemapLastModified(route: SitemapRoute) {
+  return typeof route === 'string' ? undefined : route.lastModified
+}
+
+export async function writeSitemap(distDir: string, siteUrl: string, routes: SitemapRoute[]) {
+  const entries = new Map<string, string | undefined>()
+  for (const route of routes) {
+    const slug = sitemapSlug(route)
+    if (slug === '404') continue
+    entries.set(publicPathFromSlug(slug), sitemapLastModified(route))
+  }
+
+  const lines = [...entries.entries()].map(([path, lastModified]) => {
+    const lastmod = lastModified ? `<lastmod>${lastModified}</lastmod>` : ''
+    return `  <url><loc>${absoluteUrl(siteUrl, path)}</loc>${lastmod}</url>`
+  })
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${lines.join('\n')}

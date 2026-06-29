@@ -1,7 +1,6 @@
-// Compiles built-in and optional custom markdown collections into in-memory routes.
-// Built-ins stay implicit:
+// Compiles built-in posts and optional custom markdown collections into in-memory routes.
+// Built-in stays implicit:
 // - content/posts/*.md → /insights/{slug}/ through src/templates/post.html
-// - content/pages/*.md → /{slug}/ through src/templates/page.html
 // Custom collections come from content/collections.json.
 
 import { readdir, readFile, stat } from 'fs/promises'
@@ -26,7 +25,7 @@ export type ContentCollectionConfig = {
   route: string
   required: string[]
   fields?: ContentFieldConfig[]
-  builtin?: 'posts' | 'pages'
+  builtin?: 'posts'
 }
 
 export type ContentRoute = {
@@ -60,18 +59,18 @@ const BUILTIN_COLLECTIONS: ContentCollectionConfig[] = [
     required: ['title'],
     builtin: 'posts',
   },
-  {
-    name: 'pages',
-    path: 'content/pages',
-    template: 'page.html',
-    route: '{slug}',
-    required: ['title'],
-    builtin: 'pages',
-  },
 ]
 
 async function exists(p: string) {
   try { await stat(p); return true } catch { return false }
+}
+
+async function markdownFiles(dir: string) {
+  try {
+    return (await readdir(dir)).filter((f) => f.endsWith('.md')).sort()
+  } catch {
+    return []
+  }
 }
 
 async function loadTemplate(srcDir: string, name: string): Promise<string> {
@@ -235,7 +234,7 @@ function normalizeContentPath(value: unknown) {
   }
   const normalized = parts.join('/')
   if (!normalized.startsWith('content/') || normalized === 'content/posts' || normalized === 'content/pages') {
-    configError('Custom collection path must be a non-built-in content subfolder', 'Use paths like content/projects. Built-in content/posts and content/pages stay implicit.')
+    configError('Custom collection path must be a non-built-in content subfolder', 'Use paths like content/projects. content/pages is reserved; authored pages belong in src/pages.')
   }
   return normalized
 }
@@ -293,7 +292,7 @@ function validateCustomCollection(raw: unknown): ContentCollectionConfig {
     configError('Custom collection name must be a lowercase id', 'Use [a-z][a-z0-9-]*, e.g. projects or team-members.')
   }
   if (name === 'posts' || name === 'pages') {
-    configError(`Custom collection name "${name}" is reserved`, 'Built-in posts and pages stay implicit; use another collection name.')
+    configError(`Custom collection name "${name}" is reserved`, 'Built-in posts stay implicit; authored pages belong in src/pages. Use another collection name.')
   }
 
   return {
@@ -449,14 +448,18 @@ export async function compileContentFrom(options: {
   const includeDrafts = options.includeDrafts ?? !!process.env.SNZ_DEV
   const out: ContentRoute[] = []
   const seenSlugs = new Map<string, string>()
+  const legacyPages = await markdownFiles(join(projectRoot, 'content', 'pages'))
+  if (legacyPages.length) {
+    throw new BuildError('Generic CMS pages are not supported', {
+      file: `content/pages/${legacyPages[0]}`,
+      hint: 'Move authored pages to src/pages, or create a named custom collection with `bun run new collection <name>`.',
+    })
+  }
 
   for (const collection of await loadContentCollections(projectRoot)) {
     const dir = join(projectRoot, collection.path)
     if (!(await exists(dir))) continue
-    let files: string[]
-    try {
-      files = (await readdir(dir)).filter((f) => f.endsWith('.md')).sort()
-    } catch { continue }
+    const files = await markdownFiles(dir)
     if (files.length === 0) continue
     const template = await loadTemplate(sourceRoot, collection.template)
     for (const f of files) {

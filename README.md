@@ -40,9 +40,9 @@ snz-bp doctor --launch             # launch-ready SEO/a11y/site gate
 snz-bp new route pricing           # scaffold src/pages/pricing.html
 snz-bp new component Hero          # scaffold src/components/Hero.html
 snz-bp new post hello-world        # scaffold content/posts/hello-world.md
-snz-bp new page about              # scaffold content/pages/about.md
+snz-bp new route about             # scaffold authored page route
 snz-bp new collection projects --route work/{slug} --template project
-snz-bp new cms                     # create PagesCMS/content/template surface
+snz-bp new cms                     # create posts-only PagesCMS/content surface
 snz-bp add component hero          # add private component preset
 snz-bp add component hero --demo   # also add demo invocation when styles page exists
 snz-bp add theme minimal           # append starter theme token block
@@ -143,8 +143,7 @@ framework/
 
 Invoked as `<PascalName />` or `<PascalName>children</PascalName>`. **One file per component.** Schema lives in a leading `<!-- @desc / @attr -->` comment at the top of each `.html`. Agent orientation is in [`framework/docs/agent-guide.md`](./framework/docs/agent-guide.md), client build flow in [`framework/docs/client-site-playbook.md`](./framework/docs/client-site-playbook.md), task recipes in [`framework/docs/agent-recipes.md`](./framework/docs/agent-recipes.md), and authoring contract in [`framework/docs/components.md`](./framework/docs/components.md).
 
-Built-ins (16):
-`Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`.
+Built-ins are generated from `src/components/*.html`; current contracts live in [`framework/docs/components-catalog.md`](./framework/docs/components-catalog.md). Common primitives include `Section`, `Grid`, `Card`, `Button`, `Link`, `Image`, `Markdown`, `Accordion`, `FAQ`, and `SEO`.
 
 Add a new component by handing [`framework/docs/component-prompt.md`](./framework/docs/component-prompt.md) to Claude, or just write it yourself.
 
@@ -184,7 +183,7 @@ Override SEO per route with a `<head>` wrapper:
 
 ## Content pipeline
 
-CMS support is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `src/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Minimal markdown subset.
+CMS support is opt-in and content-record focused. Run `bun run new cms` to create `.pages.yml`, `content/posts/`, `src/images/`, and `src/templates/post.html`. Authored pages stay in `src/pages/`; custom records use `bun run new collection`.
 
 Custom collections are opt-in too. `snz-bp new collection projects --route work/{slug} --template project` creates `content/projects/`, `src/templates/project.html`, a `content/collections.json` compiler entry, and a matching `.pages.yml` editor entry. Omit flags for defaults: `route: projects/{slug}`, `template: project.html`.
 
@@ -202,7 +201,7 @@ Body in **markdown**.
 
 Drafts (`draft: true`) are excluded from production builds, included in dev. Tags emit `/tags/{tag}/` indexes automatically. Generated `/insights/`, `/tags/`, and `/tags/{tag}/` routes fail loudly if authored/content routes already own those slugs.
 
-Custom collections are optional via `content/collections.json`. Built-in `posts` and `pages` stay implicit and reserved. A custom collection declares its markdown folder, template file in `src/templates/`, public route pattern, and required front-matter fields:
+Custom collections are optional via `content/collections.json`. Built-in `posts` stays implicit; `pages` is reserved so authored pages stay in `src/pages`. A custom collection declares its markdown folder, template file in `src/templates/`, public route pattern, and required front-matter fields:
 
 ```json
 {

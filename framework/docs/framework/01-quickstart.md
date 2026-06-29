@@ -106,7 +106,6 @@ Markdown body.
 
 Built-in paths:
 
-- `content/pages/about.md` → `/about/`
 - `content/posts/intro.md` → `/insights/intro/`
 
 Draft posts are excluded from production builds.

@@ -104,7 +104,7 @@ html[data-page="pricing"] .pricing-note {
 
 **Common collisions:**
 
-- `src/pages/about.html` and `content/pages/about.md`
+- `src/pages/about.html` and a generated content route with the same slug
 - generated `/insights/` and authored `/insights/`
 - custom collection route overlaps authored page
 

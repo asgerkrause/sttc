@@ -8,10 +8,10 @@
 Current content compile is intentionally small:
 
 - `content/posts/*.md` → `/insights/{slug}/` through `src/templates/post.html`
-- `content/pages/*.md` → `/{slug}/` through `src/templates/page.html`
+- optional custom collections compile through configured templates/routes
 - posts also feed `/insights/`, `/tags/`, RSS, JSON Feed, and `BlogPosting` schema
 
-Need custom collections for common client shapes (`projects`, `team`, `services`, `locations`) without turning the boilerplate into an enterprise CMS. Static `src/pages` and built-in posts/pages must stay simple.
+Need custom collections for common client shapes (`projects`, `team`, `services`, `locations`) without turning the boilerplate into an enterprise CMS or generic page builder. Static `src/pages` and built-in posts must stay simple.
 
 ## Decision
 
@@ -43,13 +43,14 @@ Recommended config file:
 
 Suggested path: `content/collections.json`.
 
-Built-ins remain implicit defaults and require no config:
+Built-in posts remain implicit and require no config:
 
 | Collection | Path | Template | Route | Extra behavior |
 | --- | --- | --- | --- | --- |
 | `posts` | `content/posts` | `post.html` | `insights/{slug}` | insights index, tag routes, feeds, `BlogPosting` |
-| `pages` | `content/pages` | `page.html` | `{slug}` | none |
 | custom | config `path` | config `template` | config `route` | none by default |
+
+Generic `content/pages` is not compiled. Authored pages belong in `src/pages/`; `pages` stays reserved so CMS config cannot recreate a page-builder lane by accident.
 
 ## Smallest model
 
@@ -206,13 +207,13 @@ hint: content/projects/acme.md (content) conflicts with src/pages/work/acme.html
 
 ## Migration path
 
-1. Refactor current hardcoded `posts`/`pages` into internal collection definitions with identical output.
-2. Keep existing `content/posts`, `content/pages`, templates, feeds, tags, and `.pages.yml` unchanged.
-3. Add optional `content/collections.json`; if absent, behavior stays current.
-4. Add one fixture collection (`projects`) in tests only; no starter bloat by default.
-5. Later, add `bun run new collection` to update both build config and `.pages.yml` together.
+1. Keep built-in `posts` as implicit collection definition.
+2. Remove implicit generic `content/pages`; authored pages stay in `src/pages`.
+3. Add optional `content/collections.json`; if absent, only posts compile.
+4. Keep fixture collection (`projects`) in tests only; no starter bloat by default.
+5. `bun run new collection` updates both build config and `.pages.yml` together.
 
-Existing sites need no migration unless they opt into custom collections.
+Existing sites using `content/pages` must migrate those markdown files to authored pages or a named custom collection.
 
 ## Implementation notes
 
@@ -238,7 +239,7 @@ type ContentCollectionConfig = {
   route: string
   required: string[]
   fields?: ContentFieldConfig[]
-  builtin?: 'posts' | 'pages'
+  builtin?: 'posts'
 }
 ```
 
@@ -246,7 +247,7 @@ type ContentCollectionConfig = {
 
 Add fixtures/tests before feature claim:
 
-- default no-config compile still emits posts/pages exactly as today
+- default no-config compile emits posts only; `content/pages` is ignored/rejected at scaffold surface
 - `projects` config compiles `content/projects/acme.md` through `src/templates/project.html` to `work/acme`
 - route pattern missing `{slug}` fails with file/hint
 - custom name `posts` or `pages` fails as reserved

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { mkdtemp, readFile, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { buildSchemaGraph, type SiteConfig } from '../build/seo'
+import { buildSchemaGraph, writeSitemap, type SiteConfig } from '../build/seo'
 import { MANIFEST_SCHEMA_VERSION, routeSchemaExtras, writeDiscovery } from '../build/discovery'
 import { GENERATOR_NAME, GENERATOR_VERSION } from '../build/version'
 
@@ -100,6 +100,34 @@ describe('AEO/GEO site facts', () => {
     })
   })
 
+  test('falls back to route lastModified for BlogPosting dateModified', () => {
+    const extras = routeSchemaExtras({
+      slug: 'insights/hello',
+      title: 'Hello',
+      description: 'Post page.',
+      components: [],
+      internalLinks: [],
+      schemas: ['WebPage'],
+      lastModified: '2026-05-27T08:00:00.000Z',
+    }, new Map(), {
+      slug: 'insights/hello',
+      routeFile: 'insights/hello.html',
+      body: '',
+      source: 'content/posts/hello.md',
+      data: { title: 'Hello', date: '2026-05-26', description: 'Post page.' },
+      date: '2026-05-26T00:00:00.000Z',
+      collection: 'posts',
+      markdown: 'Body',
+      tags: [],
+      draft: false,
+    }, baseSite)
+
+    expect(extras.extraJsonLd).toContainEqual(expect.objectContaining({
+      '@type': 'BlogPosting',
+      dateModified: '2026-05-27T08:00:00.000Z',
+    }))
+  })
+
   test('writes discovery version metadata without requiring rich site config', async () => {
     await withTempDir(async (distDir) => {
       await writeDiscovery(distDir, {
@@ -140,6 +168,7 @@ describe('AEO/GEO site facts', () => {
           components: [],
           internalLinks: [],
           schemas: ['WebPage'],
+          lastModified: '2026-05-27T08:00:00.000Z',
         }],
         componentSchemas: new Map(),
         componentUseCounts: new Map(),
@@ -148,7 +177,7 @@ describe('AEO/GEO site facts', () => {
           routeFile: 'insights/hello.html',
           body: '',
           source: 'content/posts/hello.md',
-          data: { title: 'Hello', date: '2026-05-26', description: 'Post page.' },
+          data: { title: 'Hello', date: '2026-05-26', dateModified: '2026-05-28', description: 'Post page.' },
           date: '2026-05-26T00:00:00.000Z',
           collection: 'posts',
           markdown: 'Body',
@@ -163,7 +192,24 @@ describe('AEO/GEO site facts', () => {
         '@type': 'BlogPosting',
         headline: 'Hello',
         datePublished: '2026-05-26T00:00:00.000Z',
+        dateModified: '2026-05-28T00:00:00.000Z',
       }))
+    })
+  })
+
+  test('writes sitemap lastmod when route records provide it', async () => {
+    await withTempDir(async (distDir) => {
+      await writeSitemap(distDir, baseSite.url, [
+        { slug: 'index', lastModified: '2026-05-26T10:30:00.000Z' },
+        { slug: '404', lastModified: '2026-05-26T10:30:00.000Z' },
+        'about',
+      ])
+
+      const sitemap = await readFile(join(distDir, 'sitemap.xml'), 'utf8')
+
+      expect(sitemap).toContain('<loc>https://example.com/</loc><lastmod>2026-05-26T10:30:00.000Z</lastmod>')
+      expect(sitemap).toContain('<loc>https://example.com/about/</loc></url>')
+      expect(sitemap).not.toContain('/404/')
     })
   })
 

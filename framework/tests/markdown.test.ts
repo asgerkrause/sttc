@@ -50,6 +50,15 @@ Intro
     expect(() => assertSafeContentMarkdown('Safe line\n<style>.x{}</style>', 'content/pages/bad.md')).toThrow(BuildError)
   })
 
+  test('allows controlled bare HTML tags and escapes unsafe attributes', () => {
+    expect(render('<br>')).toBe('<br>')
+    expect(render('<hr />')).toBe('<hr />')
+    expect(render('<br onclick=alert(1)>')).toBe('<p>&lt;br onclick=alert(1)&gt;</p>')
+    expect(render('<hr style="color:red">')).toBe('<p>&lt;hr style=&quot;color:red&quot;&gt;</p>')
+    expect(render('<span onclick="alert(1)">Bad</span>')).toBe('<p>&lt;span onclick=&quot;alert(1)&quot;&gt;Bad&lt;/span&gt;</p>')
+    expect(render('<span href="javascript:alert(1)">Bad</span>')).toBe('<p>&lt;span href=&quot;javascript:alert(1)&quot;&gt;Bad&lt;/span&gt;</p>')
+  })
+
   test('preserves PascalCase component passthrough', () => {
     expect(render('<Button label="Contact" href="/contact/" />')).toBe('<Button label="Contact" href="/contact/" />')
     expect(render('<Card title="A">Body</Card>')).toBe('<Card title="A">Body</Card>')

@@ -7,7 +7,7 @@ import { BuildError, lineOf } from './errors'
 const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }
 const FRONT_MATTER_RE = /^---\n([\s\S]*?)\n---\n?/
 const SAFE_COMPONENT_RE = /^(?:<\/?[A-Z][A-Za-z0-9]*(?:\s[^>]*)?>|<[A-Z][A-Za-z0-9]*(?:\s[^>]*)?>[\s\S]*<\/[A-Z][A-Za-z0-9]*>)\s*$/
-const SAFE_HTML_RE = /^<\/?(?:br|hr|sup|sub|small|mark|kbd|abbr|cite|span)(?:\s[^>]*)?>\s*$/i
+const SAFE_HTML_RE = /^<\/?(?:br|hr|sup|sub|small|mark|kbd|abbr|cite|span)\s*\/?>\s*$/i
 
 export type MarkdownOptions = {
   file?: string

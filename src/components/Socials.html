@@ -2,9 +2,15 @@
   @desc Social link navigation wrapper. Put <Social> items in the default slot.
   @attr label Accessible nav label. Defaults to Social links.
 -->
+{#if label}
 <nav class="socials" aria-label="{{label}}">
   {{slot}}
 </nav>
+{:else}
+<nav class="socials" aria-label="Social links">
+  {{slot}}
+</nav>
+{/if}
 
 <style>
   .socials {

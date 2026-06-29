@@ -102,7 +102,7 @@ try {
   await run(['bun', 'install'], localTarget)
   await run(['bun', 'run', 'new', 'cms'], localTarget)
   await run(['bun', 'run', 'new', 'post', 'smoke-post'], localTarget)
-  await run(['bun', 'run', 'new', 'page', 'smoke-page'], localTarget)
+  await run(['bun', 'run', 'new', 'route', 'smoke-page'], localTarget)
   await run(['bun', 'run', 'add', 'theme', 'minimal'], localTarget)
   await run(['bun', 'run', 'add', 'component', 'hero'], localTarget)
   await Bun.write(join(localTarget, 'src', 'pages', 'smoke.html'), `<head>

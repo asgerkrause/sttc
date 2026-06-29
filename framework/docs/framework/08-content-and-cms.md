@@ -8,7 +8,6 @@ SANITIZE Boilerplate keeps content static at runtime. Markdown and CMS files com
 | --- | --- | --- |
 | `src/pages/**/*.html` | authored routes | fixed marketing pages |
 | `content/posts/*.md` | `/insights/{slug}/` | insights/blog content |
-| `content/pages/*.md` | `/{slug}/` | editor-owned long-tail pages |
 | `content/collections.json` + custom folders | configured routes | optional project/team/service/location entries |
 | `src/site.json` | site metadata | SEO defaults, feeds, discovery artifacts |
 
@@ -32,12 +31,6 @@ Posts:
 
 ```txt
 content/posts/intro.md -> /insights/intro/
-```
-
-Pages:
-
-```txt
-content/pages/about.md -> /about/
 ```
 
 Minimum markdown file:
@@ -64,7 +57,6 @@ Drafts:
 Built-in content renders through:
 
 - `src/templates/post.html`
-- `src/templates/page.html`
 
 Templates can use front-matter placeholders, `{{body}}`, conditionals, and array loops:
 
@@ -92,9 +84,23 @@ Templates can use front-matter placeholders, `{{body}}`, conditionals, and array
 </Grid>
 ```
 
-`{#each}` reads YAML front-matter arrays. Use `as item` plus optional index alias (`as item, i`). No expressions, nesting, or `{:else if ...}` yet.
+`{#each}` reads YAML front-matter arrays. Use `as item` plus optional index alias (`as item, i`). Source order is preserved unless a sort clause is declared. Sort keys are item-relative dotted paths and can use multiple tie-breakers.
 
-Use PascalCase components in templates when layout matters. Avoid per-entry route files for posts/pages.
+```html
+{#each services sort title asc as service, i}
+<Card title="{{service.title}}">
+  <p>{{service.body | lower}}</p>
+</Card>
+{/each}
+
+{#each cases sort featured desc, date desc as item}
+<Card title="{{item.title}}" />
+{/each}
+```
+
+Placeholders support `lower` and `slug` filters. No JavaScript expressions, nesting, or `{:else if ...}` yet.
+
+Use PascalCase components in templates when layout matters. Avoid per-entry route files for posts; authored pages stay in `src/pages`.
 
 ## Markdown support
 

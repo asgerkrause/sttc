@@ -124,7 +124,6 @@ bun run new cms
 
 Built-in content paths:
 
-- `content/pages/about.md` -> `/about/`
 - `content/posts/intro.md` -> `/insights/intro/`
 
 Minimum frontmatter:
@@ -138,7 +137,7 @@ description: Why this page exists.
 Markdown body.
 ```
 
-Use `src/templates/page.html` and `src/templates/post.html` for content render shells. Keep PascalCase components in templates, not CMS body fields when layout matters.
+Use `src/templates/post.html` and custom collection templates for content render shells. Keep PascalCase components in templates, not CMS body fields when layout matters.
 
 ### 7. Style only as needed
 

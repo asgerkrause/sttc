@@ -14,7 +14,7 @@ Leading HTML comment in a component file. Uses directives such as `@desc`, `@att
 
 ## content collection
 
-Markdown content source. Built-in collections are `content/pages` and `content/posts`. Custom collections can be declared in `content/collections.json`.
+Markdown content source. Built-in content is `content/posts`; authored pages live in `src/pages`. Custom collections can be declared in `content/collections.json`.
 
 ## discovery artifacts
 
@@ -43,7 +43,7 @@ Optional `<script>` block inside a component. Runs once per mounted component in
 
 ## page
 
-HTML route source under `src/pages/**/*.html`, or markdown page under `content/pages/*.md` when CMS is enabled.
+HTML route source under `src/pages/**/*.html`.
 
 ## route
 

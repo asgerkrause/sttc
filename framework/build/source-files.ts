@@ -14,6 +14,14 @@ async function exists(path: string) {
   try { await stat(path); return true } catch { return false }
 }
 
+export async function sourceLastModified(path: string) {
+  try {
+    return (await stat(path)).mtime.toISOString()
+  } catch {
+    return undefined
+  }
+}
+
 function normalizeRel(path: string) {
   return path.replace(/\\/g, '/')
 }

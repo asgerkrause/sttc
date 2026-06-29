@@ -23,6 +23,7 @@
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
   let resizeObserver
   let frame
+  let offActive
   let railWidth = 0
   let x = 0
   let lastTime = performance.now()
@@ -65,6 +66,12 @@
     setVelocity(delta)
   }
 
+  function stop() {
+    if (!frame) return
+    cancelAnimationFrame(frame)
+    frame = undefined
+  }
+
   function tick(time) {
     const delta = time - lastTime
     lastTime = time
@@ -79,6 +86,12 @@
       track.style.transform = `translate3d(${-x}px, 0, 0)`
     }
 
+    frame = requestAnimationFrame(tick)
+  }
+
+  function start() {
+    if (frame) return
+    lastTime = performance.now()
     frame = requestAnimationFrame(tick)
   }
 
@@ -105,11 +118,12 @@
       el.addEventListener('focusin', () => setPaused(true))
       el.addEventListener('focusout', () => setPaused(false))
     }
-    frame = requestAnimationFrame(tick)
+    offActive = window.snz?.onActive?.(el, { enter: start, exit: stop })
   }
 
   return () => {
-    cancelAnimationFrame(frame)
+    offActive?.()
+    stop()
     resizeObserver?.disconnect()
     removeEventListener('resize', measure)
     removeEventListener('scroll', onScroll)

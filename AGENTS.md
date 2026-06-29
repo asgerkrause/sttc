@@ -34,9 +34,9 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | `src/routes/**/*.html` | Legacy static route input; `src/pages` wins on collisions |
 | `src/styles/styles.css` | Legacy global CSS path |
 | `src/app/app.js` | Legacy app entry + optional runtime helpers |
-| `src/templates/{post,page}.html` | Opt-in CMS render shells |
+| `src/templates/post.html` | Opt-in CMS post render shell |
+| `src/templates/*.html` | Custom collection render shells |
 | `content/posts/*.md` | Opt-in PagesCMS posts → `/insights/{slug}/` |
-| `content/pages/*.md` | Opt-in PagesCMS pages → `/{slug}/` |
 | `framework/runtime/lib/paths.js` | Shared by router (browser) + build (Bun) |
 | `framework/runtime/router.js` | Client framework, exposes `window.snz` |
 | `framework/build/` | Build pipeline (TypeScript, runs in Bun) |
@@ -83,7 +83,7 @@ Read **`framework/docs/agent-guide.md`** for framework orientation and **`framew
 - Optional `<script>` block runs once per instance; `el` bound to the root, return a function for cleanup.
 - `<style>` colocated and auto-bundled into `dist/assets/css/components.{hash}.css`.
 
-Built-in components (30): `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`.
+Built-in components: `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`.
 
 To spawn a new component via LLM, hand it `framework/docs/component-prompt.md`. Or just write the file yourself.
 
@@ -95,7 +95,7 @@ Inline `<script>` allowed only at the top of a route — auto-extracted and wrap
 
 ## Content pipeline
 
-CMS is opt-in. Run `bun run new cms` to create `.pages.yml`, `content/`, `src/images/`, and `src/templates/`. When `content/posts/*.md` or `content/pages/*.md` exist, they compile through `src/templates/{post,page}.html`. Front-matter must include `title`.
+CMS is opt-in and content-record focused. Run `bun run new cms` to create `.pages.yml`, `content/posts/`, `src/images/`, and `src/templates/post.html`. Authored pages stay in `src/pages/`; custom records use `bun run new collection`.
 
 ```yaml
 ---

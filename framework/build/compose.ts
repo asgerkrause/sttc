@@ -7,7 +7,7 @@ import { componentsDir, src } from './paths'
 import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { COMPONENT_OPEN_RE, nextComponent, parseAttrs, type ComponentMatch } from './tags'
-import { renderTemplate, type TemplateContext } from './template-directives'
+import { renderPlaceholders, renderTemplate, type TemplateContext } from './template-directives'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
 const LEGACY_COMMENT_RE = /<!--\s*@(component|seo)\b/
@@ -93,9 +93,12 @@ export function createComposer(
   }
 
   function substitute(template: string, attrs: Record<string, string>) {
-    return template
-      .replace(/\{\{(\w+)\}\}/g, (_, key) => attrs[key] ?? '')
-      .replace(/\s(?:id|data-theme|c|r|o)=""/g, '')
+    return renderPlaceholders(template, attrs, {
+      placeholders: true,
+      preserveUnknownPlaceholders: true,
+      preservePlaceholders: (path) => path === 'slot' || path.startsWith('slot:'),
+      escapeStrings: false,
+    }).replace(/\s(?:id|data-theme|c|r|o)=""/g, '')
   }
 
   function titleCase(slug: string) {

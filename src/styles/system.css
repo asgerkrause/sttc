@@ -18,7 +18,7 @@
     --mw-min: 30;
     --py-max: 10;
     --py-min: 6;
-    --px-max: 5;
+    --px-max: 1.5;
     --px-min: 1;
     --ss-max: 4;
     --ss-min: 2.5;
@@ -69,8 +69,8 @@
     --h6-min: 0.875;
     --lg-max: 1.25;
     --lg-min: 1.125;
-    --md-max: 1.125;
-    --md-min: 0.8;
+    --md-max: 1;
+    --md-min: 0.875;
     --sm-max: 0.75;
     --sm-min: 0.625;
 

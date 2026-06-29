@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdtemp, readFile, rm } from 'fs/promises'
+import { mkdir, mkdtemp, readFile, rm, utimes, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import type { Composer, ComposeInstance, RouteComposeInput } from '../build/compose'
@@ -52,6 +52,56 @@ describe('route graph', () => {
         internalLinks: ['/insights/one/'],
         schemas: ['CollectionPage'],
       }])
+    })
+  })
+
+  test('uses source file mtime as route lastModified when available', async () => {
+    await withTempDir(async (rootDir) => {
+      const source = join(rootDir, 'src', 'pages', 'about.html')
+      await mkdir(join(source, '..'), { recursive: true })
+      await writeFile(source, '<h1>About</h1>')
+      const modified = new Date('2026-05-26T10:30:00.000Z')
+      await utimes(source, modified, modified)
+
+      const graph = new RouteGraph({
+        composer: testComposer(),
+        distDir: join(rootDir, 'dist'),
+        sourceRoot: rootDir,
+      })
+
+      await graph.compose(
+        { slug: 'about', kind: 'static', source: 'src/pages/about.html' },
+        '<h1>About</h1>',
+      )
+
+      expect(graph.records()[0]?.lastModified).toBe(modified.toISOString())
+    })
+  })
+
+  test('derives generated route lastModified from linked route records', async () => {
+    await withTempDir(async (rootDir) => {
+      const source = join(rootDir, 'content', 'posts', 'hello.md')
+      await mkdir(join(source, '..'), { recursive: true })
+      await writeFile(source, 'hello')
+      const modified = new Date('2026-05-27T08:00:00.000Z')
+      await utimes(source, modified, modified)
+
+      const graph = new RouteGraph({
+        composer: testComposer(),
+        distDir: join(rootDir, 'dist'),
+        sourceRoot: rootDir,
+      })
+
+      await graph.compose(
+        { slug: 'insights/hello', kind: 'content', source: 'content/posts/hello.md' },
+        '<h1>Hello</h1>',
+      )
+      await graph.compose(
+        { slug: 'insights', kind: 'generated', source: 'generated:insights' },
+        '<a href="/insights/hello/">Hello</a>',
+      )
+
+      expect(graph.records().find((record) => record.slug === 'insights')?.lastModified).toBe(modified.toISOString())
     })
   })
 })

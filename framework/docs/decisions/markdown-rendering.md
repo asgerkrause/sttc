@@ -5,7 +5,7 @@
 
 ## Context
 
-Content should be easy for editors and useful for marketing sites without adding a runtime framework. Markdown powers CMS posts/pages and inline authoring through `<Markdown>`.
+Content should be easy for editors and useful for marketing sites without adding a runtime framework. Markdown powers CMS posts/custom records and inline authoring through `<Markdown>`.
 
 ## Chosen
 

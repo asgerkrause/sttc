@@ -307,23 +307,26 @@ describe('component preset scaffold', () => {
     }
   })
 
-  test('cms scaffold creates collection config, templates, and entries', async () => {
+  test('cms scaffold creates post/editor surface and rejects CMS pages', async () => {
     const dir = await tempProject()
     try {
       const cms = await runScaffold(['cms'], dir)
       const post = await runScaffold(['post', 'smoke-post'], dir)
       const page = await runScaffold(['page', 'about-us'], dir)
+      const pagesYml = await readFile(join(dir, '.pages.yml'), 'utf8')
 
       expect(cms.code).toBe(0)
       expect(cms.stdout).toContain('CMS scaffold ready')
       expect(post.code).toBe(0)
-      expect(page.code).toBe(0)
-      expect(await readFile(join(dir, '.pages.yml'), 'utf8')).toContain('path: content/posts')
+      expect(page.code).toBe(1)
+      expect(page.stderr).toContain('CMS pages are not supported')
+      expect(pagesYml).toContain('path: content/posts')
+      expect(pagesYml).not.toContain('path: content/pages')
       expect(await readFile(join(dir, 'content', 'README.md'), 'utf8')).toContain('content/posts/')
       expect(await readFile(join(dir, 'src', 'templates', 'post.html'), 'utf8')).toContain('/insights/{{basename}}/')
-      expect(await readFile(join(dir, 'src', 'templates', 'page.html'), 'utf8')).toContain('/{{basename}}/')
+      expect(await Bun.file(join(dir, 'src', 'templates', 'page.html')).exists()).toBe(false)
       expect(await readFile(join(dir, 'content', 'posts', 'smoke-post.md'), 'utf8')).toContain('title: Smoke Post')
-      expect(await readFile(join(dir, 'content', 'pages', 'about-us.md'), 'utf8')).toContain('title: About Us')
+      expect(await Bun.file(join(dir, 'content', 'pages', 'about-us.md')).exists()).toBe(false)
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

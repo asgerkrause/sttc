@@ -37,6 +37,10 @@ snz.prefetch('/contact/')
 snz.beforeNavigate(({ pathname, slug }) => true)
 snz.afterNavigate(({ main, slug, pathname }) => {})
 snz.track('CTA clicked', { location: 'hero' })
+snz.onVisible(el, { threshold: 0.2, enter() {}, exit() {} })
+snz.onActive(el, { enter: start, exit: stop })
+snz.isVisible(el)
+snz.isActive(el)
 ```
 
 `onPage` fires immediately when current page matches. It returns unsubscribe.
@@ -113,6 +117,31 @@ Use component `<script>` when behavior belongs to component instance.
 ```
 
 Runtime mounts component scripts after each navigation and runs returned cleanup before old route DOM is removed.
+
+Long-running component work must bind to activity. Use `snz.onActive` for `requestAnimationFrame` loops, timers, media playback, canvas/WebGL, and scroll-driven animation. Activity means the element is in the viewport and the document is not hidden.
+
+```html
+<script>
+  let frame
+  const start = () => {
+    if (frame) return
+    frame = requestAnimationFrame(tick)
+  }
+  const stop = () => {
+    cancelAnimationFrame(frame)
+    frame = undefined
+  }
+  const off = window.snz?.onActive?.(el, { threshold: 0.2, enter: start, exit: stop })
+  return () => { off?.(); stop() }
+</script>
+```
+
+Autoplay media is activity-managed by default. `video[autoplay]` and `audio[autoplay]` pause offscreen or in hidden tabs, then resume only when the runtime paused them. Add `data-active="manual"` on the media or an ancestor to opt out.
+
+```html
+<video autoplay muted loop playsinline src="/assets/videos/loop.mp4"></video>
+<video autoplay muted loop playsinline data-active="manual" src="/assets/videos/always-on.mp4"></video>
+```
 
 ## Disclosure behavior
 

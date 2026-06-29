@@ -23,6 +23,7 @@
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
   let resizeObserver
   let frame
+  let offActive
   let railWidth = 0
   let x = 0
   let lastTime = performance.now()
@@ -65,6 +66,12 @@
     setVelocity(delta)
   }
 
+  function stop() {
+    if (!frame) return
+    cancelAnimationFrame(frame)
+    frame = undefined
+  }
+
   function tick(time) {
     const delta = time - lastTime
     lastTime = time
@@ -79,6 +86,12 @@
       track.style.transform = `translate3d(${-x}px, 0, 0)`
     }
 
+    frame = requestAnimationFrame(tick)
+  }
+
+  function start() {
+    if (frame) return
+    lastTime = performance.now()
     frame = requestAnimationFrame(tick)
   }
 
@@ -105,11 +118,12 @@
       el.addEventListener('focusin', () => setPaused(true))
       el.addEventListener('focusout', () => setPaused(false))
     }
-    frame = requestAnimationFrame(tick)
+    offActive = window.snz?.onActive?.(el, { enter: start, exit: stop })
   }
 
   return () => {
-    cancelAnimationFrame(frame)
+    offActive?.()
+    stop()
     resizeObserver?.disconnect()
     removeEventListener('resize', measure)
     removeEventListener('scroll', onScroll)
@@ -119,21 +133,24 @@
 
 <style>
   .marquee {
-    --marquee-gap: var(--gp);
+    --mq-gp: var(--gp);
     overflow: hidden;
   }
 
   .marquee[data-fade="true"] {
-    mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+    mask-image: linear-gradient(to right, transparent, black var(--px), black calc(100% - var(--px)), transparent);
+    margin-left: calc(var(--px) * -1);
+    width: calc(100% + var(--px) * 2);
   }
 
   .marquee [data-marquee="track"] {
     display: flex;
     align-items: center;
-    gap: var(--marquee-gap);
+    gap: var(--mq-gp);
     width: max-content;
     min-width: 100%;
     will-change: transform;
+    padding-right: var(--mq-gp);
   }
 
   .marquee [data-marquee="rail"],
@@ -141,7 +158,7 @@
     display: inline-flex;
     flex: 0 0 auto;
     align-items: center;
-    gap: var(--marquee-gap);
+    gap: var(--mq-gp);
     min-width: max-content;
     text-wrap: nowrap;
   }

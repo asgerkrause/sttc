@@ -214,7 +214,7 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
     if (existing) fail(`${route.source}: content route collides with ${existing} at /${route.slug}/`)
   }
 
-  for (const template of ['post.html', 'page.html']) {
+  for (const template of ['post.html']) {
     const rel = `src/templates/${template}`
     const raw = await readFile(join(src, 'templates', template), 'utf8').catch(() => '')
     if (!raw) continue
@@ -244,6 +244,39 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
     } catch (err) {
       if (err instanceof BuildError) fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
       else fail(err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  await checkComponentActiveScripts(warn)
+}
+
+const COMPONENT_SCRIPT_RE = /<script(?![^>]*type=["']application\/ld\+json["'])(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi
+
+function hasRecursiveRaf(code: string) {
+  for (const match of code.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*{[\s\S]*?requestAnimationFrame\(\s*\1\s*\)/g)) {
+    if (match[1]) return true
+  }
+  return false
+}
+
+function activeScriptNeedsGuard(code: string) {
+  if (/snz\?\.on(?:Active|Visible)|snz\.on(?:Active|Visible)|window\.snz\?\.on(?:Active|Visible)|window\.snz\.on(?:Active|Visible)/.test(code)) return false
+  if (/new\s+IntersectionObserver\b/.test(code)) return false
+  return hasRecursiveRaf(code)
+    || /\bsetInterval\s*\(/.test(code)
+    || /\.play\s*\(/.test(code)
+    || /addEventListener\(\s*['"]scroll['"]/.test(code)
+}
+
+async function checkComponentActiveScripts(warn: (m: string) => void) {
+  let entries: string[]
+  try { entries = await readdir(componentsDir) } catch { return }
+  for (const file of entries.filter((entry) => entry.endsWith('.html')).sort()) {
+    const rel = `src/components/${file}`
+    const raw = await readFile(join(componentsDir, file), 'utf8').catch(() => '')
+    for (const match of raw.matchAll(COMPONENT_SCRIPT_RE)) {
+      const code = match[1] ?? ''
+      if (activeScriptNeedsGuard(code)) warn(`${rel}: component script appears to run active work without snz.onActive/onVisible`)
     }
   }
 }

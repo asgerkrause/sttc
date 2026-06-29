@@ -1,0 +1,30 @@
+<!--
+  @desc Responsive native video. Add `auto` or `auto="true"` for muted looping inline autoplay that the runtime pauses offscreen.
+  @attr src! Video URL or built video asset path.
+  @attr poster Optional poster image URL.
+  @attr label Accessible label for decorative/autoplay video.
+  @attr title Accessible title when controls are visible.
+  @attr auto Emits autoplay muted loop playsinline when present.
+  @attr controls Shows native controls when present.
+  @attr ratio Optional CSS aspect-ratio value, e.g. 16 / 9.
+  @attr active=[manual] Set manual to opt out of framework activity guard.
+-->
+<div class="vid-w"{#if ratio} style="aspect-ratio: {{ratio}}"{/if}>
+  <video src="{{src}}"{#if poster} poster="{{poster}}"{/if}{#if label} aria-label="{{label}}"{/if}{#if title} title="{{title}}"{/if}{#if auto} autoplay muted loop playsinline{/if}{#if controls} controls{/if}{#if active} data-active="{{active}}"{/if} preload="metadata"></video>
+</div>
+
+<style>
+  .vid-w {
+    overflow: hidden;
+    width: 100%;
+    border-radius: var(--br);
+    background: var(--t);
+
+    video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+</style>

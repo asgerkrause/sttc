@@ -166,7 +166,7 @@ Build emits responsive WebP variants under `/assets/images/`. Lazy images includ
 
 Use source roots by media class:
 
-- `src/videos/` → `/assets/videos/` for public video files. Passthrough today; future compression/transcoding belongs here.
+- `src/videos/` → `/assets/videos/` for public video files. Passthrough today; future compression/transcoding and a `<Video auto="true" />` component belong here.
 - `src/files/` → `/assets/files/` for public PDFs, audio, zips, and downloads.
 
 Anything in `src/images/`, `src/videos/`, or `src/files/` is publishable. Build validates authored `/assets/images/*`, `/assets/videos/*`, and `/assets/files/*` refs exist; it does not publish only detected usage.
@@ -197,7 +197,7 @@ CMS is opt-in. Scaffold the content surface first:
 bun run new cms
 ```
 
-Then add markdown. Built-in collections need no config: `content/pages/about.md` → `/about/`; `content/posts/intro.md` → `/insights/intro/`.
+Then add markdown. Built-in posts need no config: `content/posts/intro.md` → `/insights/intro/`. Authored pages use `src/pages`.
 
 ```md
 ---
@@ -265,6 +265,7 @@ bun run doctor
 - `{{slot}}` receives children.
 - `<slot name="x">...</slot>` fills `{{slot:x}}`.
 - Optional `<script>` runs per instance with `el` bound to root.
+- Active work (`requestAnimationFrame` loops, timers, media playback, canvas/WebGL, scroll animation) must use `snz.onActive` or `snz.onVisible` so offscreen work stops.
 - Optional `@schema Type field=attr` emits JSON-LD.
 
 Full contract: `framework/docs/components.md`.
@@ -280,7 +281,9 @@ Full contract: `framework/docs/components.md`.
 
 ## App scripts
 
-`src/app.ts` is the default site code entry and is bundled with `Bun.build`. Author code can use imports and TypeScript directly. Starter projects include `src/snz.d.ts` for typed `window.snz`, `snz:page`, and `snz:track` usage. `src/app.js` still works as an escape hatch, but do not keep both files; the build fails on ambiguous root app entries. Shell head scripts, component lifecycle scripts, and route top scripts are appended to the same hashed `dist/assets/js/app.{hash}.js` output. Only `PUBLIC_*` env vars are inlined.
+`src/app.ts` is the default site code entry and is bundled with `Bun.build`. Author code can use imports and TypeScript directly. Starter projects include `src/snz.d.ts` for typed `window.snz`, `snz:page`, `snz:track`, and active/visible helpers. `src/app.js` still works as an escape hatch, but do not keep both files; the build fails on ambiguous root app entries. Shell head scripts, component lifecycle scripts, and route top scripts are appended to the same hashed `dist/assets/js/app.{hash}.js` output. Only `PUBLIC_*` env vars are inlined.
+
+Autoplay media is activity-managed by default: `video[autoplay]` and `audio[autoplay]` pause offscreen or in hidden tabs, then resume only if the runtime paused them. Add `data-active="manual"` on the media or an ancestor to opt out.
 
 ## Vercel analytics intent
 
@@ -300,6 +303,10 @@ snz.onPage('*', fn)
 snz.prefetch('/contact/')
 snz.beforeNavigate(fn)
 snz.afterNavigate(fn)
+snz.onVisible(el, { threshold: 0.2, enter, exit })
+snz.onActive(el, { enter, exit })
+snz.isVisible(el)
+snz.isActive(el)
 ```
 
 ## Build/check loop

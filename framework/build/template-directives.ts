@@ -4,9 +4,12 @@ export type SafeHtml = { kind: 'html'; value: string }
 export type TemplateValue = string | number | boolean | null | undefined | SafeHtml | TemplateValue[] | { [key: string]: TemplateValue }
 export type TemplateContext = Record<string, TemplateValue>
 
+type SortDirection = 'asc' | 'desc'
+type SortKey = { path: string; direction: SortDirection }
+
 type DirectiveToken =
   | { kind: 'ifOpen'; expr: string; index: number; end: number }
-  | { kind: 'eachOpen'; source: string; alias: string; indexAlias?: string; index: number; end: number }
+  | { kind: 'eachOpen'; source: string; alias: string; indexAlias?: string; sort?: SortKey[]; index: number; end: number }
   | { kind: 'else'; index: number; end: number }
   | { kind: 'elseIf'; expr: string; index: number; end: number }
   | { kind: 'close'; name: 'if' | 'each'; index: number; end: number }
@@ -15,14 +18,17 @@ type RenderOptions = {
   placeholders?: boolean
   preserveUnknownPlaceholders?: boolean
   preservePlaceholders?: (path: string) => boolean
+  escapeStrings?: boolean
   allowEach?: boolean
   file?: string
 }
 
 const TOKEN_RE = /\{#if\s+([^}]+)\}|\{#each\s+([^}]+)\}|\{:else\s+if\s+([^}]+)\}|\{:else\}|\{\/(if|each)\}/g
-const PLACEHOLDER_RE = /\{\{\s*([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\}\}/g
+const PLACEHOLDER_RE = /\{\{\s*([^}]+?)\s*\}\}/g
 const PATH_RE = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/
-const EACH_EXPR_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s+as\s+([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?$/
+const EACH_EXPR_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)(?:\s+sort\s+(.+?))?\s+as\s+([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?$/
+const SORT_ITEM_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s+(asc|desc)$/
+const FILTER_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\|\s*([A-Za-z_$][\w$]*)$/
 
 function assertNever(value: never): never {
   throw new Error(`Unhandled template directive token ${(value as { kind?: string }).kind}`)
@@ -47,6 +53,30 @@ function valueToString(value: TemplateValue, rawHtml: boolean) {
   return escapeHtml(String(value))
 }
 
+function valueToRawString(value: TemplateValue) {
+  if (value == null) return ''
+  if (isSafeHtml(value)) return value.value
+  if (Array.isArray(value) || typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function applyFilter(value: TemplateValue, filter: string): TemplateValue {
+  const text = valueToString(value, false)
+  if (filter === 'lower') return text.toLowerCase()
+  if (filter === 'slug') return slugify(text)
+  throw new BuildError(`Unknown component placeholder filter "${filter}"`, {
+    hint: 'Supported filters: lower, slug.',
+  })
+}
+
 function getPath(context: TemplateContext, path: string): TemplateValue {
   if (Object.prototype.hasOwnProperty.call(context, path)) return context[path]
   const parts = path.split('.')
@@ -66,19 +96,33 @@ function isTruthy(value: TemplateValue) {
   return true
 }
 
+function parseSort(sort: string): SortKey[] {
+  return sort.split(',').map((raw) => {
+    const item = raw.trim()
+    const match = item.match(SORT_ITEM_RE)
+    if (!match) {
+      throw new BuildError(`Invalid component each sort "${item}"`, {
+        hint: 'Use sort name asc or sort name desc. Multiple keys: sort featured desc, date desc.',
+      })
+    }
+    return { path: match[1]!, direction: match[2]! as SortDirection }
+  })
+}
+
 function parseEachExpr(expr: string, index: number, end: number): DirectiveToken {
   const match = expr.trim().match(EACH_EXPR_RE)
   if (!match) {
     throw new BuildError(`Invalid component each "${expr.trim()}"`, {
-      hint: 'Use {#each items as item} or {#each items as item, i}. No expressions yet.',
+      hint: 'Use {#each items as item}, {#each items as item, i}, or {#each items sort name asc as item}. No expressions yet.',
     })
   }
   const source = match[1]!
-  const alias = match[2]!
-  const indexAlias = match[3]
+  const sort = match[2] ? parseSort(match[2]) : undefined
+  const alias = match[3]!
+  const indexAlias = match[4]
   return indexAlias
-    ? { kind: 'eachOpen', source, alias, indexAlias, index, end }
-    : { kind: 'eachOpen', source, alias, index, end }
+    ? { kind: 'eachOpen', source, alias, indexAlias, sort, index, end }
+    : { kind: 'eachOpen', source, alias, sort, index, end }
 }
 
 function tokenize(template: string): DirectiveToken[] {
@@ -131,14 +175,59 @@ function findClose(tokens: DirectiveToken[], open: DirectiveToken, start: number
   })
 }
 
-function renderPlaceholders(segment: string, context: TemplateContext, options: RenderOptions) {
+export function renderPlaceholders(segment: string, context: TemplateContext, options: RenderOptions) {
   if (!options.placeholders) return segment
-  return segment.replace(PLACEHOLDER_RE, (full, path) => {
+  return segment.replace(PLACEHOLDER_RE, (full, expr) => {
+    const raw = String(expr).trim()
+    const filterMatch = raw.match(FILTER_RE)
+    const path = filterMatch ? filterMatch[1]! : raw
+    if (!PATH_RE.test(path)) {
+      throw new BuildError(`Invalid component placeholder "${raw}"`, {
+        hint: 'Use {{name}}, {{item.name}}, {{name | lower}}, or {{name | slug}}. No expressions yet.',
+      })
+    }
     if (options.preservePlaceholders?.(path)) return full
     const value = getPath(context, path)
     if (value === undefined && options.preserveUnknownPlaceholders) return full
-    return valueToString(value, true)
+    const rendered = filterMatch ? applyFilter(value, filterMatch[2]!) : value
+    return options.escapeStrings === false ? valueToRawString(rendered) : valueToString(rendered, true)
   })
+}
+
+function sortableValue(value: TemplateValue): string | number | undefined {
+  if (value == null || isSafeHtml(value) || Array.isArray(value) || typeof value === 'object') return undefined
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined
+  if (typeof value === 'boolean') return value ? 1 : 0
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  const numeric = Number(trimmed)
+  if (trimmed !== '' && Number.isFinite(numeric)) return numeric
+  const timestamp = Date.parse(trimmed)
+  if (Number.isFinite(timestamp) && /^\d{4}-\d{2}-\d{2}/.test(trimmed)) return timestamp
+  return trimmed
+}
+
+function compareValues(a: TemplateValue, b: TemplateValue, direction: SortDirection) {
+  const av = sortableValue(a)
+  const bv = sortableValue(b)
+  const dir = direction === 'asc' ? 1 : -1
+  if (av === undefined && bv === undefined) return 0
+  if (av === undefined) return 1
+  if (bv === undefined) return -1
+  if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
+  return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' }) * dir
+}
+
+function sortedEachSource(source: TemplateValue[], sort: SortKey[] | undefined) {
+  if (!sort?.length) return source
+  return source.map((item, index) => ({ item, index })).sort((a, b) => {
+    const context = { item: a.item, other: b.item }
+    for (const key of sort) {
+      const result = compareValues(getPath(context, `item.${key.path}`), getPath(context, `other.${key.path}`), key.direction)
+      if (result !== 0) return result
+    }
+    return a.index - b.index
+  }).map(({ item }) => item)
 }
 
 export function renderTemplate(template: string, context: TemplateContext, options: RenderOptions = {}): string {
@@ -183,7 +272,7 @@ export function renderTemplate(template: string, context: TemplateContext, optio
           })
         }
         const body = template.slice(token.end, close.token.index)
-        out += source.map((item, index) => renderTemplate(body, {
+        out += sortedEachSource(source, token.sort).map((item, index) => renderTemplate(body, {
           ...context,
           [token.alias]: item,
           ...(token.indexAlias ? { [token.indexAlias]: index } : {}),
