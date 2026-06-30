@@ -44,6 +44,18 @@ describe('build path contracts', () => {
     expect(slugFromPath('/work/case/')).toBe('work/case')
   })
 
+  test('prunes optional unresolved placeholders from component attributes', async () => {
+    const seoTemplate = await readFile('src/components/SEO.html', 'utf8')
+    const boxTemplate = '<section id="{{id}}" data-theme="{{theme}}" class="c {{center}}" style="--x: {{x}}; color: red">{{slot}}</section>'
+    const composer = createComposer(new Map([['SEO', seoTemplate], ['Box', boxTemplate]]), new Map(), () => ({}))
+
+    const html = await composer.prepareRouteSource('<Box><p>Hi</p></Box>', { slug: 'index', fileHint: 'test.html' })
+
+    expect(html).toContain('<section class="c" style="color: red"><p>Hi</p></section>')
+    expect(html).not.toContain('{{theme}}')
+    expect(html).not.toContain('data-theme')
+  })
+
   test('slugifies generated tag routes predictably', () => {
     expect(slugifyTag('Bun Native')).toBe('bun-native')
     expect(slugifyTag('Ångström & SEO')).toBe('angstrom-seo')

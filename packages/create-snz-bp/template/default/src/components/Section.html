@@ -2,7 +2,11 @@
   @desc Semantic section with a .c container. No root class.
   @attr id Optional section id.
   @attr theme Optional data-theme value.
+  @attr center=[center] Optional center alignment for the inner .c container.
+  @attr scroll Optional data-scroll timeline name.
+  @attr video Optional decorative background video URL.
 -->
-<section id="{{id}}" data-theme="{{theme}}">
-  <div class="c">{{slot}}</div>
+<section id="{{id}}" data-theme="{{theme}}" data-scroll="{{scroll}}">
+  {#if video}<video data-hero-bg src="{{video}}" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>{/if}
+  <div class="c {{center}}">{{slot}}</div>
 </section>

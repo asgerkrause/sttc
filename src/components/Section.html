@@ -6,7 +6,7 @@
   @attr scroll Optional data-scroll timeline name.
   @attr video Optional decorative background video URL.
 -->
-<section{#if id} id="{{id}}"{/if}{#if theme} data-theme="{{theme}}"{/if}{#if scroll} data-scroll="{{scroll}}"{/if}>
+<section id="{{id}}" data-theme="{{theme}}" data-scroll="{{scroll}}">
   {#if video}<video data-hero-bg src="{{video}}" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>{/if}
   <div class="c {{center}}">{{slot}}</div>
 </section>

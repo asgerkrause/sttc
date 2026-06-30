@@ -5,8 +5,6 @@
 <style>
   #hero {
     min-height: 100svh;
-    margin-top: calc(var(--hdr-h, 4rem) * -1);
-    padding-top: calc(var(--py) + var(--hdr-h, 4rem));
     position: relative;
     isolation: isolate;
     overflow: hidden;
@@ -20,7 +18,8 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: color-mix(in srgb, var(--n100) 45%, transparent);
+    background: var(--d);
+    opacity: .5;
   }
 
   #hero [data-hero-bg] {
@@ -33,7 +32,6 @@
   }
 
   #hero .c {
-    min-height: calc(100svh - var(--hdr-h, 4rem) - var(--py));
     align-items: center;
     justify-content: end;
     padding-bottom: var(--py);
