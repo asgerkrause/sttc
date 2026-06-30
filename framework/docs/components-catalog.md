@@ -834,6 +834,13 @@ Semantic section with a .c container. No root class.
 |---|---|---|---|
 | `id` | no | string | Optional section id. |
 | `theme` | no | string | Optional data-theme value. |
+| `center` | no | `center` | Optional center alignment for the inner .c container. |
+| `scroll` | no | string | Optional data-scroll timeline name. |
+| `video` | no | string | Optional decorative background video URL. |
+
+### Variants / enums
+
+- `center`: `center`
 
 ### Accessibility notes
 

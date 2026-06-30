@@ -8,7 +8,7 @@
   }
 
   :root {
-    color-scheme: dark;
+    color-scheme: dark light;
     interpolate-size: allow-keywords;
     hanging-punctuation: first last;
     text-wrap: pretty;

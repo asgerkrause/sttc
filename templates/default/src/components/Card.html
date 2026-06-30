@@ -3,7 +3,7 @@
   @attr variant=[default|outlined|ghost] :class Visual variant.
   @attr theme=[tone|accent|invert] Optional data-theme value.
 -->
-<article class="crd" data-theme="{{theme}}">{{slot}}</article>
+<article class="crd"{#if theme} data-theme="{{theme}}"{/if}>{{slot}}</article>
 
 <style>
   .crd:has(.img-w) {

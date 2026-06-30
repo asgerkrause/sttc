@@ -24,9 +24,21 @@
 
 <style>
   body>header {
-  background: var(--s);
+  --hdr-h: 4rem;
+  --hdr-fade: 1px;
+  --hdr-bg: var(--s);
+  --hdr-fg: var(--i);
+  --hdr-b: var(--b);
+  --hdr-hero-bg: var(--s10);
+  --hdr-hero-fg: var(--i);
+  --hdr-hero-b: var(--b);
+
+  background: var(--hdr-bg);
+  color: var(--hdr-fg);
   view-transition-name: header;
+  backdrop-filter: blur(2rem);
   border-bottom: var(--bw) var(--b) solid;
+  min-height: var(--hdr-h);
   padding: var(--pd) var(--px);
   position: sticky;
   top: 0;
@@ -139,6 +151,32 @@
         }
       }
     }
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @keyframes snz-hdr-hero {
+    from {
+      --hdr-bg: var(--hdr-hero-bg);
+      --hdr-fg: var(--hdr-hero-fg);
+      --hdr-b: var(--hdr-hero-b);
+    }
+
+    to {
+      --hdr-bg: var(--s);
+      --hdr-fg: var(--i);
+      --hdr-b: var(--b);
+    }
+  }
+
+  body>header {
+    animation-name: snz-hdr-hero;
+    animation-timeline: --snz-hero;
+    animation-range:
+      exit calc(100% - var(--hdr-h) - var(--hdr-fade))
+      exit calc(100% - var(--hdr-h));
+    animation-fill-mode: both;
+    animation-timing-function: steps(1, end);
   }
 }
 

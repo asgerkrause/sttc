@@ -36,12 +36,13 @@
 
   .c {
     container-type: inline-size;
+    max-width: var(--mw);
     width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: var(--ss);
-    max-width: var(--mw);
 
     &.sm { max-width: var(--mw-sm); }
     &.lg { max-width: var(--mw-lg); }

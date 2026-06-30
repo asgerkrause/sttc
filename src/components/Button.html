@@ -31,6 +31,7 @@
     --btn-b: transparent;
     --btn-vis-s: color-mix(in srgb, var(--btn-i) 15%, var(--btn-s));
     --btn-vis-i: color-mix(in srgb, var(--btn-i) 80%, var(--btn-s));
+    --btn-vis-b: transparent;
     --btn-vis-h: 2.5lh;
     border: var(--bw) var(--btn-b) solid;
     background: var(--btn-s);
@@ -46,33 +47,37 @@
       --btn-s: transparent;
       --btn-i: var(--g);
       --btn-b: transparent;
+      --btn-vis-s: var(--s);
+      --btn-vis-b: var(--b);
     }
 
     &.tone {
       --btn-s: var(--t);
       --btn-i: var(--n80);
-      --btn-b: var(--b);
+      --btn-b: transparent;
     }
 
     &.accent {
       --btn-s: var(--a);
       --btn-i: var(--ai);
+      --btn-b: transparent;
 
       &.tone {
         --btn-s: var(--a05);
         --btn-i: var(--a60);
-        --btn-b: var(--a10);
+        --btn-b: transparent;
       }
     }
 
     &.complimentary {
       --btn-s: var(--c);
       --btn-i: var(--ci);
+      --btn-b: transparent;
 
       &.tone {
         --btn-s: var(--c05);
         --btn-i: var(--c60);
-        --btn-b: var(--c10);
+        --btn-b: transparent;
       }
     }
 
@@ -88,22 +93,12 @@
       }
 
       &.tone {
-        --btn-s: var(--a05);
-        --btn-i: var(--a80);
-        --btn-b: var(--a10);
+        --btn-s: var(--s);
+        --btn-i: var(--i);
+        --btn-b: var(--b);
       }
 
-      &.accent,
-      &.complimentary {
-        --btn-s: var(--i);
-        --btn-i: var(--s);
-
-        &.tone {
-          --btn-s: var(--t);
-          --btn-i: var(--n80);
-          --btn-b: var(--b);
-        }
-      }
+      
     }
 
     &:active {
@@ -149,6 +144,7 @@
     .btn-vis-w {
       flex: none;
       border-radius: calc(var(--br) - var(--btn-pd));
+      border: var(--bw) var(--btn-vis-b) solid;
 
       &:has(:is(span, i, b, svg)) {
         display: inline-flex;

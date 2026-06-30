@@ -3,7 +3,7 @@
   @attr variant=[default|accent|quiet] :class Visual tone.
   @attr theme=[tone|accent|invert] Optional data-theme value.
 -->
-<blockquote class="statement" data-theme="{{theme}}">
+<blockquote class="statement"{#if theme} data-theme="{{theme}}"{/if}>
   {{slot}}
 </blockquote>
 

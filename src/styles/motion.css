@@ -45,6 +45,17 @@
 }
 
 @layer motion {
+  @supports (animation-timeline: view()) {
+    body {
+      timeline-scope: --snz-hero;
+    }
+
+    [data-scroll="hero"] {
+      view-timeline-name: --snz-hero;
+      view-timeline-axis: block;
+    }
+  }
+
   :where(a, button) {
     --is-f: 1;
     --is-t: 0;
