@@ -7,35 +7,35 @@
 
 <style>
   a.lnk {
-    background-image: linear-gradient(0deg, var(--i), var(--i));
+    background-image: linear-gradient(0deg, var(--c-ink), var(--c-ink));
     background-repeat: no-repeat;
     background-position-x: right;
     background-position-y: 100%;
-    background-size: 0 var(--bw);
+    background-size: 0 var(--s-bw);
 
     @media (hover: hover) {
       &:hover {
-        background-size: 100% var(--bw);
+        background-size: 100% var(--s-bw);
         background-position-x: left;
       }
 
       &:not(:hover, :focus-visible) {
-        color: var(--g);
+        color: var(--c-mut);
       }
     }
 
     @media (hover: none) {
-      background-size: 100% var(--bw);
+      background-size: 100% var(--s-bw);
     }
 
     &:focus-visible {
-      background-size: 100% var(--bw);
+      background-size: 100% var(--s-bw);
       background-position-x: left;
     }
 
     &[aria-current="page"] {
-      background-size: 100% var(--bw);
-      color: var(--i);
+      background-size: 100% var(--s-bw);
+      color: var(--c-ink);
     }
   }
 </style>

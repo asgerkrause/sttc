@@ -168,7 +168,7 @@ Use `src/app.ts` for shared behavior. Use component `<script>` for behavior owne
 
 ```css
 html[data-page="pricing"] .pricing-note {
-  color: var(--g);
+  color: var(--c-mut);
 }
 ```
 

@@ -13,7 +13,7 @@
   form {
     display: flex;
     flex-direction: column;
-    gap: var(--gp-xl);
+    gap: var(--s-gp-xl);
     width: 100%;
 
     fieldset {
@@ -22,49 +22,54 @@
       margin: 0;
       display: flex;
       flex-direction: column;
-      gap: var(--gp);
+      gap: var(--s-gp);
 
       legend {
-        color: var(--g);
-        padding-bottom: var(--gp);
-        font-size: var(--sm-fs);
+        color: var(--c-mut);
+        padding-bottom: var(--s-gp);
+        font-size: var(--t-sm-fs);
         letter-spacing: .04em;
       }
 
       &:has(input[type="radio"]:required:invalid) > legend::after,
       &[aria-required="true"]:has(input[type="checkbox"]):not(:has(input[type="checkbox"]:checked)) > legend::after {
         content: " *";
-        color: #e33;
+        color: var(--c-bad);
       }
 
       > div {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--gp);
+        gap: var(--s-gp);
       }
     }
 
     label {
+      --e-inp-sur: var(--c-sur);
+      --e-inp-ink: var(--c-mut);
+      --e-inp-bor: var(--c-bor);
+      --e-inp-field-ink: var(--c-ink);
+      --e-inp-placeholder-ink: var(--c-mut);
       display: flex;
-      gap: var(--gp-sm);
-      padding: var(--pd-sm) var(--pd);
-      background: var(--t);
-      border: var(--bw) solid var(--b);
-      border-radius: var(--br);
-      color: var(--g);
-      transition: border-color var(--td) var(--tf-o), background var(--td) var(--tf-o), color var(--td) var(--tf-o);
+      gap: var(--s-gp-sm);
+      padding: var(--s-pd-sm) var(--s-pd);
+      background: var(--e-inp-sur);
+      border: var(--s-bw) solid var(--e-inp-bor);
+      border-radius: var(--s-br);
+      color: var(--e-inp-ink);
+      transition: border-color var(--m-td) var(--m-tf-o), background var(--m-td) var(--m-tf-o), color var(--m-td) var(--m-tf-o);
 
       &:has(:focus-visible) {
-        border-color: var(--a);
-        background: var(--a05);
-        color: var(--a80);
+        --e-inp-bor: var(--c-acc);
+        --e-inp-sur: var(--c-acc-05);
+        --e-inp-ink: var(--c-acc-80);
       }
 
       &:has(> input:not([type="radio"]):not([type="checkbox"]):user-invalid),
       &:has(> textarea:user-invalid),
       &:has(> select:user-invalid) {
-        border-color: #e33;
-        background: color-mix(in srgb, #e33 8%, transparent);
+        --e-inp-bor: var(--c-bad);
+        --e-inp-sur: var(--c-bad-sur);
       }
 
       &:has(> input:not([type="radio"]):not([type="checkbox"])),
@@ -87,28 +92,28 @@
 
         @media (hover: hover) {
           &:hover {
-            border-color: var(--a60);
-            color: var(--i);
+            --e-inp-bor: var(--c-acc-60);
+            --e-inp-ink: var(--c-ink);
           }
         }
       }
 
       &:has(> input[type="radio"]:checked),
       &:has(> input[type="checkbox"]:checked) {
-        background: var(--a10);
-        border-color: var(--a60);
-        color: var(--i);
+        --e-inp-sur: var(--c-acc-10);
+        --e-inp-bor: var(--c-acc-60);
+        --e-inp-ink: var(--c-ink);
       }
 
       &:has(> input:not([type="radio"]):not([type="checkbox"]):required:invalid) > span::after,
       &:has(> textarea:required:invalid) > span::after,
       &:has(> select:required:invalid) > span::after {
         content: " *";
-        color: #e33;
+        color: var(--c-bad);
       }
 
       span {
-        font-size: var(--sm-fs);
+        font-size: var(--t-sm-fs);
         letter-spacing: .04em;
       }
     }
@@ -120,11 +125,11 @@
       border: 0;
       background: transparent;
       outline: 0;
-      color: var(--i);
+      color: var(--e-inp-field-ink);
       font: inherit;
 
       &::placeholder {
-        color: var(--g);
+        color: var(--e-inp-placeholder-ink);
         opacity: .45;
       }
     }
@@ -138,7 +143,7 @@
     input[type="checkbox"] {
       width: 1.25em;
       height: 1.25em;
-      accent-color: var(--a);
+      accent-color: var(--c-acc);
       margin: 0;
       flex: none;
     }
@@ -148,7 +153,7 @@
     }
 
     [aria-live] {
-      color: var(--g);
+      color: var(--c-mut);
     }
   }
 
@@ -159,7 +164,7 @@
       label:has(> textarea:required:invalid) > span::after,
       label:has(> select:required:invalid) > span::after {
         content: " *";
-        color: #e33;
+        color: var(--c-bad);
       }
     }
   }

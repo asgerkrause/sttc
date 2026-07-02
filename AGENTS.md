@@ -186,7 +186,7 @@ Structured data auto-emitted:
 ## CSS
 
 - Base tokens + reset: `src/styles.css` imports split CSS under `src/styles/`.
-- Token legend: `--mw`, `--px`, `--py`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`, then semantic `--s`, `--i`, `--t`, `--b`, `--g`.
+- Token legend: layout `--l-*`, space `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Key tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; color `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-acc-ink`, `--c-sec`, `--c-sec-ink`. Use grouped tokens only; no short aliases.
 - Global layout primitives: `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`.
 - `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`). Small stacks by default.
 - Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).

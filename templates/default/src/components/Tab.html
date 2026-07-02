@@ -11,34 +11,34 @@
   .tabs [role="tab"] {
     width: 100%;
     justify-content: flex-start;
-    border: var(--bw) solid transparent;
-    border-left-color: var(--b);
+    border: var(--s-bw) solid transparent;
+    border-left-color: var(--c-bor);
     background: transparent;
-    color: var(--g);
+    color: var(--c-mut);
     cursor: pointer;
     display: inline-flex;
-    gap: var(--pd-xs);
-    padding: var(--pd-sm) var(--pd);
+    gap: var(--s-pd-xs);
+    padding: var(--s-pd-sm) var(--s-pd);
     text-align: left;
-    border-radius: var(--br-sm);
+    border-radius: var(--s-br-sm);
   }
 
   .tabs [role="tab"][aria-selected="true"] {
-    border-color: var(--b);
-    border-left-color: var(--a);
-    background: var(--t);
-    color: var(--i);
+    border-color: var(--c-bor);
+    border-left-color: var(--c-acc);
+    background: var(--c-sur);
+    color: var(--c-ink);
   }
 
   .tabs [role="tab"]:focus-visible {
-    outline: var(--bw) solid currentColor;
-    outline-offset: calc(var(--bw) * 2);
+    outline: var(--s-bw) solid currentColor;
+    outline-offset: calc(var(--s-bw) * 2);
   }
 
   @media (hover: hover) {
     .tabs [role="tab"]:hover {
-      color: var(--i);
-      background: var(--t);
+      color: var(--c-ink);
+      background: var(--c-sur);
     }
   }
 </style>

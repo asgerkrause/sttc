@@ -25,7 +25,7 @@ No JSON sidecars. Component file is contract, template, styles, and optional beh
 
 <style>
   .crd.accent {
-    background: var(--a05);
+    background: var(--c-acc-05);
   }
 </style>
 ```
@@ -139,7 +139,7 @@ Prefer `:class` enum variants and combo classes. Avoid BEM.
 ```html
 <!--
   @attr variant=[default|outlined|ghost] :class Visual style.
-  @attr theme=[tone|accent|invert] Theme token set.
+  @attr theme=[tone|invert] Theme token set.
 -->
 <article class="crd" data-theme="{{theme}}">
   {{slot}}
@@ -147,9 +147,9 @@ Prefer `:class` enum variants and combo classes. Avoid BEM.
 
 <style>
   .crd {
-    &.outlined { border-color: var(--b); background: transparent; }
+    &.outlined { border-color: var(--c-bor); background: transparent; }
     &.ghost { background: transparent; }
-    &[data-theme] { background: var(--s); color: var(--i); }
+    &[data-theme] { background: var(--c-bg); color: var(--c-ink); }
   }
 </style>
 ```
@@ -164,7 +164,7 @@ Put component-owned CSS inside component `<style>`.
 <style>
   .feature {
     display: grid;
-    gap: var(--gp);
+    gap: var(--s-gp);
   }
 </style>
 ```

@@ -1,20 +1,20 @@
 <!--
   @desc Flexible styled container for grouped content. Put headings, copy, media, and actions in the default slot.
   @attr variant=[default|outlined|ghost] :class Visual variant.
-  @attr theme=[tone|accent|invert] Optional data-theme value.
+  @attr theme=[tone|invert] Optional data-theme value.
 -->
 <article class="crd"{#if theme} data-theme="{{theme}}"{/if}>{{slot}}</article>
 
 <style>
   .crd:has(.img-w) {
     & .img-w:is(:first-child) {
-      margin: calc(var(--pd) * -1);
-      margin-bottom: calc(var(--pd) / 2);
+      margin: calc(var(--s-pd) * -1);
+      margin-bottom: calc(var(--s-pd) / 2);
     }
 
     & .img-w:is(:last-child) {
-      margin: calc(var(--pd) * -1);
-      margin-top: calc(var(--pd) / 2);
+      margin: calc(var(--s-pd) * -1);
+      margin-top: calc(var(--s-pd) / 2);
     }
   }
 </style>

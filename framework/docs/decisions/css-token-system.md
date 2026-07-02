@@ -1,11 +1,11 @@
 # CSS token system
 
 **Status:** active  
-**Date:** 2026-06-19
+**Date:** 2026-07-02
 
 ## Context
 
-The framework CSS had grown into one large `src/styles.css` file with static size tokens, `--gg`/`--gp` naming drift, and generic body aliases (`--fs`, `--fw`, `--ls`, `--lh`, `--fmw`). Component ownership was already correct, but token authoring needed a smaller human/agent surface.
+The framework CSS needs a token contract that is explicit enough for human editing and agent work. The new contract follows the grouped `test-system-3_5` naming model and ships no short aliases.
 
 ## Chosen
 
@@ -16,35 +16,39 @@ Global CSS is split by owner:
 - `src/styles/reset.css` — reset and base element rules
 - `src/styles/grid.css` — `[g]`, `[c]`, `[r]`, `[o]`
 - `src/styles/type.css` — heading/body utility type rules
-- `src/styles/wrappers.css` — `.c`, `.w`, `.btns`, `.lnks`, tiny global wrappers
+- `src/styles/wrappers.css` — `.c`, `.w`, `.crd`, `.btns`, `.lnks`, tiny global wrappers
 - `src/styles/motion.css` — scroll/view-transition hooks
 
-Token naming uses short stable primitives:
+Token naming uses grouped prefixes from `test-system-3_5`. Layout/type keep `snz-bp` fluid authoring; colors keep the #99 visual anchors with grouped names; theme mechanics and motion timing follow the `test-system-3_5` contract:
 
-- layout: `--mw`, `--px`, `--py`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`, `--gc`
-- type: `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-fs/fw/ls/lh/mw`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`
-- color config: `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`
-- semantic color output: `--s`, `--i`, `--t`, `--b`, `--g`
+- layout: `--l-mw`, `--l-mw-min/max`, `--l-gc`, `--l-st`
+- space: `--s-px`, `--s-py`, `--s-ss`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`, plus `*-min/max` and grouped scale tokens (`--s-gp-sm`, `--s-pd-lg`, `--s-br-pill`)
+- type: `--t-fw-l/r/b`, `--t-ff-*`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; fluid size/line-height use names like `--t-h1-fs-min`, `--t-h1-fs-max`, `--t-h1-lh-min`, `--t-h1-lh-max`
+- color: anchors `--c-light-fixed`, `--c-dark-fixed`, `--c-acc`, `--c-acc-ink`, `--c-sec`, `--c-sec-ink`; semantic roles `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`; ramps `--c-neu-*`, `--c-acc-*`, `--c-sec-*`, `--c-bg-*`, `--c-fg-*`
+- motion/state: `--m-td*`, `--m-tf*`, `--i-hov-*`, `--i-foc-*`, `--i-prs-*`, `--i-exp-*`
+- element roles: `--e-head-*`, `--e-foot-*`, `--e-btn-*`, `--e-crd-*`, `--e-inp-*`, `--e-bdg-*`
 
-`--gp` is the only global gap token. `--gg` is not used.
+Old short tokens are not shipped. CSS must use grouped tokens.
 
-Themes remap semantic tokens. Accent sections use `data-theme="accent"`; no swatches or `[data-accent]` API ships by default.
+Themes remap semantic color tokens. Use `data-theme="tone"` or `data-theme="invert"`; use `[data-accent]` for accent palette presets.
 
 ## Why
 
-- A tiny editable config is easier for humans and agents than verbose token soup.
-- Fluid `*-min` / `*-max` tokens make marketing sites feel polished without per-breakpoint overrides.
-- Semantic color outputs keep components portable across `tone`, `accent`, and `invert` themes.
-- Splitting CSS by owner lowers scan cost without adding a runtime dependency or utility framework.
+- Grouped prefixes make role and ownership obvious without adding a dependency or utility framework.
+- Fluid `*-min` / `*-max` tokens preserve polished marketing rhythm without per-breakpoint overrides.
+- Semantic color outputs keep components portable across `tone` and `invert` themes.
+- Removing aliases makes the token contract explicit; downstream custom CSS must migrate to grouped names.
+- Splitting CSS by owner lowers scan cost while preserving component style ownership.
 
 ## Consequences
 
-- Component CSS should consume semantic/layout tokens, not raw hex or one-off spacing.
-- Theme packs must override the new token contract (`--mw-max`, `--md-*`, `--l`, `--d`, etc.).
-- Docs should teach the token legend instead of every derived ramp.
-- Existing custom code using `--gg`, `--fs`, `--fw`, `--a-i`, or `--c-i` should migrate to `--gp`, `--md-*`, `--fw-l/r/b`, `--ai`, and `--ci`.
+- Component CSS should consume grouped semantic/layout tokens, not raw hex or one-off spacing.
+- Theme packs should override grouped config tokens (`--l-mw-max`, `--t-md-*`, `--c-acc`, etc.).
+- Docs teach grouped tokens only.
+- Existing custom CSS using short tokens must migrate to grouped names.
 
 ## Verification
 
+- `bun run css:audit`
 - `bun run doctor`
 - `bun test`

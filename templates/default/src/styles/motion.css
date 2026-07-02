@@ -1,4 +1,4 @@
-@layer scrub {
+@layer motion {
   @supports (animation-timeline: view()) {
     @property --sp-t {
       syntax: '<number>';
@@ -46,13 +46,13 @@
 
 @layer motion {
   :where(a, button) {
-    --is-f: 1;
-    --is-t: 0;
+    --i-hov-f: 1;
+    --i-hov-t: 0;
   }
 
   :where(a, button):is(:hover, :focus-visible) {
-    --is-f: 0;
-    --is-t: 1;
+    --i-hov-f: 0;
+    --i-hov-t: 1;
   }
 
   @supports (view-transition-name: none) {
@@ -92,13 +92,13 @@
 
     ::view-transition-old(root),
     ::view-transition-old(current) {
-      animation: var(--td) var(--tf-i) both o-out;
+      animation: var(--m-td) var(--m-tf-i) both o-out;
     }
 
     ::view-transition-new(root),
     ::view-transition-new(current) {
-      animation: var(--td-f) var(--tf-o) both o-in;
-      animation-delay: var(--td);
+      animation: var(--m-td-f) var(--m-tf-o) both o-in;
+      animation-delay: var(--m-td);
     }
   }
 }

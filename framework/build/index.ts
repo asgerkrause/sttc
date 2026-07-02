@@ -423,17 +423,17 @@ async function writeErrorPage(err: unknown, context: BuildContext = createBuildC
 <title>${escapeHtml(title)}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-:root { color-scheme: dark; --r:#ff3b30; --bg:#0a0a0a; --fg:#fafafa; --a:#666; --c:#1c1c1c; }
+:root { color-scheme: dark; --error-red:#ff3b30; --error-bg:#0a0a0a; --error-fg:#fafafa; --error-muted:#666; --error-card:#1c1c1c; }
 * { box-sizing: border-box }
-body { font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); color: var(--fg); margin: 0; padding: 2rem; }
+body { font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--error-bg); color: var(--error-fg); margin: 0; padding: 2rem; }
 main { max-width: 60ch; margin: 4rem auto; }
-.tag { display: inline-block; padding: .25em .5em; background: var(--r); color: white; font-weight: 600; border-radius: 4px; font-size: 12px; }
+.tag { display: inline-block; padding: .25em .5em; background: var(--error-red); color: white; font-weight: 600; border-radius: 4px; font-size: 12px; }
 h1 { margin: .5em 0 1em; font-size: 1.5em; font-weight: 600; text-wrap: balance; }
-.file { color: var(--a); margin-bottom: 1.5em; }
-.hint { padding: 1em; background: var(--c); border-left: 2px solid var(--r); border-radius: 4px; margin-bottom: 1.5em; }
-.hint::before { content: 'hint: '; color: var(--a); }
-pre { background: var(--c); padding: 1em; border-radius: 4px; overflow-x: auto; font-size: 12px; color: var(--a); }
-.refresh { margin-top: 2em; color: var(--a); font-size: 13px; }
+.file { color: var(--error-muted); margin-bottom: 1.5em; }
+.hint { padding: 1em; background: var(--error-card); border-left: 2px solid var(--error-red); border-radius: 4px; margin-bottom: 1.5em; }
+.hint::before { content: 'hint: '; color: var(--error-muted); }
+pre { background: var(--error-card); padding: 1em; border-radius: 4px; overflow-x: auto; font-size: 12px; color: var(--error-muted); }
+.refresh { margin-top: 2em; color: var(--error-muted); font-size: 13px; }
 </style>
 </head>
 <body>

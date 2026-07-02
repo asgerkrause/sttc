@@ -85,7 +85,7 @@ async function writeMinimalSite(root: string) {
 </html>
 `)
 
-  await writeFile(join(root, 'src', 'styles.css'), ':root{--py:4rem;--px:1rem;--gp:1rem;--pd:.75rem;--pd-sm:.5rem;--pd-lg:1.25rem;--br:.5rem;--bw:1px;--b:#ddd;--i:#111;--s:#fff;--g:#555;--t:#f6f6f6;--n05:#f6f6f6;--a:#111;--a05:#eee;--a10:#ddd;--a60:#555;--a80:#333;--ai:#fff;--c:#111;--c05:#eee;--c10:#ddd;--c60:#555;--ci:#fff;--md-mw:60ch;--sm-fs:.875rem;--h0-fs:4rem;--h0-lh:1;--h2-fs:2rem;--h2-lh:1.1}.c{max-width:72rem;margin-inline:auto;padding-inline:var(--px)}.w>*+*{margin-top:var(--gp)}[g]{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--gp)}[g]>*{grid-column:span 4}@media(width < 60rem){[g]>*{grid-column:1/-1}}')
+  await writeFile(join(root, 'src', 'styles.css'), ':root{--s-py:4rem;--s-px:1rem;--s-gp:1rem;--s-pd:.75rem;--s-pd-sm:.5rem;--s-pd-lg:1.25rem;--s-br:.5rem;--s-bw:1px;--c-bor:#ddd;--c-ink:#111;--c-bg:#fff;--c-mut:#555;--c-sur:#f6f6f6;--c-neu-05:#f6f6f6;--c-acc:#111;--c-acc-05:#eee;--c-acc-10:#ddd;--c-acc-60:#555;--c-acc-80:#333;--c-acc-ink:#fff;--c-sec:#111;--c-sec-05:#eee;--c-sec-10:#ddd;--c-sec-60:#555;--c-sec-ink:#fff;--t-md-mw:60ch;--t-sm-fs:.875rem;--t-h0-fs:4rem;--t-h0-lh:1;--t-h2-fs:2rem;--t-h2-lh:1.1}.c{max-width:72rem;margin-inline:auto;padding-inline:var(--s-px)}.w>*+*{margin-top:var(--s-gp)}[g]{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--s-gp)}[g]>*{grid-column:span 4}@media(width < 60rem){[g]>*{grid-column:1/-1}}')
   await writeFile(join(root, 'src', 'app.js'), '')
 }
 
@@ -292,7 +292,7 @@ describe('component preset scaffold', () => {
     const dir = await tempProject()
     try {
       await mkdir(join(dir, 'src'), { recursive: true })
-      await writeFile(join(dir, 'src', 'styles.css'), 'body { color: var(--i); }\n')
+      await writeFile(join(dir, 'src', 'styles.css'), 'body { color: var(--c-ink); }\n')
 
       const result = await runBun(binPath, ['add', 'theme', 'brutalist'], dir)
       const css = await readFile(join(dir, 'src', 'styles.css'), 'utf8')
@@ -301,7 +301,7 @@ describe('component preset scaffold', () => {
       expect(result.stdout).toContain('applied brutalist theme')
       expect(css).toContain('/* snz-bp theme:start */')
       expect(css).toContain('/* brutalist token pack. Safe to edit after applying. */')
-      expect(css).toContain('--bw: 0.2rem;')
+      expect(css).toContain('--s-bw: 0.2rem;')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -395,7 +395,7 @@ describe('component preset scaffold', () => {
       }
 
       await writeFile(join(dir, 'src', 'pages', 'index.html'), `<Section><Hero /></Section>
-<Section theme="accent"><CTA /></Section>
+<Section theme="tone"><CTA /></Section>
 <Section><Features><Feature><h3>Fast</h3><p>Copy.</p></Feature></Features></Section>
 <Section><Partners><Partner>Northstar</Partner></Partners></Section>
 <Section><Pricing><Plan><h3>Starter</h3><p>Copy.</p></Plan></Pricing></Section>

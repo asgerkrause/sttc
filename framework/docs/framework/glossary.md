@@ -71,7 +71,7 @@ Build validation that fails on source errors such as missing required attrs, unk
 
 ## token
 
-CSS custom property from design system. Common tokens include `--mw`, `--px`, `--py`, `--gp`, `--pd`, `--br`, `--s`, `--i`, `--t`, `--b`, `--a`, and `--ai`.
+CSS custom property from design system. Common grouped tokens include `--l-mw`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--c-bg`, `--c-ink`, `--c-sur`, `--c-bor`, `--c-acc`, and `--c-acc-ink`. Old short tokens are removed.
 
 ## Next
 

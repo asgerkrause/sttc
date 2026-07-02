@@ -17,7 +17,7 @@ Produce exactly one file: `src/components/<PascalName>.html`. It must contain:
 
 Rules:
 
-- Use design tokens (`--mw`, `--px`, `--py`, `--gp`, `--fw-l/r/b`, type tokens, the color system). Never hardcode spacing, font weights, or colors.
+- Use design tokens (`--l-*`, `--s-*`, `--t-*`, `--c-*`, `--m-*`, `--i-*`, `--e-*`). Never hardcode spacing, font weights, or colors.
 - Semantic HTML first. ARIA/data attributes before classes for state and theme.
 - Classes are rare and short: use existing primitives (`.c`, `.w`, `.crd`, `.btn`, `.lnk`) or short private hooks only when needed (`.brg`, `.logo-mk`, `.code-lb`). No BEM or verbose wrapper classes.
 - Visible focus via `:focus-visible`. Never `outline: none` without a replacement.

@@ -161,7 +161,7 @@ Theme packs append a marked `snz-bp theme` block to `src/styles.css`. Existing t
 
 CSS ownership: `src/styles.css` is the import shell. `src/styles/system.css` owns the editable token config + fluid engine; `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css` own their matching layers. Global primitives are `.c`, `.w`, `.btns`, `.lnks`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Component-specific selectors live in component `<style>` blocks.
 
-Token legend: layout uses `--mw`, `--px`, `--py`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Accent sections use `data-theme="accent"`.
+Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color/theme `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Use grouped tokens only: no short aliases. Themes use `data-theme="tone"` or `data-theme="invert"`; accent palettes use `data-accent="blue|green|pink|purple|orange|red|lime"`.
 
 ## Routes
 

@@ -65,25 +65,25 @@ const hero: ComponentPreset = {
   .hero {
     display: grid;
     align-content: center;
-    gap: var(--gp);
+    gap: var(--s-gp);
     min-height: 70svh;
-    padding-block: var(--py);
+    padding-block: var(--s-py);
 
     h1 {
       max-width: 12ch;
-      font-size: clamp(var(--h2-fs), 12vw, var(--h0-fs));
-      line-height: var(--h0-lh);
+      font-size: clamp(var(--t-h2-fs), 12vw, var(--t-h0-fs));
+      line-height: var(--t-h0-lh);
     }
 
     .w p {
-      max-width: var(--md-mw);
-      color: var(--g);
+      max-width: var(--t-md-mw);
+      color: var(--c-mut);
     }
   }
 
   .hero-kicker {
-    color: var(--a60);
-    font-size: var(--sm-fs);
+    color: var(--c-acc-60);
+    font-size: var(--t-sm-fs);
     text-transform: uppercase;
     letter-spacing: .08em;
   }
@@ -92,7 +92,7 @@ const hero: ComponentPreset = {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--gp);
+    gap: var(--s-gp);
   }
 </style>
 `,
@@ -101,7 +101,7 @@ const hero: ComponentPreset = {
 
 const cta: ComponentPreset = {
   name: 'CTA',
-  demoHtml: '<Section theme="accent"><CTA /></Section>',
+  demoHtml: '<Section theme="tone"><CTA /></Section>',
   files: [{
     componentName: 'CTA',
     fileName: 'CTA.html',
@@ -119,8 +119,8 @@ const cta: ComponentPreset = {
 
 <style>
   .cta {
-    max-width: var(--lg-mw);
-    padding-block: var(--py);
+    max-width: var(--t-lg-mw);
+    padding-block: var(--s-py);
     text-align: center;
     align-items: center;
     margin-inline: auto;
@@ -168,20 +168,20 @@ const features: ComponentPreset = {
 <style>
   .feature {
     display: grid;
-    gap: var(--gp);
-    padding: var(--pd);
-    background: var(--t);
-    border: var(--bw) solid transparent;
-    border-radius: var(--br);
+    gap: var(--s-gp);
+    padding: var(--s-pd);
+    background: var(--c-sur);
+    border: var(--s-bw) solid transparent;
+    border-radius: var(--s-br);
 
     &.outlined {
       background: transparent;
-      border-color: var(--b);
+      border-color: var(--c-bor);
     }
 
     &.ghost { background: transparent; }
 
-    p { color: var(--g); }
+    p { color: var(--c-mut); }
   }
 </style>
 `,
@@ -214,19 +214,19 @@ const partners: ComponentPreset = {
 <style>
   .partners {
     display: grid;
-    gap: var(--gp);
-    padding-block: var(--ss);
-    border-block: var(--bw) solid var(--b);
+    gap: var(--s-gp);
+    padding-block: var(--s-ss);
+    border-block: var(--s-bw) solid var(--c-bor);
 
     p {
-      color: var(--g);
-      font-size: var(--sm-fs);
+      color: var(--c-mut);
+      font-size: var(--t-sm-fs);
     }
 
     ul {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-      gap: var(--gp);
+      gap: var(--s-gp);
       padding: 0;
       margin: 0;
       list-style: none;
@@ -248,10 +248,10 @@ const partners: ComponentPreset = {
     display: grid;
     min-height: 5rem;
     place-items: center;
-    padding: var(--pd-sm);
-    border: var(--bw) solid var(--b);
-    border-radius: var(--br);
-    color: var(--g);
+    padding: var(--s-pd-sm);
+    border: var(--s-bw) solid var(--c-bor);
+    border-radius: var(--s-br);
+    color: var(--c-mut);
     text-align: center;
 
     img,
@@ -308,20 +308,20 @@ const pricing: ComponentPreset = {
   .plan {
     display: grid;
     align-content: start;
-    gap: var(--gp);
-    padding: var(--pd);
-    border: var(--bw) solid var(--b);
-    border-radius: var(--br);
+    gap: var(--s-gp);
+    padding: var(--s-pd);
+    border: var(--s-bw) solid var(--c-bor);
+    border-radius: var(--s-br);
 
     &.true {
-      background: var(--i);
-      color: var(--s);
+      background: var(--c-ink);
+      color: var(--c-bg);
       border-color: transparent;
 
-      p { color: var(--n40); }
+      p { color: var(--c-neu-40); }
     }
 
-    p { color: var(--g); }
+    p { color: var(--c-mut); }
 
     .btns,
     .lnks { margin-top: auto; }
@@ -367,20 +367,20 @@ const testimonials: ComponentPreset = {
 <style>
   .testimonial {
     display: grid;
-    gap: var(--gp);
-    padding: var(--pd);
+    gap: var(--s-gp);
+    padding: var(--s-pd);
     margin: 0;
-    background: var(--t);
-    border-radius: var(--br);
+    background: var(--c-sur);
+    border-radius: var(--s-br);
 
     blockquote {
       margin: 0;
-      font-size: var(--lg-fs);
-      line-height: var(--lg-lh);
+      font-size: var(--t-lg-fs);
+      line-height: var(--t-lg-lh);
     }
 
     p,
-    figcaption { color: var(--g); }
+    figcaption { color: var(--c-mut); }
   }
 </style>
 `,
@@ -425,17 +425,17 @@ const stats: ComponentPreset = {
 <style>
   .stat {
     display: grid;
-    gap: calc(var(--gp) / 2);
-    padding-block: var(--pd);
-    border-top: var(--bw) solid var(--b);
+    gap: calc(var(--s-gp) / 2);
+    padding-block: var(--s-pd);
+    border-top: var(--s-bw) solid var(--c-bor);
 
     strong {
-      font-size: var(--h2-fs);
-      line-height: var(--h2-lh);
+      font-size: var(--t-h2-fs);
+      line-height: var(--t-h2-lh);
     }
 
     span,
-    p { color: var(--g); }
+    p { color: var(--c-mut); }
   }
 </style>
 `,
@@ -464,7 +464,7 @@ const processPreset: ComponentPreset = {
 <style>
   .process {
     display: grid;
-    gap: var(--gp);
+    gap: var(--s-gp);
     padding: 0;
     margin: 0;
     list-style: none;
@@ -485,17 +485,17 @@ const processPreset: ComponentPreset = {
   .stp {
     counter-increment: steps;
     display: grid;
-    gap: calc(var(--gp) / 2);
-    padding: var(--pd);
-    border-top: var(--bw) solid var(--b);
+    gap: calc(var(--s-gp) / 2);
+    padding: var(--s-pd);
+    border-top: var(--s-bw) solid var(--c-bor);
 
     &::before {
       content: counter(steps, decimal-leading-zero);
-      color: var(--g);
-      font-size: var(--sm-fs);
+      color: var(--c-mut);
+      font-size: var(--t-sm-fs);
     }
 
-    p { color: var(--g); }
+    p { color: var(--c-mut); }
   }
 </style>
 `,
@@ -527,14 +527,14 @@ const questions: ComponentPreset = {
 </div>
 
 <style>
-  .questions { padding-block: var(--py); }
+  .questions { padding-block: var(--s-py); }
 
   .questions-head {
-    max-width: var(--md-mw);
+    max-width: var(--t-md-mw);
 
     p {
-      color: var(--a60);
-      font-size: var(--sm-fs);
+      color: var(--c-acc-60);
+      font-size: var(--t-sm-fs);
       text-transform: uppercase;
       letter-spacing: .08em;
     }
@@ -542,7 +542,7 @@ const questions: ComponentPreset = {
 
   .questions-list {
     display: grid;
-    gap: var(--gp);
+    gap: var(--s-gp);
   }
 </style>
 `,

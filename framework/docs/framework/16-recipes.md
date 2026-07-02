@@ -78,8 +78,8 @@ bun run new component Feature
 
 <style>
   .crd.accent {
-    background: var(--a);
-    color: var(--ai);
+    background: var(--c-acc);
+    color: var(--c-acc-ink);
   }
 </style>
 ```
