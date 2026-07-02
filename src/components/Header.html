@@ -39,15 +39,17 @@
   backdrop-filter: blur(2rem);
   border-bottom: var(--bw) var(--b) solid;
   min-height: var(--hdr-h);
-  padding: var(--pd) var(--px);
+  padding: 0 var(--px);
   position: fixed;
   inset: 0;
   bottom: auto;
   z-index: 1000;
+  display: flex;
 
   .c {
     flex-direction: row;
     align-items: center;
+    justify-content: center;
   }
 
   nav ul {
@@ -57,12 +59,12 @@
     align-items: center;
     padding: 0;
     margin: 0;
-    gap: var(--gp-lg);
+    gap: var(--gp);
   }
 
   .brg {
     position: relative;
-    background: var(--t);
+    background: var(--i05);
     color: var(--i);
     z-index: 1000;
     width: 4em;
@@ -75,7 +77,7 @@
     border-radius: 100vw;
     display: flex;
     flex-direction: column;
-    backdrop-filter: blur(2rem);
+
 
     &::before,
     &::after {
@@ -103,7 +105,7 @@
     }
 
     &[aria-expanded="true"] {
-      background: var(--n10);
+      background: var(--i10);
 
       &::after {
         transform: rotate(45deg);

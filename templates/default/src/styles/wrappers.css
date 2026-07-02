@@ -29,9 +29,6 @@
       gap: var(--gp-xl);
     }
 
-    > section:first-child {
-      margin-top: 8rem;
-    }
   }
 
   .c {
