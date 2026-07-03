@@ -90,7 +90,7 @@ function wrapLayer(layer: string, css: string) {
 }
 
 /** Read components: strip inline <style> + <script>, build template + schema + script registries. */
-export async function prepareComponents(componentsDir: string): Promise<{
+export async function prepareComponents(componentsDir: string, projectRoot = root): Promise<{
   cssBlocks: CssBlock[]
   templates: Map<string, string>
   schemas: Map<string, ComponentSchema>
@@ -115,7 +115,7 @@ export async function prepareComponents(componentsDir: string): Promise<{
     const raw = await readFile(path, 'utf8')
     const name = file.replace(/\.html$/i, '')
     // 1. Pull build-time JSON data before runtime scripts so it never ships or mounts.
-    const { html: noData, data: componentData } = await extractTemplateData(raw, { file: `src/components/${file}`, projectRoot: root })
+    const { html: noData, data: componentData } = await extractTemplateData(raw, { file: `src/components/${file}`, projectRoot })
     if (Object.keys(componentData).length) data.set(name, componentData)
     // 2. Pull <script> (so its content isn't swept by stripStyleBlocks comment regex)
     const { html: noScript, scripts: blocks } = extractComponentScripts(noData)

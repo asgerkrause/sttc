@@ -25,6 +25,7 @@ bun run build     # produce dist/, run strict checks at the end
 bun run check     # rebuild + validate without serving
 bun run doctor    # CSS ownership audit + strict check
 bun run doctor -- --launch # pre-launch SEO/a11y/site gate
+bun run framework:verify # full framework gate: doctor, tests, template sync, create smoke
 bun run new       # scaffolder: component|route|post|page <name>, collection <name>, or cms
 bun run add       # add component preset or theme pack
 ```
@@ -89,6 +90,12 @@ bun dev
 ```
 
 Current local verification:
+
+```bash
+bun run framework:verify
+```
+
+That runs `doctor`, the full framework test suite, template sync check, and create-smoke. For a narrower manual template check:
 
 ```bash
 bun run check:create-template

@@ -50,6 +50,7 @@
     "css:audit": "bun framework/cli/snz-bp.ts css:audit",
     "dev": "bun framework/cli/snz-bp.ts dev",
     "doctor": "bun framework/cli/snz-bp.ts doctor && bun run typecheck",
+    "framework:verify": "bun run doctor && bun test && bun run check:create-template && bun run smoke:create",
     "test": "bun test framework/tests",
     "new": "bun framework/cli/snz-bp.ts new",
     "add": "bun framework/cli/snz-bp.ts add",
