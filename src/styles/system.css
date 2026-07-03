@@ -40,12 +40,18 @@
     --s-br-min: 0.375;
 
     /* Editable type config. */
-    --t-ff-ss: "Aspekta", system-ui, sans-serif;
+    --t-ff-ss: "Aspekta",
+    system-ui,
+    sans-serif;
     --t-ff-se: serif;
     --t-ff-mo: monospace;
     --t-ff-hand: cursive;
     --t-ff-display: var(--t-ff-ss);
-    --t-ffs: "ss02" on, "ss04" on, "ss05" on, "ss08" on, "ss12" on;
+    --t-ffs: "ss02" on,
+    "ss04" on,
+    "ss05" on,
+    "ss08" on,
+    "ss12" on;
     --t-fw-l: 300;
     --t-fw-r: 400;
     --t-fw-b: 600;
@@ -335,7 +341,7 @@
     --c-fg: var(--c-neu-100);
     --c-sur: var(--c-neu-05);
     --c-ink: var(--c-neu-100);
-    --c-mut: var(--c-neu-40);
+    --c-mut: var(--c-fg-40);
     --c-bor: var(--c-neu-20);
 
     --c-acc-sur: var(--c-acc);
