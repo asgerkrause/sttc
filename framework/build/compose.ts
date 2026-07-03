@@ -94,13 +94,44 @@ export function createComposer(
       .replace(/>/g, '&gt;')
   }
 
+  const UNRESOLVED_PLACEHOLDER_RE = /\{\{[\w.-]+(?::[\w.-]+)?\}\}/
+
+  function cleanClassAttr(value: string) {
+    return value
+      .split(/\s+/)
+      .filter((token) => token && !UNRESOLVED_PLACEHOLDER_RE.test(token))
+      .join(' ')
+  }
+
+  function cleanStyleAttr(value: string) {
+    return value
+      .split(';')
+      .map((decl) => decl.trim())
+      .filter((decl) => decl && !UNRESOLVED_PLACEHOLDER_RE.test(decl))
+      .join('; ')
+  }
+
+  function pruneOptionalPlaceholders(html: string) {
+    return html
+      .replace(/\sclass="([^"]*)"/g, (_, value: string) => {
+        const cleaned = cleanClassAttr(value)
+        return cleaned ? ` class="${cleaned}"` : ''
+      })
+      .replace(/\sstyle="([^"]*)"/g, (_, value: string) => {
+        const cleaned = cleanStyleAttr(value)
+        return cleaned ? ` style="${cleaned}"` : ''
+      })
+      .replace(/\s[\w:-]+="\{\{[\w.-]+(?::[\w.-]+)?\}\}"/g, '')
+  }
+
   function substitute(template: string, attrs: Record<string, string>) {
-    return renderPlaceholders(template, attrs, {
+    const rendered = renderPlaceholders(template, attrs, {
       placeholders: true,
       preserveUnknownPlaceholders: true,
       preservePlaceholders: (path) => path === 'slot' || path.startsWith('slot:'),
       escapeStrings: false,
-    }).replace(/\s(?:id|data-theme|data-polar-checkout|c|r|o)=""/g, '')
+    })
+    return pruneOptionalPlaceholders(rendered)
   }
 
   function titleCase(slug: string) {

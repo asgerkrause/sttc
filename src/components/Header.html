@@ -24,17 +24,32 @@
 
 <style>
   body>header {
-  background: var(--s);
+  --hdr-h: 4rem;
+  --hdr-fade: 1px;
+  --hdr-bg: var(--s);
+  --hdr-fg: var(--i);
+  --hdr-b: var(--b);
+  --hdr-hero-bg: var(--s10);
+  --hdr-hero-fg: var(--i);
+  --hdr-hero-b: var(--b);
+
+  background: var(--hdr-bg);
+  color: var(--hdr-fg);
   view-transition-name: header;
+  backdrop-filter: blur(2rem);
   border-bottom: var(--bw) var(--b) solid;
-  padding: var(--pd) var(--px);
-  position: sticky;
-  top: 0;
+  min-height: var(--hdr-h);
+  padding: 0 var(--px);
+  position: fixed;
+  inset: 0;
+  bottom: auto;
   z-index: 1000;
+  display: flex;
 
   .c {
     flex-direction: row;
     align-items: center;
+    justify-content: center;
   }
 
   nav ul {
@@ -44,12 +59,12 @@
     align-items: center;
     padding: 0;
     margin: 0;
-    gap: var(--gp-lg);
+    gap: var(--gp);
   }
 
   .brg {
     position: relative;
-    background: var(--t);
+    background: var(--i05);
     color: var(--i);
     z-index: 1000;
     width: 4em;
@@ -62,7 +77,7 @@
     border-radius: 100vw;
     display: flex;
     flex-direction: column;
-    backdrop-filter: blur(2rem);
+
 
     &::before,
     &::after {
@@ -90,7 +105,7 @@
     }
 
     &[aria-expanded="true"] {
-      background: var(--n10);
+      background: var(--i10);
 
       &::after {
         transform: rotate(45deg);
@@ -139,6 +154,32 @@
         }
       }
     }
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @keyframes snz-hdr-hero {
+    from {
+      --hdr-bg: var(--hdr-hero-bg);
+      --hdr-fg: var(--hdr-hero-fg);
+      --hdr-b: var(--hdr-hero-b);
+    }
+
+    to {
+      --hdr-bg: var(--s);
+      --hdr-fg: var(--i);
+      --hdr-b: var(--b);
+    }
+  }
+
+  body>header {
+    animation-name: snz-hdr-hero;
+    animation-timeline: --snz-hero;
+    animation-range:
+      exit calc(100% - var(--hdr-h) - var(--hdr-fade))
+      exit calc(100% - var(--hdr-h));
+    animation-fill-mode: both;
+    animation-timing-function: steps(1, end);
   }
 }
 

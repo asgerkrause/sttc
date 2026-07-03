@@ -8,7 +8,7 @@
   }
 
   :root {
-    color-scheme: dark;
+    color-scheme: dark light;
     interpolate-size: allow-keywords;
     hanging-punctuation: first last;
     text-wrap: pretty;
@@ -238,7 +238,7 @@
 @layer themes {
   :root {
     --l: #fbfbfa;
-    --d: #121416;
+    --d: #242628;
     --a: #cf7;
     --ai: var(--d);
     --c: #cbf;

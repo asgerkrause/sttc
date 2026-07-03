@@ -25,6 +25,7 @@ export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   await checkSeoFiles(fail)
   await checkJsonLd(fail)
   await checkBuiltPublicAssetRefs(dist, fail)
+  await checkUnresolvedTemplatePlaceholders(fail)
   if (!opts.allowBrokenLinks) await checkInternalLinks(fail)
   await checkComponentTags(warn)
   await checkDiscoveryArtifacts(fail)
@@ -70,6 +71,18 @@ async function checkJsonLd(fail: (m: string) => void) {
       } catch {
         fail(`${file}: invalid JSON-LD`)
       }
+    }
+  }
+}
+
+async function checkUnresolvedTemplatePlaceholders(fail: (m: string) => void) {
+  const files = await collectHtmlFiles(dist)
+  const re = /\{\{[\w.-]+(?::[\w.-]+)?\}\}/g
+  for (const file of files) {
+    const html = await readFile(file, 'utf8').catch(() => null)
+    if (!html) continue
+    for (const match of html.matchAll(re)) {
+      fail(`${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`)
     }
   }
 }

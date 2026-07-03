@@ -2,19 +2,54 @@
   <SEO title="Home" description="HTML-first static sites with composable components." />
 </head>
 
-<section>
-  <div class="c">
-    <div class="w">
-      <h1>HTML-first sites, composed at build time.</h1>
-      <p class="f-md">Write routes, drop in components, and ship static output. No runtime framework required.</p>
-    </div>
-    <div class="btns">
-      <Button label="Get started" href="#" icon="→" />
-      <Button label="View components" href="/components/" />
-      <Button label="About" href="/about/" color="ghost" />
-    </div>
+<style>
+  #hero {
+    min-height: 100svh;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    justify-content: end;
+    text-align: center;
+    color: var(--l);
+  }
+
+  #hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--d);
+    opacity: .5;
+  }
+
+  #hero [data-hero-bg] {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #hero .c {
+    align-items: center;
+    justify-content: end;
+  }
+
+  #hero .btns {
+    justify-content: center;
+  }
+</style>
+
+<Section id="hero" scroll="hero" center="center" video="https://r2.snz.st/02.mp4">
+  <div class="w center">
+    <h1>HTML-first sites, composed at build time.</h1>
+    <p class="f-lg">Write routes, drop in components, and ship static output.</p>
   </div>
-</section>
+  <div class="btns">
+    <Button label="Get started now" href="#" color="tone" icon="→" />
+  </div>
+</Section>
 
 <section>
   <div class="c">
@@ -40,7 +75,7 @@
 </section>
 
 <section>
-  <div class="c w">
+  <div class="c">
     <div class="w">
       <h2>Template directives</h2>
       <p>Use conditionals inside components, and loops inside CMS templates.</p>
