@@ -44,25 +44,28 @@ async function scanHtml(dir: string) {
   return files.sort()
 }
 
-export async function discoverSourceRoutes(): Promise<SourceRoute[]> {
+export async function discoverSourceRoutes(options: { srcDir?: string } = {}): Promise<SourceRoute[]> {
+  const sourceRoot = options.srcDir ?? join(routesDir, '..')
+  const sourceRoutesDir = join(sourceRoot, 'routes')
+  const sourcePagesDir = join(sourceRoot, 'pages')
   const routes = new Map<string, SourceRoute>()
 
-  for (const rel of await scanHtml(routesDir)) {
+  for (const rel of await scanHtml(sourceRoutesDir)) {
     const slug = slugFromPageRel(rel)
     routes.set(slug, {
       slug,
-      sourcePath: join(routesDir, rel),
+      sourcePath: join(sourceRoutesDir, rel),
       sourceRel: `src/routes/${rel}`,
       outFile: outFileFromSlug(slug),
       legacy: true,
     })
   }
 
-  for (const rel of await scanHtml(pagesDir)) {
+  for (const rel of await scanHtml(sourcePagesDir)) {
     const slug = slugFromPageRel(rel)
     routes.set(slug, {
       slug,
-      sourcePath: join(pagesDir, rel),
+      sourcePath: join(sourcePagesDir, rel),
       sourceRel: `src/pages/${rel}`,
       outFile: outFileFromSlug(slug),
       legacy: false,

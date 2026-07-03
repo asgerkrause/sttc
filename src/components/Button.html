@@ -2,7 +2,7 @@
   @desc Link styled as an action button.
   @attr href Destination URL or path. Defaults to #.
   @attr label Visible button text. Defaults to Learn more.
-  @attr color=[default|ghost|tone|accent|accent tone|complimentary|complimentary tone] :class Visual color treatment.
+  @attr color=[default|ghost|tone|accent|accent tone|secondary|secondary tone] :class Visual color treatment.
   @attr size=[sm|md|lg] :class Size variant.
   @attr icon Optional decorative literal icon/glyph. Provider syntax like lucide:arrow-right is reserved.
   @attr image Optional decorative local image name from src/images, without extension.
@@ -26,79 +26,77 @@
 
 <style>
   .btn {
-    --btn-s: var(--i80);
-    --btn-i: var(--s);
-    --btn-b: transparent;
-    --btn-vis-s: color-mix(in srgb, var(--btn-i) 15%, var(--btn-s));
-    --btn-vis-i: color-mix(in srgb, var(--btn-i) 80%, var(--btn-s));
-    --btn-vis-b: transparent;
-    --btn-vis-h: 2.5lh;
-    border: var(--bw) var(--btn-b) solid;
-    background: var(--btn-s);
-    color: var(--btn-i);
+    --e-btn-sur: var(--c-fg-80);
+    --e-btn-ink: var(--c-bg);
+    --e-btn-bor: transparent;
+    --e-btn-vis-sur: color-mix(in srgb, var(--e-btn-ink) 15%, var(--e-btn-sur));
+    --e-btn-vis-ink: color-mix(in srgb, var(--e-btn-ink) 80%, var(--e-btn-sur));
+    --e-btn-vis-bor: transparent;
+    --e-btn-vis-h: 2.5lh;
+    border: var(--s-bw) var(--e-btn-bor) solid;
+    background: var(--e-btn-sur);
+    color: var(--e-btn-ink);
     display: inline-flex;
     cursor: pointer;
-    padding: var(--pd-sm) var(--pd);
+    padding: var(--s-pd-sm) var(--s-pd);
     text-decoration: none;
-    border-radius: var(--br);
+    border-radius: var(--s-br);
 
 
     &.ghost {
-      --btn-s: transparent;
-      --btn-i: var(--g);
-      --btn-b: transparent;
-      --btn-vis-s: var(--s);
-      --btn-vis-b: var(--b);
+      --e-btn-sur: transparent;
+      --e-btn-ink: var(--c-mut);
+      --e-btn-bor: transparent;
+      --e-btn-vis-sur: var(--c-bg);
+      --e-btn-vis-bor: var(--c-bor);
     }
 
     &.tone {
-      --btn-s: var(--t);
-      --btn-i: var(--n80);
-      --btn-b: transparent;
+      --e-btn-sur: var(--c-sur);
+      --e-btn-ink: var(--c-neu-80);
+      --e-btn-bor: transparent;
     }
 
     &.accent {
-      --btn-s: var(--a);
-      --btn-i: var(--ai);
-      --btn-b: transparent;
+      --e-btn-sur: var(--c-acc);
+      --e-btn-ink: var(--c-acc-ink);
+      --e-btn-bor: transparent;
 
       &.tone {
-        --btn-s: var(--a05);
-        --btn-i: var(--a60);
-        --btn-b: transparent;
+        --e-btn-sur: var(--c-acc-05);
+        --e-btn-ink: var(--c-acc-60);
+        --e-btn-bor: transparent;
       }
     }
 
-    &.complimentary {
-      --btn-s: var(--c);
-      --btn-i: var(--ci);
-      --btn-b: transparent;
+    &.secondary {
+      --e-btn-sur: var(--c-sec);
+      --e-btn-ink: var(--c-sec-ink);
+      --e-btn-bor: transparent;
 
       &.tone {
-        --btn-s: var(--c05);
-        --btn-i: var(--c60);
-        --btn-b: transparent;
+        --e-btn-sur: var(--c-sec-05);
+        --e-btn-ink: var(--c-sec-60);
+        --e-btn-bor: transparent;
       }
     }
 
     &:is(:hover, :focus-visible) {
-      --btn-s: var(--n100);
-      --btn-i: var(--n00);
+      --e-btn-sur: var(--c-neu-100);
+      --e-btn-ink: var(--c-neu-00);
 
 
       &.ghost {
-        --btn-s: var(--t);
-        --btn-i: var(--i);
-        --btn-b: transparent;
+        --e-btn-sur: var(--c-sur);
+        --e-btn-ink: var(--c-ink);
+        --e-btn-bor: transparent;
       }
 
       &.tone {
-        --btn-s: var(--s);
-        --btn-i: var(--i);
-        --btn-b: var(--b);
+        --e-btn-sur: var(--c-bg);
+        --e-btn-ink: var(--c-ink);
+        --e-btn-bor: var(--c-bor);
       }
-
-      
     }
 
     &:active {
@@ -106,33 +104,33 @@
     }
 
     &.sm {
-      --btn-vis-h: 2.5em;
-      padding: var(--pd-xs) var(--pd-sm);
-      border-radius: var(--br-sm);
-      font-size: var(--sm-fs);
+      --e-btn-vis-h: 2.5em;
+      padding: var(--s-pd-xs) var(--s-pd-sm);
+      border-radius: var(--s-br-sm);
+      font-size: var(--t-sm-fs);
 
       &:has(.btn-vis-w) {
-        padding: var(--btn-pd) var(--pd-sm) var(--btn-pd) var(--btn-pd);
+        padding: var(--e-btn-pd) var(--s-pd-sm) var(--e-btn-pd) var(--e-btn-pd);
       }
     }
 
     &.lg {
-      --btn-vis-h: 4em;
-      padding: var(--pd) var(--pd-lg);
-      border-radius: var(--br-lg);
-      font-size: var(--lg-fs);
+      --e-btn-vis-h: 4em;
+      padding: var(--s-pd) var(--s-pd-lg);
+      border-radius: var(--s-br-lg);
+      font-size: var(--t-lg-fs);
 
       &:has(.btn-vis-w) {
-        padding: var(--btn-pd) var(--pd-lg) var(--btn-pd) var(--btn-pd);
+        padding: var(--e-btn-pd) var(--s-pd-lg) var(--e-btn-pd) var(--e-btn-pd);
       }
     }
 
     /* with visual content */
     &:has(.btn-vis-w) {
-      --btn-pd: .2em;
+      --e-btn-pd: .2em;
       align-items: center;
-      gap: var(--gp);
-      padding: var(--btn-pd) var(--pd) var(--btn-pd) var(--btn-pd);
+      gap: var(--s-gp);
+      padding: var(--e-btn-pd) var(--s-pd) var(--e-btn-pd) var(--e-btn-pd);
 
     }
 
@@ -143,24 +141,24 @@
 
     .btn-vis-w {
       flex: none;
-      border-radius: calc(var(--br) - var(--btn-pd));
-      border: var(--bw) var(--btn-vis-b) solid;
+      border-radius: calc(var(--s-br) - var(--e-btn-pd));
+      border: var(--s-bw) var(--e-btn-vis-bor) solid;
 
       &:has(:is(span, i, b, svg)) {
         display: inline-flex;
-        width: var(--btn-vis-h);
-        height: var(--btn-vis-h);
+        width: var(--e-btn-vis-h);
+        height: var(--e-btn-vis-h);
         align-items: center;
         justify-content: flex-end;
-        background: var(--btn-vis-s);
-        color: var(--btn-vis-i);
+        background: var(--e-btn-vis-sur);
+        color: var(--e-btn-vis-ink);
         transition-property: background, color;
-        transition-duration: var(--td);
-        transition-timing-function: var(--tf-o);
+        transition-duration: var(--m-td);
+        transition-timing-function: var(--m-tf-o);
       }
 
       &:has(:is(img, picture)) {
-        height: var(--btn-vis-h);
+        height: var(--e-btn-vis-h);
       }
 
       :is(span, i, b, svg) {
@@ -170,20 +168,20 @@
         flex: none;
         width: 100%;
         height: 100%;
-        transform: translateX(calc(100% * var(--is-t)));
+        transform: translateX(calc(100% * var(--i-hov-t)));
         transition-property: transform, color;
-        transition-duration: var(--td-s);
-        transition-timing-function: var(--tf-s);
+        transition-duration: var(--m-td-s);
+        transition-timing-function: var(--m-tf-s);
       }
 
       :is(img, picture) {
         display: block;
         height: 100%;
         width: auto;
-        transform: scale(calc(1 + .2 * var(--is-f)));
+        transform: scale(calc(1 + .2 * var(--i-hov-f)));
         transition-property: transform;
-        transition-duration: var(--td-f);
-        transition-timing-function: var(--tf-o);
+        transition-duration: var(--m-td-f);
+        transition-timing-function: var(--m-tf-o);
       }
 
       img {
@@ -198,10 +196,10 @@
 
       span {
         display: block;
-        transform: translateY(calc(var(--is-t) * -100%));
+        transform: translateY(calc(var(--i-hov-t) * -100%));
         transition-property: transform, color;
-        transition-duration: var(--td-s);
-        transition-timing-function: var(--tf-s);
+        transition-duration: var(--m-td-s);
+        transition-timing-function: var(--m-tf-s);
       }
     }
   }

@@ -42,33 +42,33 @@
 
 <style>
   .masonry {
-    --gc: 3;
-    --masonry-row: var(--gp-xs);
+    --l-gc: 3;
+    --masonry-row: var(--s-gp-xs);
     display: grid;
-    grid-template-columns: repeat(var(--gc), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--l-gc), minmax(0, 1fr));
     grid-auto-rows: var(--masonry-row);
-    gap: var(--gp);
+    gap: var(--s-gp);
     align-items: start;
   }
 
   .masonry.sm {
-    gap: var(--gp-sm);
+    gap: var(--s-gp-sm);
   }
 
   .masonry.lg {
-    gap: var(--gp-lg);
+    gap: var(--s-gp-lg);
   }
 
   .masonry > * {
     grid-row-end: span var(--masonry-span, 1);
   }
 
-  .masonry[data-cols$="1"] { --gc: 1; }
-  .masonry[data-cols$="2"] { --gc: 2; }
-  .masonry[data-cols$="3"] { --gc: 3; }
-  .masonry[data-cols$="4"] { --gc: 4; }
-  .masonry[data-cols$="5"] { --gc: 5; }
-  .masonry[data-cols$="6"] { --gc: 6; }
+  .masonry[data-cols$="1"] { --l-gc: 1; }
+  .masonry[data-cols$="2"] { --l-gc: 2; }
+  .masonry[data-cols$="3"] { --l-gc: 3; }
+  .masonry[data-cols$="4"] { --l-gc: 4; }
+  .masonry[data-cols$="5"] { --l-gc: 5; }
+  .masonry[data-cols$="6"] { --l-gc: 6; }
 
   @media (width < 30rem) {
     .masonry {
@@ -78,11 +78,11 @@
   }
 
   @media (width >= 60rem) {
-    .masonry[data-cols^="1"] { --gc: 1; }
-    .masonry[data-cols^="2"] { --gc: 2; }
-    .masonry[data-cols^="3"] { --gc: 3; }
-    .masonry[data-cols^="4"] { --gc: 4; }
-    .masonry[data-cols^="5"] { --gc: 5; }
-    .masonry[data-cols^="6"] { --gc: 6; }
+    .masonry[data-cols^="1"] { --l-gc: 1; }
+    .masonry[data-cols^="2"] { --l-gc: 2; }
+    .masonry[data-cols^="3"] { --l-gc: 3; }
+    .masonry[data-cols^="4"] { --l-gc: 4; }
+    .masonry[data-cols^="5"] { --l-gc: 5; }
+    .masonry[data-cols^="6"] { --l-gc: 6; }
   }
 </style>

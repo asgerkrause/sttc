@@ -67,8 +67,8 @@
     position: relative;
     margin: 0;
     overflow: hidden;
-    border-radius: var(--br);
-    background: var(--t);
+    border-radius: var(--s-br);
+    background: var(--c-sur);
   }
 
   .gallery.bleed {
@@ -91,9 +91,9 @@
 
   .gallery output,
   .gallery [data-gallery="controls"] {
-    color: var(--l);
+    color: var(--c-light-fixed);
     mix-blend-mode: difference;
-    padding: var(--pd-xs) var(--pd-sm);
+    padding: var(--s-pd-xs) var(--s-pd-sm);
   }
 
   .gallery output {
@@ -131,8 +131,8 @@
   }
 
   .gallery button:focus-visible {
-    outline: var(--bw) solid currentColor;
-    outline-offset: calc(var(--bw) * -2);
+    outline: var(--s-bw) solid currentColor;
+    outline-offset: calc(var(--s-bw) * -2);
   }
 
   @media (hover: hover) {

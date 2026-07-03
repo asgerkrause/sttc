@@ -3,33 +3,36 @@
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { basename, join } from 'path'
-import { componentsDir, dist, legacyAppDir, legacyImagesDir, legacyRuntimeLib, legacyRuntimeRouter, legacyStylesDir, packageRoot, pagesDir, root, routesDir, shellFile, src } from './paths'
+import { packageRoot, projectPaths, root } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError, lineOf } from './errors'
-import { compileContent, loadCustomContentCollections } from './content'
+import { compileContentFrom, loadCustomContentCollections } from './content'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs } from './images'
+import { createBuildContext, type BuildContext } from './build-context'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
-type CheckOptions = { allowBrokenLinks?: boolean; launch?: boolean }
+type CheckOptions = { allowBrokenLinks?: boolean; launch?: boolean; context?: BuildContext }
 
 export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
+  const context = opts.context ?? createBuildContext()
+  const paths = projectPaths(context.rootDir)
   const errors: string[] = []
   const warnings: string[] = []
   const fail = (m: string) => errors.push(m)
   const warn = (m: string) => warnings.push(m)
 
-  await checkSiteJson(fail)
-  await checkSourceContracts(fail, warn)
-  await checkSourceLayout(warn)
-  await checkSeoFiles(fail)
-  await checkJsonLd(fail)
-  await checkBuiltPublicAssetRefs(dist, fail)
-  await checkUnresolvedTemplatePlaceholders(fail)
-  if (!opts.allowBrokenLinks) await checkInternalLinks(fail)
-  await checkComponentTags(warn)
-  await checkDiscoveryArtifacts(fail)
-  if (opts.launch) await checkLaunchReadiness(fail, warn)
+  await checkSiteJson(paths.src, fail)
+  await checkSourceContracts(context, fail, warn)
+  await checkSourceLayout(paths, warn)
+  await checkSeoFiles(context.distDir, fail)
+  await checkJsonLd(context.distDir, fail)
+  await checkBuiltPublicAssetRefs(context.distDir, fail)
+  await checkUnresolvedTemplatePlaceholders(context.distDir, fail)
+  if (!opts.allowBrokenLinks) await checkInternalLinks(context.distDir, fail)
+  await checkComponentTags(paths, warn)
+  await checkDiscoveryArtifacts(context.distDir, fail)
+  if (opts.launch) await checkLaunchReadiness(context, fail, warn)
 
   return { errors, warnings }
 }
@@ -57,8 +60,8 @@ function extractLdJson(html: string) {
   return blocks
 }
 
-async function checkJsonLd(fail: (m: string) => void) {
-  const files = [join(dist, 'index.html'), ...(await collectHtmlFiles(join(dist, 'routes')))]
+async function checkJsonLd(distDir: string, fail: (m: string) => void) {
+  const files = [join(distDir, 'index.html'), ...(await collectHtmlFiles(join(distDir, 'routes')))]
   for (const file of files) {
     let html: string
     try { html = await readFile(file, 'utf8') } catch { fail(`missing ${file}`); continue }
@@ -75,8 +78,8 @@ async function checkJsonLd(fail: (m: string) => void) {
   }
 }
 
-async function checkUnresolvedTemplatePlaceholders(fail: (m: string) => void) {
-  const files = await collectHtmlFiles(dist)
+async function checkUnresolvedTemplatePlaceholders(distDir: string, fail: (m: string) => void) {
+  const files = await collectHtmlFiles(distDir)
   const re = /\{\{[\w.-]+(?::[\w.-]+)?\}\}/g
   for (const file of files) {
     const html = await readFile(file, 'utf8').catch(() => null)
@@ -87,26 +90,26 @@ async function checkUnresolvedTemplatePlaceholders(fail: (m: string) => void) {
   }
 }
 
-async function checkSeoFiles(fail: (m: string) => void) {
-  const robots = await readFile(join(dist, 'robots.txt'), 'utf8').catch(() => null)
+async function checkSeoFiles(distDir: string, fail: (m: string) => void) {
+  const robots = await readFile(join(distDir, 'robots.txt'), 'utf8').catch(() => null)
   if (!robots) fail('missing dist/robots.txt')
   else if (!robots.includes('Sitemap:')) fail('robots.txt missing Sitemap line')
 
-  const sitemap = await readFile(join(dist, 'sitemap.xml'), 'utf8').catch(() => null)
+  const sitemap = await readFile(join(distDir, 'sitemap.xml'), 'utf8').catch(() => null)
   if (!sitemap) fail('missing dist/sitemap.xml')
   else if (!sitemap.includes('<urlset')) fail('sitemap.xml invalid')
 }
 
-async function routeExists(href: string) {
+async function routeExists(distDir: string, href: string) {
   const path = href.replace(/\/$/, '') || '/'
-  if (path === '/') return stat(join(dist, 'index.html')).then(() => true).catch(() => false)
+  if (path === '/') return stat(join(distDir, 'index.html')).then(() => true).catch(() => false)
   const slug = path.slice(1)
-  return stat(join(dist, 'routes', `${slug}.html`)).then(() => true).catch(() => false)
+  return stat(join(distDir, 'routes', `${slug}.html`)).then(() => true).catch(() => false)
 }
 
-async function assetExists(href: string) {
+async function assetExists(distDir: string, href: string) {
   const rel = href.startsWith('/') ? href.slice(1) : href
-  return stat(join(dist, rel)).then(() => true).catch(() => false)
+  return stat(join(distDir, rel)).then(() => true).catch(() => false)
 }
 
 const PUBLIC_ASSET_RE = /\/assets\/(images|videos|files)\/[^"'`\s<>)\\]+/g
@@ -170,8 +173,8 @@ export async function checkBuiltImageRefs(distRoot: string, fail: (m: string) =>
   await checkBuiltPublicAssetRefs(distRoot, fail)
 }
 
-async function checkInternalLinks(fail: (m: string) => void) {
-  const htmlFiles = [join(dist, 'index.html'), ...(await collectHtmlFiles(join(dist, 'routes')))]
+async function checkInternalLinks(distDir: string, fail: (m: string) => void) {
+  const htmlFiles = [join(distDir, 'index.html'), ...(await collectHtmlFiles(join(distDir, 'routes')))]
   const hrefRe = /href="(\/[^"#?]*)"/g
   for (const file of htmlFiles) {
     const html = await readFile(file, 'utf8').catch(() => null)
@@ -179,25 +182,25 @@ async function checkInternalLinks(fail: (m: string) => void) {
     for (const m of html.matchAll(hrefRe)) {
       const href = m[1]
       if (href.startsWith('/assets/') || href.startsWith('/media/') || href.startsWith('/lib/')) {
-        if (!(await assetExists(href))) fail(`${file}: broken asset ${href}`)
+        if (!(await assetExists(distDir, href))) fail(`${file}: broken asset ${href}`)
       } else if (href.endsWith('.html') || href.endsWith('.json') || href.endsWith('.txt')) {
-        if (!(await assetExists(href))) fail(`${file}: broken link ${href}`)
+        if (!(await assetExists(distDir, href))) fail(`${file}: broken link ${href}`)
       } else {
-        if (!(await routeExists(href))) fail(`${file}: broken route ${href}`)
+        if (!(await routeExists(distDir, href))) fail(`${file}: broken route ${href}`)
       }
     }
   }
 }
 
-async function checkSiteJson(fail: (m: string) => void) {
-  try { JSON.parse(await readFile(join(src, 'site.json'), 'utf8')) }
+async function checkSiteJson(srcDir: string, fail: (m: string) => void) {
+  try { JSON.parse(await readFile(join(srcDir, 'site.json'), 'utf8')) }
   catch { fail('src/site.json is not valid JSON') }
 }
 
-async function checkSourceContracts(fail: (m: string) => void, warn: (m: string) => void) {
-  await checkVercelConfig(root, warn)
+async function checkSourceContracts(context: BuildContext, fail: (m: string) => void, warn: (m: string) => void) {
+  await checkVercelConfig(context.rootDir, warn)
 
-  const imageRoots = await imageSourceRoots(root).catch((err) => {
+  const imageRoots = await imageSourceRoots(context.rootDir).catch((err) => {
     if (err instanceof BuildError) {
       fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
       return []
@@ -214,11 +217,11 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
   })
 
   const routeSlugs = new Map<string, string>()
-  for (const route of await discoverSourceRoutes()) {
+  for (const route of await discoverSourceRoutes({ srcDir: context.srcDir })) {
     routeSlugs.set(route.slug, route.sourceRel)
   }
 
-  const contentRoutes = await compileContent().catch((err) => {
+  const contentRoutes = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir }).catch((err) => {
     fail(err instanceof Error ? err.message : String(err))
     return []
   })
@@ -229,19 +232,19 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
 
   for (const template of ['post.html']) {
     const rel = `src/templates/${template}`
-    const raw = await readFile(join(src, 'templates', template), 'utf8').catch(() => '')
+    const raw = await readFile(join(context.srcDir, 'templates', template), 'utf8').catch(() => '')
     if (!raw) continue
     if (!raw.includes('{{body}}')) fail(`${rel}: missing {{body}} placeholder`)
     if (!raw.includes('{{title}}')) warn(`${rel}: missing {{title}} placeholder`)
   }
 
-  const customCollections = await loadCustomContentCollections().catch((err) => {
+  const customCollections = await loadCustomContentCollections(context.rootDir).catch((err) => {
     fail(err instanceof Error ? err.message : String(err))
     return []
   })
   for (const collection of customCollections) {
     const rel = `src/templates/${collection.template}`
-    const raw = await readFile(join(src, 'templates', collection.template), 'utf8').catch(() => '')
+    const raw = await readFile(join(context.srcDir, 'templates', collection.template), 'utf8').catch(() => '')
     if (!raw) {
       fail(`${rel}: missing custom collection template for "${collection.name}"`)
       continue
@@ -250,7 +253,7 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
     if (!raw.includes('{{title}}')) warn(`${rel}: missing {{title}} placeholder`)
   }
 
-  const pages = await readFile(join(root, '.pages.yml'), 'utf8').catch(() => '')
+  const pages = await readFile(join(context.rootDir, '.pages.yml'), 'utf8').catch(() => '')
   if (pages) {
     try {
       checkPagesCmsConfig(pages, warn)
@@ -260,7 +263,7 @@ async function checkSourceContracts(fail: (m: string) => void, warn: (m: string)
     }
   }
 
-  await checkComponentActiveScripts(warn)
+  await checkComponentActiveScripts(context.componentsDir, warn)
 }
 
 const COMPONENT_SCRIPT_RE = /<script(?![^>]*type=["']application\/ld\+json["'])(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi
@@ -281,7 +284,7 @@ function activeScriptNeedsGuard(code: string) {
     || /addEventListener\(\s*['"]scroll['"]/.test(code)
 }
 
-async function checkComponentActiveScripts(warn: (m: string) => void) {
+async function checkComponentActiveScripts(componentsDir: string, warn: (m: string) => void) {
   let entries: string[]
   try { entries = await readdir(componentsDir) } catch { return }
   for (const file of entries.filter((entry) => entry.endsWith('.html')).sort()) {
@@ -384,16 +387,16 @@ export async function checkVercelConfig(projectRoot: string, warn: (m: string) =
   }
 }
 
-async function checkSourceLayout(warn: (m: string) => void) {
+async function checkSourceLayout(paths: ReturnType<typeof projectPaths>, warn: (m: string) => void) {
   const legacy = [
-    ['src/routes', routesDir],
-    ['src/styles/styles.css', join(src, 'styles', 'styles.css')],
-    ['src/app/app.js', join(src, 'app', 'app.js')],
-    ['src/assets/js', legacyAppDir],
-    ['src/assets/css', legacyStylesDir],
-    ['src/assets/images', legacyImagesDir],
-    ['router.js', legacyRuntimeRouter],
-    ['lib', legacyRuntimeLib],
+    ['src/routes', paths.routesDir],
+    ['src/styles/styles.css', join(paths.src, 'styles', 'styles.css')],
+    ['src/app/app.js', join(paths.src, 'app', 'app.js')],
+    ['src/assets/js', paths.legacyAppDir],
+    ['src/assets/css', paths.legacyStylesDir],
+    ['src/assets/images', paths.legacyImagesDir],
+    ['router.js', paths.legacyRuntimeRouter],
+    ['lib', paths.legacyRuntimeLib],
   ] as const
   for (const [label, path] of legacy) {
     try {
@@ -405,10 +408,10 @@ async function checkSourceLayout(warn: (m: string) => void) {
   }
 }
 
-async function checkComponentTags(warn: (m: string) => void) {
+async function checkComponentTags(paths: ReturnType<typeof projectPaths>, warn: (m: string) => void) {
   let names: string[]
   try {
-    names = (await readdir(componentsDir)).filter((n) => n.endsWith('.html')).map((n) => n.replace(/\.html$/, ''))
+    names = (await readdir(paths.componentsDir)).filter((n) => n.endsWith('.html')).map((n) => n.replace(/\.html$/, ''))
   } catch { return }
   const known = new Set(names)
   const tagRe = /<([A-Z][A-Za-z0-9]*)(?:\s|\/|>)/g
@@ -420,9 +423,9 @@ async function checkComponentTags(warn: (m: string) => void) {
       warn(`${path}: unknown component <${m[1]} />`)
     }
   }
-  await scanFile(shellFile)
+  await scanFile(paths.shellFile)
   const glob = new Bun.Glob('**/*.html')
-  for (const dir of [routesDir, pagesDir]) {
+  for (const dir of [paths.routesDir, paths.pagesDir]) {
     if (!(await Bun.file(dir).exists())) continue
     for await (const rel of glob.scan({ cwd: dir, onlyFiles: true })) {
       await scanFile(join(dir, rel))
@@ -485,9 +488,9 @@ async function checkRouteSemantics(file: string, fail: (m: string) => void, warn
   }
 }
 
-async function checkLaunchSiteConfig(fail: (m: string) => void) {
+async function checkLaunchSiteConfig(context: BuildContext, fail: (m: string) => void) {
   const rel = 'src/site.json'
-  const raw = await readFile(join(src, 'site.json'), 'utf8').catch(() => '')
+  const raw = await readFile(join(context.srcDir, 'site.json'), 'utf8').catch(() => '')
   let site: Record<string, unknown>
   try { site = JSON.parse(raw) } catch { return }
   const url = typeof site.url === 'string' ? site.url : ''
@@ -498,8 +501,8 @@ async function checkLaunchSiteConfig(fail: (m: string) => void) {
   if (!og) fail(`${rel}: launch ogImage missing\n  hint: Set ogImage to a real social preview image path.`)
 }
 
-async function checkPrivateOutputUrls(fail: (m: string) => void) {
-  const files = [join(dist, 'index.html'), ...(await collectHtmlFiles(join(dist, 'routes'))), ...(await collectFilesByExtension(dist, '.json'))]
+async function checkPrivateOutputUrls(distDir: string, fail: (m: string) => void) {
+  const files = [join(distDir, 'index.html'), ...(await collectHtmlFiles(join(distDir, 'routes'))), ...(await collectFilesByExtension(distDir, '.json'))]
   const privateUrl = /https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|[^\s"'<>]+\.local\b)/i
   for (const file of files) {
     const text = await readFile(file, 'utf8').catch(() => '')
@@ -508,17 +511,17 @@ async function checkPrivateOutputUrls(fail: (m: string) => void) {
   }
 }
 
-async function checkDraftLeakage(fail: (m: string) => void) {
-  const content = await compileContent().catch(() => [])
+async function checkDraftLeakage(context: BuildContext, fail: (m: string) => void) {
+  const content = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir }).catch(() => [])
   for (const route of content) {
     if (route.draft) fail(`${route.source}: draft content included in production build\n  hint: Draft content must not emit during launch checks.`)
   }
 }
 
-async function checkLaunchReadiness(fail: (m: string) => void, warn: (m: string) => void) {
-  await checkLaunchSiteConfig(fail)
-  const routeFiles = (await collectHtmlFiles(join(dist, 'routes'))).filter((file) => file !== join(dist, 'routes', 'index.html'))
-  const files = [join(dist, 'index.html'), ...routeFiles]
+async function checkLaunchReadiness(context: BuildContext, fail: (m: string) => void, warn: (m: string) => void) {
+  await checkLaunchSiteConfig(context, fail)
+  const routeFiles = (await collectHtmlFiles(join(context.distDir, 'routes'))).filter((file) => file !== join(context.distDir, 'routes', 'index.html'))
+  const files = [join(context.distDir, 'index.html'), ...routeFiles]
   const titleOwners = new Map<string, string>()
   const descOwners = new Map<string, string>()
   for (const file of files) {
@@ -538,11 +541,11 @@ async function checkLaunchReadiness(fail: (m: string) => void, warn: (m: string)
       else descOwners.set(desc, file)
     }
   }
-  await checkPrivateOutputUrls(fail)
-  await checkDraftLeakage(fail)
+  await checkPrivateOutputUrls(context.distDir, fail)
+  await checkDraftLeakage(context, fail)
 }
 
-async function checkDiscoveryArtifacts(fail: (m: string) => void) {
+async function checkDiscoveryArtifacts(distDir: string, fail: (m: string) => void) {
   const required = [
     'llms.txt',
     'llms-full.txt',
@@ -550,10 +553,10 @@ async function checkDiscoveryArtifacts(fail: (m: string) => void) {
     '.well-known/ai-plugin.json',
   ]
   for (const rel of required) {
-    if (!(await assetExists(`/${rel}`))) fail(`missing dist/${rel}`)
+    if (!(await assetExists(distDir, `/${rel}`))) fail(`missing dist/${rel}`)
   }
   try {
-    const manifest = JSON.parse(await readFile(join(dist, 'site.manifest.json'), 'utf8'))
+    const manifest = JSON.parse(await readFile(join(distDir, 'site.manifest.json'), 'utf8'))
     if (!Array.isArray(manifest.routes) || !manifest.routes.length) fail('site.manifest.json: routes array empty or missing')
     if (!Array.isArray(manifest.components)) fail('site.manifest.json: components array missing')
   } catch {

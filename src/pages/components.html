@@ -9,15 +9,15 @@
     { "label": "Tone", "color": "tone", "image": "r2" },
     { "label": "Accent", "color": "accent", "image": "r3" },
     { "label": "Accent tone", "color": "accent tone", "image": "r4" },
-    { "label": "Complimentary", "color": "complimentary", "image": "r5" },
-    { "label": "Complimentary tone", "color": "complimentary tone", "image": "r6" },
+    { "label": "Secondary", "color": "secondary", "image": "r5" },
+    { "label": "Secondary tone", "color": "secondary tone", "image": "r6" },
     { "label": "Ghost", "color": "ghost", "image": "r1" }
   ],
   "cards": [
     { "title": "Default card", "body": "Grouped content with optional actions.", "variant": "", "theme": "" },
     { "title": "Outlined card", "body": "Clear separation without a heavier surface.", "variant": "outlined", "theme": "" },
     { "title": "Ghost card", "body": "Use sparingly for quiet supporting content.", "variant": "ghost", "theme": "" },
-    { "title": "Accent card", "body": "High-contrast callout using the theme contract.", "variant": "", "theme": "accent" }
+    { "title": "Tone card", "body": "High-contrast callout using the theme contract.", "variant": "", "theme": "tone" }
   ]
 }
 </script>
@@ -117,7 +117,7 @@
     <Badge>Default</Badge>
     <Badge variant="tone">Tone</Badge>
     <Badge variant="accent">Accent</Badge>
-    <Badge variant="complimentary">Complimentary</Badge>
+    <Badge variant="secondary">Secondary</Badge>
   </div>
   <div class="btns">
     <Icon label="Decorative dot" />
@@ -195,7 +195,7 @@
     <Card><h3>One</h3><p>Short card.</p></Card>
     <Card><h3>Two</h3><p>Longer card with extra copy to prove row-span measurement keeps the grid packed without reordering source content.</p></Card>
     <Image src="r3" alt="Masonry image one" max="800" />
-    <Card theme="accent"><h3>Four</h3><p>Theme card.</p></Card>
+    <Card theme="tone"><h3>Four</h3><p>Tone card.</p></Card>
     <Image src="r5" alt="Masonry image two" max="800" />
     <Card variant="outlined"><h3>Six</h3><p>Outlined card.</p></Card>
   </Masonry>
@@ -251,7 +251,7 @@ Use markdown for prose-heavy pages: notes, case studies, docs, changelogs, and C
   <h2>Section themes</h2>
   <Grid cols="3-2">
     <Card><h3>Tone</h3><p><code>Section theme="tone"</code> remaps semantic tokens.</p></Card>
-    <Card theme="accent"><h3>Accent card</h3><p><code>Card theme="accent"</code> uses the same data-theme contract.</p></Card>
+    <Card theme="tone"><h3>Tone card</h3><p><code>Card theme="tone"</code> uses the same data-theme contract.</p></Card>
     <Card theme="invert"><h3>Invert card</h3><p>Theme attrs compose with card variants.</p></Card>
   </Grid>
 </Section>

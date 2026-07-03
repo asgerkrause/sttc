@@ -16,7 +16,7 @@ Each component file may start with a single `<!-- ... -->` HTML comment that dec
 <!--
   @desc Flexible styled container for grouped content.
   @attr variant=[default|outlined|ghost] :class Visual variant.
-  @attr theme=[tone|accent|invert] Optional data-theme value.
+  @attr theme=[tone|invert] Optional data-theme value.
 -->
 <article class="crd">{{slot}}</article>
 
@@ -130,7 +130,7 @@ Placeholders are data paths, not JavaScript expressions. For common text transfo
 ```html
 <!--
   @attr variant=[default|outlined|ghost] :class
-  @attr theme=[tone|accent|invert]
+  @attr theme=[tone|invert]
 -->
 <article class="crd" data-theme="{{theme}}">
   ...
@@ -139,14 +139,14 @@ Placeholders are data paths, not JavaScript expressions. For common text transfo
 <style>
   .crd {
     /* base */
-    &.outlined { border-color: var(--b); background: transparent; }
+    &.outlined { border-color: var(--c-bor); background: transparent; }
     &.ghost { background: transparent; }
-    &[data-theme] { background: var(--s); color: var(--i); }
+    &[data-theme] { background: var(--c-bg); color: var(--c-ink); }
   }
 </style>
 ```
 
-`<Card theme="accent">` produces `<article class="crd" data-theme="accent">`.
+`<Card theme="tone">` produces `<article class="crd" data-theme="tone">`.
 
 ## Styles
 
@@ -156,7 +156,7 @@ Global CSS is split by owner: `src/styles.css` imports `src/styles/system.css`, 
 
 Class language is short and rare. Prefer semantic HTML, ARIA, and data attributes first. Use durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.f-*`, `.fw-*`, `.c-*`, `.h*`), or short private hooks (`.brg`, `.logo-mk`, `.code-lb`) only when useful.
 
-Use design tokens from the global system. Layout: `--mw`, `--px`, `--py`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`. Type: `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`. Color: `--s`, `--i`, `--t`, `--b`, `--g`, `--a`, `--ai`, `--c`, `--ci`. Don't hardcode spacing, font weights, or colors.
+Use design tokens from the global system. Layout: `--l-mw`, `--l-gc`. Space/radius/border: `--s-px`, `--s-py`, `--s-ss`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`. Type: `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`. Color: `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-acc-ink`, `--c-sec`, `--c-sec-ink`. Motion: `--m-td*`, `--m-tf*`; interaction: `--i-hov-*`. Old short tokens are removed. Component CSS must use grouped names. Don't hardcode spacing, font weights, or colors.
 
 ## Lifecycle scripts
 

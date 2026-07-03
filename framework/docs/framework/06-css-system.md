@@ -22,38 +22,51 @@ Use tokens instead of hardcoded spacing, radii, weights, and colors.
 Layout:
 
 ```css
---mw; --px; --py; --ss; --gp; --pd; --br; --bw;
---gp-xl; --gp-lg; --gp-sm; --gp-xs;
---pd-xl; --pd-lg; --pd-sm; --pd-xs;
---br-xl; --br-lg; --br-sm; --br-xs; --br-full;
+--l-mw; --l-mw-min; --l-mw-max;
+--l-gc; --l-st;
+```
+
+Space, radius, border:
+
+```css
+--s-px; --s-py; --s-ss; --s-gp; --s-pd; --s-br; --s-bw;
+--s-gp-xl; --s-gp-lg; --s-gp-sm; --s-gp-xs;
+--s-pd-xl; --s-pd-lg; --s-pd-sm; --s-pd-xs;
+--s-br-xl; --s-br-lg; --s-br-sm; --s-br-xs; --s-br-pill;
 ```
 
 Type:
 
 ```css
---fw-l; --fw-r; --fw-b;
---h0; --h1; --h2; --h3; --h4; --h5; --h6;
---lg-fs; --md-fs; --sm-fs;
+--t-fw-l; --t-fw-r; --t-fw-b;
+--t-ff-ss; --t-ff-se; --t-ff-mo;
+--t-h0; --t-h1; --t-h2; --t-h3; --t-h4; --t-h5; --t-h6;
+--t-lg-fs; --t-md-fs; --t-sm-fs;
+--t-h1-fs-min; --t-h1-fs-max; --t-h1-lh-min; --t-h1-lh-max;
 ```
 
 Color:
 
 ```css
---s;  /* surface */
---i;  /* ink */
---t;  /* tone */
---b;  /* border */
---g;  /* muted */
---a; --ai;  /* accent + accent ink */
---c; --ci;  /* complimentary + ink */
+--c-bg;   /* background */
+--c-fg;   /* foreground */
+--c-ink;  /* text ink */
+--c-sur;  /* raised/tone surface */
+--c-bor;  /* border */
+--c-mut;  /* muted */
+--c-acc; --c-acc-ink;  /* accent + accent ink */
+--c-sec; --c-sec-ink;  /* secondary + ink */
 ```
 
-Motion:
+Motion and interaction:
 
 ```css
---td-sf; --td-f; --td; --td-s; --td-ss;
---tf-io; --tf-i; --tf-o; --tf-g; --tf-s;
+--m-td-sf; --m-td-f; --m-td; --m-td-s; --m-td-ss;
+--m-tf-io; --m-tf-i; --m-tf-o; --m-tf-g; --m-tf-s;
+--i-hov-t; --i-hov-f;
 ```
+
+Old short tokens are removed. CSS must use grouped tokens.
 
 ## Layout primitives
 
@@ -153,8 +166,8 @@ Use `span`, `rows`, and `order` on `<Grid>` only when grid itself is child of an
 Sections and components can use theme tokens through `data-theme`.
 
 ```html
-<Section theme="accent">
-  <h2>Accent section</h2>
+<Section theme="tone">
+  <h2>Tone section</h2>
 </Section>
 ```
 
@@ -168,9 +181,9 @@ Keep color usage token-based inside CSS:
 
 ```css
 .notice {
-  background: var(--s);
-  color: var(--i);
-  border: var(--bw) solid var(--b);
+  background: var(--c-bg);
+  color: var(--c-ink);
+  border: var(--s-bw) solid var(--c-bor);
 }
 ```
 
@@ -187,7 +200,7 @@ Use durable primitives:
 Use type/tone utilities when useful:
 
 ```txt
-.eb .f-* .fw-* .c-* .h*
+.eb .f-* .t-* .fw-* .c-* .h*
 ```
 
 Use private hooks only when they clarify ownership:
@@ -238,7 +251,7 @@ Use page data attr for one-off page rules:
 
 ```css
 html[data-page="about"] .team-note {
-  color: var(--g);
+  color: var(--c-mut);
 }
 ```
 

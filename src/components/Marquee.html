@@ -133,14 +133,14 @@
 
 <style>
   .marquee {
-    --mq-gp: var(--gp);
+    --mq-gp: var(--s-gp);
     overflow: hidden;
   }
 
   .marquee[data-fade="true"] {
-    mask-image: linear-gradient(to right, transparent, black var(--px), black calc(100% - var(--px)), transparent);
-    margin-left: calc(var(--px) * -1);
-    width: calc(100% + var(--px) * 2);
+    mask-image: linear-gradient(to right, transparent, black var(--s-px), black calc(100% - var(--s-px)), transparent);
+    margin-left: calc(var(--s-px) * -1);
+    width: calc(100% + var(--s-px) * 2);
   }
 
   .marquee [data-marquee="track"] {

@@ -94,11 +94,11 @@ Small inline label.
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `variant` | no | `default \| tone \| accent \| complimentary` | Visual style. |
+| `variant` | no | `default \| tone \| accent \| secondary` | Visual style. |
 
 ### Variants / enums
 
-- `variant`: `default`, `tone`, `accent`, `complimentary`
+- `variant`: `default`, `tone`, `accent`, `secondary`
 
 ### Example
 
@@ -123,7 +123,7 @@ Link styled as an action button.
 |---|---|---|---|
 | `href` | no | string | Destination URL or path. Defaults to #. |
 | `label` | no | string | Visible button text. Defaults to Learn more. |
-| `color` | no | `default \| ghost \| tone \| accent \| accent tone \| complimentary \| complimentary tone` | Visual color treatment. |
+| `color` | no | `default \| ghost \| tone \| accent \| accent tone \| secondary \| secondary tone` | Visual color treatment. |
 | `size` | no | `sm \| md \| lg` | Size variant. |
 | `icon` | no | string | Optional decorative literal icon/glyph. Provider syntax like lucide:arrow-right is reserved. |
 | `image` | no | string | Optional decorative local image name from src/images, without extension. |
@@ -131,7 +131,7 @@ Link styled as an action button.
 
 ### Variants / enums
 
-- `color`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `complimentary`, `complimentary tone`
+- `color`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `secondary`, `secondary tone`
 - `size`: `sm`, `md`, `lg`
 
 ### Accessibility notes
@@ -160,12 +160,12 @@ Flexible styled container for grouped content. Put headings, copy, media, and ac
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
 | `variant` | no | `default \| outlined \| ghost` | Visual variant. |
-| `theme` | no | `tone \| accent \| invert` | Optional data-theme value. |
+| `theme` | no | `tone \| invert` | Optional data-theme value. |
 
 ### Variants / enums
 
 - `variant`: `default`, `outlined`, `ghost`
-- `theme`: `tone`, `accent`, `invert`
+- `theme`: `tone`, `invert`
 
 ### Example
 
@@ -1003,12 +1003,12 @@ Large editorial statement block.
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
 | `variant` | no | `default \| accent \| quiet` | Visual tone. |
-| `theme` | no | `tone \| accent \| invert` | Optional data-theme value. |
+| `theme` | no | `tone \| invert` | Optional data-theme value. |
 
 ### Variants / enums
 
 - `variant`: `default`, `accent`, `quiet`
-- `theme`: `tone`, `accent`, `invert`
+- `theme`: `tone`, `invert`
 
 ### Example
 
@@ -1032,13 +1032,13 @@ Native submit button using the shared button visual style.
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
 | `label` | no | string | Visible button text. Defaults to Submit. |
-| `color` | no | `default \| ghost \| tone \| accent \| accent tone \| complimentary \| complimentary tone` | Visual color treatment. |
+| `color` | no | `default \| ghost \| tone \| accent \| accent tone \| secondary \| secondary tone` | Visual color treatment. |
 | `size` | no | `sm \| md \| lg` | Size variant. |
 | `disabled` | no | string | Disables the submit button. |
 
 ### Variants / enums
 
-- `color`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `complimentary`, `complimentary tone`
+- `color`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `secondary`, `secondary tone`
 - `size`: `sm`, `md`, `lg`
 
 ### Example

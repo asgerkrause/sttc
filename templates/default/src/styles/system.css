@@ -8,335 +8,466 @@
   }
 
   :root {
-    color-scheme: light dark;
+    color-scheme: dark light;
     interpolate-size: allow-keywords;
     hanging-punctuation: first last;
     text-wrap: pretty;
 
-    /* Editable rhythm config. Unit = rem. */
-    --mw-max: 90;
-    --mw-min: 30;
-    --py-max: 10;
-    --py-min: 6;
-    --px-max: 5;
-    --px-min: 1;
-    --ss-max: 4;
-    --ss-min: 2.5;
-    --gp-max: 1.5;
-    --gp-min: 0.625;
-    --pd-max: 1.5;
-    --pd-min: 1;
-    --br-max: .5;
-    --br-min: 0.375;
-    --gc: 12;
-    --cs: 1;
-    --st: 8lh;
+    /* Editable layout config. Unit = rem. */
+    --l-mw-max: 90;
+    --l-mw-min: 30;
+    --l-gc: 12;
+    --l-cs: 1;
+    --l-st: 8lh;
+    --l-z-head: 1000;
 
     @media (width < 60rem) {
-      --gc: 6;
+      --l-gc: 6;
     }
 
+    /* Editable space config. Unit = rem. */
+    --s-py-max: 10;
+    --s-py-min: 6;
+    --s-px-max: 5;
+    --s-px-min: 1;
+    --s-ss-max: 4;
+    --s-ss-min: 2.5;
+    --s-gp-max: 1.5;
+    --s-gp-min: 0.625;
+    --s-pd-max: 1.5;
+    --s-pd-min: 1;
+    --s-br-max: .5;
+    --s-br-min: 0.375;
+
     /* Editable type config. */
-    --ff-sans: "Aspekta", system-ui, sans-serif;
-    --ff-serif: serif;
-    --ff-mono: monospace;
-    --ff-hand: cursive;
-    --ff-display: var(--ff-sans);
-    --ffs: "ss02" on, "ss04" on, "ss05" on, "ss08" on, "ss12" on;
-    --fw-l: 300;
-    --fw-r: 400;
-    --fw-b: 600;
+    --t-ff-ss: "Aspekta", system-ui, sans-serif;
+    --t-ff-se: serif;
+    --t-ff-mo: monospace;
+    --t-ff-hand: cursive;
+    --t-ff-display: var(--t-ff-ss);
+    --t-ffs: "ss02" on, "ss04" on, "ss05" on, "ss08" on, "ss12" on;
+    --t-fw-l: 300;
+    --t-fw-r: 400;
+    --t-fw-b: 600;
 
-    --h0-max: 5;
-    --h0-min: 2.5;
-    --h1-max: 3.5;
-    --h1-min: 2;
-    --h2-max: 2.5;
-    --h2-min: 1.5;
-    --h3-max: 2;
-    --h3-min: 1.25;
-    --h4-max: 1.5;
-    --h4-min: 1.125;
-    --h5-max: 1.25;
-    --h5-min: 1;
-    --h6-max: 1;
-    --h6-min: 0.875;
-    --lg-max: 1.25;
-    --lg-min: 1.125;
-    --md-max: 1.125;
-    --md-min: 0.8;
-    --sm-max: 0.75;
-    --sm-min: 0.625;
+    --t-h0-fs-max: 5;
+    --t-h0-fs-min: 2.5;
+    --t-h0-ff: var(--t-ff-ss);
+    --t-h0-fw: var(--t-fw-r);
+    --t-h0-lh-min: 1;
+    --t-h0-lh-max: 1;
+    --t-h0-ls: -0.01em;
+    --t-h0-mw: 66ch;
+    --t-h0-tt: initial;
 
-    --h0-ff: var(--ff-sans);
-    --h1-ff: var(--ff-sans);
-    --h2-ff: var(--ff-sans);
-    --h3-ff: var(--ff-sans);
-    --h4-ff: var(--ff-sans);
-    --h5-ff: var(--ff-sans);
-    --h6-ff: var(--ff-sans);
+    --t-h1-fs-max: 3.5;
+    --t-h1-fs-min: 2;
+    --t-h1-ff: var(--t-ff-ss);
+    --t-h1-fw: var(--t-fw-r);
+    --t-h1-lh-min: 1;
+    --t-h1-lh-max: 1;
+    --t-h1-ls: -0.01em;
+    --t-h1-mw: 66ch;
+    --t-h1-tt: initial;
 
-    --h0-fw: var(--fw-r);
-    --h1-fw: var(--fw-r);
-    --h2-fw: var(--fw-r);
-    --h3-fw: var(--fw-r);
-    --h4-fw: var(--fw-b);
-    --h5-fw: var(--fw-b);
-    --h6-fw: var(--fw-b);
-    --lg-fw: var(--fw-r);
-    --md-fw: var(--fw-r);
-    --sm-fw: var(--fw-r);
+    --t-h2-fs-max: 2.5;
+    --t-h2-fs-min: 1.5;
+    --t-h2-ff: var(--t-ff-ss);
+    --t-h2-fw: var(--t-fw-r);
+    --t-h2-lh-min: 1.05;
+    --t-h2-lh-max: 1.05;
+    --t-h2-ls: -0.01em;
+    --t-h2-mw: 66ch;
+    --t-h2-tt: initial;
 
-    --h0-lh: 1;
-    --h1-lh: 1;
-    --h2-lh: 1.05;
-    --h3-lh: 1.1;
-    --h4-lh: 1.2;
-    --h5-lh: 1.2;
-    --h6-lh: 1.2;
-    --lg-lh: 1.2;
-    --md-lh: 1.2;
-    --sm-lh: 1.2;
+    --t-h3-fs-max: 2;
+    --t-h3-fs-min: 1.25;
+    --t-h3-ff: var(--t-ff-ss);
+    --t-h3-fw: var(--t-fw-r);
+    --t-h3-lh-min: 1.1;
+    --t-h3-lh-max: 1.1;
+    --t-h3-ls: -0.01em;
+    --t-h3-mw: 66ch;
+    --t-h3-tt: initial;
 
-    --h0-ls: -0.01em;
-    --h1-ls: -0.01em;
-    --h2-ls: -0.01em;
-    --h3-ls: -0.01em;
-    --h4-ls: -0.02em;
-    --h5-ls: -0.01em;
-    --h6-ls: -0.01em;
-    --lg-ls: -0.02em;
-    --md-ls: -0.02em;
-    --sm-ls: -0.01em;
+    --t-h4-fs-max: 1.5;
+    --t-h4-fs-min: 1.125;
+    --t-h4-ff: var(--t-ff-ss);
+    --t-h4-fw: var(--t-fw-b);
+    --t-h4-lh-min: 1.2;
+    --t-h4-lh-max: 1.2;
+    --t-h4-ls: -0.02em;
+    --t-h4-mw: 66ch;
+    --t-h4-tt: initial;
 
-    --h0-mw: 66ch;
-    --h1-mw: 66ch;
-    --h2-mw: 66ch;
-    --h3-mw: 66ch;
-    --h4-mw: 66ch;
-    --h5-mw: 66ch;
-    --h6-mw: 66ch;
-    --lg-mw: 66ch;
-    --md-mw: 66ch;
-    --sm-mw: 66ch;
+    --t-h5-fs-max: 1.25;
+    --t-h5-fs-min: 1;
+    --t-h5-ff: var(--t-ff-ss);
+    --t-h5-fw: var(--t-fw-b);
+    --t-h5-lh-min: 1.2;
+    --t-h5-lh-max: 1.2;
+    --t-h5-ls: -0.01em;
+    --t-h5-mw: 66ch;
+    --t-h5-tt: initial;
 
-    --h0-tt: initial;
-    --h1-tt: initial;
-    --h2-tt: initial;
-    --h3-tt: initial;
-    --h4-tt: initial;
-    --h5-tt: initial;
-    --h6-tt: initial;
+    --t-h6-fs-max: 1;
+    --t-h6-fs-min: 0.875;
+    --t-h6-ff: var(--t-ff-ss);
+    --t-h6-fw: var(--t-fw-b);
+    --t-h6-lh-min: 1.2;
+    --t-h6-lh-max: 1.2;
+    --t-h6-ls: -0.01em;
+    --t-h6-mw: 66ch;
+    --t-h6-tt: initial;
+
+    --t-lg-fs-max: 1.25;
+    --t-lg-fs-min: 1.125;
+    --t-lg-ff: var(--t-ff-ss);
+    --t-lg-fw: var(--t-fw-r);
+    --t-lg-lh-min: 1.2;
+    --t-lg-lh-max: 1.2;
+    --t-lg-ls: -0.02em;
+    --t-lg-mw: 66ch;
+    --t-lg-tt: initial;
+
+    --t-md-fs-max: 1.125;
+    --t-md-fs-min: 0.8;
+    --t-md-ff: var(--t-ff-ss);
+    --t-md-fw: var(--t-fw-r);
+    --t-md-lh-min: 1.2;
+    --t-md-lh-max: 1.2;
+    --t-md-ls: -0.02em;
+    --t-md-mw: 66ch;
+    --t-md-tt: initial;
+
+    --t-sm-fs-max: 0.75;
+    --t-sm-fs-min: 0.625;
+    --t-sm-ff: var(--t-ff-ss);
+    --t-sm-fw: var(--t-fw-r);
+    --t-sm-lh-min: 1.2;
+    --t-sm-lh-max: 1.2;
+    --t-sm-ls: -0.01em;
+    --t-sm-mw: 66ch;
+    --t-sm-tt: initial;
+
   }
 
   :root {
-    --mw-total: calc(var(--mw-max) + var(--px-max) * 2);
-    --fluid: calc((100vw - var(--mw-min) * 1rem) / (var(--mw-total) - var(--mw-min)));
+    --l-mw-total: calc(var(--l-mw-max) + var(--s-px-max) * 2);
+    --l-fluid: calc((100vw - var(--l-mw-min) * 1rem) / (var(--l-mw-total) - var(--l-mw-min)));
+    --l-mw: calc((var(--l-mw-total) * 1rem) - (var(--s-px) * 2));
+    --s-py: clamp(var(--s-py-min) * 1rem, var(--s-py-min) * 1rem + (var(--s-py-max) - var(--s-py-min)) * var(--l-fluid), var(--s-py-max) * 1rem);
+    --s-px: clamp(var(--s-px-min) * 1rem, var(--s-px-min) * 1rem + (var(--s-px-max) - var(--s-px-min)) * var(--l-fluid), var(--s-px-max) * 1rem);
+    --s-ss: clamp(var(--s-ss-min) * 1rem, var(--s-ss-min) * 1rem + (var(--s-ss-max) - var(--s-ss-min)) * var(--l-fluid), var(--s-ss-max) * 1rem);
+    --s-gp: clamp(var(--s-gp-min) * 1rem, var(--s-gp-min) * 1rem + (var(--s-gp-max) - var(--s-gp-min)) * var(--l-fluid), var(--s-gp-max) * 1rem);
+    --s-pd: clamp(var(--s-pd-min) * 1rem, var(--s-pd-min) * 1rem + (var(--s-pd-max) - var(--s-pd-min)) * var(--l-fluid), var(--s-pd-max) * 1rem);
+    --s-br: clamp(var(--s-br-min) * 1rem, var(--s-br-min) * 1rem + (var(--s-br-max) - var(--s-br-min)) * var(--l-fluid), var(--s-br-max) * 1rem);
+    --s-bw: 1px;
+    --t-h0-fs: clamp(var(--t-h0-fs-min) * 1rem, var(--t-h0-fs-min) * 1rem + (var(--t-h0-fs-max) - var(--t-h0-fs-min)) * var(--l-fluid), var(--t-h0-fs-max) * 1rem);
+    --t-h0-lh: clamp(var(--t-h0-lh-min), var(--t-h0-lh-min) + (var(--t-h0-lh-max) - var(--t-h0-lh-min)) * var(--l-fluid), var(--t-h0-lh-max));
+    --t-h1-fs: clamp(var(--t-h1-fs-min) * 1rem, var(--t-h1-fs-min) * 1rem + (var(--t-h1-fs-max) - var(--t-h1-fs-min)) * var(--l-fluid), var(--t-h1-fs-max) * 1rem);
+    --t-h1-lh: clamp(var(--t-h1-lh-min), var(--t-h1-lh-min) + (var(--t-h1-lh-max) - var(--t-h1-lh-min)) * var(--l-fluid), var(--t-h1-lh-max));
+    --t-h2-fs: clamp(var(--t-h2-fs-min) * 1rem, var(--t-h2-fs-min) * 1rem + (var(--t-h2-fs-max) - var(--t-h2-fs-min)) * var(--l-fluid), var(--t-h2-fs-max) * 1rem);
+    --t-h2-lh: clamp(var(--t-h2-lh-min), var(--t-h2-lh-min) + (var(--t-h2-lh-max) - var(--t-h2-lh-min)) * var(--l-fluid), var(--t-h2-lh-max));
+    --t-h3-fs: clamp(var(--t-h3-fs-min) * 1rem, var(--t-h3-fs-min) * 1rem + (var(--t-h3-fs-max) - var(--t-h3-fs-min)) * var(--l-fluid), var(--t-h3-fs-max) * 1rem);
+    --t-h3-lh: clamp(var(--t-h3-lh-min), var(--t-h3-lh-min) + (var(--t-h3-lh-max) - var(--t-h3-lh-min)) * var(--l-fluid), var(--t-h3-lh-max));
+    --t-h4-fs: clamp(var(--t-h4-fs-min) * 1rem, var(--t-h4-fs-min) * 1rem + (var(--t-h4-fs-max) - var(--t-h4-fs-min)) * var(--l-fluid), var(--t-h4-fs-max) * 1rem);
+    --t-h4-lh: clamp(var(--t-h4-lh-min), var(--t-h4-lh-min) + (var(--t-h4-lh-max) - var(--t-h4-lh-min)) * var(--l-fluid), var(--t-h4-lh-max));
+    --t-h5-fs: clamp(var(--t-h5-fs-min) * 1rem, var(--t-h5-fs-min) * 1rem + (var(--t-h5-fs-max) - var(--t-h5-fs-min)) * var(--l-fluid), var(--t-h5-fs-max) * 1rem);
+    --t-h5-lh: clamp(var(--t-h5-lh-min), var(--t-h5-lh-min) + (var(--t-h5-lh-max) - var(--t-h5-lh-min)) * var(--l-fluid), var(--t-h5-lh-max));
+    --t-h6-fs: clamp(var(--t-h6-fs-min) * 1rem, var(--t-h6-fs-min) * 1rem + (var(--t-h6-fs-max) - var(--t-h6-fs-min)) * var(--l-fluid), var(--t-h6-fs-max) * 1rem);
+    --t-h6-lh: clamp(var(--t-h6-lh-min), var(--t-h6-lh-min) + (var(--t-h6-lh-max) - var(--t-h6-lh-min)) * var(--l-fluid), var(--t-h6-lh-max));
+    --t-lg-fs: clamp(var(--t-lg-fs-min) * 1rem, var(--t-lg-fs-min) * 1rem + (var(--t-lg-fs-max) - var(--t-lg-fs-min)) * var(--l-fluid), var(--t-lg-fs-max) * 1rem);
+    --t-lg-lh: clamp(var(--t-lg-lh-min), var(--t-lg-lh-min) + (var(--t-lg-lh-max) - var(--t-lg-lh-min)) * var(--l-fluid), var(--t-lg-lh-max));
+    --t-md-fs: clamp(var(--t-md-fs-min) * 1rem, var(--t-md-fs-min) * 1rem + (var(--t-md-fs-max) - var(--t-md-fs-min)) * var(--l-fluid), var(--t-md-fs-max) * 1rem);
+    --t-md-lh: clamp(var(--t-md-lh-min), var(--t-md-lh-min) + (var(--t-md-lh-max) - var(--t-md-lh-min)) * var(--l-fluid), var(--t-md-lh-max));
+    --t-sm-fs: clamp(var(--t-sm-fs-min) * 1rem, var(--t-sm-fs-min) * 1rem + (var(--t-sm-fs-max) - var(--t-sm-fs-min)) * var(--l-fluid), var(--t-sm-fs-max) * 1rem);
+    --t-sm-lh: clamp(var(--t-sm-lh-min), var(--t-sm-lh-min) + (var(--t-sm-lh-max) - var(--t-sm-lh-min)) * var(--l-fluid), var(--t-sm-lh-max));
+    --t-h0: var(--t-h0-fw) var(--t-h0-fs) / var(--t-h0-lh) var(--t-h0-ff);
+    --t-h1: var(--t-h1-fw) var(--t-h1-fs) / var(--t-h1-lh) var(--t-h1-ff);
+    --t-h2: var(--t-h2-fw) var(--t-h2-fs) / var(--t-h2-lh) var(--t-h2-ff);
+    --t-h3: var(--t-h3-fw) var(--t-h3-fs) / var(--t-h3-lh) var(--t-h3-ff);
+    --t-h4: var(--t-h4-fw) var(--t-h4-fs) / var(--t-h4-lh) var(--t-h4-ff);
+    --t-h5: var(--t-h5-fw) var(--t-h5-fs) / var(--t-h5-lh) var(--t-h5-ff);
+    --t-h6: var(--t-h6-fw) var(--t-h6-fs) / var(--t-h6-lh) var(--t-h6-ff);
 
-    --mw: calc((var(--mw-total) * 1rem) - (var(--px) * 2));
-    --py: clamp(var(--py-min) * 1rem, var(--py-min) * 1rem + (var(--py-max) - var(--py-min)) * var(--fluid), var(--py-max) * 1rem);
-    --px: clamp(var(--px-min) * 1rem, var(--px-min) * 1rem + (var(--px-max) - var(--px-min)) * var(--fluid), var(--px-max) * 1rem);
-    --ss: clamp(var(--ss-min) * 1rem, var(--ss-min) * 1rem + (var(--ss-max) - var(--ss-min)) * var(--fluid), var(--ss-max) * 1rem);
-    --gp: clamp(var(--gp-min) * 1rem, var(--gp-min) * 1rem + (var(--gp-max) - var(--gp-min)) * var(--fluid), var(--gp-max) * 1rem);
-    --pd: clamp(var(--pd-min) * 1rem, var(--pd-min) * 1rem + (var(--pd-max) - var(--pd-min)) * var(--fluid), var(--pd-max) * 1rem);
-    --br: clamp(var(--br-min) * 1rem, var(--br-min) * 1rem + (var(--br-max) - var(--br-min)) * var(--fluid), var(--br-max) * 1rem);
-    --bw: 1px;
-
-    --h0-fs: clamp(var(--h0-min) * 1rem, var(--h0-min) * 1rem + (var(--h0-max) - var(--h0-min)) * var(--fluid), var(--h0-max) * 1rem);
-    --h1-fs: clamp(var(--h1-min) * 1rem, var(--h1-min) * 1rem + (var(--h1-max) - var(--h1-min)) * var(--fluid), var(--h1-max) * 1rem);
-    --h2-fs: clamp(var(--h2-min) * 1rem, var(--h2-min) * 1rem + (var(--h2-max) - var(--h2-min)) * var(--fluid), var(--h2-max) * 1rem);
-    --h3-fs: clamp(var(--h3-min) * 1rem, var(--h3-min) * 1rem + (var(--h3-max) - var(--h3-min)) * var(--fluid), var(--h3-max) * 1rem);
-    --h4-fs: clamp(var(--h4-min) * 1rem, var(--h4-min) * 1rem + (var(--h4-max) - var(--h4-min)) * var(--fluid), var(--h4-max) * 1rem);
-    --h5-fs: clamp(var(--h5-min) * 1rem, var(--h5-min) * 1rem + (var(--h5-max) - var(--h5-min)) * var(--fluid), var(--h5-max) * 1rem);
-    --h6-fs: clamp(var(--h6-min) * 1rem, var(--h6-min) * 1rem + (var(--h6-max) - var(--h6-min)) * var(--fluid), var(--h6-max) * 1rem);
-    --lg-fs: clamp(var(--lg-min) * 1rem, var(--lg-min) * 1rem + (var(--lg-max) - var(--lg-min)) * var(--fluid), var(--lg-max) * 1rem);
-    --md-fs: clamp(var(--md-min) * 1rem, var(--md-min) * 1rem + (var(--md-max) - var(--md-min)) * var(--fluid), var(--md-max) * 1rem);
-    --sm-fs: clamp(var(--sm-min) * 1rem, var(--sm-min) * 1rem + (var(--sm-max) - var(--sm-min)) * var(--fluid), var(--sm-max) * 1rem);
-
-    --h0: var(--h0-fw) var(--h0-fs) / var(--h0-lh) var(--h0-ff);
-    --h1: var(--h1-fw) var(--h1-fs) / var(--h1-lh) var(--h1-ff);
-    --h2: var(--h2-fw) var(--h2-fs) / var(--h2-lh) var(--h2-ff);
-    --h3: var(--h3-fw) var(--h3-fs) / var(--h3-lh) var(--h3-ff);
-    --h4: var(--h4-fw) var(--h4-fs) / var(--h4-lh) var(--h4-ff);
-    --h5: var(--h5-fw) var(--h5-fs) / var(--h5-lh) var(--h5-ff);
-    --h6: var(--h6-fw) var(--h6-fs) / var(--h6-lh) var(--h6-ff);
-
-    --mw-lg: calc(var(--mw) * 1.25);
-    --mw-sm: calc(var(--mw) * 0.75);
-    --gp-xl: calc(var(--gp) * 4);
-    --gp-lg: calc(var(--gp) * 2);
-    --gp-sm: calc(var(--gp) * 0.5);
-    --gp-xs: calc(var(--gp) * 0.25);
-    --pd-xl: calc(var(--pd) * 2);
-    --pd-lg: calc(var(--pd) * 1.5);
-    --pd-sm: calc(var(--pd) * 0.66);
-    --pd-xs: calc(var(--pd) * 0.33);
-    --ss-xl: calc(var(--ss) * 2);
-    --ss-lg: calc(var(--ss) * 1.5);
-    --ss-sm: calc(var(--ss) * 0.66);
-    --ss-xs: calc(var(--ss) * 0.33);
-    --br-xl: calc(var(--br) * 2);
-    --br-lg: calc(var(--br) * 1.5);
-    --br-sm: calc(var(--br) * 0.66);
-    --br-xs: calc(var(--br) * 0.33);
-    --br-full: 100vw;
+    --l-mw-lg: calc(var(--l-mw) * 1.25);
+    --l-mw-sm: calc(var(--l-mw) * 0.75);
+    --s-gp-xl: calc(var(--s-gp) * 4);
+    --s-gp-lg: calc(var(--s-gp) * 2);
+    --s-gp-sm: calc(var(--s-gp) * 0.5);
+    --s-gp-xs: calc(var(--s-gp) * 0.25);
+    --s-pd-xl: calc(var(--s-pd) * 2);
+    --s-pd-lg: calc(var(--s-pd) * 1.5);
+    --s-pd-sm: calc(var(--s-pd) * 0.66);
+    --s-pd-xs: calc(var(--s-pd) * 0.33);
+    --s-ss-xl: calc(var(--s-ss) * 2);
+    --s-ss-lg: calc(var(--s-ss) * 1.5);
+    --s-ss-sm: calc(var(--s-ss) * 0.66);
+    --s-ss-xs: calc(var(--s-ss) * 0.33);
+    --s-br-xl: calc(var(--s-br) * 2);
+    --s-br-lg: calc(var(--s-br) * 1.5);
+    --s-br-sm: calc(var(--s-br) * 0.66);
+    --s-br-xs: calc(var(--s-br) * 0.33);
+    --s-br-pill: 100vw;
+    --z-base: 0;
+    --z-head: var(--l-z-head);
+    --z-pop: 2000;
+    --z-modal: 3000;
+    --z-toast: 4000;
   }
 }
 
 @layer global {
   :root {
-    --i1: cubic-bezier(0.1, 0, 0.4, 0);
-    --i2: cubic-bezier(0.2, 0, 0.5, 0);
-    --i3: cubic-bezier(0.3, 0, 0.6, 0);
-    --i4: cubic-bezier(0.4, 0, 0.7, 0);
-    --i5: cubic-bezier(0.5, 0, 0.8, 0);
-    --i6: cubic-bezier(0.6, 0, 0.9, 0);
-    --io1: cubic-bezier(0.4, 0, 0.6, 1);
-    --io2: cubic-bezier(0.5, 0, 0.5, 1);
-    --io3: cubic-bezier(0.6, 0, 0.4, 1);
-    --io4: cubic-bezier(0.7, 0, 0.3, 1);
-    --io5: cubic-bezier(0.8, 0, 0.2, 1);
-    --io6: cubic-bezier(0.9, 0, 0.1, 1);
-    --o1: cubic-bezier(0.6, 1, 0.9, 1);
-    --o2: cubic-bezier(0.5, 1, 0.8, 1);
-    --o3: cubic-bezier(0.4, 1, 0.7, 1);
-    --o4: cubic-bezier(0.3, 1, 0.6, 1);
-    --o5: cubic-bezier(0.2, 1, 0.5, 1);
-    --o6: cubic-bezier(0.1, 1, 0.4, 1);
-    --tf-io: var(--io5);
-    --tf-i: var(--i5);
-    --tf-o: var(--o5);
-    --tf-g: linear(0, 0.012 0.9%, 0.05 2%, 0.411 9.2%, 0.517 11.8%, 0.611 14.6%, 0.694 17.7%, 0.765 21.1%, 0.824 24.8%, 0.872 28.9%, 0.91 33.4%, 0.939 38.4%, 0.977 50.9%, 0.994 68.4%, 1);
-    --tf-s: linear(0, 0.007 0.9%, 0.028 1.9%, 0.119 4.2%, 0.63 12.8%, 0.833 17%, 0.91 19.1%, 0.971 21.3%, 1.016 23.5%, 1.047 25.9%, 1.068 29.1%, 1.07 32.8%, 1.013 48%, 0.996 57.6%, 1);
-    --td-sf: 100ms;
-    --td-f: 200ms;
-    --td: 300ms;
-    --td-s: 600ms;
-    --td-ss: 900ms;
+    /* motion */
+    --m-tf-i: cubic-bezier(0.5, 0, 0.8, 0);
+    --m-tf-io: cubic-bezier(0.8, 0, 0.2, 1);
+    --m-tf-o: cubic-bezier(0.2, 1, 0.5, 1);
+    --m-tf-g: linear(0, 0.012 0.9%, 0.05 2%, 0.411 9.2%, 0.517 11.8%, 0.611 14.6%, 0.694 17.7%, 0.765 21.1%, 0.824 24.8%, 0.872 28.9%, 0.91 33.4%, 0.939 38.4%, 0.977 50.9%, 0.994 68.4%, 1);
+    --m-tf-s: linear(0, 0.007 0.9%, 0.028 1.9%, 0.119 4.2%, 0.63 12.8%, 0.833 17%, 0.91 19.1%, 0.971 21.3%, 1.016 23.5%, 1.047 25.9%, 1.068 29.1%, 1.07 32.8%, 1.013 48%, 0.996 57.6%, 1);
+    --m-tf: var(--m-tf-o);
+
+    --m-td-sf: 50ms;
+    --m-td-f: 100ms;
+    --m-td: 200ms;
+    --m-td-s: 400ms;
+    --m-td-ss: 800ms;
+
+    /* interaction state */
+    --i-hov-t: 0;
+    --i-hov-f: 1;
+    --i-foc-t: 0;
+    --i-foc-f: 1;
+    --i-prs-t: 0;
+    --i-prs-f: 1;
+    --i-exp-t: 0;
+    --i-exp-f: 1;
 
     @media (prefers-reduced-motion: reduce) {
-      --tf-io: linear;
-      --tf-i: linear;
-      --tf-o: linear;
-      --tf-g: linear;
-      --tf-s: linear;
-      --td-sf: 0.001ms;
-      --td-f: 0.001ms;
-      --td: 0.001ms;
-      --td-s: 0.001ms;
-      --td-ss: 0.001ms;
+      --m-tf-io: linear;
+      --m-tf-i: linear;
+      --m-tf-o: linear;
+      --m-tf-g: linear;
+      --m-tf-s: linear;
+      --m-tf: linear;
+      --m-td-sf: 0.001ms;
+      --m-td-f: 0.001ms;
+      --m-td: 0.001ms;
+      --m-td-s: 0.001ms;
+      --m-td-ss: 0.001ms;
     }
   }
 }
 
 @layer themes {
   :root {
-    --l: #fbfbfa;
-    --d: #121416;
-    --a: #cf7;
-    --ai: var(--l);
-    --c: #cbf;
-    --ci: var(--d);
+    /* fixed color anchors + palette. Root-only. */
+    --c-light-fixed: #fbfbfa;
+    --c-dark-fixed: #242628;
+
+    --c-red: #f44;
+    --c-orange: #f60;
+    --c-yellow: #fc3;
+    --c-lime: #af0;
+    --c-green: #0c8;
+    --c-cyan: #2ef;
+    --c-sky: #0af;
+    --c-blue: #06e;
+    --c-purple: #84f;
+    --c-pink: #f9d;
+    --c-magenta: #f3f;
+
+    /* default brand pair. [data-accent] can override both. */
+    --c-acc: #cf7;
+    --c-sec: #cbf;
   }
 
   :root,
   [data-theme] {
-    --n00: light-dark(color-mix(in srgb, var(--d) 0%, var(--l)), color-mix(in srgb, var(--l) 0%, var(--d)));
-    --n01: light-dark(color-mix(in srgb, var(--d) 1%, var(--l)), color-mix(in srgb, var(--l) 1%, var(--d)));
-    --n02: light-dark(color-mix(in srgb, var(--d) 2%, var(--l)), color-mix(in srgb, var(--l) 2%, var(--d)));
-    --n03: light-dark(color-mix(in srgb, var(--d) 3%, var(--l)), color-mix(in srgb, var(--l) 3%, var(--d)));
-    --n04: light-dark(color-mix(in srgb, var(--d) 4%, var(--l)), color-mix(in srgb, var(--l) 4%, var(--d)));
-    --n05: light-dark(color-mix(in srgb, var(--d) 5%, var(--l)), color-mix(in srgb, var(--l) 5%, var(--d)));
-    --n10: light-dark(color-mix(in srgb, var(--d) 10%, var(--l)), color-mix(in srgb, var(--l) 10%, var(--d)));
-    --n20: light-dark(color-mix(in srgb, var(--d) 20%, var(--l)), color-mix(in srgb, var(--l) 20%, var(--d)));
-    --n30: light-dark(color-mix(in srgb, var(--d) 30%, var(--l)), color-mix(in srgb, var(--l) 30%, var(--d)));
-    --n40: light-dark(color-mix(in srgb, var(--d) 40%, var(--l)), color-mix(in srgb, var(--l) 40%, var(--d)));
-    --n50: light-dark(color-mix(in srgb, var(--d) 50%, var(--l)), color-mix(in srgb, var(--l) 50%, var(--d)));
-    --n60: light-dark(color-mix(in srgb, var(--d) 60%, var(--l)), color-mix(in srgb, var(--l) 60%, var(--d)));
-    --n70: light-dark(color-mix(in srgb, var(--d) 70%, var(--l)), color-mix(in srgb, var(--l) 70%, var(--d)));
-    --n80: light-dark(color-mix(in srgb, var(--d) 80%, var(--l)), color-mix(in srgb, var(--l) 80%, var(--d)));
-    --n90: light-dark(color-mix(in srgb, var(--d) 90%, var(--l)), color-mix(in srgb, var(--l) 90%, var(--d)));
-    --n95: light-dark(color-mix(in srgb, var(--d) 95%, var(--l)), color-mix(in srgb, var(--l) 95%, var(--d)));
-    --n100: light-dark(color-mix(in srgb, var(--d) 100%, var(--l)), color-mix(in srgb, var(--l) 100%, var(--d)));
+    /* theme direction */
+    --c-light: light-dark(var(--c-light-fixed), var(--c-dark-fixed));
+    --c-dark: light-dark(var(--c-dark-fixed), var(--c-light-fixed));
 
-    --s: var(--n00);
-    --i: var(--n100);
-    --t: var(--n03);
-    --g: var(--n60);
-    --b: var(--i10);
+    /* neutral ramp */
+    --c-neu-00: color-mix(in srgb, var(--c-dark) 0%, var(--c-light));
+    --c-neu-05: color-mix(in srgb, var(--c-dark) 5%, var(--c-light));
+    --c-neu-10: color-mix(in srgb, var(--c-dark) 10%, var(--c-light));
+    --c-neu-20: color-mix(in srgb, var(--c-dark) 20%, var(--c-light));
+    --c-neu-30: color-mix(in srgb, var(--c-dark) 30%, var(--c-light));
+    --c-neu-40: color-mix(in srgb, var(--c-dark) 40%, var(--c-light));
+    --c-neu-50: color-mix(in srgb, var(--c-dark) 50%, var(--c-light));
+    --c-neu-60: color-mix(in srgb, var(--c-dark) 60%, var(--c-light));
+    --c-neu-70: color-mix(in srgb, var(--c-dark) 70%, var(--c-light));
+    --c-neu-80: color-mix(in srgb, var(--c-dark) 80%, var(--c-light));
+    --c-neu-90: color-mix(in srgb, var(--c-dark) 90%, var(--c-light));
+    --c-neu-95: color-mix(in srgb, var(--c-dark) 95%, var(--c-light));
+    --c-neu-100: color-mix(in srgb, var(--c-dark) 100%, var(--c-light));
 
-    --a05: color-mix(in srgb, var(--a) 10%, var(--n00));
-    --a10: color-mix(in srgb, var(--a) 20%, var(--n00));
-    --a20: color-mix(in srgb, var(--a) 40%, var(--n00));
-    --a30: color-mix(in srgb, var(--a) 60%, var(--n00));
-    --a40: color-mix(in srgb, var(--a) 80%, var(--n00));
-    --a50: var(--a);
-    --a60: color-mix(in srgb, var(--a) 80%, var(--n100));
-    --a70: color-mix(in srgb, var(--a) 60%, var(--n100));
-    --a80: color-mix(in srgb, var(--a) 40%, var(--n100));
-    --a90: color-mix(in srgb, var(--a) 20%, var(--n100));
-    --a95: color-mix(in srgb, var(--a) 10%, var(--n100));
+    /* accent ramp: follows nearest --c-acc, including [data-accent]. */
+    --c-acc-05: color-mix(in srgb, var(--c-acc) 10%, var(--c-light));
+    --c-acc-10: color-mix(in srgb, var(--c-acc) 20%, var(--c-light));
+    --c-acc-20: color-mix(in srgb, var(--c-acc) 40%, var(--c-light));
+    --c-acc-30: color-mix(in srgb, var(--c-acc) 60%, var(--c-light));
+    --c-acc-40: color-mix(in srgb, var(--c-acc) 80%, var(--c-light));
+    --c-acc-50: var(--c-acc);
+    --c-acc-60: color-mix(in srgb, var(--c-acc) 80%, var(--c-dark));
+    --c-acc-70: color-mix(in srgb, var(--c-acc) 60%, var(--c-dark));
+    --c-acc-80: color-mix(in srgb, var(--c-acc) 40%, var(--c-dark));
+    --c-acc-90: color-mix(in srgb, var(--c-acc) 20%, var(--c-dark));
+    --c-acc-95: color-mix(in srgb, var(--c-acc) 10%, var(--c-dark));
 
-    --c05: color-mix(in srgb, var(--c) 10%, var(--n00));
-    --c10: color-mix(in srgb, var(--c) 20%, var(--n00));
-    --c20: color-mix(in srgb, var(--c) 40%, var(--n00));
-    --c30: color-mix(in srgb, var(--c) 60%, var(--n00));
-    --c40: color-mix(in srgb, var(--c) 80%, var(--n00));
-    --c50: var(--c);
-    --c60: color-mix(in srgb, var(--c) 80%, var(--n100));
-    --c70: color-mix(in srgb, var(--c) 60%, var(--n100));
-    --c80: color-mix(in srgb, var(--c) 40%, var(--n100));
-    --c90: color-mix(in srgb, var(--c) 20%, var(--n100));
-    --c95: color-mix(in srgb, var(--c) 10%, var(--n100));
+    /* secondary ramp: paired with accent. */
+    --c-sec-05: color-mix(in srgb, var(--c-sec) 10%, var(--c-light));
+    --c-sec-10: color-mix(in srgb, var(--c-sec) 20%, var(--c-light));
+    --c-sec-20: color-mix(in srgb, var(--c-sec) 40%, var(--c-light));
+    --c-sec-30: color-mix(in srgb, var(--c-sec) 60%, var(--c-light));
+    --c-sec-40: color-mix(in srgb, var(--c-sec) 80%, var(--c-light));
+    --c-sec-50: var(--c-sec);
+    --c-sec-60: color-mix(in srgb, var(--c-sec) 80%, var(--c-dark));
+    --c-sec-70: color-mix(in srgb, var(--c-sec) 60%, var(--c-dark));
+    --c-sec-80: color-mix(in srgb, var(--c-sec) 40%, var(--c-dark));
+    --c-sec-90: color-mix(in srgb, var(--c-sec) 20%, var(--c-dark));
+    --c-sec-95: color-mix(in srgb, var(--c-sec) 10%, var(--c-dark));
 
-    --s05: color-mix(in srgb, var(--s) 5%, transparent);
-    --s10: color-mix(in srgb, var(--s) 10%, transparent);
-    --s20: color-mix(in srgb, var(--s) 20%, transparent);
-    --s30: color-mix(in srgb, var(--s) 30%, transparent);
-    --s40: color-mix(in srgb, var(--s) 40%, transparent);
-    --s50: color-mix(in srgb, var(--s) 50%, transparent);
-    --s60: color-mix(in srgb, var(--s) 60%, transparent);
-    --s70: color-mix(in srgb, var(--s) 70%, transparent);
-    --s80: color-mix(in srgb, var(--s) 80%, transparent);
-    --s90: color-mix(in srgb, var(--s) 90%, transparent);
-    --s95: color-mix(in srgb, var(--s) 95%, transparent);
+    /* semantic roles */
+    --c-bg: var(--c-neu-00);
+    --c-fg: var(--c-neu-100);
+    --c-sur: var(--c-neu-05);
+    --c-ink: var(--c-neu-100);
+    --c-mut: var(--c-neu-40);
+    --c-bor: var(--c-neu-20);
 
-    --i05: color-mix(in srgb, var(--i) 5%, transparent);
-    --i10: color-mix(in srgb, var(--i) 10%, transparent);
-    --i20: color-mix(in srgb, var(--i) 20%, transparent);
-    --i30: color-mix(in srgb, var(--i) 30%, transparent);
-    --i40: color-mix(in srgb, var(--i) 40%, transparent);
-    --i50: color-mix(in srgb, var(--i) 50%, transparent);
-    --i60: color-mix(in srgb, var(--i) 60%, transparent);
-    --i70: color-mix(in srgb, var(--i) 70%, transparent);
-    --i80: color-mix(in srgb, var(--i) 80%, transparent);
-    --i90: color-mix(in srgb, var(--i) 90%, transparent);
-    --i95: color-mix(in srgb, var(--i) 95%, transparent);
+    --c-acc-sur: var(--c-acc);
+    --c-acc-ink: var(--c-dark-fixed);
+    --c-acc-mut: var(--c-acc-60);
+    --c-acc-bor: var(--c-acc-10);
+
+    --c-sec-sur: var(--c-sec);
+    --c-sec-ink: var(--c-dark-fixed);
+    --c-sec-mut: var(--c-sec-60);
+    --c-sec-bor: var(--c-sec-10);
+
+    /* states */
+    --c-warn: var(--c-orange);
+    --c-warn-sur: color-mix(in srgb, var(--c-warn) 14%, var(--c-bg));
+    --c-warn-ink: color-mix(in srgb, var(--c-warn) 72%, var(--c-ink));
+    --c-warn-bor: color-mix(in srgb, var(--c-warn) 36%, var(--c-bg));
+
+    --c-good: var(--c-green);
+    --c-good-sur: color-mix(in srgb, var(--c-good) 14%, var(--c-bg));
+    --c-good-ink: color-mix(in srgb, var(--c-good) 72%, var(--c-ink));
+    --c-good-bor: color-mix(in srgb, var(--c-good) 36%, var(--c-bg));
+
+    --c-bad: var(--c-red);
+    --c-bad-sur: color-mix(in srgb, var(--c-bad) 14%, var(--c-bg));
+    --c-bad-ink: color-mix(in srgb, var(--c-bad) 72%, var(--c-ink));
+    --c-bad-bor: color-mix(in srgb, var(--c-bad) 36%, var(--c-bg));
+
+    /* alpha roles */
+    --c-bg-05: color-mix(in srgb, var(--c-bg) 5%, transparent);
+    --c-bg-10: color-mix(in srgb, var(--c-bg) 10%, transparent);
+    --c-bg-20: color-mix(in srgb, var(--c-bg) 20%, transparent);
+    --c-bg-30: color-mix(in srgb, var(--c-bg) 30%, transparent);
+    --c-bg-40: color-mix(in srgb, var(--c-bg) 40%, transparent);
+    --c-bg-50: color-mix(in srgb, var(--c-bg) 50%, transparent);
+    --c-bg-60: color-mix(in srgb, var(--c-bg) 60%, transparent);
+    --c-bg-70: color-mix(in srgb, var(--c-bg) 70%, transparent);
+    --c-bg-80: color-mix(in srgb, var(--c-bg) 80%, transparent);
+    --c-bg-90: color-mix(in srgb, var(--c-bg) 90%, transparent);
+    --c-bg-95: color-mix(in srgb, var(--c-bg) 95%, transparent);
+
+    --c-fg-05: color-mix(in srgb, var(--c-fg) 5%, transparent);
+    --c-fg-10: color-mix(in srgb, var(--c-fg) 10%, transparent);
+    --c-fg-20: color-mix(in srgb, var(--c-fg) 20%, transparent);
+    --c-fg-30: color-mix(in srgb, var(--c-fg) 30%, transparent);
+    --c-fg-40: color-mix(in srgb, var(--c-fg) 40%, transparent);
+    --c-fg-50: color-mix(in srgb, var(--c-fg) 50%, transparent);
+    --c-fg-60: color-mix(in srgb, var(--c-fg) 60%, transparent);
+    --c-fg-70: color-mix(in srgb, var(--c-fg) 70%, transparent);
+    --c-fg-80: color-mix(in srgb, var(--c-fg) 80%, transparent);
+    --c-fg-90: color-mix(in srgb, var(--c-fg) 90%, transparent);
+    --c-fg-95: color-mix(in srgb, var(--c-fg) 95%, transparent);
+
+    /* element roles: theme-dependent only. */
+    --e-head-sur: color-mix(in srgb, var(--c-bg) 90%, transparent);
+    --e-head-ink: var(--c-ink);
+    --e-head-bor: var(--c-bor);
+    --e-head-hgt: 4rem;
+
+    --e-foot-sur: var(--c-sur);
+    --e-foot-ink: var(--c-mut);
+    --e-foot-bor: var(--c-bor);
+
+    --e-btn-sur: var(--c-neu-90);
+    --e-btn-ink: var(--c-neu-00);
+    --e-btn-bor: transparent;
+    --e-btn-vis-sur: color-mix(in srgb, var(--e-btn-ink) 15%, var(--e-btn-sur));
+    --e-btn-vis-ink: color-mix(in srgb, var(--e-btn-ink) 80%, var(--e-btn-sur));
+    --e-btn-vis-bor: transparent;
+
+    --e-crd-sur: var(--c-sur);
+    --e-crd-ink: var(--c-ink);
+    --e-crd-bor: var(--c-bor);
+    --e-crd-mut: var(--c-mut);
+
+    --e-inp-sur: var(--c-bg);
+    --e-inp-ink: var(--c-ink);
+    --e-inp-bor: var(--c-bor);
+
+    --e-bdg-sur: var(--c-sur);
+    --e-bdg-ink: var(--c-mut);
+    --e-bdg-bor: var(--c-bor);
   }
 
   [data-theme] {
-    background: var(--s);
-    color: var(--i);
+    background: var(--c-bg);
+    color: var(--c-fg);
   }
 
   [data-theme*="tone"] {
-    --s: var(--n03);
-    --t: var(--n00);
-  }
-
-  [data-theme*="accent"] {
-    --s: var(--a05);
-    --i: var(--a90);
-    --t: color-mix(in srgb, var(--a) 14%, var(--n00));
-    --g: color-mix(in srgb, var(--i) 58%, var(--s));
-    --b: color-mix(in srgb, var(--i) 12%, transparent);
+    --c-bg: var(--c-neu-05);
+    --c-sur: var(--c-neu-00);
   }
 
   [data-theme*="invert"] {
-    --s: var(--n100);
-    --i: var(--n00);
-    --t: var(--n95);
-    --g: var(--n40);
-    --b: var(--i10);
+    --c-light: light-dark(var(--c-dark-fixed), var(--c-light-fixed));
+    --c-dark: light-dark(var(--c-light-fixed), var(--c-dark-fixed));
+  }
+
+  /* Accent presets set accent + secondary as a pair. */
+  [data-accent="blue"] {
+    --c-acc: var(--c-blue);
+    --c-sec: var(--c-acc);
+  }
+
+  [data-accent="green"] {
+    --c-acc: var(--c-green);
+    --c-sec: var(--c-acc);
+  }
+
+  [data-accent="pink"] {
+    --c-acc: var(--c-pink);
+    --c-sec: var(--c-acc);
+  }
+
+  [data-accent="purple"] {
+    --c-acc: var(--c-purple);
+    --c-sec: var(--c-acc);
+  }
+
+  [data-accent="orange"] {
+    --c-acc: var(--c-orange);
+    --c-sec: var(--c-acc);
+  }
+
+  [data-accent="red"] {
+    --c-acc: var(--c-red);
+    --c-sec: var(--c-acc);
+  }
+
+  [data-accent="lime"] {
+    --c-acc: var(--c-lime);
+    --c-sec: var(--c-acc);
   }
 }

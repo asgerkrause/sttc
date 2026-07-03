@@ -1,10 +1,10 @@
 @layer site {
   :root {
-    --mw-max: 84;
-    --a: #315cff;
-    --c: #6b3df5;
-    --ai: var(--l);
-    --ci: var(--l);
+    --l-mw-max: 84;
+    --c-acc: #315cff;
+    --c-sec: #6b3df5;
+    --c-acc-ink: var(--c-light-fixed);
+    --c-sec-ink: var(--c-light-fixed);
   }
 
   .hero {
@@ -14,10 +14,10 @@
 
   .hero-pn,
   .stp {
-    border: var(--bw) solid var(--b);
-    border-radius: var(--br-lg);
-    background: color-mix(in srgb, var(--s) 70%, transparent);
-    padding: var(--pd-lg);
+    border: var(--s-bw) solid var(--c-bor);
+    border-radius: var(--s-br-lg);
+    background: color-mix(in srgb, var(--c-bg) 70%, transparent);
+    padding: var(--s-pd-lg);
   }
 
   .hero-pn {
@@ -25,18 +25,18 @@
     justify-content: end;
 
     span {
-      color: var(--g);
-      font-size: var(--sm-fs);
+      color: var(--c-mut);
+      font-size: var(--t-sm-fs);
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
 
     strong {
       display: block;
-      font-size: var(--h2-fs);
-      font-weight: var(--h2-fw);
-      letter-spacing: var(--h2-ls);
-      line-height: var(--h2-lh);
+      font-size: var(--t-h2-fs);
+      font-weight: var(--t-h2-fw);
+      letter-spacing: var(--t-h2-ls);
+      line-height: var(--t-h2-lh);
     }
   }
 
@@ -44,9 +44,9 @@
     min-height: 22rem;
 
     span {
-      color: var(--a);
-      font-size: var(--sm-fs);
-      font-weight: var(--fw-b);
+      color: var(--c-acc);
+      font-size: var(--t-sm-fs);
+      font-weight: var(--t-fw-b);
     }
   }
 

@@ -24,26 +24,25 @@
 
 <style>
   body>header {
-  --hdr-h: 4rem;
-  --hdr-fade: 1px;
-  --hdr-bg: var(--s);
-  --hdr-fg: var(--i);
-  --hdr-b: var(--b);
-  --hdr-hero-bg: var(--s10);
-  --hdr-hero-fg: var(--i);
-  --hdr-hero-b: var(--b);
+  --e-head-sur: var(--c-bg);
+  --e-head-ink: var(--c-ink);
+  --e-head-bor: var(--c-bor);
+  --e-head-fade: 1px;
+  --e-head-hero-sur: var(--c-bg-10);
+  --e-head-hero-ink: var(--c-ink);
+  --e-head-hero-bor: var(--c-bor);
 
-  background: var(--hdr-bg);
-  color: var(--hdr-fg);
+  background: var(--e-head-sur);
+  color: var(--e-head-ink);
   view-transition-name: header;
   backdrop-filter: blur(2rem);
-  border-bottom: var(--bw) var(--b) solid;
-  min-height: var(--hdr-h);
-  padding: 0 var(--px);
+  border-bottom: var(--s-bw) var(--e-head-bor) solid;
+  min-height: var(--e-head-hgt);
+  padding: 0 var(--s-px);
   position: fixed;
   inset: 0;
   bottom: auto;
-  z-index: 1000;
+  z-index: var(--l-z-head);
   display: flex;
 
   .c {
@@ -59,14 +58,14 @@
     align-items: center;
     padding: 0;
     margin: 0;
-    gap: var(--gp);
+    gap: var(--s-gp);
   }
 
   .brg {
     position: relative;
-    background: var(--i05);
-    color: var(--i);
-    z-index: 1000;
+    background: var(--c-fg-05);
+    color: var(--c-ink);
+    z-index: var(--l-z-head);
     width: 4em;
     height: 2em;
     margin-left: auto;
@@ -83,13 +82,13 @@
     &::after {
       content: "";
       width: 33%;
-      height: var(--bw);
+      height: var(--s-bw);
       background: currentColor;
       position: absolute;
       border-radius: 100vw;
       transition-property: color, background, transform;
-      transition-timing-function: var(--tf-s);
-      transition-duration: var(--td-s);
+      transition-timing-function: var(--m-tf-s);
+      transition-duration: var(--m-td-s);
     }
 
     &::after {
@@ -101,11 +100,11 @@
     }
 
     &:hover {
-      background: var(--n10);
+      background: var(--c-neu-10);
     }
 
     &[aria-expanded="true"] {
-      background: var(--i10);
+      background: var(--c-fg-10);
 
       &::after {
         transform: rotate(45deg);
@@ -141,7 +140,7 @@
       inset: 0;
       height: 100vh;
       width: 100vw;
-      padding: var(--px);
+      padding: var(--s-px);
       align-items: end;
 
       ul {
@@ -150,7 +149,7 @@
         width: 100%;
 
         a {
-          font-size: var(--h2-fs);
+          font-size: var(--t-h2-fs);
         }
       }
     }
@@ -160,15 +159,15 @@
 @supports (animation-timeline: view()) {
   @keyframes snz-hdr-hero {
     from {
-      --hdr-bg: var(--hdr-hero-bg);
-      --hdr-fg: var(--hdr-hero-fg);
-      --hdr-b: var(--hdr-hero-b);
+      --e-head-sur: var(--e-head-hero-sur);
+      --e-head-ink: var(--e-head-hero-ink);
+      --e-head-bor: var(--e-head-hero-bor);
     }
 
     to {
-      --hdr-bg: var(--s);
-      --hdr-fg: var(--i);
-      --hdr-b: var(--b);
+      --e-head-sur: var(--c-bg);
+      --e-head-ink: var(--c-ink);
+      --e-head-bor: var(--c-bor);
     }
   }
 
@@ -176,8 +175,8 @@
     animation-name: snz-hdr-hero;
     animation-timeline: --snz-hero;
     animation-range:
-      exit calc(100% - var(--hdr-h) - var(--hdr-fade))
-      exit calc(100% - var(--hdr-h));
+      exit calc(100% - var(--e-head-hgt) - var(--e-head-fade))
+      exit calc(100% - var(--e-head-hgt));
     animation-fill-mode: both;
     animation-timing-function: steps(1, end);
   }
@@ -191,7 +190,7 @@
 
   body:has(header [aria-expanded="true"]) main::after {
     content: "";
-    background: color-mix(in srgb, var(--s) 90%, transparent);
+    background: color-mix(in srgb, var(--c-bg) 90%, transparent);
     position: fixed;
     inset: 0;
     z-index: 998;

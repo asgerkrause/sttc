@@ -81,14 +81,14 @@ return () => {
   .tabs {
     display: grid;
     grid-template-columns: minmax(10rem, 0.8fr) minmax(0, 2fr);
-    gap: var(--gp);
+    gap: var(--s-gp);
     align-items: start;
   }
 
   .tabs > [role="tablist"] {
     display: flex;
     flex-direction: column;
-    gap: var(--pd-xs);
+    gap: var(--s-pd-xs);
   }
 
   .tabs.horizontal {
@@ -125,7 +125,7 @@ return () => {
     .tabs > [role="tablist"] {
       flex-direction: row;
       overflow-x: auto;
-      padding-bottom: var(--pd-xs);
+      padding-bottom: var(--s-pd-xs);
     }
   }
 </style>

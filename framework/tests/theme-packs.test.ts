@@ -24,7 +24,7 @@ describe('theme packs', () => {
       expect(css).toContain('/* snz-bp theme:start */')
       expect(css).toContain(`/* ${name} token pack. Safe to edit after applying. */`)
       expect(css).toContain(':root {')
-      expect(css).toContain('--a:')
+      expect(css).toContain('--c-acc:')
       expect(css).toContain('/* snz-bp theme:end */')
       expect(css).not.toContain('.crd')
       expect(css).not.toContain('.accordion')
@@ -35,15 +35,15 @@ describe('theme packs', () => {
     const dir = await tempProject()
     try {
       const stylesPath = join(dir, 'src', 'styles.css')
-      await writeFile(stylesPath, '@import "grid.css";\n\nbody { color: var(--i); }\n')
+      await writeFile(stylesPath, '@import "grid.css";\n\nbody { color: var(--c-ink); }\n')
 
       await applyThemePack(dir, 'editorial')
 
       const css = await readFile(stylesPath, 'utf8')
-      expect(css.startsWith('@import "grid.css";\n\nbody { color: var(--i); }')).toBe(true)
+      expect(css.startsWith('@import "grid.css";\n\nbody { color: var(--c-ink); }')).toBe(true)
       expect(css).toContain('/* editorial token pack. Safe to edit after applying. */')
-      expect(css).toContain('--h0-ff: var(--ff-serif);')
-      expect(css).toContain('--md-mw: 72ch;')
+      expect(css).toContain('--t-h0-ff: var(--t-ff-se);')
+      expect(css).toContain('--t-md-mw: 72ch;')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -68,7 +68,7 @@ describe('theme packs', () => {
 
       const css = await readFile(join(dir, 'src', 'styles.css'), 'utf8')
       expect(css).toContain('/* brutalist token pack. Safe to edit after applying. */')
-      expect(css).toContain('--bw: 0.2rem;')
+      expect(css).toContain('--s-bw: 0.2rem;')
       expect(css).not.toContain('/* minimal token pack. Safe to edit after applying. */')
     } finally {
       await rm(dir, { recursive: true, force: true })

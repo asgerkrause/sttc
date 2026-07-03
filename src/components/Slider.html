@@ -62,18 +62,18 @@
 <style>
   .slider {
     display: grid;
-    gap: var(--pd);
+    gap: var(--s-pd);
   }
 
   .slider [data-slider="track"] {
-    --gc: 4;
+    --l-gc: 4;
     display: flex;
     align-items: start;
-    gap: var(--gp);
+    gap: var(--s-gp);
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
-    border-radius: var(--br);
+    border-radius: var(--s-br);
     -webkit-overflow-scrolling: touch;
   }
 
@@ -82,11 +82,11 @@
   }
 
   .slider [data-slider="track"] > * {
-    flex: 0 0 calc(((100% + var(--gp)) / var(--gc)) - var(--gp));
+    flex: 0 0 calc(((100% + var(--s-gp)) / var(--l-gc)) - var(--s-gp));
     min-width: 0;
     scroll-snap-align: start;
     overflow: hidden;
-    border-radius: var(--br);
+    border-radius: var(--s-br);
     user-select: none;
     -webkit-user-drag: none;
   }
@@ -99,15 +99,15 @@
   .slider [data-slider="controls"] {
     display: flex;
     justify-content: end;
-    gap: var(--gp);
+    gap: var(--s-gp);
   }
 
   .slider button {
     all: unset;
-    color: var(--g);
+    color: var(--c-mut);
     cursor: pointer;
     text-decoration: none;
-    transition: opacity var(--td) var(--tf-o), color var(--td) var(--tf-o);
+    transition: opacity var(--m-td) var(--m-tf-o), color var(--m-td) var(--m-tf-o);
   }
 
   .slider button[disabled] {
@@ -116,35 +116,35 @@
   }
 
   .slider button:focus-visible {
-    outline: var(--bw) solid currentColor;
-    outline-offset: calc(var(--bw) * 2);
+    outline: var(--s-bw) solid currentColor;
+    outline-offset: calc(var(--s-bw) * 2);
   }
 
-  .slider [data-cols$="1"] { --gc: 1; }
-  .slider [data-cols$="2"] { --gc: 2; }
-  .slider [data-cols$="3"] { --gc: 3; }
-  .slider [data-cols$="4"] { --gc: 4; }
-  .slider [data-cols$="5"] { --gc: 5; }
-  .slider [data-cols$="6"] { --gc: 6; }
+  .slider [data-cols$="1"] { --l-gc: 1; }
+  .slider [data-cols$="2"] { --l-gc: 2; }
+  .slider [data-cols$="3"] { --l-gc: 3; }
+  .slider [data-cols$="4"] { --l-gc: 4; }
+  .slider [data-cols$="5"] { --l-gc: 5; }
+  .slider [data-cols$="6"] { --l-gc: 6; }
 
   @media (width < 30rem) {
     .slider [data-slider="track"] {
-      --gc: 1;
+      --l-gc: 1;
     }
   }
 
   @media (width >= 60rem) {
-    .slider [data-cols^="1"] { --gc: 1; }
-    .slider [data-cols^="2"] { --gc: 2; }
-    .slider [data-cols^="3"] { --gc: 3; }
-    .slider [data-cols^="4"] { --gc: 4; }
-    .slider [data-cols^="5"] { --gc: 5; }
-    .slider [data-cols^="6"] { --gc: 6; }
+    .slider [data-cols^="1"] { --l-gc: 1; }
+    .slider [data-cols^="2"] { --l-gc: 2; }
+    .slider [data-cols^="3"] { --l-gc: 3; }
+    .slider [data-cols^="4"] { --l-gc: 4; }
+    .slider [data-cols^="5"] { --l-gc: 5; }
+    .slider [data-cols^="6"] { --l-gc: 6; }
   }
 
   @media (hover: hover) {
     .slider button:hover {
-      color: var(--i);
+      color: var(--c-ink);
       text-decoration: underline;
     }
   }

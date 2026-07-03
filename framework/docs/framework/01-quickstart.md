@@ -51,8 +51,8 @@ Create `src/components/Feature.html`:
 
 <style>
   .crd.accent {
-    background: var(--a);
-    color: var(--ai);
+    background: var(--c-acc);
+    color: var(--c-acc-ink);
   }
 </style>
 ```

@@ -83,8 +83,8 @@ Keep component slot-first unless stable config earns attrs:
 
 <style>
   .crd.accent {
-    background: var(--a);
-    color: var(--ai);
+    background: var(--c-acc);
+    color: var(--c-acc-ink);
   }
 </style>
 ```

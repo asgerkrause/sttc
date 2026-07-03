@@ -109,7 +109,7 @@ Create `src/components/Feature.html`:
 
 <style>
   .crd.accent {
-    background: var(--a05);
+    background: var(--c-acc-05);
   }
 </style>
 ```
@@ -291,7 +291,7 @@ Component CSS:
 - Bundled to `dist/assets/css/components.{hash}.css` inside `@layer snz.components`.
 - Loads after global CSS and before route CSS.
 
-Token legend: layout uses `--mw`, `--px`, `--py`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; weight utilities are `.fw-l`, `.fw-r`, `.fw-b`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Use `data-theme="accent"`, `tone`, and `invert` for section themes. Class language is semantic-first and short: `.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`, `.eb`; private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
+Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Common tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; colors `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-acc-ink`, `--c-sec`, `--c-sec-ink`. Weight utilities are `.fw-l`, `.fw-r`, `.fw-b`; text utilities support `.f-*` and `.t-*`. Old short tokens are removed. Use `data-theme="tone"` or `invert` for surface themes; use `data-accent` for accent palettes. Class language is semantic-first and short: `.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`, `.eb`; private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
 
 Audit boundary:
 

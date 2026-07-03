@@ -1,6 +1,6 @@
 <!--
   @desc Small inline label.
-  @attr variant=[default|tone|accent|complimentary] :class Visual style.
+  @attr variant=[default|tone|accent|secondary] :class Visual style.
 -->
 <span class="badge">{{slot}}</span>
 
@@ -8,33 +8,33 @@
   .badge {
     align-items: center;
     align-self: start;
-    background: var(--t);
-    border: var(--bw) solid var(--b);
-    border-radius: var(--br-sm);
-    color: var(--g);
+    background: var(--e-bdg-sur);
+    border: var(--s-bw) solid var(--e-bdg-bor);
+    border-radius: var(--s-br-sm);
+    color: var(--e-bdg-ink);
     display: inline-flex;
-    font-size: var(--sm-fs);
-    font-weight: var(--fw-b);
-    gap: var(--pd-xs);
+    font-size: var(--t-sm-fs);
+    font-weight: var(--t-fw-b);
+    gap: var(--s-pd-xs);
     line-height: 1;
-    padding: var(--pd-xs) var(--pd-sm);
+    padding: var(--s-pd-xs) var(--s-pd-sm);
     white-space: nowrap;
   }
 
   .badge.tone {
-    background: var(--t);
-    color: var(--i);
+    --e-bdg-sur: var(--c-sur);
+    --e-bdg-ink: var(--c-ink);
   }
 
   .badge.accent {
-    background: var(--a);
-    border-color: var(--a);
-    color: var(--ai);
+    --e-bdg-sur: var(--c-acc);
+    --e-bdg-ink: var(--c-acc-ink);
+    --e-bdg-bor: var(--c-acc);
   }
 
-  .badge.complimentary {
-    background: var(--c);
-    border-color: var(--c);
-    color: var(--ci);
+  .badge.secondary {
+    --e-bdg-sur: var(--c-sec);
+    --e-bdg-ink: var(--c-sec-ink);
+    --e-bdg-bor: var(--c-sec);
   }
 </style>

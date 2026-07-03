@@ -41,52 +41,52 @@
   .product {
     display: grid;
     align-content: space-between;
-    gap: var(--gp-lg);
+    gap: var(--s-gp-lg);
     min-height: 100%;
-    padding: var(--pd);
-    border: var(--bw) solid var(--b);
-    border-radius: var(--br);
-    background: var(--t);
+    padding: var(--s-pd);
+    border: var(--s-bw) solid var(--c-bor);
+    border-radius: var(--s-br);
+    background: var(--c-sur);
 
     &.true {
-      background: var(--i);
-      color: var(--s);
+      background: var(--c-ink);
+      color: var(--c-bg);
       border-color: transparent;
 
       p,
-      .product-price span { color: color-mix(in srgb, var(--s) 62%, var(--i)); }
+      .product-price span { color: color-mix(in srgb, var(--c-bg) 62%, var(--c-ink)); }
 
       .btn {
-        background: var(--s);
-        color: var(--i);
+        background: var(--c-bg);
+        color: var(--c-ink);
       }
     }
 
     h3 { margin: 0; }
 
-    p { color: var(--g); }
+    p { color: var(--c-mut); }
   }
 
   .product-main,
   .product-buy {
     display: grid;
-    gap: var(--gp-sm);
+    gap: var(--s-gp-sm);
   }
 
   .product-price {
     margin: 0;
 
     strong {
-      color: var(--i);
-      font-size: var(--h3-fs);
-      font-weight: var(--fw-r);
-      letter-spacing: var(--h3-ls);
-      line-height: var(--h3-lh);
+      color: var(--c-ink);
+      font-size: var(--t-h3-fs);
+      font-weight: var(--t-fw-r);
+      letter-spacing: var(--t-h3-ls);
+      line-height: var(--t-h3-lh);
     }
 
     span {
-      color: var(--g);
-      font-size: var(--sm-fs);
+      color: var(--c-mut);
+      font-size: var(--t-sm-fs);
     }
   }
 
@@ -95,7 +95,7 @@
   }
 
   .product-unavailable {
-    color: var(--g);
-    font-size: var(--sm-fs);
+    color: var(--c-mut);
+    font-size: var(--t-sm-fs);
   }
 </style>

@@ -61,6 +61,7 @@ export function createComposer(
   /** Names of components that have a lifecycle <script>. Their root gets data-snz-component. */
   scriptsByComponent?: Set<string>,
   dataByComponent = new Map<string, TemplateContext>(),
+  options: { siteFile?: string } = {},
 ) {
   let siteConfig: SiteConfig | null = null
   let currentRoute: string | undefined
@@ -68,7 +69,7 @@ export function createComposer(
 
   async function loadSiteConfig(): Promise<SiteConfig> {
     if (siteConfig) return siteConfig
-    const raw = await readFile(join(src, 'site.json'), 'utf8')
+    const raw = await readFile(options.siteFile ?? join(src, 'site.json'), 'utf8')
     siteConfig = JSON.parse(raw) as SiteConfig
     return siteConfig
   }

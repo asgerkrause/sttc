@@ -40,7 +40,7 @@ import {
   sourceVideosDir,
 } from './paths'
 import { absoluteUrl, buildSchemaGraph, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
-import { compileContent, type ContentRoute } from './content'
+import { compileContentFrom, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
 import { copyTree, mediaInputCopyExclusions, shouldSkipMediaCopy } from './assets'
@@ -166,14 +166,14 @@ async function copyAssetsTo(context: BuildContext) {
   const jsDist = join(assetsDist, 'js')
   await mkdir(cssDist, { recursive: true })
   await mkdir(jsDist, { recursive: true })
-  await copyTree(await sourceStylesDir(), cssDist, (name) => name === 'styles.css')
-  await Bun.write(join(cssDist, 'styles.css'), Bun.file(await sourceStylesFile()))
-  await copyTree(await sourceAppDir(), jsDist, (name) => name === 'app.js' || name === 'app.ts')
+  await copyTree(await sourceStylesDir(context.rootDir), cssDist, (name) => name === 'styles.css')
+  await Bun.write(join(cssDist, 'styles.css'), Bun.file(await sourceStylesFile(context.rootDir)))
+  await copyTree(await sourceAppDir(context.rootDir), jsDist, (name) => name === 'app.js' || name === 'app.ts')
   const imagesDist = join(assetsDist, 'images')
   await mkdir(imagesDist, { recursive: true })
-  await copyTree(await sourceImagesDir(), imagesDist, (name) => !name.endsWith('.svg'))
-  await copyTree(await sourceVideosDir(), join(assetsDist, 'videos'))
-  await copyTree(await sourceFilesDir(), join(assetsDist, 'files'))
+  await copyTree(await sourceImagesDir(context.rootDir), imagesDist, (name) => !name.endsWith('.svg'))
+  await copyTree(await sourceVideosDir(context.rootDir), join(assetsDist, 'videos'))
+  await copyTree(await sourceFilesDir(context.rootDir), join(assetsDist, 'files'))
 }
 
 async function copyMediaFolderTo(context: BuildContext) {
@@ -223,7 +223,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     result = await buildInto(stageContext)
     backupDir = await publishStagedDist(context, stageDir)
     const t = performance.now()
-    const report = await runChecks({ allowBrokenLinks: context.flags.allowBrokenLinks })
+    const report = await runChecks({ context, allowBrokenLinks: context.flags.allowBrokenLinks })
     await failOnReport(report)
     result.timings.check = Math.round(performance.now() - t)
     result.totalMs = Math.round(performance.now() - t0)
@@ -249,7 +249,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const tick = (label: string, start: number) => { timings[label] = Math.round(performance.now() - start) }
 
   let t = performance.now()
-  const { cssBlocks, templates, schemas, scripts: componentScripts, data: componentData } = await prepareComponents(context.componentsDir)
+  const { cssBlocks, templates, schemas, scripts: componentScripts, data: componentData } = await prepareComponents(context.componentsDir, context.rootDir)
   tick('components', t)
   let imageMeta: Record<string, ImageMeta> = {}
   const instancesByRoute = new Map<string, ComposeInstance[]>()
@@ -267,6 +267,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     },
     scriptComponentNames,
     componentData,
+    { siteFile: context.siteFile },
   )
   composer.resetSiteConfig()
 
@@ -318,9 +319,10 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     composer,
     instancesFor: (slug) => instancesByRoute.get(slug) ?? [],
     distDir: context.distDir,
+    sourceRoot: context.rootDir,
   })
 
-  for (const route of await discoverSourceRoutes()) {
+  for (const route of await discoverSourceRoutes({ srcDir: context.srcDir })) {
     const routeRaw = await readFile(route.sourcePath, 'utf8')
     const { html: routeHtml, data: routeData } = await extractTemplateData(routeRaw, {
       file: route.sourceRel,
@@ -344,7 +346,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   }
 
   // Compile posts and configured content records via templates → dist/routes/...
-  const contentRoutes = await compileContent()
+  const contentRoutes = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir })
   const contentByslug = new Map<string, ContentRoute>()
   for (const c of contentRoutes) {
     contentByslug.set(c.slug, c)
@@ -382,7 +384,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   tick('discovery', t)
 
   const appJsFile = await writeAppJs(
-    await sourceAppFile(),
+    await sourceAppFile('app.ts', context.rootDir),
     join(context.distDir, 'assets', 'js'),
     scriptBlocks,
   )
@@ -391,8 +393,8 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const shellWithApp = withAppJs(composedShell, appJsFile)
   await writeStaticRoutes(context.distDir, shellWithApp, routeGraph.composedRoutes(), routeRecords, schemaExtrasBySlug, site)
 
-  await Bun.write(join(context.distDir, 'router.js'), Bun.file(await sourceRouterFile()))
-  await copyTree(await sourceRuntimeLibDir(), join(context.distDir, 'lib'))
+  await Bun.write(join(context.distDir, 'router.js'), Bun.file(await sourceRouterFile(context.rootDir)))
+  await copyTree(await sourceRuntimeLibDir(context.rootDir), join(context.distDir, 'lib'))
 
   const total = Math.round(performance.now() - t0)
 
@@ -423,17 +425,17 @@ async function writeErrorPage(err: unknown, context: BuildContext = createBuildC
 <title>${escapeHtml(title)}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-:root { color-scheme: dark; --r:#ff3b30; --bg:#0a0a0a; --fg:#fafafa; --a:#666; --c:#1c1c1c; }
+:root { color-scheme: dark; --error-red:#ff3b30; --error-bg:#0a0a0a; --error-fg:#fafafa; --error-muted:#666; --error-card:#1c1c1c; }
 * { box-sizing: border-box }
-body { font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); color: var(--fg); margin: 0; padding: 2rem; }
+body { font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--error-bg); color: var(--error-fg); margin: 0; padding: 2rem; }
 main { max-width: 60ch; margin: 4rem auto; }
-.tag { display: inline-block; padding: .25em .5em; background: var(--r); color: white; font-weight: 600; border-radius: 4px; font-size: 12px; }
+.tag { display: inline-block; padding: .25em .5em; background: var(--error-red); color: white; font-weight: 600; border-radius: 4px; font-size: 12px; }
 h1 { margin: .5em 0 1em; font-size: 1.5em; font-weight: 600; text-wrap: balance; }
-.file { color: var(--a); margin-bottom: 1.5em; }
-.hint { padding: 1em; background: var(--c); border-left: 2px solid var(--r); border-radius: 4px; margin-bottom: 1.5em; }
-.hint::before { content: 'hint: '; color: var(--a); }
-pre { background: var(--c); padding: 1em; border-radius: 4px; overflow-x: auto; font-size: 12px; color: var(--a); }
-.refresh { margin-top: 2em; color: var(--a); font-size: 13px; }
+.file { color: var(--error-muted); margin-bottom: 1.5em; }
+.hint { padding: 1em; background: var(--error-card); border-left: 2px solid var(--error-red); border-radius: 4px; margin-bottom: 1.5em; }
+.hint::before { content: 'hint: '; color: var(--error-muted); }
+pre { background: var(--error-card); padding: 1em; border-radius: 4px; overflow-x: auto; font-size: 12px; color: var(--error-muted); }
+.refresh { margin-top: 2em; color: var(--error-muted); font-size: 13px; }
 </style>
 </head>
 <body>

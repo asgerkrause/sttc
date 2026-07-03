@@ -25,6 +25,7 @@ bun run build     # produce dist/, run strict checks at the end
 bun run check     # rebuild + validate without serving
 bun run doctor    # CSS ownership audit + strict check
 bun run doctor -- --launch # pre-launch SEO/a11y/site gate
+bun run framework:verify # full framework gate: doctor, tests, template sync, create smoke
 bun run new       # scaffolder: component|route|post|page <name>, collection <name>, or cms
 bun run add       # add component preset or theme pack
 ```
@@ -89,6 +90,12 @@ bun dev
 ```
 
 Current local verification:
+
+```bash
+bun run framework:verify
+```
+
+That runs `doctor`, the full framework test suite, template sync check, and create-smoke. For a narrower manual template check:
 
 ```bash
 bun run check:create-template
@@ -161,7 +168,7 @@ Theme packs append a marked `snz-bp theme` block to `src/styles.css`. Existing t
 
 CSS ownership: `src/styles.css` is the import shell. `src/styles/system.css` owns the editable token config + fluid engine; `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css` own their matching layers. Global primitives are `.c`, `.w`, `.btns`, `.lnks`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Component-specific selectors live in component `<style>` blocks.
 
-Token legend: layout uses `--mw`, `--px`, `--py`, `--ss`, `--gp`, `--pd`, `--br`, `--bw`; type uses `--fw-l`, `--fw-r`, `--fw-b`, plus `--md-*`, `--lg-*`, `--sm-*`, `--h0-*`…`--h6-*`; color config uses `--l`, `--d`, `--a`, `--ai`, `--c`, `--ci`; semantic output uses `--s`, `--i`, `--t`, `--b`, `--g`. Accent sections use `data-theme="accent"`.
+Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color/theme `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Use grouped tokens only: no short aliases. Themes use `data-theme="tone"` or `data-theme="invert"`; accent palettes use `data-accent="blue|green|pink|purple|orange|red|lime"`.
 
 ## Routes
 

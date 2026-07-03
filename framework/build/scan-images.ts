@@ -1,6 +1,5 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { pagesDir, routesDir } from './paths'
 import { parseAttrs } from './tags'
 import { BuildError } from './errors'
 
@@ -76,8 +75,8 @@ export async function scanImageEncodeOptions(
   const shell = await readIfExists(join(srcDir, 'shell.html'))
   if (shell) scanHtml(shell, 'src/shell.html', map)
 
-  await scanHtmlDir(routesDir, 'src/routes', map)
-  await scanHtmlDir(pagesDir, 'src/pages', map)
+  await scanHtmlDir(join(srcDir, 'routes'), 'src/routes', map)
+  await scanHtmlDir(join(srcDir, 'pages'), 'src/pages', map)
   await scanHtmlDir(componentsDir, 'src/components', map)
 
   return Object.fromEntries(map)
