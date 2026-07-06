@@ -102,7 +102,7 @@ Put source images in one of:
 Use media roots for other public files:
 
 - `src/videos/` for video files published at `/assets/videos/`
-- `src/files/` for PDFs, audio, zips, and downloads published at `/assets/files/`
+- `src/files/` for PDFs, audio, Lottie JSON, zips, and downloads published at `/assets/files/`
 
 Anything in these roots is public; keep drafts/private files elsewhere.
 
@@ -149,7 +149,7 @@ Use existing primitives first:
 - `.w` stack rhythm
 - `.crd` card shell
 - `.btns`, `.lnks`
-- `[g]`, `[c]`, `[r]`, `[o]` grid attrs
+- `[g]`, `[c]`, `[r]`, `[o]` grid attrs; use `g="a"`, `g="a-sm"`, or `g="a-lg"` for auto-fit grids
 
 Global CSS owns tokens, reset, type, grid, wrappers, motion, and page overrides. Component-specific selectors belong in component `<style>` blocks.
 

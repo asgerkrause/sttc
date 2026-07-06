@@ -17,21 +17,25 @@
     content: "";
     position: absolute;
     inset: 0;
-    z-index: -1;
+    z-index: 1;
     background: var(--c-dark-fixed);
     opacity: .5;
+    pointer-events: none;
   }
 
   #hero [data-hero-bg] {
     position: absolute;
     inset: 0;
-    z-index: -2;
+    z-index: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
   }
 
   #hero .c {
+    position: relative;
+    z-index: 2;
     align-items: center;
     justify-content: end;
   }
@@ -44,10 +48,10 @@
 <Section id="hero" scroll="hero" center="center" video="https://r2.snz.st/02.mp4">
   <div class="w center">
     <h1>HTML-first sites, composed at build time.</h1>
-    <p class="f-lg">Write routes, drop in components, and ship static output.</p>
+    <p class="t-lg">Write routes, drop in components, and ship static output.</p>
   </div>
   <div class="btns">
-    <Button label="Get started now" href="#" color="tone" icon="→" />
+    <Button label="Get started now" href="#" variant="tone" icon="→" />
   </div>
 </Section>
 

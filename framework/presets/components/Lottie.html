@@ -1,0 +1,285 @@
+<!--
+  @desc Optional Lottie animation. Supports viewport playback, hover/click triggers, and scroll scrub via existing data-scrub motion vars.
+  @attr src! Public Lottie JSON URL. Put JSON under src/files/animations for copied files output.
+  @attr trigger=[view|hover|scrub|click|manual] Playback trigger. Defaults to manual unless autoplay is true.
+  @attr autoplay=[true|false] Legacy shorthand for trigger="view" when true.
+  @attr loop Loop setting: true, false, or a number.
+  @attr duration Target playback duration in seconds. Overrides speed when supported.
+  @attr speed Playback speed multiplier. Defaults to 1.
+  @attr direction=[forward|reverse] Initial playback direction.
+  @attr hover=[reverse|reset|pause] Hover-out behavior for trigger="hover".
+  @attr target=[self|closest|parent] Trigger/scrub target. Defaults to closest for hover, self otherwise.
+  @attr progress CSS custom property used for scrub progress. Defaults to --sp-t.
+  @attr range Optional frame range as "start end".
+  @attr renderer=[svg|canvas|html] Lottie renderer. Defaults to svg.
+  @attr ratio Optional CSS aspect-ratio value, e.g. 1 / 1.
+  @attr fit=[contain|cover] Object fit for rendered SVG/canvas/html.
+  @attr loading=[lazy|eager] Load player immediately or on first trigger. Defaults to lazy.
+  @attr label Accessible label. Omit for decorative animations.
+  @attr description Accessible description for SVG renderer.
+  @attr player Override Lottie player script URL. Defaults to /assets/js/vendor/lottie.min.js.
+-->
+<div class="lottie" data-src="{{src}}" data-trigger="{{trigger}}" data-autoplay="{{autoplay}}" data-loop="{{loop}}" data-duration="{{duration}}" data-speed="{{speed}}" data-direction="{{direction}}" data-hover="{{hover}}" data-target="{{target}}" data-progress="{{progress}}" data-range="{{range}}" data-renderer="{{renderer}}" data-fit="{{fit}}" data-loading="{{loading}}" data-label="{{label}}" data-description="{{description}}" data-player="{{player}}"{#if ratio} style="aspect-ratio: {{ratio}}"{/if}{#if label} role="img" aria-label="{{label}}"{:else} aria-hidden="true"{/if}>
+  <div data-lottie-stage></div>
+</div>
+
+<script>
+  const stage = el.querySelector('[data-lottie-stage]')
+  if (!stage) return
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+  const interactiveSelector = 'a, button, [role="button"], [data-lottie-target]'
+  let animation
+  let animationPromise
+  let frame
+  let offActive
+  let cleanupTargetScrub = false
+  const cleanups = []
+
+  function value(name, fallback = '') {
+    const raw = el.dataset[name]
+    return raw && raw !== '{{' + name + '}}' ? raw : fallback
+  }
+
+  function boolish(raw, fallback = false) {
+    if (!raw) return fallback
+    if (raw === 'true' || raw === '') return true
+    if (raw === 'false') return false
+    return fallback
+  }
+
+  function loopValue(raw) {
+    if (!raw) return false
+    if (raw === 'true' || raw === '') return true
+    if (raw === 'false') return false
+    const n = Number.parseInt(raw, 10)
+    return Number.isFinite(n) ? n : false
+  }
+
+  function numberValue(raw, fallback) {
+    const n = Number.parseFloat(raw)
+    return Number.isFinite(n) ? n : fallback
+  }
+
+  function frameRange() {
+    const parts = value('range').trim().split(/\s+/).map(Number)
+    if (parts.length !== 2 || !parts.every(Number.isFinite)) return null
+    return [Math.max(0, parts[0]), Math.max(0, parts[1])]
+  }
+
+  function trigger() {
+    const explicit = value('trigger')
+    if (explicit) return explicit
+    return boolish(value('autoplay'), false) ? 'view' : 'manual'
+  }
+
+  function target() {
+    const mode = value('target', trigger() === 'hover' ? 'closest' : 'self')
+    if (mode === 'parent') return el.parentElement || el
+    if (mode === 'closest') return el.closest(interactiveSelector) || el.parentElement || el
+    return el
+  }
+
+  function totalFrames() {
+    if (!animation) return 0
+    if (typeof animation.getDuration === 'function') return animation.getDuration(true)
+    return animation.totalFrames || 0
+  }
+
+  function segment() {
+    const range = frameRange()
+    if (range) return range
+    const total = totalFrames()
+    return [0, Math.max(total - 1, 0)]
+  }
+
+  function firstFrame() {
+    return segment()[0]
+  }
+
+  function lastFrame() {
+    return segment()[1]
+  }
+
+  function setDurationSpeed() {
+    const seconds = numberValue(value('duration'), 0)
+    if (seconds > 0 && typeof animation?.getDuration === 'function') {
+      const base = animation.getDuration(false)
+      if (base > 0) {
+        animation.setSpeed(base / seconds)
+        return
+      }
+    }
+    animation?.setSpeed(numberValue(value('speed'), 1))
+  }
+
+  function loadPlayer() {
+    if (window.lottie) return Promise.resolve(window.lottie)
+    if (window.__snzLottiePromise) return window.__snzLottiePromise
+
+    window.__snzLottiePromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = value('player', '/assets/js/vendor/lottie.min.js')
+      script.defer = true
+      script.onload = () => window.lottie ? resolve(window.lottie) : reject(new Error('Lottie player did not expose window.lottie'))
+      script.onerror = () => reject(new Error('Could not load Lottie player'))
+      document.head.appendChild(script)
+    })
+    return window.__snzLottiePromise
+  }
+
+  function ensureAnimation() {
+    if (animation) return Promise.resolve(animation)
+    if (animationPromise) return animationPromise
+
+    animationPromise = loadPlayer().then((lottie) => {
+      animation = lottie.loadAnimation({
+        container: stage,
+        renderer: value('renderer', 'svg'),
+        loop: loopValue(value('loop')),
+        autoplay: false,
+        path: value('src'),
+        title: value('label'),
+        description: value('description'),
+        rendererSettings: {
+          progressiveLoad: true,
+          preserveAspectRatio: value('fit') === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet',
+        },
+      })
+
+      animation.addEventListener?.('DOMLoaded', () => {
+        setDurationSpeed()
+        if (value('direction') === 'reverse') animation.setDirection(-1)
+        if (trigger() !== 'view') animation.goToAndStop(firstFrame(), true)
+        el.dispatchEvent(new CustomEvent('snz:lottie:ready', { detail: { animation }, bubbles: true }))
+      })
+      return animation
+    }).catch((error) => {
+      console.error('[snz] Lottie error:', error)
+      animationPromise = undefined
+    })
+
+    return animationPromise
+  }
+
+  function playForward() {
+    ensureAnimation().then(() => {
+      if (!animation || reduceMotion) return
+      setDurationSpeed()
+      animation.setDirection(1)
+      const range = frameRange()
+      if (range) animation.playSegments(range, true)
+      else animation.play()
+    })
+  }
+
+  function playReverse() {
+    ensureAnimation().then(() => {
+      if (!animation || reduceMotion) return
+      setDurationSpeed()
+      animation.setDirection(-1)
+      animation.play()
+    })
+  }
+
+  function pause() {
+    animation?.pause()
+  }
+
+  function stopFrame(value) {
+    ensureAnimation().then(() => animation?.goToAndStop(value, true))
+  }
+
+  function scrub() {
+    const scrubTarget = target()
+    const prop = value('progress', '--sp-t')
+    const [start, end] = segment()
+    const raw = Number.parseFloat(getComputedStyle(scrubTarget).getPropertyValue(prop))
+    const t = Math.min(1, Math.max(0, Number.isFinite(raw) ? raw : 0))
+    animation?.goToAndStop(start + (end - start) * t, true)
+    frame = requestAnimationFrame(scrub)
+  }
+
+  function startScrub() {
+    ensureAnimation().then(() => {
+      if (!animation || frame || reduceMotion) return
+      scrub()
+    })
+  }
+
+  function stopScrub() {
+    if (!frame) return
+    cancelAnimationFrame(frame)
+    frame = undefined
+  }
+
+  function add(target, type, fn, options) {
+    target.addEventListener(type, fn, options)
+    cleanups.push(() => target.removeEventListener(type, fn, options))
+  }
+
+  const mode = trigger()
+  const triggerTarget = target()
+
+  if (mode === 'scrub') {
+    if (!triggerTarget.hasAttribute('data-scrub')) {
+      triggerTarget.setAttribute('data-scrub', '')
+      cleanupTargetScrub = true
+    }
+    offActive = window.snz?.onActive?.(triggerTarget, { enter: startScrub, exit: stopScrub })
+    if (value('loading') === 'eager' && !reduceMotion) ensureAnimation()
+  } else if (mode === 'view') {
+    offActive = window.snz?.onActive?.(el, { enter: playForward, exit: pause })
+    if (value('loading') === 'eager') ensureAnimation()
+  } else if (mode === 'hover') {
+    const onEnter = () => playForward()
+    const onLeave = () => {
+      const out = value('hover', 'reverse')
+      if (out === 'reset') stopFrame(firstFrame())
+      else if (out === 'pause') pause()
+      else playReverse()
+    }
+    add(triggerTarget, 'pointerenter', onEnter)
+    add(triggerTarget, 'pointerleave', onLeave)
+    add(triggerTarget, 'focusin', onEnter)
+    add(triggerTarget, 'focusout', onLeave)
+    offActive = window.snz?.onActive?.(el, { exit: pause })
+    if (value('loading') === 'eager') ensureAnimation()
+  } else if (mode === 'click') {
+    let playing = false
+    add(triggerTarget, 'click', () => {
+      if (playing) pause()
+      else playForward()
+      playing = !playing
+    })
+    offActive = window.snz?.onActive?.(el, { exit: pause })
+    if (value('loading') === 'eager') ensureAnimation()
+  } else if (value('loading') === 'eager') {
+    ensureAnimation()
+  }
+
+  if (reduceMotion && (mode === 'view' || mode === 'scrub')) stopFrame(firstFrame())
+
+  return () => {
+    offActive?.()
+    stopScrub()
+    for (const cleanup of cleanups) cleanup()
+    if (cleanupTargetScrub) triggerTarget.removeAttribute('data-scrub')
+    animation?.destroy()
+  }
+</script>
+
+<style>
+  .lottie {
+    width: 100%;
+    min-height: 1lh;
+  }
+
+  .lottie [data-lottie-stage],
+  .lottie svg,
+  .lottie canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+</style>

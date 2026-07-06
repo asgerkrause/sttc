@@ -42,7 +42,7 @@ Type:
 --t-ff-ss; --t-ff-se; --t-ff-mo;
 --t-h0; --t-h1; --t-h2; --t-h3; --t-h4; --t-h5; --t-h6;
 --t-lg-fs; --t-md-fs; --t-sm-fs;
---t-h1-fs-min; --t-h1-fs-max; --t-h1-lh-min; --t-h1-lh-max;
+--t-h1-fs-min; --t-h1-fs-max; --t-h1-lh;
 ```
 
 Color:
@@ -54,8 +54,8 @@ Color:
 --c-sur;  /* raised/tone surface */
 --c-bor;  /* border */
 --c-mut;  /* muted */
---c-acc; --c-acc-ink;  /* accent + accent ink */
---c-sec; --c-sec-ink;  /* secondary + ink */
+--c-acc; --c-sec;  /* accent + secondary anchors */
+--c-acc-sur/ink/bor; --c-sec-sur/ink/bor;  /* paired action/theme roles */
 ```
 
 Motion and interaction:
@@ -139,7 +139,7 @@ Values split by breakpoint:
 </div>
 ```
 
-`g`, `c`, and `r` accept large-medium values. Small screens stack by default.
+`g`, `c`, and `r` accept large-medium values. Small screens stack by default. Auto grids use `g="a"` (20rem min), `g="a-sm"` (10rem min), or `g="a-lg"` (30rem min).
 
 `o` accepts large-medium-small values: `f` first, `a` auto, `l` last.
 
@@ -156,6 +156,11 @@ Values split by breakpoint:
 <Grid cols="4-2">
   <Card>One</Card>
   <Card>Two</Card>
+</Grid>
+
+<Grid cols="a">
+  <Card>Unknown count</Card>
+  <Card>Auto-fit track</Card>
 </Grid>
 ```
 
@@ -174,7 +179,7 @@ Sections and components can use theme tokens through `data-theme`.
 Component attrs can pass theme:
 
 ```html
-<Card theme="tone">...</Card>
+<Card variant="accent">...</Card>
 ```
 
 Keep color usage token-based inside CSS:
@@ -200,7 +205,7 @@ Use durable primitives:
 Use type/tone utilities when useful:
 
 ```txt
-.eb .f-* .t-* .fw-* .c-* .h*
+.eb .t-* .fw-* .c-* .h*
 ```
 
 Use private hooks only when they clarify ownership:

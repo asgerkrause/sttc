@@ -134,10 +134,10 @@ describe('build error source spans', () => {
 
   test('splits class-backed attr values into safe class tokens', async () => {
     const schemas = new Map<string, ComponentSchema>([
-      ['Button', { attrs: { label: {}, href: {}, color: { enum: ['accent tone'], asClass: true } } }],
+      ['Button', { attrs: { label: {}, href: {}, variant: { enum: ['accent tone'], asClass: true } } }],
     ])
     const html = await composer(schemas).prepareRouteSource(
-      '<Button label="Go" color="accent tone" />',
+      '<Button label="Go" variant="accent tone" />',
       { slug: 'page', fileHint: 'src/pages/page.html' },
     )
     expect(html).toContain('<a class="btn accent tone">Go</a>')
@@ -145,10 +145,10 @@ describe('build error source spans', () => {
 
   test('allows empty optional enum attrs', async () => {
     const schemas = new Map<string, ComponentSchema>([
-      ['Card', { attrs: { title: {}, variant: { enum: ['outlined', 'ghost'], asClass: true }, theme: { enum: ['accent'] } } }],
+      ['Card', { attrs: { title: {}, variant: { enum: ['outlined', 'ghost', 'accent'], asClass: true } } }],
     ])
     const html = await composer(schemas).prepareRouteSource(
-      '<Card title="Plain" variant="" theme="" />',
+      '<Card title="Plain" variant="" />',
       { slug: 'page', fileHint: 'src/pages/page.html' },
     )
     expect(html).toContain('<article>Plain</article>')
@@ -156,10 +156,10 @@ describe('build error source spans', () => {
 
   test('rejects unsafe class-backed attr tokens', async () => {
     const schemas = new Map<string, ComponentSchema>([
-      ['Button', { attrs: { label: {}, href: {}, color: { asClass: true } } }],
+      ['Button', { attrs: { label: {}, href: {}, variant: { asClass: true } } }],
     ])
     try {
-      await composer(schemas).prepareRouteSource('<Button color="accent/evil" />', { slug: 'page', fileHint: 'src/pages/page.html' })
+      await composer(schemas).prepareRouteSource('<Button variant="accent/evil" />', { slug: 'page', fileHint: 'src/pages/page.html' })
       throw new Error('expected BuildError')
     } catch (err) {
       expect(err).toBeInstanceOf(BuildError)

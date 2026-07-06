@@ -104,11 +104,20 @@
 
     &.ghost { --e-crd-sur: transparent; }
 
-    &[data-theme] {
-      --e-crd-sur: var(--c-bg);
-      --e-crd-ink: var(--c-ink);
-      --e-crd-mut: var(--c-mut);
+    &.accent {
+      --e-crd-sur: var(--c-acc);
+      --e-crd-ink: var(--c-acc-ink);
+      --e-crd-mut: color-mix(in srgb, var(--c-acc-ink) 72%, var(--c-acc));
+      --e-crd-bor: transparent;
     }
+
+    &.invert {
+      --e-crd-sur: var(--c-ink);
+      --e-crd-ink: var(--c-bg);
+      --e-crd-mut: color-mix(in srgb, var(--c-bg) 72%, var(--c-ink));
+      --e-crd-bor: transparent;
+    }
+
 
     p { color: var(--e-crd-mut); }
 

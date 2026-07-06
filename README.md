@@ -45,6 +45,7 @@ snz-bp new route about             # scaffold authored page route
 snz-bp new collection projects --route work/{slug} --template project
 snz-bp new cms                     # create posts-only PagesCMS/content surface
 snz-bp add component hero          # add private component preset
+snz-bp add component lottie        # add optional Lottie component + local player
 snz-bp add component hero --demo   # also add demo invocation when styles page exists
 snz-bp add theme minimal           # append starter theme token block
 snz-bp migrate                     # migrate legacy component sidecars
@@ -154,7 +155,7 @@ Built-ins are generated from `src/components/*.html`; current contracts live in 
 
 Add a new component by handing [`framework/docs/component-prompt.md`](./framework/docs/component-prompt.md) to Claude, or just write it yourself.
 
-Add private slot-first presets with `snz-bp add component <preset>`. Presets include `hero`, `cta`, `features`, `partners`, `pricing`, `testimonials`, `stats`, `process`, and `faq`. They use content nouns: plural wrappers (`Features`, `Testimonials`, `Partners`) and singular items (`Feature`, `Testimonial`, `Partner`). Generated files compose existing `Grid`, `Card`, `Button`, and `Image`; edit them locally after scaffolding. Pass `--demo` to append component invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present.
+Add private slot-first presets with `snz-bp add component <preset>`. Presets include `hero`, `cta`, `features`, `partners`, `pricing`, `testimonials`, `stats`, `process`, `faq`, and optional `lottie`. They use content nouns: plural wrappers (`Features`, `Testimonials`, `Partners`) and singular items (`Feature`, `Testimonial`, `Partner`). `lottie` adds `Lottie.html` plus a local `src/app/vendor/lottie.min.js` player only when chosen. Generated files compose existing `Grid`, `Card`, `Button`, and `Image`; edit them locally after scaffolding. Pass `--demo` to append component invocation to `src/pages/styles.html` or legacy `src/routes/styles.html` when present.
 
 Theme token packs are private starter shortcuts, not design systems:
 
@@ -166,7 +167,7 @@ snz-bp add theme brutalist    # bold/high-contrast
 
 Theme packs append a marked `snz-bp theme` block to `src/styles.css`. Existing theme blocks are not replaced unless `--force` is passed.
 
-CSS ownership: `src/styles.css` is the import shell. `src/styles/system.css` owns the editable token config + fluid engine; `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css` own their matching layers. Global primitives are `.c`, `.w`, `.btns`, `.lnks`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Component-specific selectors live in component `<style>` blocks.
+CSS ownership: `src/styles.css` is the import shell. `src/styles/system.css` owns the editable token config + fluid engine; `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css` own their matching layers. Global primitives are `.c`, `.w`, `.btns`, `.lnks`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Use fixed grids like `g="4-2"` or auto grids `g="a"`, `g="a-sm"`, `g="a-lg"`. Component-specific selectors live in component `<style>` blocks.
 
 Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color/theme `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Use grouped tokens only: no short aliases. Themes use `data-theme="tone"` or `data-theme="invert"`; accent palettes use `data-accent="blue|green|pink|purple|orange|red|lime"`.
 

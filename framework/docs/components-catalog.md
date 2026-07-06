@@ -22,13 +22,14 @@ See `framework/docs/components.md` in the framework package for the authoring co
 - [`<Form />`](#form) — Native form wrapper with framework form spacing and validation states.
 - [`<FormStatus />`](#formstatus) — Polite live region for form feedback or enhanced submit status.
 - [`<Gallery />`](#gallery) — Single-item media gallery with previous/next controls and live counter.
-- [`<Grid />`](#grid) — Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
+- [`<Grid />`](#grid) — Attribute grid container. cols maps to [g]; supports fixed counts, subgrid (sg), and auto-fit grids (a, a-sm, a-lg). span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
 - [`<Header />`](#header) — Site header.
 - [`<Icon />`](#icon) — Minimal inline icon slot wrapper. Bring your own SVG/icon font until an icon library is chosen.
 - [`<Image />`](#image) — Responsive WebP image. Lazy by default with temporary .img-tmp preview; eager images skip preview. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
 - [`<Input />`](#input) — Labeled native input field.
 - [`<Link />`](#link) — Underlined inline link.
 - [`<Logo />`](#logo) — Text-first site logo. Uses site.json name by default; slot can hold an SVG or img mark.
+- [`<Lottie />`](#lottie) — Optional Lottie animation. Supports viewport playback, hover/click triggers, and scroll scrub via existing data-scrub motion vars.
 - [`<Markdown />`](#markdown) — Inline markdown rendered at build time. Put markdown source in the default slot.
 - [`<Marquee />`](#marquee) — Continuous slot-first marquee with scroll-reactive direction/speed and reduced-motion fallback.
 - [`<Masonry />`](#masonry) — Masonry-style grid that keeps source order and measures item row spans.
@@ -115,7 +116,7 @@ Link styled as an action button.
 - Tag: `<Button>` can be self-closing.
 - Slots: `vis`.
 - Unknown attributes: rejected when schema exists.
-- Class-mapped attrs: `color`, `size` append value to root class.
+- Class-mapped attrs: `variant`, `size` append value to root class.
 
 ### Attributes
 
@@ -123,7 +124,7 @@ Link styled as an action button.
 |---|---|---|---|
 | `href` | no | string | Destination URL or path. Defaults to #. |
 | `label` | no | string | Visible button text. Defaults to Learn more. |
-| `color` | no | `default \| ghost \| tone \| accent \| accent tone \| secondary \| secondary tone` | Visual color treatment. |
+| `variant` | no | `default \| ghost \| tone \| accent \| accent tone \| secondary \| secondary tone` | Visual variant. |
 | `size` | no | `sm \| md \| lg` | Size variant. |
 | `icon` | no | string | Optional decorative literal icon/glyph. Provider syntax like lucide:arrow-right is reserved. |
 | `image` | no | string | Optional decorative local image name from src/images, without extension. |
@@ -131,7 +132,7 @@ Link styled as an action button.
 
 ### Variants / enums
 
-- `color`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `secondary`, `secondary tone`
+- `variant`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `secondary`, `secondary tone`
 - `size`: `sm`, `md`, `lg`
 
 ### Accessibility notes
@@ -159,13 +160,12 @@ Flexible styled container for grouped content. Put headings, copy, media, and ac
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `variant` | no | `default \| outlined \| ghost` | Visual variant. |
-| `theme` | no | `tone \| invert` | Optional data-theme value. |
+| `variant` | no | `default \| outlined \| ghost \| accent \| invert` | Visual variant. |
+| `href` | no | string | Optional link-card destination. Renders the root as an anchor when present. |
 
 ### Variants / enums
 
-- `variant`: `default`, `outlined`, `ghost`
-- `theme`: `tone`, `invert`
+- `variant`: `default`, `outlined`, `ghost`, `accent`, `invert`
 
 ### Example
 
@@ -418,7 +418,7 @@ Single-item media gallery with previous/next controls and live counter.
 
 ## Grid
 
-Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
+Attribute grid container. cols maps to [g]; supports fixed counts, subgrid (sg), and auto-fit grids (a, a-sm, a-lg). span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
 
 ### Contract
 
@@ -430,7 +430,7 @@ Attribute grid container. cols maps to [g]; span/rows/order map to [c]/[r]/[o] w
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
-| `cols` | no | string | Column count as large-medium split value. Default grid is 12 large / 6 medium. |
+| `cols` | no | string | Column count as large-medium split value, sg, a, a-sm, or a-lg. Default grid is 12 large / 6 medium. |
 | `span` | no | string | Column span when this grid is nested as a child. |
 | `rows` | no | string | Row span when this grid is nested as a child. |
 | `order` | no | string | Visual order as large-medium-small split value. |
@@ -616,6 +616,56 @@ Text-first site logo. Uses site.json name by default; slot can hold an SVG or im
 
 ```html
 <Logo siteName="Example Studio"></Logo>
+```
+
+## Lottie
+
+Optional Lottie animation. Supports viewport playback, hover/click triggers, and scroll scrub via existing data-scrub motion vars.
+
+### Contract
+
+- Tag: `<Lottie>` can be self-closing.
+- Slots: none detected.
+- Unknown attributes: rejected when schema exists.
+
+### Attributes
+
+| Name | Required | Type / enum | Description |
+|---|---|---|---|
+| `src` | yes | string | Public Lottie JSON URL. Put JSON under src/files/animations for copied files output. |
+| `trigger` | no | `view \| hover \| scrub \| click \| manual` | Playback trigger. Defaults to manual unless autoplay is true. |
+| `autoplay` | no | `true \| false` | Legacy shorthand for trigger="view" when true. |
+| `loop` | no | string | Loop setting: true, false, or a number. |
+| `duration` | no | string | Target playback duration in seconds. Overrides speed when supported. |
+| `speed` | no | string | Playback speed multiplier. Defaults to 1. |
+| `direction` | no | `forward \| reverse` | Initial playback direction. |
+| `hover` | no | `reverse \| reset \| pause` | Hover-out behavior for trigger="hover". |
+| `target` | no | `self \| closest \| parent` | Trigger/scrub target. Defaults to closest for hover, self otherwise. |
+| `progress` | no | string | CSS custom property used for scrub progress. Defaults to --sp-t. |
+| `range` | no | string | Optional frame range as "start end". |
+| `renderer` | no | `svg \| canvas \| html` | Lottie renderer. Defaults to svg. |
+| `ratio` | no | string | Optional CSS aspect-ratio value, e.g. 1 / 1. |
+| `fit` | no | `contain \| cover` | Object fit for rendered SVG/canvas/html. |
+| `loading` | no | `lazy \| eager` | Load player immediately or on first trigger. Defaults to lazy. |
+| `label` | no | string | Accessible label. Omit for decorative animations. |
+| `description` | no | string | Accessible description for SVG renderer. |
+| `player` | no | string | Override Lottie player script URL. Defaults to /assets/js/vendor/lottie.min.js. |
+
+### Variants / enums
+
+- `trigger`: `view`, `hover`, `scrub`, `click`, `manual`
+- `autoplay`: `true`, `false`
+- `direction`: `forward`, `reverse`
+- `hover`: `reverse`, `reset`, `pause`
+- `target`: `self`, `closest`, `parent`
+- `renderer`: `svg`, `canvas`, `html`
+- `fit`: `contain`, `cover`
+- `loading`: `lazy`, `eager`
+
+### Example
+
+```html
+<Lottie src="example" />
 ```
 
 ## Markdown
@@ -833,13 +883,14 @@ Semantic section with a .c container. No root class.
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
 | `id` | no | string | Optional section id. |
-| `theme` | no | string | Optional data-theme value. |
+| `theme` | no | `tone \| accent \| secondary \| invert` | Optional data-theme value. |
 | `center` | no | `center` | Optional center alignment for the inner .c container. |
 | `scroll` | no | string | Optional data-scroll timeline name. |
 | `video` | no | string | Optional decorative background video URL. |
 
 ### Variants / enums
 
+- `theme`: `tone`, `accent`, `secondary`, `invert`
 - `center`: `center`
 
 ### Accessibility notes
@@ -1003,12 +1054,12 @@ Large editorial statement block.
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
 | `variant` | no | `default \| accent \| quiet` | Visual tone. |
-| `theme` | no | `tone \| invert` | Optional data-theme value. |
+| `theme` | no | `tone \| accent \| secondary \| invert` | Optional data-theme value. |
 
 ### Variants / enums
 
 - `variant`: `default`, `accent`, `quiet`
-- `theme`: `tone`, `invert`
+- `theme`: `tone`, `accent`, `secondary`, `invert`
 
 ### Example
 
@@ -1025,20 +1076,20 @@ Native submit button using the shared button visual style.
 - Tag: `<Submit>` can be self-closing.
 - Slots: none detected.
 - Unknown attributes: rejected when schema exists.
-- Class-mapped attrs: `color`, `size` append value to root class.
+- Class-mapped attrs: `variant`, `size` append value to root class.
 
 ### Attributes
 
 | Name | Required | Type / enum | Description |
 |---|---|---|---|
 | `label` | no | string | Visible button text. Defaults to Submit. |
-| `color` | no | `default \| ghost \| tone \| accent \| accent tone \| secondary \| secondary tone` | Visual color treatment. |
+| `variant` | no | `default \| ghost \| tone \| accent \| accent tone \| secondary \| secondary tone` | Visual variant. |
 | `size` | no | `sm \| md \| lg` | Size variant. |
 | `disabled` | no | string | Disables the submit button. |
 
 ### Variants / enums
 
-- `color`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `secondary`, `secondary tone`
+- `variant`: `default`, `ghost`, `tone`, `accent`, `accent tone`, `secondary`, `secondary tone`
 - `size`: `sm`, `md`, `lg`
 
 ### Example

@@ -24,9 +24,9 @@ Global primitives:
 Type/tone utilities:
 
 - `.eb` — eyebrow / kicker
-- `.f-lg`, `.f-md`, `.f-sm`
+- `.t-lg`, `.t-md`, `.t-sm`
 - `.fw-l`, `.fw-r`, `.fw-b`
-- `.c-i`, `.c-g`, `.c-s`, `.c-a`, `.c-c`
+- `.c-ink`, `.c-mut`, `.c-bg`, `.c-acc`, `.c-sec`
 - `.h0`…`.h6`
 
 Private hooks stay concise and component-owned, e.g. `.brg`, `.logo-mk`, `.logo-tx`, `.code-lb`, `.hero-pn`, `.stp`.

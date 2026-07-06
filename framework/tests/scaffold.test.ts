@@ -288,6 +288,23 @@ describe('component preset scaffold', () => {
     }
   })
 
+  test('adds lottie preset with local player asset', async () => {
+    const dir = await tempProject()
+    try {
+      const result = await runAdd(['component', 'lottie'], dir)
+      const html = await readFile(join(dir, 'src', 'components', 'Lottie.html'), 'utf8')
+      const player = await Bun.file(join(dir, 'src', 'app', 'vendor', 'lottie.min.js')).exists()
+
+      expect(result.code).toBe(0)
+      expect(result.stdout).toContain('Added Lottie')
+      expect(html).toContain('@desc Optional Lottie animation')
+      expect(html).toContain('trigger=[view|hover|scrub|click|manual]')
+      expect(player).toBe(true)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
   test('snz-bp add dispatches to theme scaffold', async () => {
     const dir = await tempProject()
     try {
@@ -360,7 +377,7 @@ describe('component preset scaffold', () => {
 
       expect(result.code).toBe(1)
       expect(result.stderr).toContain('unknown component preset "gallery"')
-      expect(result.stderr).toContain('Available presets: hero, cta, features, partners, pricing, testimonials, stats, process, faq')
+      expect(result.stderr).toContain('Available presets: hero, cta, features, partners, pricing, testimonials, stats, process, faq, lottie')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

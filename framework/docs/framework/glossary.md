@@ -32,7 +32,7 @@ CSS under `src/styles.css` and `src/styles/*.css`. Owns tokens, reset, type, gri
 
 Attribute-based layout system:
 
-- `[g]` grid container;
+- `[g]` grid container; fixed counts (`g="4-2"`), subgrid (`g="sg"`), or auto-fit (`g="a"`, `g="a-sm"`, `g="a-lg"`);
 - `[c]` column span;
 - `[r]` row span;
 - `[o]` visual order.
@@ -71,7 +71,7 @@ Build validation that fails on source errors such as missing required attrs, unk
 
 ## token
 
-CSS custom property from design system. Common grouped tokens include `--l-mw`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--c-bg`, `--c-ink`, `--c-sur`, `--c-bor`, `--c-acc`, and `--c-acc-ink`. Old short tokens are removed.
+CSS custom property from design system. Common grouped tokens include `--l-mw`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--c-bg`, `--c-ink`, `--c-sur`, `--c-bor`, `--c-acc`, and `--c-acc-sur/ink/bor`. Old short tokens are removed.
 
 ## Next
 

@@ -1,9 +1,6 @@
 @layer type {
   body,
   p,
-  .f-md,
-  .f-lg,
-  .f-sm,
   .t-md,
   .t-lg,
   .t-sm {
@@ -13,7 +10,6 @@
 
   body,
   p,
-  .f-md,
   .t-md {
     font-size: var(--t-md-fs);
     font-weight: var(--t-md-fw);
@@ -27,7 +23,6 @@
     max-width: none;
   }
 
-  .f-lg,
   .t-lg {
     font-size: var(--t-lg-fs);
     font-weight: var(--t-lg-fw);
@@ -37,7 +32,6 @@
     max-width: var(--t-lg-mw);
   }
 
-  .f-sm,
   .t-sm {
     font-size: var(--t-sm-fs);
     font-weight: var(--t-sm-fw);
@@ -62,11 +56,11 @@
     font-variation-settings: "wght" var(--t-fw-b);
   }
 
-  .c-i { color: var(--c-ink); }
-  .c-g { color: var(--c-mut); }
-  .c-s { color: var(--c-bg); }
-  .c-a { color: var(--c-acc); }
-  .c-c { color: var(--c-sec); }
+  .c-ink { color: var(--c-ink); }
+  .c-mut { color: var(--c-mut); }
+  .c-bg { color: var(--c-bg); }
+  .c-acc { color: var(--c-acc); }
+  .c-sec { color: var(--c-sec); }
 
   [class*="h0"] {
     font-family: var(--t-h0-ff);

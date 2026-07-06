@@ -79,57 +79,7 @@
   }
 
 
-  .crd {
-    --e-crd-sur: var(--c-sur);
-    --e-crd-ink: var(--c-ink);
-    --e-crd-bor: transparent;
-    --e-crd-mut: var(--c-mut);
-    padding: var(--s-pd);
-    background: var(--e-crd-sur);
-    color: var(--e-crd-ink);
-    border: var(--s-bw) var(--e-crd-bor) solid;
-    border-radius: var(--s-br);
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    overflow: hidden;
-    gap: var(--s-gp);
 
-    &:is(a) {
-      --e-crd-bor: var(--c-bor);
-      background-image: none;
-
-      &:hover {
-        --e-crd-sur: var(--c-bg);
-      }
-    }
-
-    &.outlined {
-      --e-crd-sur: transparent;
-      --e-crd-bor: var(--c-bor);
-    }
-
-    &.ghost {
-      --e-crd-sur: transparent;
-    }
-
-    &[data-theme] {
-      --e-crd-sur: var(--c-bg);
-      --e-crd-ink: var(--c-ink);
-      --e-crd-mut: var(--c-mut);
-    }
-
-    p {
-      color: var(--e-crd-mut);
-    }
-
-
-    .lnks,
-    .btns {
-      margin-top: auto;
-      padding-top: var(--s-pd);
-    }
-  }
 
   .btns,
   .lnks {

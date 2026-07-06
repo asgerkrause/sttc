@@ -38,7 +38,7 @@ Use built-in form primitives when form markup repeats or needs consistent local 
   </Fieldset>
 
   <Textarea name="message" label="Message" required placeholder="Tell us what you need." />
-  <Submit label="Submit Inquiry" color="accent" />
+  <Submit label="Submit Inquiry" variant="accent" />
   <FormStatus>Native browser validation handles required fields before submit.</FormStatus>
 </Form>
 ```

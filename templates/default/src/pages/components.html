@@ -6,12 +6,12 @@
   <div class="c">
     <div class="w">
       <h1>Copy-ready patterns using built-in pieces.</h1>
-      <p class="f-lg">These examples cover common page needs: actions, cards, media, motion, tabs, counters, markdown, code, and layout primitives.</p>
+      <p class="t-lg">These examples cover common page needs: actions, cards, media, motion, tabs, counters, markdown, code, and layout primitives.</p>
       <p>Slot-first patterns stay flexible: compose primitives inside <code>Section</code>, <code>Grid</code>, and <code>Card</code> instead of locking content into too many props.</p>
     </div>
     <div class="btns">
       <Button label="Back home" href="/" />
-      <Button label="Component docs" href="https://github.com/sanitizestudio/snz-bp" color="ghost" />
+      <Button label="Component docs" href="https://github.com/sanitizestudio/snz-bp" variant="ghost" />
     </div>
   </div>
 </section>
@@ -24,9 +24,9 @@
   </header>
   <div class="btns">
     <Button label="Default" href="/components/" />
-    <Button label="Tone" href="/components/" color="tone" />
-    <Button label="Accent" href="/components/" color="accent" />
-    <Button label="Ghost" href="/components/" color="ghost" />
+    <Button label="Tone" href="/components/" variant="tone" />
+    <Button label="Accent" href="/components/" variant="accent" />
+    <Button label="Ghost" href="/components/" variant="ghost" />
   </div>
   <p><Link label="Inline link example" href="/" /></p>
 </Section>
@@ -37,10 +37,23 @@
     <h2>Card</h2>
   </header>
   <Grid cols="4-2">
-    <Card><h3>Default</h3><p>Group a feature, service, note, or summary with optional action.</p></Card>
     <Card variant="outlined"><h3>Outlined</h3><p>Clear separation without extra surface.</p></Card>
     <Card variant="ghost"><h3>Ghost</h3><p>Quiet cards keep supporting content present without adding much surface.</p></Card>
-    <Card theme="tone"><h3>Tone</h3><p>Use tone cards for high-contrast callouts.</p></Card>
+    <Card variant="accent"><h3>Accent</h3><p>Accent cards create a stronger callout without changing page theme.</p></Card>
+    <Card variant="invert"><h3>Invert</h3><p>Invert cards create high contrast inside the current section.</p></Card>
+  </Grid>
+</Section>
+
+<Section id="link-cards">
+  <header class="w">
+    <p class="eb">Content groups</p>
+    <h2>Link cards</h2>
+  </header>
+  <Grid cols="4-2">
+    <Card href="#" variant="outlined"><h3>Outlined</h3><p>Clear separation without extra surface.</p></Card>
+    <Card href="#" variant="ghost"><h3>Ghost</h3><p>Quiet cards keep supporting content present without adding much surface.</p></Card>
+    <Card href="#" variant="accent"><h3>Accent</h3><p>Accent cards create a stronger callout without changing page theme.</p></Card>
+    <Card href="#" variant="invert"><h3>Invert</h3><p>Invert cards create high contrast inside the current section.</p></Card>
   </Grid>
 </Section>
 
@@ -50,12 +63,12 @@
     <h2>Statement + Split</h2>
   </header>
   <Statement variant="accent">Static sites should feel sharp, fast, and easy to reshape.</Statement>
-  <p class="f-lg"><Split>Split wraps words for animation-ready text while preserving an accessible label.</Split></p>
+  <p class="t-lg"><Split>Split wraps words for animation-ready text while preserving an accessible label.</Split></p>
   <Grid cols="2">
     <div class="w">
       <h3>Layout still uses Grid</h3>
       <p>Use layout primitives for two-column content. Use <code>Split</code> for text splitting.</p>
-      <Button label="Primary action" href="/components/" color="accent" />
+      <Button label="Primary action" href="/components/" variant="accent" />
     </div>
     <Image src="showcase" alt="Abstract starter site preview" max="1200" />
   </Grid>
@@ -156,7 +169,7 @@
     <Card><h3>One</h3><p>Short card.</p></Card>
     <Card><h3>Two</h3><p>Longer card with extra copy to prove row-span measurement keeps the grid packed without reordering source content.</p></Card>
     <Image src="showcase" alt="Masonry image one" max="800" />
-    <Card theme="tone"><h3>Four</h3><p>Tone card.</p></Card>
+    <Card variant="accent"><h3>Four</h3><p>Accent card.</p></Card>
     <Image src="showcase" alt="Masonry image two" max="800" />
     <Card variant="outlined"><h3>Six</h3><p>Outlined card.</p></Card>
   </Masonry>
@@ -220,7 +233,7 @@
     <p class="eb">Snippets</p>
     <h2>Code + SEO</h2>
   </header>
-  <Code lang="html">&lt;Button label="Go" href="/" color="ghost" /&gt;</Code>
+  <Code lang="html">&lt;Button label="Go" href="/" variant="ghost" /&gt;</Code>
   <Code lang="html">&lt;SEO title="Components" description="Simple built-in component showcase." /&gt;</Code>
 </Section>
 
@@ -230,9 +243,9 @@
     <h2>Section themes</h2>
   </header>
   <Grid cols="3-2">
-    <Card><h3>Tone</h3><p><code>Section theme="tone"</code> remaps semantic tokens.</p></Card>
-    <Card theme="tone"><h3>Tone card</h3><p><code>Card theme="tone"</code> uses the same data-theme contract.</p></Card>
-    <Card theme="invert"><h3>Invert card</h3><p>Theme attrs compose with card variants.</p></Card>
+    <Card><h3>Themed section</h3><p><code>Section theme="tone"</code> remaps semantic tokens around the card.</p></Card>
+    <Card variant="accent"><h3>Accent card</h3><p><code>Card variant="accent"</code> applies a component visual treatment.</p></Card>
+    <Card variant="invert"><h3>Invert card</h3><p>Card variants compose with themed sections.</p></Card>
   </Grid>
 </Section>
 

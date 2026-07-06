@@ -15,10 +15,14 @@ Each component file may start with a single `<!-- ... -->` HTML comment that dec
 ```html
 <!--
   @desc Flexible styled container for grouped content.
-  @attr variant=[default|outlined|ghost] :class Visual variant.
-  @attr theme=[tone|invert] Optional data-theme value.
+  @attr variant=[default|outlined|ghost|accent|invert] :class Visual variant.
+  @attr href Optional link-card destination. Renders the root as an anchor when present.
 -->
+{#if href}
+<a class="crd" href="{{href}}">{{slot}}</a>
+{:else}
 <article class="crd">{{slot}}</article>
+{/if}
 
 <style>
   .crd:has(.img-w) { /* component-specific composition edge */ }
@@ -129,10 +133,10 @@ Placeholders are data paths, not JavaScript expressions. For common text transfo
 
 ```html
 <!--
-  @attr variant=[default|outlined|ghost] :class
-  @attr theme=[tone|invert]
+  @attr variant=[default|outlined|ghost|accent|invert] :class
+  @attr href Optional link-card destination.
 -->
-<article class="crd" data-theme="{{theme}}">
+<article class="crd">
   ...
 </article>
 
@@ -141,12 +145,13 @@ Placeholders are data paths, not JavaScript expressions. For common text transfo
     /* base */
     &.outlined { border-color: var(--c-bor); background: transparent; }
     &.ghost { background: transparent; }
-    &[data-theme] { background: var(--c-bg); color: var(--c-ink); }
+    &.accent { background: var(--c-acc); color: var(--c-acc-ink); }
+    &.invert { background: var(--c-ink); color: var(--c-bg); }
   }
 </style>
 ```
 
-`<Card theme="tone">` produces `<article class="crd" data-theme="tone">`.
+`<Card href="/work/" variant="accent">` produces a linked accent card.
 
 ## Styles
 
@@ -154,9 +159,9 @@ Colocate component-specific `<style>` in the component file. The build extracts 
 
 Global CSS is split by owner: `src/styles.css` imports `src/styles/system.css`, `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css`. Global CSS owns tokens, reset/base type, `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
 
-Class language is short and rare. Prefer semantic HTML, ARIA, and data attributes first. Use durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.f-*`, `.fw-*`, `.c-*`, `.h*`), or short private hooks (`.brg`, `.logo-mk`, `.code-lb`) only when useful.
+Class language is short and rare. Prefer semantic HTML, ARIA, and data attributes first. Use durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.t-lg`, `.t-md`, `.t-sm`, `.fw-*`, `.c-*`, `.h*`), or short private hooks (`.brg`, `.logo-mk`, `.code-lb`) only when useful.
 
-Use design tokens from the global system. Layout: `--l-mw`, `--l-gc`. Space/radius/border: `--s-px`, `--s-py`, `--s-ss`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`. Type: `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`. Color: `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-acc-ink`, `--c-sec`, `--c-sec-ink`. Motion: `--m-td*`, `--m-tf*`; interaction: `--i-hov-*`. Old short tokens are removed. Component CSS must use grouped names. Don't hardcode spacing, font weights, or colors.
+Use design tokens from the global system. Layout: `--l-mw`, `--l-gc`. Space/radius/border: `--s-px`, `--s-py`, `--s-ss`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`. Type: `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`. Color: `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-sec`, `--c-acc-sur/ink/bor`, `--c-sec-sur/ink/bor`. Motion: `--m-td*`, `--m-tf*`; interaction: `--i-hov-*`. Old short tokens are removed. Component CSS must use grouped names. Don't hardcode spacing, font weights, or colors.
 
 ## Lifecycle scripts
 
@@ -246,7 +251,7 @@ Use attrs only for stable configuration: variant, theme, href, image source, acc
 | `Accordion`, `FAQ` | Native `<details>` disclosure + demo composite. |
 | `Section` | Semantic section + `.c` container. No root class. |
 | `Markdown` | Inline build-time markdown (use slot for source). Supports headings, lists, tables, code, safe links/images, and PascalCase components. |
-| `Grid` | Attribute grid wrapper. `cols` maps to `[g]`; `span`/`rows`/`order` map to `[c]`/`[r]`/`[o]` for nested grid children. |
+| `Grid` | Attribute grid wrapper. `cols` maps to `[g]` fixed, subgrid, or auto-fit values; `span`/`rows`/`order` map to `[c]`/`[r]`/`[o]` for nested grid children. |
 | `Stack` | Deprecated compatibility wrapper. Prefer `<div class="w">…</div>`. |
 | `Code` | `<pre><code>` block with optional language label. |
 | `Badge`, `Icon` | Small label and tiny built-in SVG icon primitives. |
@@ -257,6 +262,7 @@ Use attrs only for stable configuration: variant, theme, href, image source, acc
 | `Tabs`, `Tab`, `TabPanel` | Accessible tab set with component-owned ARIA state. |
 | `Slider` | Native scroll-snap gallery with previous/next controls. |
 | `Gallery` | Single-item media gallery with counter and previous/next controls. |
+| `Lottie` | Optional Lottie animation component. Add with `snz-bp add component lottie`; supports view, hover, click, manual, and scrub triggers. |
 | `Marquee` | Continuous slot-first marquee with scroll-reactive direction/speed and reduced-motion fallback. |
 | `Masonry` | Source-order masonry grid using row-span measurement. |
 
@@ -281,11 +287,11 @@ Use attrs, not utility classes:
 - `[r]` — child row span
 - `[o]` — visual order
 
-Values split large-medium for `g`, `c`, and `r`: `g="4-2"`, `c="6-3"`, `r="2-1"`. One value applies to both large and medium. Small screens stack by default.
+Values split large-medium for `g`, `c`, and `r`: `g="4-2"`, `c="6-3"`, `r="2-1"`. One value applies to both large and medium. Small screens stack by default. Auto grids use `g="a"` (20rem min), `g="a-sm"` (10rem min), or `g="a-lg"` (30rem min).
 
 `o` splits large-medium-small with values `f` (first), `a` (auto), `l` (last), and empty slots: `o="f-a"`, `o="-f"`.
 
-`<Grid cols="4-2">` renders a `[g]` container. `span`, `rows`, and `order` are only for cases where the grid itself is nested as a grid child.
+`<Grid cols="4-2">` renders a fixed `[g]` container. `<Grid cols="a">` renders an auto-fit grid. `span`, `rows`, and `order` are only for cases where the grid itself is nested as a grid child.
 
 ## Anti-patterns (build refuses)
 

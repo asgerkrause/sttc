@@ -16,6 +16,18 @@
       display: grid;
       grid-template-columns: subgrid;
     }
+
+    &[g="a"] {
+      grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+    }
+
+    &[g="a-sm"] {
+      grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+    }
+
+    &[g="a-lg"] {
+      grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
+    }
   }
 
   [g],
@@ -28,23 +40,11 @@
     }
   }
 
-  [in] {
-    text-indent: calc(var(--cw, 1ch) * var(--in, 0));
-  }
-
   [o$="-f"] { --or: -2; }
   [o$="-a"] { --or: auto; }
   [o$="-l"] { --or: 2; }
 
   @media (width >= 30rem) {
-    [in$="0"] { --in: 0; }
-    [in$="1"] { --in: 1; }
-    [in$="2"] { --in: 2; }
-    [in$="3"] { --in: 3; }
-    [in$="4"] { --in: 4; }
-    [in$="5"] { --in: 5; }
-    [in$="6"] { --in: 6; }
-
     [g$="1"] { --l-gc: 1; }
     [g$="2"] { --l-gc: 2; }
     [g$="3"] { --l-gc: 3; }
@@ -83,14 +83,6 @@
   }
 
   @media (width >= 60rem) {
-    [in^="0"] { --in: 0; }
-    [in^="1"] { --in: 1; }
-    [in^="2"] { --in: 2; }
-    [in^="3"] { --in: 3; }
-    [in^="4"] { --in: 4; }
-    [in^="5"] { --in: 5; }
-    [in^="6"] { --in: 6; }
-
     [g^="1"] { --l-gc: 1; }
     [g^="2"] { --l-gc: 2; }
     [g^="3"] { --l-gc: 3; }

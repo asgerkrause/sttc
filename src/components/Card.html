@@ -1,11 +1,76 @@
 <!--
   @desc Flexible styled container for grouped content. Put headings, copy, media, and actions in the default slot.
-  @attr variant=[default|outlined|ghost] :class Visual variant.
-  @attr theme=[tone|invert] Optional data-theme value.
+  @attr variant=[default|outlined|ghost|accent|invert] :class Visual variant.
+  @attr href Optional link-card destination. Renders the root as an anchor when present.
 -->
-<article class="crd"{#if theme} data-theme="{{theme}}"{/if}>{{slot}}</article>
+{#if href}
+<a class="crd" href="{{href}}">{{slot}}</a>
+{:else}
+<article class="crd">{{slot}}</article>
+{/if}
 
 <style>
+.crd {
+    --e-crd-sur: var(--c-sur);
+    --e-crd-ink: var(--c-ink);
+    --e-crd-bor: transparent;
+    --e-crd-mut: var(--c-mut);
+    padding: var(--s-pd);
+    background: var(--e-crd-sur);
+    color: var(--e-crd-ink);
+    border: var(--s-bw) var(--e-crd-bor) solid;
+    border-radius: var(--s-br);
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    overflow: hidden;
+    gap: var(--s-gp);
+
+    &:is(a) {
+      --e-crd-bor: var(--c-bor);
+      background-image: none;
+
+      &:hover {
+        --e-crd-sur: var(--c-bg);
+      }
+    }
+
+    &.outlined {
+      --e-crd-sur: transparent;
+      --e-crd-bor: var(--c-bor);
+    }
+
+    &.ghost {
+      --e-crd-sur: transparent;
+    }
+
+    &.accent {
+      --e-crd-sur: var(--c-acc);
+      --e-crd-ink: var(--c-acc-ink);
+      --e-crd-mut: color-mix(in srgb, var(--c-acc-ink) 72%, var(--c-acc));
+      --e-crd-bor: transparent;
+    }
+
+    &.invert {
+      --e-crd-sur: var(--c-ink);
+      --e-crd-ink: var(--c-bg);
+      --e-crd-mut: color-mix(in srgb, var(--c-bg) 72%, var(--c-ink));
+      --e-crd-bor: transparent;
+    }
+
+
+    p {
+      color: var(--e-crd-mut);
+    }
+
+
+    .lnks,
+    .btns {
+      margin-top: auto;
+      padding-top: var(--s-pd);
+    }
+  }
+
   .crd:has(.img-w) {
     & .img-w:is(:first-child) {
       margin: calc(var(--s-pd) * -1);

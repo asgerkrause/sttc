@@ -30,7 +30,7 @@ Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
 | `src/app.ts` (`src/app.js` escape hatch) | Site code entry |
 | `src/images/` | Public raster masters and opt-in PagesCMS uploads → built to webp at multiple sizes |
 | `src/videos/` | Public video files → copied to `/assets/videos/` (future video pipeline source) |
-| `src/files/` | Public raw files (PDF, audio, downloads) → copied to `/assets/files/` |
+| `src/files/` | Public raw files (PDF, audio, Lottie JSON, downloads) → copied to `/assets/files/` |
 | `src/routes/**/*.html` | Legacy static route input; `src/pages` wins on collisions |
 | `src/styles/styles.css` | Legacy global CSS path |
 | `src/app/app.js` | Legacy app entry + optional runtime helpers |
@@ -127,7 +127,7 @@ Drafts (`draft: true`) are excluded from production builds, included in dev. Tag
 
 - `src/images/`, `src/videos/`, and `src/files/` are public source roots. Anything inside can be published; do not store private drafts there.
 - Videos copy raw from `src/videos/` to `dist/assets/videos/`. Add compression/transcoding later in this folder's pipeline, not as a new source root.
-- Files copy raw from `src/files/` to `dist/assets/files/` for PDFs, audio, zips, and downloads.
+- Files copy raw from `src/files/` to `dist/assets/files/` for PDFs, audio, Lottie JSON, zips, and downloads.
 - Build validates authored `/assets/images/*`, `/assets/videos/*`, and `/assets/files/*` references exist.
 
 ## Client framework (`router.js`)
@@ -186,12 +186,12 @@ Structured data auto-emitted:
 ## CSS
 
 - Base tokens + reset: `src/styles.css` imports split CSS under `src/styles/`.
-- Token legend: layout `--l-*`, space `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Key tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; color `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-acc-ink`, `--c-sec`, `--c-sec-ink`. Use grouped tokens only; no short aliases.
+- Token legend: layout `--l-*`, space `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Key tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; color `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-sec`, `--c-acc-sur/ink/bor`, `--c-sec-sur/ink/bor`. Use grouped tokens only; no short aliases.
 - Global layout primitives: `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`.
-- `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`). Small stacks by default.
+- `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`) or auto grids (`g="a"`, `g="a-sm"`, `g="a-lg"`). Small screens stack by default.
 - Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).
 - Component CSS loads **after** base so component rules win at equal specificity.
-- Class language is semantic-first and short. Use classes only for durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.f-*`, `.fw-*`, `.c-*`, `.h*`), or concise private hooks (`.brg`, `.logo-mk`, `.code-lb`).
+- Class language is semantic-first and short. Use classes only for durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.t-*`, `.fw-*`, `.c-*`, `.h*`), or concise private hooks (`.brg`, `.logo-mk`, `.code-lb`).
 - Component-specific selectors belong in component files. Run `bun run css:audit` or `bun run doctor` when cleaning CSS boundaries.
 - Per-page route CSS: use `<style>` in authored routes for one-off page rules; build extracts to `@layer snz.pages.{slug}`. Use `html[data-page="{slug}"]` in global CSS only for durable cross-route overrides.
 

@@ -5,19 +5,20 @@
 <script type="application/json" data-snz>
 {
   "buttons": [
-    { "label": "Default", "color": "default", "image": "r1" },
-    { "label": "Tone", "color": "tone", "image": "r2" },
-    { "label": "Accent", "color": "accent", "image": "r3" },
-    { "label": "Accent tone", "color": "accent tone", "image": "r4" },
-    { "label": "Secondary", "color": "secondary", "image": "r5" },
-    { "label": "Secondary tone", "color": "secondary tone", "image": "r6" },
-    { "label": "Ghost", "color": "ghost", "image": "r1" }
+    { "label": "Default", "variant": "default", "image": "r1" },
+    { "label": "Tone", "variant": "tone", "image": "r2" },
+    { "label": "Accent", "variant": "accent", "image": "r3" },
+    { "label": "Accent tone", "variant": "accent tone", "image": "r4" },
+    { "label": "Secondary", "variant": "secondary", "image": "r5" },
+    { "label": "Secondary tone", "variant": "secondary tone", "image": "r6" },
+    { "label": "Ghost", "variant": "ghost", "image": "r1" }
   ],
   "cards": [
-    { "title": "Default card", "body": "Grouped content with optional actions.", "variant": "", "theme": "" },
-    { "title": "Outlined card", "body": "Clear separation without a heavier surface.", "variant": "outlined", "theme": "" },
-    { "title": "Ghost card", "body": "Use sparingly for quiet supporting content.", "variant": "ghost", "theme": "" },
-    { "title": "Tone card", "body": "High-contrast callout using the theme contract.", "variant": "", "theme": "tone" }
+    { "title": "Default card", "body": "Default card used for basic content blocks.", "variant": "default" },
+    { "title": "Outlined card", "body": "Clear separation without a heavier surface.", "variant": "outlined" },
+    { "title": "Ghost card", "body": "Use sparingly for quiet supporting content.", "variant": "ghost" },
+    { "title": "Accent card", "body": "Accent cards create a stronger callout without changing page theme.", "variant": "accent" },
+    { "title": "Invert card", "body": "Invert cards create high contrast inside the current section.", "variant": "invert" }
   ]
 }
 </script>
@@ -26,11 +27,11 @@
   <div class="c">
     <div class="w">
       <h1>Component showcase</h1>
-      <p class="f-md">Copy-ready examples for every built-in component. Compose primitives inside routes and adjust content.</p>
+      <p class="t-md">Copy-ready examples for every built-in component. Compose primitives inside routes and adjust content.</p>
     </div>
     <div class="btns">
       <Button label="Back home" href="/" />
-      <Button label="Read docs" href="https://github.com/sanitizestudio/snz-bp" color="tone" />
+      <Button label="Read docs" href="https://github.com/sanitizestudio/snz-bp" variant="tone" />
     </div>
   </div>
 </section>
@@ -39,19 +40,19 @@
   <h2>Button + Link</h2>
   <div class="btns">
     {#each buttons as button}
-    <Button label="{{button.label}}" href="#" color="{{button.color}}" />
+    <Button label="{{button.label}}" href="#" variant="{{button.variant}}" />
     {/each}
   </div>
 
   <div class="btns">
     {#each buttons as button}
-    <Button label="{{button.label}}" href="#" color="{{button.color}}" icon="→" />
+    <Button label="{{button.label}}" href="#" variant="{{button.variant}}" icon="→" />
     {/each}
   </div>
 
   <div class="btns">
     {#each buttons as button}
-    <Button label="{{button.label}}" href="#" color="{{button.color}}" image="{{button.image}}" />
+    <Button label="{{button.label}}" href="#" variant="{{button.variant}}" image="{{button.image}}" />
     {/each}
   </div>
 
@@ -60,10 +61,22 @@
 
 <Section id="cards">
   <h2>Card</h2>
-  <Grid cols="4-2">
+  <Grid cols="a">
     {#each cards as card}
-    <Card variant="{{card.variant}}" theme="{{card.theme}}">
-      <h3>{{card.title}}</h3>
+    <Card variant="{{card.variant}}">
+      <h3 class="t-lg">{{card.title}}</h3>
+      <p>{{card.body}}</p>
+    </Card>
+    {/each}
+  </Grid>
+</Section>
+
+<Section id="link-cards">
+  <h2>Link cards</h2>
+  <Grid cols="a">
+    {#each cards as card}
+    <Card href="#" variant="{{card.variant}}">
+      <h3 class="t-lg">{{card.title}}</h3>
       <p>{{card.body}}</p>
     </Card>
     {/each}
@@ -92,7 +105,7 @@
       <Checkbox name="services" value="brand" label="Brand Strategy" />
     </Fieldset>
     <Textarea name="message" label="Project Notes" required rows="4" placeholder="Tell us what you need." />
-    <Submit label="Submit Inquiry" color="accent" />
+    <Submit label="Submit Inquiry" variant="accent" />
     <FormStatus>Native browser validation handles required fields before submit.</FormStatus>
   </Form>
 </Section>
@@ -100,12 +113,12 @@
 <Section id="editorial" theme="tone">
   <h2>Statement + Split</h2>
   <Statement variant="accent">Static sites should feel sharp, fast, and easy to reshape.</Statement>
-  <p class="f-lg"><Split>Split wraps words for animation-ready text while preserving an accessible label.</Split></p>
+  <p class="t-lg"><Split>Split wraps words for animation-ready text while preserving an accessible label.</Split></p>
   <Grid cols="2">
     <div class="w">
       <h3>Layout still uses Grid</h3>
       <p>Use layout primitives for two-column content. Use <code>Split</code> for text splitting.</p>
-      <Button label="Primary action" href="/components/" color="accent" />
+      <Button label="Primary action" href="/components/" variant="accent" />
     </div>
     <Image src="r1" alt="Abstract component media example" max="1200" />
   </Grid>
@@ -195,7 +208,7 @@
     <Card><h3>One</h3><p>Short card.</p></Card>
     <Card><h3>Two</h3><p>Longer card with extra copy to prove row-span measurement keeps the grid packed without reordering source content.</p></Card>
     <Image src="r3" alt="Masonry image one" max="800" />
-    <Card theme="tone"><h3>Four</h3><p>Tone card.</p></Card>
+    <Card variant="accent"><h3>Four</h3><p>Accent card.</p></Card>
     <Image src="r5" alt="Masonry image two" max="800" />
     <Card variant="outlined"><h3>Six</h3><p>Outlined card.</p></Card>
   </Masonry>
@@ -243,16 +256,16 @@ Use markdown for prose-heavy pages: notes, case studies, docs, changelogs, and C
 
 <Section id="code">
   <h2>Code + SEO</h2>
-  <Code lang="html">&lt;Button label="Go" href="/" color="ghost" /&gt;</Code>
+  <Code lang="html">&lt;Button label="Go" href="/" variant="ghost" /&gt;</Code>
   <Code lang="html">&lt;SEO title="Components" description="Simple built-in component showcase." /&gt;</Code>
 </Section>
 
 <Section id="themes" theme="tone">
   <h2>Section themes</h2>
   <Grid cols="3-2">
-    <Card><h3>Tone</h3><p><code>Section theme="tone"</code> remaps semantic tokens.</p></Card>
-    <Card theme="tone"><h3>Tone card</h3><p><code>Card theme="tone"</code> uses the same data-theme contract.</p></Card>
-    <Card theme="invert"><h3>Invert card</h3><p>Theme attrs compose with card variants.</p></Card>
+    <Card><h3>Themed section</h3><p><code>Section theme="tone"</code> remaps semantic tokens around the card.</p></Card>
+    <Card variant="accent"><h3>Accent card</h3><p><code>Card variant="accent"</code> applies a component visual treatment.</p></Card>
+    <Card variant="invert"><h3>Invert card</h3><p>Card variants compose with themed sections.</p></Card>
   </Grid>
 </Section>
 

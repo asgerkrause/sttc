@@ -1,6 +1,6 @@
-import { mkdir, readFile, stat, writeFile } from 'fs/promises'
+import { copyFile, mkdir, readFile, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { root } from './paths'
+import { packageRoot, root } from './paths'
 
 export type ComponentPresetName =
   | 'hero'
@@ -13,16 +13,24 @@ export type ComponentPresetName =
   | 'stats'
   | 'process'
   | 'faq'
+  | 'lottie'
 
 type ComponentPresetFile = {
   componentName: string
   fileName: string
-  html: string
+  html?: string
+  source?: string
+}
+
+type ComponentPresetAsset = {
+  source: string
+  dest: string
 }
 
 type ComponentPreset = {
   name: string
   files: ComponentPresetFile[]
+  assets?: ComponentPresetAsset[]
   demoHtml: string
 }
 
@@ -38,6 +46,16 @@ async function writeIfMissing(path: string, content: string, force: boolean) {
   await mkdir(join(path, '..'), { recursive: true })
   await writeFile(path, content)
   console.log(`wrote ${path}`)
+}
+
+async function copyIfMissing(source: string, dest: string, force: boolean) {
+  if (await exists(dest) && !force) {
+    console.error(`refusing to overwrite ${dest} (pass --force to overwrite)`)
+    process.exit(2)
+  }
+  await mkdir(join(dest, '..'), { recursive: true })
+  await copyFile(source, dest)
+  console.log(`wrote ${dest}`)
 }
 
 const hero: ComponentPreset = {
@@ -549,6 +567,20 @@ const questions: ComponentPreset = {
   }],
 }
 
+const lottie: ComponentPreset = {
+  name: 'Lottie',
+  demoHtml: '<Lottie src="/assets/files/animations/example.json" trigger="view" label="Animation" />',
+  files: [{
+    componentName: 'Lottie',
+    fileName: 'Lottie.html',
+    source: join(packageRoot, 'presets', 'components', 'Lottie.html'),
+  }],
+  assets: [{
+    source: join(packageRoot, 'vendor', 'lottie-web-5.13.0.min.js'),
+    dest: join(root, 'src', 'app', 'vendor', 'lottie.min.js'),
+  }],
+}
+
 const componentPresets: Record<ComponentPresetName, ComponentPreset> = {
   hero,
   cta,
@@ -560,6 +592,7 @@ const componentPresets: Record<ComponentPresetName, ComponentPreset> = {
   stats,
   process: processPreset,
   faq: questions,
+  lottie,
 }
 
 export function availableComponentPresets() {
@@ -586,8 +619,14 @@ async function appendDemo(preset: ComponentPreset) {
 
 export async function addComponentPreset(name: string, options: { force?: boolean, demo?: boolean } = {}) {
   const preset = componentPreset(name)
+  const force = options.force ?? false
   for (const file of preset.files) {
-    await writeIfMissing(join(root, 'src', 'components', file.fileName), file.html, options.force ?? false)
+    const dest = join(root, 'src', 'components', file.fileName)
+    if (file.source) await copyIfMissing(file.source, dest, force)
+    else await writeIfMissing(dest, file.html ?? '', force)
+  }
+  for (const asset of preset.assets ?? []) {
+    await copyIfMissing(asset.source, asset.dest, force)
   }
   if (options.demo) await appendDemo(preset)
   console.log(`\nAdded ${preset.name}.`)

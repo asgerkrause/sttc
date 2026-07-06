@@ -108,7 +108,7 @@ Keep contract inline:
 
 <style>
   .crd.accent {
-    background: var(--c-acc);
+    background: var(--c-acc-sur);
     color: var(--c-acc-ink);
   }
 </style>

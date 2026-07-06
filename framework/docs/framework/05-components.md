@@ -130,7 +130,7 @@ Use `{{name}}` for attrs and `{{slot}}` for children.
 </Banner>
 ```
 
-Use attrs for stable configuration: variant, theme, href, IDs, labels, image names. Use slots for rich content.
+Use attrs for stable configuration: variant, href, IDs, labels, image names, and scoped theme only when the component owns a `data-theme` boundary. Use slots for rich content.
 
 ## Variants
 
@@ -138,10 +138,10 @@ Prefer `:class` enum variants and combo classes. Avoid BEM.
 
 ```html
 <!--
-  @attr variant=[default|outlined|ghost] :class Visual style.
-  @attr theme=[tone|invert] Theme token set.
+  @attr variant=[default|outlined|ghost|accent|invert] :class Visual style.
+  @attr href Optional link-card destination.
 -->
-<article class="crd" data-theme="{{theme}}">
+<article class="crd">
   {{slot}}
 </article>
 
@@ -149,7 +149,8 @@ Prefer `:class` enum variants and combo classes. Avoid BEM.
   .crd {
     &.outlined { border-color: var(--c-bor); background: transparent; }
     &.ghost { background: transparent; }
-    &[data-theme] { background: var(--c-bg); color: var(--c-ink); }
+    &.accent { background: var(--c-acc); color: var(--c-acc-ink); }
+    &.invert { background: var(--c-ink); color: var(--c-bg); }
   }
 </style>
 ```

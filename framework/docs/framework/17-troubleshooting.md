@@ -166,7 +166,7 @@ Global CSS should own tokens, reset/base type, `.c`, `.w`, `.crd`, `.btns`, `.ln
 </div>
 ```
 
-Small screens stack by default. Use split values for large/medium: `g="4-2"`, `c="6-3"`, `r="2-1"`.
+Small screens stack by default. Use split values for large/medium: `g="4-2"`, `c="6-3"`, `r="2-1"`. Use auto-fit values when item count is unknown: `g="a"`, `g="a-sm"`, `g="a-lg"`.
 
 ## Route script does not run
 

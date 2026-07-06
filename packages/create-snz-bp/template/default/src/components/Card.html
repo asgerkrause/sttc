@@ -1,9 +1,13 @@
 <!--
   @desc Flexible styled container for grouped content. Put headings, copy, media, and actions in the default slot.
-  @attr variant=[default|outlined|ghost] :class Visual variant.
-  @attr theme=[tone|invert] Optional data-theme value.
+  @attr variant=[default|outlined|ghost|accent|invert] :class Visual variant.
+  @attr href Optional link-card destination. Renders the root as an anchor when present.
 -->
-<article class="crd"{#if theme} data-theme="{{theme}}"{/if}>{{slot}}</article>
+{#if href}
+<a class="crd" href="{{href}}">{{slot}}</a>
+{:else}
+<article class="crd">{{slot}}</article>
+{/if}
 
 <style>
   .crd:has(.img-w) {

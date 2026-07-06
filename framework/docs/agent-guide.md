@@ -77,6 +77,7 @@ snz-bp add component testimonials # Testimonials.html + Testimonial.html
 snz-bp add component stats        # Stats.html + Stat.html
 snz-bp add component process      # Process.html + Step.html
 snz-bp add component faq          # Questions.html
+snz-bp add component lottie       # Lottie.html + src/app/vendor/lottie.min.js
 snz-bp add component hero --demo  # also append <Section><Hero /></Section>
 ```
 
@@ -134,9 +135,14 @@ Or via component:
   <Card><h3>One</h3><p>...</p></Card>
   <Card><h3>Two</h3><p>...</p></Card>
 </Grid>
+
+<Grid cols="a">
+  <Card><h3>Unknown count</h3><p>Auto-fit track.</p></Card>
+  <Card><h3>Another</h3><p>Same rhythm.</p></Card>
+</Grid>
 ```
 
-`Grid span/rows/order` only when `<Grid>` itself is a child of another grid.
+Use `cols="a"` for auto-fit cards, `cols="a-sm"` for compact chips, and `cols="a-lg"` for wide panels. `Grid span/rows/order` only when `<Grid>` itself is a child of another grid.
 
 ### Add stack/wrap rhythm
 
@@ -199,7 +205,7 @@ Use form primitives for repeated contact or newsletter UI. The framework stays s
     <Checkbox name="services" value="dev" label="Web Development" />
   </Fieldset>
   <Textarea name="message" label="Project Notes" />
-  <Submit label="Submit Inquiry" color="accent" />
+  <Submit label="Submit Inquiry" variant="accent" />
   <FormStatus>Native validation handles missing required fields before submit.</FormStatus>
 </Form>
 ```
@@ -211,7 +217,7 @@ Use form primitives for repeated contact or newsletter UI. The framework stays s
 Use source roots by media class:
 
 - `src/videos/` → `/assets/videos/` for public video files. Passthrough today; future compression/transcoding and a `<Video auto="true" />` component belong here.
-- `src/files/` → `/assets/files/` for public PDFs, audio, zips, and downloads.
+- `src/files/` → `/assets/files/` for public PDFs, audio, Lottie JSON, zips, and downloads.
 
 Anything in `src/images/`, `src/videos/`, or `src/files/` is publishable. Build validates authored `/assets/images/*`, `/assets/videos/*`, and `/assets/files/*` refs exist; it does not publish only detected usage.
 
@@ -291,7 +297,7 @@ Component CSS:
 - Bundled to `dist/assets/css/components.{hash}.css` inside `@layer snz.components`.
 - Loads after global CSS and before route CSS.
 
-Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Common tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; colors `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-acc-ink`, `--c-sec`, `--c-sec-ink`. Weight utilities are `.fw-l`, `.fw-r`, `.fw-b`; text utilities support `.f-*` and `.t-*`. Old short tokens are removed. Use `data-theme="tone"` or `invert` for surface themes; use `data-accent` for accent palettes. Class language is semantic-first and short: `.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`, `.eb`; private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
+Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Common tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; colors `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-sec`, `--c-acc-sur/ink/bor`, `--c-sec-sur/ink/bor`. Weight utilities are `.fw-l`, `.fw-r`, `.fw-b`; text utilities use `.t-lg`, `.t-md`, and `.t-sm`. Old short tokens are removed. Use `data-theme="tone"`, `accent`, `secondary`, or `invert` for scoped themes. Class language is semantic-first and short: `.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`, `.eb`; private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
 
 Audit boundary:
 
@@ -327,7 +333,7 @@ Full contract: `framework/docs/components.md`.
 
 `src/app.ts` is the default site code entry and is bundled with `Bun.build`. Author code can use imports and TypeScript directly. Starter projects include `src/snz.d.ts` for typed `window.snz`, `snz:page`, `snz:track`, and active/visible helpers. `src/app.js` still works as an escape hatch, but do not keep both files; the build fails on ambiguous root app entries. Shell head scripts, component lifecycle scripts, and route top scripts are appended to the same hashed `dist/assets/js/app.{hash}.js` output. Only `PUBLIC_*` env vars are inlined.
 
-Autoplay media is activity-managed by default: `video[autoplay]` and `audio[autoplay]` pause offscreen or in hidden tabs, then resume only if the runtime paused them. Add `data-active="manual"` on the media or an ancestor to opt out.
+Autoplay media is activity-managed by default: `video[autoplay]` and `audio[autoplay]` pause offscreen or in hidden tabs, then resume only if the runtime paused them. Add `data-active="manual"` on the media or an ancestor to opt out. Optional `<Lottie>` uses the same activity model for `trigger="view"` and `trigger="scrub"`; add it with `snz-bp add component lottie`.
 
 ## Vercel analytics intent
 

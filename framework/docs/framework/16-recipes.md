@@ -78,7 +78,7 @@ bun run new component Feature
 
 <style>
   .crd.accent {
-    background: var(--c-acc);
+    background: var(--c-acc-sur);
     color: var(--c-acc-ink);
   }
 </style>
@@ -131,7 +131,14 @@ Or built-in component:
   <Card><h3>One</h3><p>...</p></Card>
   <Card><h3>Two</h3><p>...</p></Card>
 </Grid>
+
+<Grid cols="a">
+  <Card><h3>Unknown count</h3><p>Auto-fit track.</p></Card>
+  <Card><h3>Another</h3><p>Same rhythm.</p></Card>
+</Grid>
 ```
+
+Use `cols="a"`, `cols="a-sm"`, or `cols="a-lg"` when item count should auto-fit instead of using fixed breakpoint counts.
 
 **Avoid:**
 
