@@ -19,13 +19,13 @@ Each component file may start with a single `<!-- ... -->` HTML comment that dec
   @attr href Optional link-card destination. Renders the root as an anchor when present.
 -->
 {#if href}
-<a class="crd" href="{{href}}">{{slot}}</a>
+<a class="card" href="{{href}}">{{slot}}</a>
 {:else}
-<article class="crd">{{slot}}</article>
+<article class="card">{{slot}}</article>
 {/if}
 
 <style>
-  .crd:has(.img-w) { /* component-specific composition edge */ }
+  .card:has(.media) { /* component-specific composition edge */ }
 </style>
 ```
 
@@ -70,11 +70,11 @@ Usage:
 Use Svelte-style `{#if ...}{/if}` blocks to omit optional markup at build time. Add `{:else}` for fallback markup.
 
 ```html
-<a class="btn" href="{{href}}" aria-label="{{label}}">
+<a class="button" href="{{href}}" aria-label="{{label}}">
   {#if slot:vis}
-  <span class="btn-vis-w" aria-hidden="true">{{slot:vis}}</span>
+  <span class="button-visual" aria-hidden="true">{{slot:vis}}</span>
   {:else}
-  <span class="btn-vis-w" aria-hidden="true">→</span>
+  <span class="button-visual" aria-hidden="true">→</span>
   {/if}
   <span>{{label}}</span>
 </a>
@@ -136,12 +136,12 @@ Placeholders are data paths, not JavaScript expressions. For common text transfo
   @attr variant=[default|outlined|ghost|accent|invert] :class
   @attr href Optional link-card destination.
 -->
-<article class="crd">
+<article class="card">
   ...
 </article>
 
 <style>
-  .crd {
+  .card {
     /* base */
     &.outlined { border-color: var(--c-bor); background: transparent; }
     &.ghost { background: transparent; }
@@ -157,9 +157,9 @@ Placeholders are data paths, not JavaScript expressions. For common text transfo
 
 Colocate component-specific `<style>` in the component file. The build extracts it into `dist/assets/css/components.{hash}.css` (loaded after the global stylesheet so component rules win at equal specificity).
 
-Global CSS is split by owner: `src/styles.css` imports `src/styles/system.css`, `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css`. Global CSS owns tokens, reset/base type, `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides. Component selectors such as `.faq`, `.code`, `.img-w`, or private component roots belong in their component file.
+Global CSS is split by owner: `src/styles.css` imports `src/styles/system.css`, `reset.css`, `type.css`, `grid.css`, `wrappers.css`, `utilities.css`, and `motion.css`. Global CSS owns tokens, reset/base type, `.container`, `.stack`, `.card`, `.buttons`, `.links`, layout attrs `[g]`, `[c]`, `[r]`, `[o]`, responsive type/rhythm/spacing attrs `[t]`, `[gp]`, `[mg*]`, `[pd*]`, theme tokens, and page overrides. Component selectors such as `.faq`, `.code`, `.media`, or private component roots belong in their component file.
 
-Class language is short and rare. Prefer semantic HTML, ARIA, and data attributes first. Use durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.t-lg`, `.t-md`, `.t-sm`, `.fw-*`, `.c-*`, `.h*`), or short private hooks (`.brg`, `.logo-mk`, `.code-lb`) only when useful.
+Class language is short and rare. Prefer semantic HTML, ARIA, and data attributes first. Use durable primitives (`.container`, `.stack`, `.card`, `.button`, `.buttons`, `.link`, `.links`), type/tone utilities (`.eyebrow`, `.t-lg`, `.t-md`, `.t-sm`, `.fw-*`, `.c-*`, `.h*`), or short private hooks (`.brg`, `.logo-mk`, `.code-lb`) only when useful.
 
 Use design tokens from the global system. Layout: `--l-mw`, `--l-gc`. Space/radius/border: `--s-px`, `--s-py`, `--s-ss`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`. Type: `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`. Color: `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-sec`, `--c-acc-sur/ink/bor`, `--c-sec-sur/ink/bor`. Motion: `--m-td*`, `--m-tf*`; interaction: `--i-hov-*`. Old short tokens are removed. Component CSS must use grouped names. Don't hardcode spacing, font weights, or colors.
 
@@ -249,10 +249,10 @@ Use attrs only for stable configuration: variant, theme, href, image source, acc
 | `Card` | Flexible styled container. Put headings, copy, media, and actions in the slot. |
 | `Products`, `Product` | Product listing and card primitives. `Products source="polar"` fetches Polar products at build time with `POLAR_ACCESS_TOKEN`; `Product checkout="embed"` loads Polar's embed helper for inline checkout. |
 | `Accordion`, `FAQ` | Native `<details>` disclosure + demo composite. |
-| `Section` | Semantic section + `.c` container. No root class. |
+| `Section` | Semantic section + `.container` container. No root class. |
 | `Markdown` | Inline build-time markdown (use slot for source). Supports headings, lists, tables, code, safe links/images, and PascalCase components. |
 | `Grid` | Attribute grid wrapper. `cols` maps to `[g]` fixed, subgrid, or auto-fit values; `span`/`rows`/`order` map to `[c]`/`[r]`/`[o]` for nested grid children. |
-| `Stack` | Deprecated compatibility wrapper. Prefer `<div class="w">…</div>`. |
+| `Stack` | Deprecated compatibility wrapper. Prefer `<div class="stack">…</div>`. |
 | `Code` | `<pre><code>` block with optional language label. |
 | `Badge`, `Icon` | Small label and tiny built-in SVG icon primitives. |
 | `Socials`, `Social` | Social/link group wrapper and item. |

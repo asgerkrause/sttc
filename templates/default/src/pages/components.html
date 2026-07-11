@@ -3,13 +3,13 @@
 </head>
 
 <section class="hero">
-  <div class="c">
-    <div class="w">
+  <div class="container">
+    <div class="stack">
       <h1>Copy-ready patterns using built-in pieces.</h1>
       <p class="t-lg">These examples cover common page needs: actions, cards, media, motion, tabs, counters, markdown, code, and layout primitives.</p>
       <p>Slot-first patterns stay flexible: compose primitives inside <code>Section</code>, <code>Grid</code>, and <code>Card</code> instead of locking content into too many props.</p>
     </div>
-    <div class="btns">
+    <div class="buttons">
       <Button label="Back home" href="/" />
       <Button label="Component docs" href="https://github.com/sanitizestudio/snz-bp" variant="ghost" />
     </div>
@@ -17,12 +17,12 @@
 </section>
 
 <Section id="actions">
-  <header class="w">
-    <p class="eb">Actions</p>
+  <header class="stack">
+    <p class="eyebrow">Actions</p>
     <h2>Button + Link</h2>
     <p>Use buttons for primary calls to action and links for lower-emphasis navigation.</p>
   </header>
-  <div class="btns">
+  <div class="buttons">
     <Button label="Default" href="/components/" />
     <Button label="Tone" href="/components/" variant="tone" />
     <Button label="Accent" href="/components/" variant="accent" />
@@ -32,8 +32,8 @@
 </Section>
 
 <Section id="cards">
-  <header class="w">
-    <p class="eb">Content groups</p>
+  <header class="stack">
+    <p class="eyebrow">Content groups</p>
     <h2>Card</h2>
   </header>
   <Grid cols="4-2">
@@ -45,8 +45,8 @@
 </Section>
 
 <Section id="link-cards">
-  <header class="w">
-    <p class="eb">Content groups</p>
+  <header class="stack">
+    <p class="eyebrow">Content groups</p>
     <h2>Link cards</h2>
   </header>
   <Grid cols="4-2">
@@ -58,14 +58,14 @@
 </Section>
 
 <Section id="editorial" theme="tone">
-  <header class="w">
-    <p class="eb">Editorial</p>
+  <header class="stack">
+    <p class="eyebrow">Editorial</p>
     <h2>Statement + Split</h2>
   </header>
   <Statement variant="accent">Static sites should feel sharp, fast, and easy to reshape.</Statement>
   <p class="t-lg"><Split>Split wraps words for animation-ready text while preserving an accessible label.</Split></p>
   <Grid cols="2">
-    <div class="w">
+    <div class="stack">
       <h3>Layout still uses Grid</h3>
       <p>Use layout primitives for two-column content. Use <code>Split</code> for text splitting.</p>
       <Button label="Primary action" href="/components/" variant="accent" />
@@ -75,11 +75,11 @@
 </Section>
 
 <Section id="identity">
-  <header class="w">
-    <p class="eb">Small pieces</p>
+  <header class="stack">
+    <p class="eyebrow">Small pieces</p>
     <h2>Badge + Icon + Socials</h2>
   </header>
-  <div class="btns">
+  <div class="buttons">
     <Badge>Default</Badge>
     <Badge variant="tone">Tone</Badge>
     <Badge variant="accent">Accent</Badge>
@@ -93,8 +93,8 @@
 </Section>
 
 <Section id="counter">
-  <header class="w">
-    <p class="eb">Numbers</p>
+  <header class="stack">
+    <p class="eyebrow">Numbers</p>
     <h2>Counter</h2>
   </header>
   <Grid cols="3-2">
@@ -105,8 +105,8 @@
 </Section>
 
 <Section id="tabs">
-  <header class="w">
-    <p class="eb">Panels</p>
+  <header class="stack">
+    <p class="eyebrow">Panels</p>
     <h2>Tabs</h2>
   </header>
   <Tabs label="Component tabs">
@@ -120,8 +120,8 @@
 </Section>
 
 <Section id="slider">
-  <header class="w">
-    <p class="eb">Gallery</p>
+  <header class="stack">
+    <p class="eyebrow">Gallery</p>
     <h2>Slider</h2>
     <p>Native scroll-snap gallery with previous/next controls.</p>
   </header>
@@ -135,8 +135,8 @@
 </Section>
 
 <Section id="gallery">
-  <header class="w">
-    <p class="eb">Gallery</p>
+  <header class="stack">
+    <p class="eyebrow">Gallery</p>
     <h2>Gallery</h2>
     <p>Single-item gallery with a live counter and previous/next zones.</p>
   </header>
@@ -148,8 +148,8 @@
 </Section>
 
 <Section id="marquee" theme="invert">
-  <header class="w">
-    <p class="eb">Motion</p>
+  <header class="stack">
+    <p class="eyebrow">Motion</p>
     <h2>Marquee</h2>
   </header>
   <Marquee label="Component marquee" speed="25" scroll="2" fade="true">
@@ -161,8 +161,8 @@
 </Section>
 
 <Section id="masonry">
-  <header class="w">
-    <p class="eb">Packed layout</p>
+  <header class="stack">
+    <p class="eyebrow">Packed layout</p>
     <h2>Masonry</h2>
   </header>
   <Masonry cols="4-2" gap="sm">
@@ -176,21 +176,21 @@
 </Section>
 
 <Section id="media">
-  <header class="w">
-    <p class="eb">Media</p>
+  <header class="stack">
+    <p class="eyebrow">Media</p>
     <h2>Image + Embed</h2>
   </header>
   <Grid cols="2">
-    <div class="w">
+    <div class="stack">
       <h3>Eager image</h3>
       <Image src="showcase" alt="Abstract starter site preview" max="1200" loading="eager" />
     </div>
-    <div class="w">
+    <div class="stack">
       <h3>Lazy image with tmp preview</h3>
       <Image src="showcase" alt="Abstract starter site preview lazy example" max="1200" />
     </div>
   </Grid>
-  <div class="w">
+  <div class="stack">
     <h3>Responsive by default</h3>
     <p>Place source images in <code>src/images</code>. Build emits optimized WebP sizes and keeps route markup clean.</p>
     <Code lang="html">&lt;Image src="showcase" alt="Abstract starter site preview" max="1200" /&gt;</Code>
@@ -199,8 +199,8 @@
 </Section>
 
 <Section id="disclosure">
-  <header class="w">
-    <p class="eb">Disclosure</p>
+  <header class="stack">
+    <p class="eyebrow">Disclosure</p>
     <h2>Accordion + FAQ</h2>
   </header>
   <Accordion summary="Where do routes live?" body="Author route files in src/pages. Home is index.html, nested folders become nested URLs." group="showcase" />
@@ -209,8 +209,8 @@
 </Section>
 
 <Section id="markdown">
-  <header class="w">
-    <p class="eb">Content</p>
+  <header class="stack">
+    <p class="eyebrow">Content</p>
     <h2>Markdown</h2>
   </header>
   <Markdown>
@@ -229,8 +229,8 @@
 </Section>
 
 <Section id="code">
-  <header class="w">
-    <p class="eb">Snippets</p>
+  <header class="stack">
+    <p class="eyebrow">Snippets</p>
     <h2>Code + SEO</h2>
   </header>
   <Code lang="html">&lt;Button label="Go" href="/" variant="ghost" /&gt;</Code>
@@ -238,8 +238,8 @@
 </Section>
 
 <Section id="themes" theme="tone">
-  <header class="w">
-    <p class="eb">Themes</p>
+  <header class="stack">
+    <p class="eyebrow">Themes</p>
     <h2>Section themes</h2>
   </header>
   <Grid cols="3-2">
@@ -250,20 +250,20 @@
 </Section>
 
 <Section id="layout">
-  <header class="w">
-    <p class="eb">Layout</p>
+  <header class="stack">
+    <p class="eyebrow">Layout</p>
     <h2>Section, Grid, Stack</h2>
   </header>
   <Grid cols="3-2">
-    <div class="w"><h3>Section</h3><p>Section owns the semantic band, container, and optional theme.</p></div>
-    <div class="w"><h3>Grid</h3><p>Maps to global <code>[g]</code> primitives and can be used inside components.</p></div>
-    <Stack><h3>Stack</h3><p>Compatibility wrapper for vertical rhythm. Prefer <code>.w</code> in new work.</p></Stack>
+    <div class="stack"><h3>Section</h3><p>Section owns the semantic band, container, and optional theme.</p></div>
+    <div class="stack"><h3>Grid</h3><p>Maps to global <code>[g]</code> primitives and can be used inside components.</p></div>
+    <Stack><h3>Stack</h3><p>Component form of the <code>.stack</code> vertical rhythm primitive.</p></Stack>
   </Grid>
 </Section>
 
 <Section id="shell">
-  <header class="w">
-    <p class="eb">Shell</p>
+  <header class="stack">
+    <p class="eyebrow">Shell</p>
     <h2>Shell components</h2>
   </header>
   <Grid cols="2">

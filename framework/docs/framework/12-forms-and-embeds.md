@@ -49,7 +49,7 @@ The primitives render native markup:
 - `<Input>` / `<Textarea>` / `<Select>` → `<label><span>Label</span><control></label>`
 - `<Checkbox>` / `<Radio>` → `<label><control><span>Label</span></label>`
 - `<Fieldset>` → `<fieldset><legend>Legend</legend><div>…</div></fieldset>`
-- `<Submit>` → `<button class="btn" type="submit">…</button>`
+- `<Submit>` → `<button class="button" type="submit">…</button>`
 
 Keep validation native first: `required`, `type`, `minlength`, `maxlength`, `pattern`, `min`, `max`, `step`, `inputmode`, `autocomplete`, and useful labels. `type="email"` handles email validation. For phone fields, prefer `type="tel"`, `inputmode="tel"`, and `autocomplete="tel"`; only add `pattern` when the project has an exact regional format requirement.
 

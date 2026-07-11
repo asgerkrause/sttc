@@ -23,7 +23,7 @@ Assets were copied raw (`cp src/assets → dist/assets`). No raster files in rep
 
 ## `<Image />` component
 
-- `src/components/Image.html` — `.img-w` wrapper + main `<img>`; lazy images also get a temporary `.img-tmp` preview
+- `src/components/Image.html` — `.media` wrapper + main `<img>`; lazy images also get a temporary `.img-tmp` preview
 - Route: `<Image src="hero" alt="…" />` (`src` = logical name, no extension)
 - Build maps `src` → `/assets/images/{name}.webp` and dimensions from `metadata()`
 - Duplicate logical names (same basename) across image source roots fail before `<Image src="name" />` can resolve ambiguously
@@ -35,7 +35,7 @@ Assets were copied raw (`cp src/assets → dist/assets`). No raster files in rep
 
 ## Lazy preview (`.img-tmp`)
 
-- Default `loading="lazy"` → `.img-tmp` (Bun `placeholder()` data URL) over the main image; main image has no private class; target `.img-w img` or `.img-tmp` in CSS
+- Default `loading="lazy"` → `.img-tmp` (Bun `placeholder()` data URL) over the main image; main image has no private class; target `.media img` or `.img-tmp` in CSS
 - `image-preview.js` removes `.img-tmp` on main `load` / `error` (no inline handlers)
 - `loading="eager"` → single `<img>`, no tmp
 - Optional pixelated tmp: `image-rendering: pixelated` on `.img-tmp` in `Image.html`

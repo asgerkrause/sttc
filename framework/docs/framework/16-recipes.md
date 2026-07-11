@@ -72,12 +72,12 @@ bun run new component Feature
   @desc Feature item.
   @attr variant=[default|accent] :class Visual variant.
 -->
-<article class="crd">
+<article class="card">
   {{slot}}
 </article>
 
 <style>
-  .crd.accent {
+  .card.accent {
     background: var(--c-acc-sur);
     color: var(--c-acc-ink);
   }
@@ -144,7 +144,7 @@ Use `cols="a"`, `cols="a-sm"`, or `cols="a-lg"` when item count should auto-fit 
 
 - new grid utility classes
 - wrapper elements without layout purpose
-- using `Stack`; prefer `.w`
+- using `Stack`; prefer `.stack`
 
 **Verify:**
 
@@ -175,7 +175,7 @@ bun run check
 - duplicate image basenames across roots
 - vague or missing `alt`
 - eager loading below fold
-- styling `.img-main`; use `.img-w img` or `.img-tmp`
+- styling `.img-main`; use `.media img` or `.img-tmp`
 
 **Verify:**
 

@@ -33,30 +33,30 @@
     pointer-events: none;
   }
 
-  #hero .c {
+  #hero .container {
     position: relative;
     z-index: 2;
     align-items: center;
     justify-content: end;
   }
 
-  #hero .btns {
+  #hero .buttons {
     justify-content: center;
   }
 </style>
 
 <Section id="hero" scroll="hero" center="center" video="https://r2.snz.st/02.mp4">
-  <div class="w center">
+  <div class="stack center">
     <h1>HTML-first sites, composed at build time.</h1>
     <p class="t-lg">Write routes, drop in components, and ship static output.</p>
   </div>
-  <div class="btns">
+  <div class="buttons">
     <Button label="Get started now" href="#" variant="tone" icon="→" />
   </div>
 </Section>
 
 <section>
-  <div class="c">
+  <div class="container">
     <h2>Built-in patterns</h2>
     <div g="3-2">
       <Card>
@@ -79,8 +79,8 @@
 </section>
 
 <section>
-  <div class="c">
-    <div class="w">
+  <div class="container">
+    <div class="stack">
       <h2>Template directives</h2>
       <p>Use conditionals inside components, and loops inside CMS templates.</p>
     </div>
@@ -128,7 +128,7 @@ services:
 </section>
 
 <section>
-  <div class="c">
+  <div class="container">
     <h2>Common questions</h2>
     <FAQ />
   </div>

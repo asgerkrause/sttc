@@ -83,7 +83,7 @@ Read **`framework/docs/agent-guide.md`** for framework orientation and **`framew
 - Optional `<script>` block runs once per instance; `el` bound to the root, return a function for cleanup.
 - `<style>` colocated and auto-bundled into `dist/assets/css/components.{hash}.css`.
 
-Built-in components: `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Product`, `Products`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.w`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`, `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus`.
+Built-in components: `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Product`, `Products`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.stack`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`, `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus`.
 
 To spawn a new component via LLM, hand it `framework/docs/component-prompt.md`. Or just write the file yourself.
 
@@ -187,11 +187,12 @@ Structured data auto-emitted:
 
 - Base tokens + reset: `src/styles.css` imports split CSS under `src/styles/`.
 - Token legend: layout `--l-*`, space `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Key tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; color `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-sec`, `--c-acc-sur/ink/bor`, `--c-sec-sur/ink/bor`. Use grouped tokens only; no short aliases.
-- Global layout primitives: `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`.
-- `[g]` is grid container; `[c]` column span; `[r]` row span; `[o]` visual order. Use split values (`g="4-2"`, `c="6-3"`, `o="f-a"`) or auto grids (`g="a"`, `g="a-sm"`, `g="a-lg"`). Small screens stack by default.
+- Global role primitives: `.container`, `.stack`, `.card`, `.button`, `.buttons`, `.link`, `.links`, `.media`, `.eyebrow`.
+- Responsive attrs: layout `[g]`, `[c]`, `[r]`, `[o]`; type/rhythm `[t]`, `[gp]`; spacing `[mg]`, `[mg-t/r/b/l/tb/lr]`, `[pd]`, `[pd-t/r/b/l/tb/lr]`.
+- Values read large → medium → small. One value applies everywhere; two set large/small; three set large/medium/small. Type accepts `h0`–`h6`, `lg`, `md`, `sm`; spacing accepts `xl`, `lg`, `md`, `sm`, `xs`, `0`. Grid keeps its documented numeric/auto values. Small screens stack by default.
 - Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).
 - Component CSS loads **after** base so component rules win at equal specificity.
-- Class language is semantic-first and short. Use classes only for durable primitives (`.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`), type/tone utilities (`.eb`, `.t-*`, `.fw-*`, `.c-*`, `.h*`), or concise private hooks (`.brg`, `.logo-mk`, `.code-lb`).
+- Classes name objects; compact attrs own token-bound responsive composition; nested CSS owns local art direction. Keep `.t-*` only as migration aliases. Private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
 - Component-specific selectors belong in component files. Run `bun run css:audit` or `bun run doctor` when cleaning CSS boundaries.
 - Per-page route CSS: use `<style>` in authored routes for one-off page rules; build extracts to `@layer snz.pages.{slug}`. Use `html[data-page="{slug}"]` in global CSS only for durable cross-route overrides.
 

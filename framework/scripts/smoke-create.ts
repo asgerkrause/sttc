@@ -78,6 +78,10 @@ async function assertStarterSurface(target: string) {
     'src/components/Image.html',
     'src/images/og.png',
     'src/images/showcase.png',
+    '.agents/skills/snz-component/SKILL.md',
+    '.agents/skills/snz-collection/SKILL.md',
+    '.agents/skills/snz-launch/SKILL.md',
+    '.agents/skills/snz-diagnose/SKILL.md',
   ]) {
     await assertFile(target, file)
   }
@@ -86,7 +90,7 @@ async function assertStarterSurface(target: string) {
   await assertNoGeneratedOrIgnoredArtifacts(target)
 
   const scripts = (await packageJson(target)).scripts ?? {}
-  for (const script of ['build', 'check', 'doctor', 'typecheck', 'new', 'add', 'migrate']) {
+  for (const script of ['build', 'check', 'doctor', 'typecheck', 'new', 'add', 'skills', 'migrate']) {
     if (typeof scripts[script] !== 'string') {
       throw new Error(`created starter missing package script "${script}"`)
     }
@@ -100,6 +104,7 @@ try {
     throw new Error('local create did not write file: @snz/bp dependency')
   }
   await run(['bun', 'install'], localTarget)
+  await run(['bun', 'run', 'skills', 'sync', '--check'], localTarget)
   await run(['bun', 'run', 'new', 'cms'], localTarget)
   await run(['bun', 'run', 'new', 'post', 'smoke-post'], localTarget)
   await run(['bun', 'run', 'new', 'route', 'smoke-page'], localTarget)

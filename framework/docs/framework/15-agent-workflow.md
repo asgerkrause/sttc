@@ -102,12 +102,12 @@ Keep contract inline:
   @desc Feature item.
   @attr variant=[default|accent] :class Visual variant.
 -->
-<article class="crd">
+<article class="card">
   {{slot}}
 </article>
 
 <style>
-  .crd.accent {
+  .card.accent {
     background: var(--c-acc-sur);
     color: var(--c-acc-ink);
   }
@@ -127,7 +127,7 @@ Run `bun run doctor` when CSS ownership changed.
 **Global CSS owns:**
 
 - tokens, reset, base type
-- `.c`, `.w`, `.crd`, `.btns`, `.lnks`
+- `.container`, `.stack`, `.card`, `.buttons`, `.links`
 - `[g]`, `[c]`, `[r]`, `[o]`
 - theme tokens and page overrides
 

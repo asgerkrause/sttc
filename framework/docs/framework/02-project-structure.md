@@ -72,11 +72,11 @@ Global CSS owns:
 - tokens and themes;
 - base element styles;
 - type utilities;
-- `.c`, `.w`, `.crd`, `.btns`, `.lnks`;
+- `.container`, `.stack`, `.card`, `.buttons`, `.links`;
 - `[g]`, `[c]`, `[r]`, `[o]` grid primitives;
 - page overrides like `html[data-page="about"]`.
 
-Component CSS owns private roots such as `.faq`, `.code`, `.img-w`, and component composition details.
+Component CSS owns private roots such as `.faq`, `.code`, `.media`, and component composition details.
 
 ## Output files
 

@@ -1,6 +1,6 @@
 # Custom content collections
 
-**Status:** implemented v1; scaffolder command remains future work
+**Status:** implemented v1, including collection scaffolding
 **Date:** 2026-06-18
 
 ## Context
@@ -126,13 +126,13 @@ Rules:
 - relation/reference fields are editor data only in v1; compiler passes their front-matter value through as string/JSON placeholder data and does not join records.
 - media keeps current behavior: image refs from `/src/images/*` or `/assets/images/*` normalize to `/assets/images/*.webp`.
 
-Future scaffolder command shape:
+Scaffolder command:
 
 ```bash
 bun run new collection projects --route work/{slug} --template project
 ```
 
-Command should create:
+Command creates:
 
 - `content/projects/`
 - `src/templates/project.html`
@@ -224,7 +224,7 @@ Primary files:
 - `build/generated-routes.ts` — keep posts-only behavior by filtering `collection === 'posts'`
 - `build/feeds.ts` — keep posts-only input
 - `build/discovery.ts` — avoid treating every custom content route as `BlogPosting`
-- `build/scaffold.ts` — future command to generate collection surface
+- `build/scaffold.ts` — generates collection config, folder, template, and PagesCMS surface
 - `.pages.yml` — only touched when adding actual starter/example custom collection
 - `content/README.md` — documents opt-in config
 

@@ -8,7 +8,8 @@ src/styles/system.css       tokens, fluid engine, colors, motion vars
 src/styles/reset.css        reset and base elements
 src/styles/type.css         type defaults and utilities
 src/styles/grid.css         [g], [c], [r], [o]
-src/styles/wrappers.css     .c, .w, .crd, .btns, .lnks
+src/styles/wrappers.css     .container, .stack, .card, .buttons, .links
+src/styles/utilities.css    [t], [gp], [mg*], [pd*] responsive composition
 src/styles/motion.css       scroll/view-transition hooks
 src/components/*.html       component <style>
 ```
@@ -75,12 +76,12 @@ Use primitives directly before creating new layout CSS.
 ### Container
 
 ```html
-<div class="c">
+<div class="container">
   <h1>Page title</h1>
 </div>
 ```
 
-`Section` includes `.c`:
+`Section` includes `.container`:
 
 ```html
 <Section>
@@ -91,29 +92,29 @@ Use primitives directly before creating new layout CSS.
 ### Stack/wrap rhythm
 
 ```html
-<div class="w">
+<div class="stack">
   <h2>Heading</h2>
   <p>Body.</p>
   <Button href="/contact/" label="Contact" />
 </div>
 ```
 
-Prefer `.w` over `Stack`.
+Use `.stack` directly or `<Stack>` when component authoring is clearer.
 
 ### Cards and action groups
 
 ```html
-<article class="crd">
+<article class="card">
   <h3>Card title</h3>
   <p>Card body.</p>
 </article>
 
-<div class="btns">
+<div class="buttons">
   <Button href="/start/" label="Start" />
   <Button href="/contact/" label="Contact" variant="ghost" />
 </div>
 
-<div class="lnks">
+<div class="links">
   <Link href="/work/" label="See work" />
 </div>
 ```
@@ -199,13 +200,13 @@ Classes should be rare, semantic, and short.
 Use durable primitives:
 
 ```txt
-.c .w .crd .btn .btns .lnk .lnks
+.container .stack .card .button .buttons .link .links .media .eyebrow
 ```
 
 Use type/tone utilities when useful:
 
 ```txt
-.eb .t-* .fw-* .c-* .h*
+.eyebrow [t] .t-* .fw-* .c-*
 ```
 
 Use private hooks only when they clarify ownership:

@@ -1,0 +1,336 @@
+@layer utilities {
+  :where([t]) {
+    font-family: var(--u-t-ff);
+    font-size: var(--u-t-fs);
+    font-weight: var(--u-t-fw);
+    font-variation-settings: "wght" var(--u-t-fw);
+    line-height: var(--u-t-lh);
+    letter-spacing: var(--u-t-ls);
+    text-transform: var(--u-t-tt);
+    max-width: var(--u-t-mw);
+  }
+
+  :where([gp]) { gap: var(--u-gp); }
+  :where([mg]) { margin: var(--u-mg); }
+  :where([mg-tb]) { margin-block: var(--u-mg-tb); }
+  :where([mg-lr]) { margin-inline: var(--u-mg-lr); }
+  :where([mg-t]) { margin-top: var(--u-mg-t); }
+  :where([mg-r]) { margin-right: var(--u-mg-r); }
+  :where([mg-b]) { margin-bottom: var(--u-mg-b); }
+  :where([mg-l]) { margin-left: var(--u-mg-l); }
+  :where([pd]) { padding: var(--u-pd); }
+  :where([pd-tb]) { padding-block: var(--u-pd-tb); }
+  :where([pd-lr]) { padding-inline: var(--u-pd-lr); }
+  :where([pd-t]) { padding-top: var(--u-pd-t); }
+  :where([pd-r]) { padding-right: var(--u-pd-r); }
+  :where([pd-b]) { padding-bottom: var(--u-pd-b); }
+  :where([pd-l]) { padding-left: var(--u-pd-l); }
+
+  [t$="h0"] { --u-t-ff: var(--t-h0-ff); --u-t-fs: var(--t-h0-fs); --u-t-fw: var(--t-h0-fw); --u-t-lh: var(--t-h0-lh); --u-t-ls: var(--t-h0-ls); --u-t-mw: var(--t-h0-mw); --u-t-tt: var(--t-h0-tt); }
+  [t$="h1"] { --u-t-ff: var(--t-h1-ff); --u-t-fs: var(--t-h1-fs); --u-t-fw: var(--t-h1-fw); --u-t-lh: var(--t-h1-lh); --u-t-ls: var(--t-h1-ls); --u-t-mw: var(--t-h1-mw); --u-t-tt: var(--t-h1-tt); }
+  [t$="h2"] { --u-t-ff: var(--t-h2-ff); --u-t-fs: var(--t-h2-fs); --u-t-fw: var(--t-h2-fw); --u-t-lh: var(--t-h2-lh); --u-t-ls: var(--t-h2-ls); --u-t-mw: var(--t-h2-mw); --u-t-tt: var(--t-h2-tt); }
+  [t$="h3"] { --u-t-ff: var(--t-h3-ff); --u-t-fs: var(--t-h3-fs); --u-t-fw: var(--t-h3-fw); --u-t-lh: var(--t-h3-lh); --u-t-ls: var(--t-h3-ls); --u-t-mw: var(--t-h3-mw); --u-t-tt: var(--t-h3-tt); }
+  [t$="h4"] { --u-t-ff: var(--t-h4-ff); --u-t-fs: var(--t-h4-fs); --u-t-fw: var(--t-h4-fw); --u-t-lh: var(--t-h4-lh); --u-t-ls: var(--t-h4-ls); --u-t-mw: var(--t-h4-mw); --u-t-tt: var(--t-h4-tt); }
+  [t$="h5"] { --u-t-ff: var(--t-h5-ff); --u-t-fs: var(--t-h5-fs); --u-t-fw: var(--t-h5-fw); --u-t-lh: var(--t-h5-lh); --u-t-ls: var(--t-h5-ls); --u-t-mw: var(--t-h5-mw); --u-t-tt: var(--t-h5-tt); }
+  [t$="h6"] { --u-t-ff: var(--t-h6-ff); --u-t-fs: var(--t-h6-fs); --u-t-fw: var(--t-h6-fw); --u-t-lh: var(--t-h6-lh); --u-t-ls: var(--t-h6-ls); --u-t-mw: var(--t-h6-mw); --u-t-tt: var(--t-h6-tt); }
+  [t$="lg"] { --u-t-ff: var(--t-lg-ff); --u-t-fs: var(--t-lg-fs); --u-t-fw: var(--t-lg-fw); --u-t-lh: var(--t-lg-lh); --u-t-ls: var(--t-lg-ls); --u-t-mw: var(--t-lg-mw); --u-t-tt: var(--t-lg-tt); }
+  [t$="md"] { --u-t-ff: var(--t-md-ff); --u-t-fs: var(--t-md-fs); --u-t-fw: var(--t-md-fw); --u-t-lh: var(--t-md-lh); --u-t-ls: var(--t-md-ls); --u-t-mw: var(--t-md-mw); --u-t-tt: var(--t-md-tt); }
+  [t$="sm"] { --u-t-ff: var(--t-sm-ff); --u-t-fs: var(--t-sm-fs); --u-t-fw: var(--t-sm-fw); --u-t-lh: var(--t-sm-lh); --u-t-ls: var(--t-sm-ls); --u-t-mw: var(--t-sm-mw); --u-t-tt: var(--t-sm-tt); }
+
+  [gp$="xl"] { --u-gp: var(--s-gp-xl); }
+  [gp$="lg"] { --u-gp: var(--s-gp-lg); }
+  [gp$="md"] { --u-gp: var(--s-gp); }
+  [gp$="sm"] { --u-gp: var(--s-gp-sm); }
+  [gp$="xs"] { --u-gp: var(--s-gp-xs); }
+  [gp$="0"] { --u-gp: 0; }
+  [mg$="xl"] { --u-mg: var(--s-gp-xl); }
+  [mg$="lg"] { --u-mg: var(--s-gp-lg); }
+  [mg$="md"] { --u-mg: var(--s-gp); }
+  [mg$="sm"] { --u-mg: var(--s-gp-sm); }
+  [mg$="xs"] { --u-mg: var(--s-gp-xs); }
+  [mg$="0"] { --u-mg: 0; }
+  [mg-tb$="xl"] { --u-mg-tb: var(--s-gp-xl); }
+  [mg-tb$="lg"] { --u-mg-tb: var(--s-gp-lg); }
+  [mg-tb$="md"] { --u-mg-tb: var(--s-gp); }
+  [mg-tb$="sm"] { --u-mg-tb: var(--s-gp-sm); }
+  [mg-tb$="xs"] { --u-mg-tb: var(--s-gp-xs); }
+  [mg-tb$="0"] { --u-mg-tb: 0; }
+  [mg-lr$="xl"] { --u-mg-lr: var(--s-gp-xl); }
+  [mg-lr$="lg"] { --u-mg-lr: var(--s-gp-lg); }
+  [mg-lr$="md"] { --u-mg-lr: var(--s-gp); }
+  [mg-lr$="sm"] { --u-mg-lr: var(--s-gp-sm); }
+  [mg-lr$="xs"] { --u-mg-lr: var(--s-gp-xs); }
+  [mg-lr$="0"] { --u-mg-lr: 0; }
+  [mg-t$="xl"] { --u-mg-t: var(--s-gp-xl); }
+  [mg-t$="lg"] { --u-mg-t: var(--s-gp-lg); }
+  [mg-t$="md"] { --u-mg-t: var(--s-gp); }
+  [mg-t$="sm"] { --u-mg-t: var(--s-gp-sm); }
+  [mg-t$="xs"] { --u-mg-t: var(--s-gp-xs); }
+  [mg-t$="0"] { --u-mg-t: 0; }
+  [mg-r$="xl"] { --u-mg-r: var(--s-gp-xl); }
+  [mg-r$="lg"] { --u-mg-r: var(--s-gp-lg); }
+  [mg-r$="md"] { --u-mg-r: var(--s-gp); }
+  [mg-r$="sm"] { --u-mg-r: var(--s-gp-sm); }
+  [mg-r$="xs"] { --u-mg-r: var(--s-gp-xs); }
+  [mg-r$="0"] { --u-mg-r: 0; }
+  [mg-b$="xl"] { --u-mg-b: var(--s-gp-xl); }
+  [mg-b$="lg"] { --u-mg-b: var(--s-gp-lg); }
+  [mg-b$="md"] { --u-mg-b: var(--s-gp); }
+  [mg-b$="sm"] { --u-mg-b: var(--s-gp-sm); }
+  [mg-b$="xs"] { --u-mg-b: var(--s-gp-xs); }
+  [mg-b$="0"] { --u-mg-b: 0; }
+  [mg-l$="xl"] { --u-mg-l: var(--s-gp-xl); }
+  [mg-l$="lg"] { --u-mg-l: var(--s-gp-lg); }
+  [mg-l$="md"] { --u-mg-l: var(--s-gp); }
+  [mg-l$="sm"] { --u-mg-l: var(--s-gp-sm); }
+  [mg-l$="xs"] { --u-mg-l: var(--s-gp-xs); }
+  [mg-l$="0"] { --u-mg-l: 0; }
+  [pd$="xl"] { --u-pd: var(--s-pd-xl); }
+  [pd$="lg"] { --u-pd: var(--s-pd-lg); }
+  [pd$="md"] { --u-pd: var(--s-pd); }
+  [pd$="sm"] { --u-pd: var(--s-pd-sm); }
+  [pd$="xs"] { --u-pd: var(--s-pd-xs); }
+  [pd$="0"] { --u-pd: 0; }
+  [pd-tb$="xl"] { --u-pd-tb: var(--s-pd-xl); }
+  [pd-tb$="lg"] { --u-pd-tb: var(--s-pd-lg); }
+  [pd-tb$="md"] { --u-pd-tb: var(--s-pd); }
+  [pd-tb$="sm"] { --u-pd-tb: var(--s-pd-sm); }
+  [pd-tb$="xs"] { --u-pd-tb: var(--s-pd-xs); }
+  [pd-tb$="0"] { --u-pd-tb: 0; }
+  [pd-lr$="xl"] { --u-pd-lr: var(--s-pd-xl); }
+  [pd-lr$="lg"] { --u-pd-lr: var(--s-pd-lg); }
+  [pd-lr$="md"] { --u-pd-lr: var(--s-pd); }
+  [pd-lr$="sm"] { --u-pd-lr: var(--s-pd-sm); }
+  [pd-lr$="xs"] { --u-pd-lr: var(--s-pd-xs); }
+  [pd-lr$="0"] { --u-pd-lr: 0; }
+  [pd-t$="xl"] { --u-pd-t: var(--s-pd-xl); }
+  [pd-t$="lg"] { --u-pd-t: var(--s-pd-lg); }
+  [pd-t$="md"] { --u-pd-t: var(--s-pd); }
+  [pd-t$="sm"] { --u-pd-t: var(--s-pd-sm); }
+  [pd-t$="xs"] { --u-pd-t: var(--s-pd-xs); }
+  [pd-t$="0"] { --u-pd-t: 0; }
+  [pd-r$="xl"] { --u-pd-r: var(--s-pd-xl); }
+  [pd-r$="lg"] { --u-pd-r: var(--s-pd-lg); }
+  [pd-r$="md"] { --u-pd-r: var(--s-pd); }
+  [pd-r$="sm"] { --u-pd-r: var(--s-pd-sm); }
+  [pd-r$="xs"] { --u-pd-r: var(--s-pd-xs); }
+  [pd-r$="0"] { --u-pd-r: 0; }
+  [pd-b$="xl"] { --u-pd-b: var(--s-pd-xl); }
+  [pd-b$="lg"] { --u-pd-b: var(--s-pd-lg); }
+  [pd-b$="md"] { --u-pd-b: var(--s-pd); }
+  [pd-b$="sm"] { --u-pd-b: var(--s-pd-sm); }
+  [pd-b$="xs"] { --u-pd-b: var(--s-pd-xs); }
+  [pd-b$="0"] { --u-pd-b: 0; }
+  [pd-l$="xl"] { --u-pd-l: var(--s-pd-xl); }
+  [pd-l$="lg"] { --u-pd-l: var(--s-pd-lg); }
+  [pd-l$="md"] { --u-pd-l: var(--s-pd); }
+  [pd-l$="sm"] { --u-pd-l: var(--s-pd-sm); }
+  [pd-l$="xs"] { --u-pd-l: var(--s-pd-xs); }
+  [pd-l$="0"] { --u-pd-l: 0; }
+
+  @media (width >=30rem) {
+    [t*="-h0-"] { --u-t-ff: var(--t-h0-ff); --u-t-fs: var(--t-h0-fs); --u-t-fw: var(--t-h0-fw); --u-t-lh: var(--t-h0-lh); --u-t-ls: var(--t-h0-ls); --u-t-mw: var(--t-h0-mw); --u-t-tt: var(--t-h0-tt); }
+    [t*="-h1-"] { --u-t-ff: var(--t-h1-ff); --u-t-fs: var(--t-h1-fs); --u-t-fw: var(--t-h1-fw); --u-t-lh: var(--t-h1-lh); --u-t-ls: var(--t-h1-ls); --u-t-mw: var(--t-h1-mw); --u-t-tt: var(--t-h1-tt); }
+    [t*="-h2-"] { --u-t-ff: var(--t-h2-ff); --u-t-fs: var(--t-h2-fs); --u-t-fw: var(--t-h2-fw); --u-t-lh: var(--t-h2-lh); --u-t-ls: var(--t-h2-ls); --u-t-mw: var(--t-h2-mw); --u-t-tt: var(--t-h2-tt); }
+    [t*="-h3-"] { --u-t-ff: var(--t-h3-ff); --u-t-fs: var(--t-h3-fs); --u-t-fw: var(--t-h3-fw); --u-t-lh: var(--t-h3-lh); --u-t-ls: var(--t-h3-ls); --u-t-mw: var(--t-h3-mw); --u-t-tt: var(--t-h3-tt); }
+    [t*="-h4-"] { --u-t-ff: var(--t-h4-ff); --u-t-fs: var(--t-h4-fs); --u-t-fw: var(--t-h4-fw); --u-t-lh: var(--t-h4-lh); --u-t-ls: var(--t-h4-ls); --u-t-mw: var(--t-h4-mw); --u-t-tt: var(--t-h4-tt); }
+    [t*="-h5-"] { --u-t-ff: var(--t-h5-ff); --u-t-fs: var(--t-h5-fs); --u-t-fw: var(--t-h5-fw); --u-t-lh: var(--t-h5-lh); --u-t-ls: var(--t-h5-ls); --u-t-mw: var(--t-h5-mw); --u-t-tt: var(--t-h5-tt); }
+    [t*="-h6-"] { --u-t-ff: var(--t-h6-ff); --u-t-fs: var(--t-h6-fs); --u-t-fw: var(--t-h6-fw); --u-t-lh: var(--t-h6-lh); --u-t-ls: var(--t-h6-ls); --u-t-mw: var(--t-h6-mw); --u-t-tt: var(--t-h6-tt); }
+    [t*="-lg-"] { --u-t-ff: var(--t-lg-ff); --u-t-fs: var(--t-lg-fs); --u-t-fw: var(--t-lg-fw); --u-t-lh: var(--t-lg-lh); --u-t-ls: var(--t-lg-ls); --u-t-mw: var(--t-lg-mw); --u-t-tt: var(--t-lg-tt); }
+    [t*="-md-"] { --u-t-ff: var(--t-md-ff); --u-t-fs: var(--t-md-fs); --u-t-fw: var(--t-md-fw); --u-t-lh: var(--t-md-lh); --u-t-ls: var(--t-md-ls); --u-t-mw: var(--t-md-mw); --u-t-tt: var(--t-md-tt); }
+    [t*="-sm-"] { --u-t-ff: var(--t-sm-ff); --u-t-fs: var(--t-sm-fs); --u-t-fw: var(--t-sm-fw); --u-t-lh: var(--t-sm-lh); --u-t-ls: var(--t-sm-ls); --u-t-mw: var(--t-sm-mw); --u-t-tt: var(--t-sm-tt); }
+    [gp*="-xl-"] { --u-gp: var(--s-gp-xl); }
+    [gp*="-lg-"] { --u-gp: var(--s-gp-lg); }
+    [gp*="-md-"] { --u-gp: var(--s-gp); }
+    [gp*="-sm-"] { --u-gp: var(--s-gp-sm); }
+    [gp*="-xs-"] { --u-gp: var(--s-gp-xs); }
+    [gp*="-0-"] { --u-gp: 0; }
+    [mg*="-xl-"] { --u-mg: var(--s-gp-xl); }
+    [mg*="-lg-"] { --u-mg: var(--s-gp-lg); }
+    [mg*="-md-"] { --u-mg: var(--s-gp); }
+    [mg*="-sm-"] { --u-mg: var(--s-gp-sm); }
+    [mg*="-xs-"] { --u-mg: var(--s-gp-xs); }
+    [mg*="-0-"] { --u-mg: 0; }
+    [mg-tb*="-xl-"] { --u-mg-tb: var(--s-gp-xl); }
+    [mg-tb*="-lg-"] { --u-mg-tb: var(--s-gp-lg); }
+    [mg-tb*="-md-"] { --u-mg-tb: var(--s-gp); }
+    [mg-tb*="-sm-"] { --u-mg-tb: var(--s-gp-sm); }
+    [mg-tb*="-xs-"] { --u-mg-tb: var(--s-gp-xs); }
+    [mg-tb*="-0-"] { --u-mg-tb: 0; }
+    [mg-lr*="-xl-"] { --u-mg-lr: var(--s-gp-xl); }
+    [mg-lr*="-lg-"] { --u-mg-lr: var(--s-gp-lg); }
+    [mg-lr*="-md-"] { --u-mg-lr: var(--s-gp); }
+    [mg-lr*="-sm-"] { --u-mg-lr: var(--s-gp-sm); }
+    [mg-lr*="-xs-"] { --u-mg-lr: var(--s-gp-xs); }
+    [mg-lr*="-0-"] { --u-mg-lr: 0; }
+    [mg-t*="-xl-"] { --u-mg-t: var(--s-gp-xl); }
+    [mg-t*="-lg-"] { --u-mg-t: var(--s-gp-lg); }
+    [mg-t*="-md-"] { --u-mg-t: var(--s-gp); }
+    [mg-t*="-sm-"] { --u-mg-t: var(--s-gp-sm); }
+    [mg-t*="-xs-"] { --u-mg-t: var(--s-gp-xs); }
+    [mg-t*="-0-"] { --u-mg-t: 0; }
+    [mg-r*="-xl-"] { --u-mg-r: var(--s-gp-xl); }
+    [mg-r*="-lg-"] { --u-mg-r: var(--s-gp-lg); }
+    [mg-r*="-md-"] { --u-mg-r: var(--s-gp); }
+    [mg-r*="-sm-"] { --u-mg-r: var(--s-gp-sm); }
+    [mg-r*="-xs-"] { --u-mg-r: var(--s-gp-xs); }
+    [mg-r*="-0-"] { --u-mg-r: 0; }
+    [mg-b*="-xl-"] { --u-mg-b: var(--s-gp-xl); }
+    [mg-b*="-lg-"] { --u-mg-b: var(--s-gp-lg); }
+    [mg-b*="-md-"] { --u-mg-b: var(--s-gp); }
+    [mg-b*="-sm-"] { --u-mg-b: var(--s-gp-sm); }
+    [mg-b*="-xs-"] { --u-mg-b: var(--s-gp-xs); }
+    [mg-b*="-0-"] { --u-mg-b: 0; }
+    [mg-l*="-xl-"] { --u-mg-l: var(--s-gp-xl); }
+    [mg-l*="-lg-"] { --u-mg-l: var(--s-gp-lg); }
+    [mg-l*="-md-"] { --u-mg-l: var(--s-gp); }
+    [mg-l*="-sm-"] { --u-mg-l: var(--s-gp-sm); }
+    [mg-l*="-xs-"] { --u-mg-l: var(--s-gp-xs); }
+    [mg-l*="-0-"] { --u-mg-l: 0; }
+    [pd*="-xl-"] { --u-pd: var(--s-pd-xl); }
+    [pd*="-lg-"] { --u-pd: var(--s-pd-lg); }
+    [pd*="-md-"] { --u-pd: var(--s-pd); }
+    [pd*="-sm-"] { --u-pd: var(--s-pd-sm); }
+    [pd*="-xs-"] { --u-pd: var(--s-pd-xs); }
+    [pd*="-0-"] { --u-pd: 0; }
+    [pd-tb*="-xl-"] { --u-pd-tb: var(--s-pd-xl); }
+    [pd-tb*="-lg-"] { --u-pd-tb: var(--s-pd-lg); }
+    [pd-tb*="-md-"] { --u-pd-tb: var(--s-pd); }
+    [pd-tb*="-sm-"] { --u-pd-tb: var(--s-pd-sm); }
+    [pd-tb*="-xs-"] { --u-pd-tb: var(--s-pd-xs); }
+    [pd-tb*="-0-"] { --u-pd-tb: 0; }
+    [pd-lr*="-xl-"] { --u-pd-lr: var(--s-pd-xl); }
+    [pd-lr*="-lg-"] { --u-pd-lr: var(--s-pd-lg); }
+    [pd-lr*="-md-"] { --u-pd-lr: var(--s-pd); }
+    [pd-lr*="-sm-"] { --u-pd-lr: var(--s-pd-sm); }
+    [pd-lr*="-xs-"] { --u-pd-lr: var(--s-pd-xs); }
+    [pd-lr*="-0-"] { --u-pd-lr: 0; }
+    [pd-t*="-xl-"] { --u-pd-t: var(--s-pd-xl); }
+    [pd-t*="-lg-"] { --u-pd-t: var(--s-pd-lg); }
+    [pd-t*="-md-"] { --u-pd-t: var(--s-pd); }
+    [pd-t*="-sm-"] { --u-pd-t: var(--s-pd-sm); }
+    [pd-t*="-xs-"] { --u-pd-t: var(--s-pd-xs); }
+    [pd-t*="-0-"] { --u-pd-t: 0; }
+    [pd-r*="-xl-"] { --u-pd-r: var(--s-pd-xl); }
+    [pd-r*="-lg-"] { --u-pd-r: var(--s-pd-lg); }
+    [pd-r*="-md-"] { --u-pd-r: var(--s-pd); }
+    [pd-r*="-sm-"] { --u-pd-r: var(--s-pd-sm); }
+    [pd-r*="-xs-"] { --u-pd-r: var(--s-pd-xs); }
+    [pd-r*="-0-"] { --u-pd-r: 0; }
+    [pd-b*="-xl-"] { --u-pd-b: var(--s-pd-xl); }
+    [pd-b*="-lg-"] { --u-pd-b: var(--s-pd-lg); }
+    [pd-b*="-md-"] { --u-pd-b: var(--s-pd); }
+    [pd-b*="-sm-"] { --u-pd-b: var(--s-pd-sm); }
+    [pd-b*="-xs-"] { --u-pd-b: var(--s-pd-xs); }
+    [pd-b*="-0-"] { --u-pd-b: 0; }
+    [pd-l*="-xl-"] { --u-pd-l: var(--s-pd-xl); }
+    [pd-l*="-lg-"] { --u-pd-l: var(--s-pd-lg); }
+    [pd-l*="-md-"] { --u-pd-l: var(--s-pd); }
+    [pd-l*="-sm-"] { --u-pd-l: var(--s-pd-sm); }
+    [pd-l*="-xs-"] { --u-pd-l: var(--s-pd-xs); }
+    [pd-l*="-0-"] { --u-pd-l: 0; }
+  }
+
+  @media (width >=60rem) {
+    [t^="h0"] { --u-t-ff: var(--t-h0-ff); --u-t-fs: var(--t-h0-fs); --u-t-fw: var(--t-h0-fw); --u-t-lh: var(--t-h0-lh); --u-t-ls: var(--t-h0-ls); --u-t-mw: var(--t-h0-mw); --u-t-tt: var(--t-h0-tt); }
+    [t^="h1"] { --u-t-ff: var(--t-h1-ff); --u-t-fs: var(--t-h1-fs); --u-t-fw: var(--t-h1-fw); --u-t-lh: var(--t-h1-lh); --u-t-ls: var(--t-h1-ls); --u-t-mw: var(--t-h1-mw); --u-t-tt: var(--t-h1-tt); }
+    [t^="h2"] { --u-t-ff: var(--t-h2-ff); --u-t-fs: var(--t-h2-fs); --u-t-fw: var(--t-h2-fw); --u-t-lh: var(--t-h2-lh); --u-t-ls: var(--t-h2-ls); --u-t-mw: var(--t-h2-mw); --u-t-tt: var(--t-h2-tt); }
+    [t^="h3"] { --u-t-ff: var(--t-h3-ff); --u-t-fs: var(--t-h3-fs); --u-t-fw: var(--t-h3-fw); --u-t-lh: var(--t-h3-lh); --u-t-ls: var(--t-h3-ls); --u-t-mw: var(--t-h3-mw); --u-t-tt: var(--t-h3-tt); }
+    [t^="h4"] { --u-t-ff: var(--t-h4-ff); --u-t-fs: var(--t-h4-fs); --u-t-fw: var(--t-h4-fw); --u-t-lh: var(--t-h4-lh); --u-t-ls: var(--t-h4-ls); --u-t-mw: var(--t-h4-mw); --u-t-tt: var(--t-h4-tt); }
+    [t^="h5"] { --u-t-ff: var(--t-h5-ff); --u-t-fs: var(--t-h5-fs); --u-t-fw: var(--t-h5-fw); --u-t-lh: var(--t-h5-lh); --u-t-ls: var(--t-h5-ls); --u-t-mw: var(--t-h5-mw); --u-t-tt: var(--t-h5-tt); }
+    [t^="h6"] { --u-t-ff: var(--t-h6-ff); --u-t-fs: var(--t-h6-fs); --u-t-fw: var(--t-h6-fw); --u-t-lh: var(--t-h6-lh); --u-t-ls: var(--t-h6-ls); --u-t-mw: var(--t-h6-mw); --u-t-tt: var(--t-h6-tt); }
+    [t^="lg"] { --u-t-ff: var(--t-lg-ff); --u-t-fs: var(--t-lg-fs); --u-t-fw: var(--t-lg-fw); --u-t-lh: var(--t-lg-lh); --u-t-ls: var(--t-lg-ls); --u-t-mw: var(--t-lg-mw); --u-t-tt: var(--t-lg-tt); }
+    [t^="md"] { --u-t-ff: var(--t-md-ff); --u-t-fs: var(--t-md-fs); --u-t-fw: var(--t-md-fw); --u-t-lh: var(--t-md-lh); --u-t-ls: var(--t-md-ls); --u-t-mw: var(--t-md-mw); --u-t-tt: var(--t-md-tt); }
+    [t^="sm"] { --u-t-ff: var(--t-sm-ff); --u-t-fs: var(--t-sm-fs); --u-t-fw: var(--t-sm-fw); --u-t-lh: var(--t-sm-lh); --u-t-ls: var(--t-sm-ls); --u-t-mw: var(--t-sm-mw); --u-t-tt: var(--t-sm-tt); }
+    [gp^="xl"] { --u-gp: var(--s-gp-xl); }
+    [gp^="lg"] { --u-gp: var(--s-gp-lg); }
+    [gp^="md"] { --u-gp: var(--s-gp); }
+    [gp^="sm"] { --u-gp: var(--s-gp-sm); }
+    [gp^="xs"] { --u-gp: var(--s-gp-xs); }
+    [gp^="0"] { --u-gp: 0; }
+    [mg^="xl"] { --u-mg: var(--s-gp-xl); }
+    [mg^="lg"] { --u-mg: var(--s-gp-lg); }
+    [mg^="md"] { --u-mg: var(--s-gp); }
+    [mg^="sm"] { --u-mg: var(--s-gp-sm); }
+    [mg^="xs"] { --u-mg: var(--s-gp-xs); }
+    [mg^="0"] { --u-mg: 0; }
+    [mg-tb^="xl"] { --u-mg-tb: var(--s-gp-xl); }
+    [mg-tb^="lg"] { --u-mg-tb: var(--s-gp-lg); }
+    [mg-tb^="md"] { --u-mg-tb: var(--s-gp); }
+    [mg-tb^="sm"] { --u-mg-tb: var(--s-gp-sm); }
+    [mg-tb^="xs"] { --u-mg-tb: var(--s-gp-xs); }
+    [mg-tb^="0"] { --u-mg-tb: 0; }
+    [mg-lr^="xl"] { --u-mg-lr: var(--s-gp-xl); }
+    [mg-lr^="lg"] { --u-mg-lr: var(--s-gp-lg); }
+    [mg-lr^="md"] { --u-mg-lr: var(--s-gp); }
+    [mg-lr^="sm"] { --u-mg-lr: var(--s-gp-sm); }
+    [mg-lr^="xs"] { --u-mg-lr: var(--s-gp-xs); }
+    [mg-lr^="0"] { --u-mg-lr: 0; }
+    [mg-t^="xl"] { --u-mg-t: var(--s-gp-xl); }
+    [mg-t^="lg"] { --u-mg-t: var(--s-gp-lg); }
+    [mg-t^="md"] { --u-mg-t: var(--s-gp); }
+    [mg-t^="sm"] { --u-mg-t: var(--s-gp-sm); }
+    [mg-t^="xs"] { --u-mg-t: var(--s-gp-xs); }
+    [mg-t^="0"] { --u-mg-t: 0; }
+    [mg-r^="xl"] { --u-mg-r: var(--s-gp-xl); }
+    [mg-r^="lg"] { --u-mg-r: var(--s-gp-lg); }
+    [mg-r^="md"] { --u-mg-r: var(--s-gp); }
+    [mg-r^="sm"] { --u-mg-r: var(--s-gp-sm); }
+    [mg-r^="xs"] { --u-mg-r: var(--s-gp-xs); }
+    [mg-r^="0"] { --u-mg-r: 0; }
+    [mg-b^="xl"] { --u-mg-b: var(--s-gp-xl); }
+    [mg-b^="lg"] { --u-mg-b: var(--s-gp-lg); }
+    [mg-b^="md"] { --u-mg-b: var(--s-gp); }
+    [mg-b^="sm"] { --u-mg-b: var(--s-gp-sm); }
+    [mg-b^="xs"] { --u-mg-b: var(--s-gp-xs); }
+    [mg-b^="0"] { --u-mg-b: 0; }
+    [mg-l^="xl"] { --u-mg-l: var(--s-gp-xl); }
+    [mg-l^="lg"] { --u-mg-l: var(--s-gp-lg); }
+    [mg-l^="md"] { --u-mg-l: var(--s-gp); }
+    [mg-l^="sm"] { --u-mg-l: var(--s-gp-sm); }
+    [mg-l^="xs"] { --u-mg-l: var(--s-gp-xs); }
+    [mg-l^="0"] { --u-mg-l: 0; }
+    [pd^="xl"] { --u-pd: var(--s-pd-xl); }
+    [pd^="lg"] { --u-pd: var(--s-pd-lg); }
+    [pd^="md"] { --u-pd: var(--s-pd); }
+    [pd^="sm"] { --u-pd: var(--s-pd-sm); }
+    [pd^="xs"] { --u-pd: var(--s-pd-xs); }
+    [pd^="0"] { --u-pd: 0; }
+    [pd-tb^="xl"] { --u-pd-tb: var(--s-pd-xl); }
+    [pd-tb^="lg"] { --u-pd-tb: var(--s-pd-lg); }
+    [pd-tb^="md"] { --u-pd-tb: var(--s-pd); }
+    [pd-tb^="sm"] { --u-pd-tb: var(--s-pd-sm); }
+    [pd-tb^="xs"] { --u-pd-tb: var(--s-pd-xs); }
+    [pd-tb^="0"] { --u-pd-tb: 0; }
+    [pd-lr^="xl"] { --u-pd-lr: var(--s-pd-xl); }
+    [pd-lr^="lg"] { --u-pd-lr: var(--s-pd-lg); }
+    [pd-lr^="md"] { --u-pd-lr: var(--s-pd); }
+    [pd-lr^="sm"] { --u-pd-lr: var(--s-pd-sm); }
+    [pd-lr^="xs"] { --u-pd-lr: var(--s-pd-xs); }
+    [pd-lr^="0"] { --u-pd-lr: 0; }
+    [pd-t^="xl"] { --u-pd-t: var(--s-pd-xl); }
+    [pd-t^="lg"] { --u-pd-t: var(--s-pd-lg); }
+    [pd-t^="md"] { --u-pd-t: var(--s-pd); }
+    [pd-t^="sm"] { --u-pd-t: var(--s-pd-sm); }
+    [pd-t^="xs"] { --u-pd-t: var(--s-pd-xs); }
+    [pd-t^="0"] { --u-pd-t: 0; }
+    [pd-r^="xl"] { --u-pd-r: var(--s-pd-xl); }
+    [pd-r^="lg"] { --u-pd-r: var(--s-pd-lg); }
+    [pd-r^="md"] { --u-pd-r: var(--s-pd); }
+    [pd-r^="sm"] { --u-pd-r: var(--s-pd-sm); }
+    [pd-r^="xs"] { --u-pd-r: var(--s-pd-xs); }
+    [pd-r^="0"] { --u-pd-r: 0; }
+    [pd-b^="xl"] { --u-pd-b: var(--s-pd-xl); }
+    [pd-b^="lg"] { --u-pd-b: var(--s-pd-lg); }
+    [pd-b^="md"] { --u-pd-b: var(--s-pd); }
+    [pd-b^="sm"] { --u-pd-b: var(--s-pd-sm); }
+    [pd-b^="xs"] { --u-pd-b: var(--s-pd-xs); }
+    [pd-b^="0"] { --u-pd-b: 0; }
+    [pd-l^="xl"] { --u-pd-l: var(--s-pd-xl); }
+    [pd-l^="lg"] { --u-pd-l: var(--s-pd-lg); }
+    [pd-l^="md"] { --u-pd-l: var(--s-pd); }
+    [pd-l^="sm"] { --u-pd-l: var(--s-pd-sm); }
+    [pd-l^="xs"] { --u-pd-l: var(--s-pd-xs); }
+    [pd-l^="0"] { --u-pd-l: 0; }
+  }
+}

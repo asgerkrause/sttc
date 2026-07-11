@@ -44,13 +44,13 @@ Create `src/components/Feature.html`:
   @attr title! Heading text.
   @attr variant=[default|accent] :class Visual variant.
 -->
-<article class="crd">
+<article class="card">
   <h2>{{title}}</h2>
   <div>{{slot}}</div>
 </article>
 
 <style>
-  .crd.accent {
+  .card.accent {
     background: var(--c-acc-sur);
     color: var(--c-acc-ink);
   }
