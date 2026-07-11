@@ -364,7 +364,7 @@ if (kind === 'cms') {
       ? join(root, 'src', 'pages', 'styles.html')
       : join(root, 'src', 'routes', 'styles.html')
     if (await exists(stylesPath)) {
-      const append = `\n<section><div class="c"><${requiredName} title="${requiredName} demo">Demo content.</${requiredName}></div></section>\n`
+      const append = `\n<section><div class="container"><${requiredName} title="${requiredName} demo">Demo content.</${requiredName}></div></section>\n`
       const cur = await Bun.file(stylesPath).text()
       await writeFile(stylesPath, cur + append)
       console.log(`appended demo to ${stylesPath}`)

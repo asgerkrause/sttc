@@ -157,7 +157,7 @@ export function resolveImageAttrs(
   const alt = attrs.alt
   // Use the master's intrinsic dimensions as integer HTML attributes so the browser
   // reserves the correct aspect-ratio box pre-load. CSS still scales the rendered size
-  // to fill the wrapper via .img-w img { width: 100%; height: 100% }.
+  // to fill the wrapper via .media img { width: 100%; height: 100% }.
   const width = attrs.width ?? String(dims.width)
   const height = attrs.height ?? String(dims.height)
   const aspectWidth = String(dims.width)

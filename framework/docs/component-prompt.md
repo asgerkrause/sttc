@@ -19,7 +19,7 @@ Rules:
 
 - Use design tokens (`--l-*`, `--s-*`, `--t-*`, `--c-*`, `--m-*`, `--i-*`, `--e-*`). Never hardcode spacing, font weights, or colors.
 - Semantic HTML first. ARIA/data attributes before classes for state and theme.
-- Classes are rare and short: use existing primitives (`.c`, `.w`, `.crd`, `.btn`, `.lnk`) or short private hooks only when needed (`.brg`, `.logo-mk`, `.code-lb`). No BEM or verbose wrapper classes.
+- Classes are rare and short: use existing primitives (`.container`, `.stack`, `.card`, `.button`, `.link`) or short private hooks only when needed (`.brg`, `.logo-mk`, `.code-lb`). No BEM or verbose wrapper classes.
 - Visible focus via `:focus-visible`. Never `outline: none` without a replacement.
 - Honor `prefers-reduced-motion` if you animate.
 - For variants, use `@attr variant=[a|b|c] :class` and combo classes + nested CSS (no BEM).

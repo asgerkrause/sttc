@@ -6,6 +6,17 @@ Need an end-to-end client build path? Read `framework/docs/client-site-playbook.
 Need task cards? Read `framework/docs/agent-recipes.md`.
 Need built-in component contracts/examples? Read generated `framework/docs/components-catalog.md`.
 
+## Discoverable skills
+
+Generated client projects include portable Agent Skills under `.agents/skills/`, natively discovered by OpenCode and Cursor:
+
+- `snz-component` for component reuse, presets, schemas, CSS ownership, and verification.
+- `snz-collection` for authored-page versus posts versus custom-record decisions.
+- `snz-launch` for launch blockers, warnings, and readiness evidence.
+- `snz-diagnose` for reproduced framework failures and source-owned fixes.
+
+The skills choose workflows; existing CLI commands own deterministic scaffolding and checks. Update managed copies explicitly with `bun run skills sync`; use `bun run skills sync --check` in read-only verification. Build and dev never write skill files.
+
 ## Mental model
 
 SANITIZE Boilerplate (`@snz/bp`) is an HTML-first, Bun-native static site framework. Authors edit normal HTML/CSS/JS/markdown; Bun compiles it into static files with routing, components, images, SEO, feeds, llms files, and discovery JSON.
@@ -36,7 +47,7 @@ No third-party runtime framework. No virtual DOM. No hydration. No npm dependenc
 | Edit `src/` and `content/` for site work. Edit `framework/` for engine work. | Edit `dist/`; generated and gitignored. |
 | Use Bun commands. | Add npm/Vite/framework assumptions. |
 | Put component CSS in component `<style>`. | Put `.faq`, `.code`, private roots in `styles.css`. |
-| Use `.c`, `.w`, `[g]`, `[c]`, `[r]`, `[o]` as global primitives. | Recreate grid/stack utility classes. |
+| Use `.container`, `.stack`, `[g]`, `[c]`, `[r]`, `[o]` as global primitives. | Recreate grid/stack utility classes. |
 | Use semantic HTML first. | Add wrapper/classes without need. |
 | Run `bun run build` after structural edits. Keep `.snz/` cache/state only. | Claim success without build/check evidence or put source in `.snz/`. |
 
@@ -102,14 +113,14 @@ Create `src/components/Feature.html`:
   @attr href Optional CTA URL.
   @attr variant=[default|accent] :class Visual style.
 -->
-<article class="crd">
+<article class="card">
   <h2>{{title}}</h2>
   <div>{{slot}}</div>
-  <a class="lnk" href="{{href}}">Learn more</a>
+  <a class="link" href="{{href}}">Learn more</a>
 </article>
 
 <style>
-  .crd.accent {
+  .card.accent {
     background: var(--c-acc-05);
   }
 </style>
@@ -146,17 +157,17 @@ Use `cols="a"` for auto-fit cards, `cols="a-sm"` for compact chips, and `cols="a
 
 ### Add stack/wrap rhythm
 
-Use `.w`:
+Use `.stack`:
 
 ```html
-<div class="w">
+<div class="stack">
   <h2>Heading</h2>
   <p>Body.</p>
   <Button href="/contact/" label="Contact" />
 </div>
 ```
 
-`Stack` exists only for backwards compatibility. Prefer `.w`.
+`Stack` is the component form of the `.stack` rhythm primitive.
 
 ### Add image
 
@@ -166,7 +177,7 @@ Place master in `src/images/hero.png` or a PagesCMS `media.input` image root (de
 <Image src="hero" alt="Product interface" max="1200" loading="eager" />
 ```
 
-Build emits responsive WebP variants under `/assets/images/`. Lazy images include a temporary `.img-tmp` preview that site code removes after the main image loads. `loading="eager"` skips the preview for above-fold images. The main image has no private `.img-main` class; target `.img-w img` or `.img-tmp` when styling. Keep each logical basename unique across image roots.
+Build emits responsive WebP variants under `/assets/images/`. Lazy images include a temporary `.img-tmp` preview that site code removes after the main image loads. `loading="eager"` skips the preview for above-fold images. The main image has no private `.img-main` class; target `.media img` or `.img-tmp` when styling. Keep each logical basename unique across image roots.
 
 ### Add products with Polar
 
@@ -287,7 +298,8 @@ Global CSS files:
 - `src/styles/reset.css` — reset and base element rules.
 - `src/styles/type.css` — heading/body type utilities, including `.fw-l`, `.fw-r`, `.fw-b`.
 - `src/styles/grid.css` — `[g]`, `[c]`, `[r]`, `[o]`.
-- `src/styles/wrappers.css` — `.c`, `.w`, `.crd`, `.btns`, `.lnks`, tiny global wrappers.
+- `src/styles/wrappers.css` — `.container`, `.stack`, `.card`, `.buttons`, `.links`, tiny global wrappers.
+- `src/styles/utilities.css` — responsive `[t]`, `[gp]`, `[mg*]`, and `[pd*]` token-bound composition.
 - `src/styles/motion.css` — scroll/view-transition hooks.
 - Legacy support: `src/styles/styles.css` can still be migrated, but new work uses the split files.
 
@@ -297,7 +309,7 @@ Component CSS:
 - Bundled to `dist/assets/css/components.{hash}.css` inside `@layer snz.components`.
 - Loads after global CSS and before route CSS.
 
-Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Common tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; colors `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-sec`, `--c-acc-sur/ink/bor`, `--c-sec-sur/ink/bor`. Weight utilities are `.fw-l`, `.fw-r`, `.fw-b`; text utilities use `.t-lg`, `.t-md`, and `.t-sm`. Old short tokens are removed. Use `data-theme="tone"`, `accent`, `secondary`, or `invert` for scoped themes. Class language is semantic-first and short: `.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`, `.eb`; private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
+Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Common tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; colors `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-sec`, `--c-acc-sur/ink/bor`, `--c-sec-sur/ink/bor`. Weight utilities are `.fw-l`, `.fw-r`, `.fw-b`; text utilities use `.t-lg`, `.t-md`, and `.t-sm`. Old short tokens are removed. Use `data-theme="tone"`, `accent`, `secondary`, or `invert` for scoped themes. Class language is semantic-first and short: `.container`, `.stack`, `.card`, `.button`, `.buttons`, `.link`, `.links`, `.eyebrow`; private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
 
 Audit boundary:
 

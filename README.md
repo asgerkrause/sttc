@@ -167,9 +167,9 @@ snz-bp add theme brutalist    # bold/high-contrast
 
 Theme packs append a marked `snz-bp theme` block to `src/styles.css`. Existing theme blocks are not replaced unless `--force` is passed.
 
-CSS ownership: `src/styles.css` is the import shell. `src/styles/system.css` owns the editable token config + fluid engine; `reset.css`, `type.css`, `grid.css`, `wrappers.css`, and `motion.css` own their matching layers. Global primitives are `.c`, `.w`, `.btns`, `.lnks`, and grid attrs `[g]`, `[c]`, `[r]`, `[o]`. Use fixed grids like `g="4-2"` or auto grids `g="a"`, `g="a-sm"`, `g="a-lg"`. Component-specific selectors live in component `<style>` blocks.
+CSS ownership: `src/styles.css` is the import shell. `src/styles/system.css` owns the editable token config + fluid engine; `reset.css`, `type.css`, `grid.css`, `wrappers.css`, `utilities.css`, and `motion.css` own their matching layers. Global primitives are `.container`, `.stack`, `.card`, `.button`, `.buttons`, `.link`, `.links`, `.media`, and `.eyebrow`; responsive composition uses `[g]`, `[c]`, `[r]`, `[o]`, `[t]`, `[gp]`, `[mg*]`, and `[pd*]`. Use fixed grids like `g="4-2"` or auto grids `g="a"`, `g="a-sm"`, `g="a-lg"`. Component-specific selectors live in component `<style>` blocks.
 
-Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color/theme `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Use grouped tokens only: no short aliases. Themes use `data-theme="tone"` or `data-theme="invert"`; accent palettes use `data-accent="blue|green|pink|purple|orange|red|lime"`.
+Token legend: layout `--l-*`, space/radius/border `--s-*`, type `--t-*`, color/theme `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Use grouped tokens only: no short aliases. Scoped themes use `data-theme="tone|accent|secondary|invert"` and remap the same semantic color roles.
 
 ## Routes
 

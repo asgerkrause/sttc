@@ -10,13 +10,13 @@
   @attr width Override intrinsic width.
   @attr height Override intrinsic height.
 -->
-<div data-scrub class="img-w" style="aspect-ratio: {{aspectWidth}} / {{aspectHeight}}">
+<div data-scrub class="media" style="aspect-ratio: {{aspectWidth}} / {{aspectHeight}}">
   {{imgTmp}}
   {{imgMain}}
 </div>
 
 <style>
-  .img-w {
+  .media {
     overflow: hidden;
     position: relative;
     width: 100%;
@@ -24,14 +24,14 @@
     background-image: linear-gradient(35deg, var(--c-bor), var(--c-sur));
   }
 
-  .img-w img {
+  .media img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
   }
 
-  .img-w .img-tmp {
+  .media .img-tmp {
     position: absolute;
     inset: 0;
     z-index: 1;
@@ -39,18 +39,18 @@
   }
 
   @supports (animation-timeline: view()) {
-    .img-w[data-scrub] {
+    .media[data-scrub] {
       --plx: 8vh;
       transition-timing-function: linear;
     }
 
-    .img-w[data-scrub] img {
+    .media[data-scrub] img {
       height: calc(100% + var(--plx));
       margin-top: calc(var(--plx) * -1);
       transform: translateY(calc(var(--plx) * var(--sp-t)));
     }
 
-    .img-w[data-scrub] .img-tmp {
+    .media[data-scrub] .img-tmp {
       position: absolute;
       inset: 0;
     }

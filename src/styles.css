@@ -1,8 +1,9 @@
-@layer global, themes, reset, grid, type, wrappers, motion, snz.components, snz.pages;
+@layer global, themes, reset, grid, type, wrappers, utilities, motion, snz.components, snz.pages;
 
 @import "system.css";
 @import "reset.css";
 @import "grid.css";
 @import "type.css";
 @import "wrappers.css";
+@import "utilities.css";
 @import "motion.css";

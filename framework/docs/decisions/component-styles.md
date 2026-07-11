@@ -35,9 +35,9 @@ Global `styles.css` grew monolithic. Authors wanted co-located component CSS wit
 
 ```html
 <!-- src/components/Image.html -->
-<div class="img-w">…</div>
+<div class="media">…</div>
 <style>
-.img-w { … }
+.media { … }
 </style>
 ```
 

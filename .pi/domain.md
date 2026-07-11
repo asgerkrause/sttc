@@ -13,7 +13,7 @@ Agents and humans use the same words here. Client product voice still lives in `
 | **Boilerplate** | Reusable starter for ultra-simple client sites. Per-project `BRAND.md` / copy added when cloning — not part of renderer setup. |
 | **Route** | One public URL: file in `routes/{slug}.html`. Home = `routes/index.html` → `/` (not `home.html`). Body only — composes **components**, no shell chrome. |
 | **Component** | Reusable HTML **part** in `components/` — a block inside a route section, not a `<section>` wrapper. Included at **build** time only — not a runtime registry. |
-| **Part** | Same as **component** — emphasis that routes own `<section>` + `.c` + headings; components supply inner markup only. |
+| **Part** | Same as **component** — emphasis that routes own `<section>` + `.container` + headings; components supply inner markup only. |
 | **Link component** | Inline / cross-nav text link (`href`, `label`). Plain `<a>` styling. |
 | **Button component** | Prominent CTA — still `<a>`, distinct presentation (e.g. `data-variant="button"`). Not a `<button>` element unless form submit later. |
 | **Prose component** | Body copy block — `text` attr → `<p>`. For intro/blurb without raw `<p>` in routes. |

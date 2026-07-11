@@ -24,12 +24,12 @@
 </script>
 
 <section>
-  <div class="c">
-    <div class="w">
+  <div class="container">
+    <div class="stack">
       <h1>Component showcase</h1>
       <p class="t-md">Copy-ready examples for every built-in component. Compose primitives inside routes and adjust content.</p>
     </div>
-    <div class="btns">
+    <div class="buttons">
       <Button label="Back home" href="/" />
       <Button label="Read docs" href="https://github.com/sanitizestudio/snz-bp" variant="tone" />
     </div>
@@ -38,19 +38,19 @@
 
 <Section id="buttons">
   <h2>Button + Link</h2>
-  <div class="btns">
+  <div class="buttons">
     {#each buttons as button}
     <Button label="{{button.label}}" href="#" variant="{{button.variant}}" />
     {/each}
   </div>
 
-  <div class="btns">
+  <div class="buttons">
     {#each buttons as button}
     <Button label="{{button.label}}" href="#" variant="{{button.variant}}" icon="→" />
     {/each}
   </div>
 
-  <div class="btns">
+  <div class="buttons">
     {#each buttons as button}
     <Button label="{{button.label}}" href="#" variant="{{button.variant}}" image="{{button.image}}" />
     {/each}
@@ -115,7 +115,7 @@
   <Statement variant="accent">Static sites should feel sharp, fast, and easy to reshape.</Statement>
   <p class="t-lg"><Split>Split wraps words for animation-ready text while preserving an accessible label.</Split></p>
   <Grid cols="2">
-    <div class="w">
+    <div class="stack">
       <h3>Layout still uses Grid</h3>
       <p>Use layout primitives for two-column content. Use <code>Split</code> for text splitting.</p>
       <Button label="Primary action" href="/components/" variant="accent" />
@@ -126,13 +126,13 @@
 
 <Section id="badges-icons">
   <h2>Badge + Icon + Socials</h2>
-  <div class="btns">
+  <div class="buttons">
     <Badge>Default</Badge>
     <Badge variant="tone">Tone</Badge>
     <Badge variant="accent">Accent</Badge>
     <Badge variant="secondary">Secondary</Badge>
   </div>
-  <div class="btns">
+  <div class="buttons">
     <Icon label="Decorative dot" />
     <span><Icon label="Inline marker" /> Inline icon wrapper</span>
   </div>
@@ -217,11 +217,11 @@
 <Section id="media">
   <h2>Media</h2>
   <Grid cols="2">
-    <div class="w">
+    <div class="stack">
       <h3>Eager image</h3>
       <Image src="r2" alt="Eager media example" loading="eager" max="1200" />
     </div>
-    <div class="w">
+    <div class="stack">
       <h3>Autoplay video</h3>
       <Video src="https://r2.snz.st/02.mp4" auto="true" ratio="16 / 9" label="Autoplay component video example" />
     </div>
@@ -272,9 +272,9 @@ Use markdown for prose-heavy pages: notes, case studies, docs, changelogs, and C
 <Section id="layout">
   <h2>Section, Grid, Stack</h2>
   <Grid cols="3-2">
-    <Stack><h3>Stack</h3><p>Legacy wrapper for vertical rhythm. Prefer <code>.w</code> directly in new work.</p></Stack>
-    <div class="w"><h3>Grid child</h3><p>Grid maps to global <code>[g]</code> primitives and can be used inside components.</p></div>
-    <div class="w"><h3>Section</h3><p>Section owns the semantic band, container, and optional theme.</p></div>
+    <Stack><h3>Stack</h3><p>Legacy wrapper for vertical rhythm. Prefer <code>.stack</code> directly in new work.</p></Stack>
+    <div class="stack"><h3>Grid child</h3><p>Grid maps to global <code>[g]</code> primitives and can be used inside components.</p></div>
+    <div class="stack"><h3>Section</h3><p>Section owns the semantic band, container, and optional theme.</p></div>
   </Grid>
 </Section>
 

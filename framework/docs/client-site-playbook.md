@@ -60,13 +60,13 @@ Rules:
 - `src/pages/work/case.html` -> `/work/case/`
 - route files contain body markup, not shell chrome
 - optional top `<head>` may hold `<SEO>` and transition meta
-- no `<style>` inside route files
+- route `<style>` is allowed for one-off page art direction; build extracts it to route-owned CSS
 
 ### 4. Use built-in components
 
 Start with existing components before writing new ones:
 
-- `<Section>` for section + `.c` container
+- `<Section>` for section + `.container` container
 - `<Grid>` for grids
 - `<Card>` for contained content
 - `<Button>` / `<Link>` for actions
@@ -79,10 +79,10 @@ Example:
 
 ```html
 <Section>
-  <div class="w">
+  <div class="stack">
     <h1>Clear headline</h1>
     <p>Short proof-led intro.</p>
-    <div class="btns">
+    <div class="buttons">
       <Button href="/contact/" label="Start project" />
       <Link href="/work/" label="See work" />
     </div>
@@ -145,10 +145,10 @@ CSS is power layer, not first step.
 
 Use existing primitives first:
 
-- `.c` container
-- `.w` stack rhythm
-- `.crd` card shell
-- `.btns`, `.lnks`
+- `.container` container
+- `.stack` stack rhythm
+- `.card` card shell
+- `.buttons`, `.links`
 - `[g]`, `[c]`, `[r]`, `[o]` grid attrs; use `g="a"`, `g="a-sm"`, or `g="a-lg"` for auto-fit grids
 
 Global CSS owns tokens, reset, type, grid, wrappers, motion, and page overrides. Component-specific selectors belong in component `<style>` blocks.

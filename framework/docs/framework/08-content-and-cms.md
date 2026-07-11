@@ -62,7 +62,7 @@ Templates can use front-matter placeholders, `{{body}}`, conditionals, and array
 
 ```html
 <Section>
-  <article class="w">
+  <article class="stack">
     <h1>{{title}}</h1>
     {#if image}
     <Image src="{{image}}" alt="{{title}}" />

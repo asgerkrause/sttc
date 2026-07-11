@@ -9,41 +9,37 @@ SANITIZE Boilerplate favors semantic HTML, ARIA state, data attributes, and toke
 
 ## Chosen
 
-Use classes rarely and keep them short.
+Use short, full-word classes for durable object roles:
 
-Global primitives:
+- `.container`, `.stack`, `.card`, `.cards`
+- `.button`, `.buttons`, `.link`, `.links`
+- `.media`, `.eyebrow`
 
-- `.c` — container
-- `.w` — wrap / vertical rhythm
-- `.crd` — card surface
-- `.btn` — action button
-- `.btns` — action group
-- `.lnk` — text link
-- `.lnks` — link group
+Use compact attributes for token-bound responsive composition:
 
-Type/tone utilities:
+- layout: `[g]`, `[c]`, `[r]`, `[o]`
+- type and rhythm: `[t]`, `[gp]`
+- spacing: `[mg]`, `[mg-t/r/b/l/tb/lr]`, `[pd]`, `[pd-t/r/b/l/tb/lr]`
 
-- `.eb` — eyebrow / kicker
-- `.t-lg`, `.t-md`, `.t-sm`
-- `.fw-l`, `.fw-r`, `.fw-b`
-- `.c-ink`, `.c-mut`, `.c-bg`, `.c-acc`, `.c-sec`
-- `.h0`…`.h6`
+Values read large → medium → small. One value applies everywhere; two values set large and small; three values set large, medium, and small. Type values are `h0`–`h6`, `lg`, `md`, `sm`. Spacing values are `xl`, `lg`, `md`, `sm`, `xs`, `0`.
 
-Private hooks stay concise and component-owned, e.g. `.brg`, `.logo-mk`, `.logo-tx`, `.code-lb`, `.hero-pn`, `.stp`.
+Keep `.t-lg`, `.t-md`, and `.t-sm` only as migration aliases. Weight and color utilities remain `.fw-*` and `.c-*`. Private hooks stay concise and component-owned, e.g. `.brg`, `.logo-mk`, `.logo-tx`, `.code-lb`, `.hero-pn`, `.stp`.
 
 Use semantic elements, ARIA, and `data-theme` before adding classes for state or theme.
 
 ## Why
 
-- Short primitives keep authoring fast.
+- Full words make object roles legible to humans and agents.
+- Compact attrs keep responsive composition fast without turning classes into CSS declarations.
+- Token-bound values prevent arbitrary utility sprawl.
 - Semantic selectors keep markup truthful.
 - Private hooks remain clear without BEM or wrapper naming debt.
-- The class contract trains humans and agents toward the same style.
 
 ## Consequences
 
-- `.card`, `.burger`, `.eyebrow`, `.step`, `.section-head`, `.logo-mark`, `.logo-text`, `.code-lang`, and `.hero-panel` are replaced by `.crd`, `.brg`, `.eb`, `.stp`, semantic `<header class="w">`, `.logo-mk`, `.logo-tx`, `.code-lb`, and `.hero-pn`.
-- `.crd` is a global primitive in `wrappers.css`; `Card` composes it.
+- Legacy aliases `.c`, `.w`, `.crd`, `.btn`, `.btns`, `.lnk`, `.lnks`, `.img-w`, and `.eb` are not shipped.
+- `.card` is a global primitive in `wrappers.css`; `Card` composes it.
+- `utilities.css` owns responsive type and spacing attrs; attrs assign recipe variables and shared declarations consume them once.
 - Component-specific selectors still belong in component `<style>` unless promoted to an approved primitive.
 
 ## Verification

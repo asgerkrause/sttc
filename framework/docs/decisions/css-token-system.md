@@ -15,8 +15,9 @@ Global CSS is split by owner:
 - `src/styles/system.css` — editable token config, fluid engine, color/theme tokens
 - `src/styles/reset.css` — reset and base element rules
 - `src/styles/grid.css` — `[g]`, `[c]`, `[r]`, `[o]`
-- `src/styles/type.css` — heading/body utility type rules
-- `src/styles/wrappers.css` — `.c`, `.w`, `.crd`, `.btns`, `.lnks`, tiny global wrappers
+- `src/styles/type.css` — heading/body type rules and migration aliases
+- `src/styles/wrappers.css` — `.container`, `.stack`, `.card`, `.buttons`, `.links`, tiny global wrappers
+- `src/styles/utilities.css` — token-bound responsive `[t]`, `[gp]`, `[mg-*]`, `[pd-*]` grammar
 - `src/styles/motion.css` — scroll/view-transition hooks
 
 Token naming uses grouped prefixes from `test-system-3_5`. Layout/type keep `snz-bp` fluid authoring; colors keep the #99 visual anchors with grouped names; theme mechanics and motion timing follow the `test-system-3_5` contract:
@@ -39,13 +40,15 @@ Themes remap semantic color tokens. Use `data-theme="tone"`, `data-theme="accent
 - Semantic color outputs keep components portable across `tone`, `accent`, `secondary`, and `invert` themes.
 - Removing aliases makes the token contract explicit; downstream custom CSS must migrate to grouped names.
 - Splitting CSS by owner lowers scan cost while preserving component style ownership.
+- Responsive attrs follow the existing grid grammar and remove repeated token-only media queries without accepting arbitrary values.
 
 ## Consequences
 
 - Component CSS should consume grouped semantic/layout tokens, not raw hex or one-off spacing.
 - Theme packs should override grouped config tokens (`--l-mw-max`, `--t-md-*`, `--c-acc`, etc.).
-- Docs teach grouped tokens only.
+- Docs teach grouped tokens and registered responsive attrs only.
 - Existing custom CSS using short tokens must migrate to grouped names.
+- Local nested CSS remains the owner for art direction; responsive attrs cover standard type and rhythm recipes only.
 
 ## Verification
 

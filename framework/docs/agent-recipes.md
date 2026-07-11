@@ -77,12 +77,12 @@ Keep component slot-first unless stable config earns attrs:
   @desc Feature item.
   @attr variant=[default|accent] :class Visual variant.
 -->
-<article class="crd">
+<article class="card">
   {{slot}}
 </article>
 
 <style>
-  .crd.accent {
+  .card.accent {
     background: var(--c-acc-sur);
     color: var(--c-acc-ink);
   }
@@ -137,7 +137,7 @@ Common failures:
 - duplicate basename across image roots
 - missing or weak `alt`
 - eager loading below fold
-- styling missing preview behavior; target `.img-w img` or `.img-tmp`, not nonexistent `.img-main`
+- styling missing preview behavior; target `.media img` or `.img-tmp`, not nonexistent `.img-main`
 
 Verify:
 

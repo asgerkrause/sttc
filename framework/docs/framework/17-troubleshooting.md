@@ -140,7 +140,7 @@ html[data-page="pricing"] .pricing-note {
 
 **Use:**
 
-- `.img-w img` for actual image
+- `.media img` for actual image
 - `.img-tmp` for lazy preview
 
 **Do not use:** `.img-main`.
@@ -151,7 +151,7 @@ html[data-page="pricing"] .pricing-note {
 
 **Fix:** move selector into owning component `<style>`.
 
-Global CSS should own tokens, reset/base type, `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides.
+Global CSS should own tokens, reset/base type, `.container`, `.stack`, `.card`, `.buttons`, `.links`, `[g]`, `[c]`, `[r]`, `[o]`, theme tokens, and page overrides.
 
 ## Layout breaks on small screens
 

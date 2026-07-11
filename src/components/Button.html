@@ -8,24 +8,24 @@
   @attr image Optional decorative local image name from src/images, without extension.
   @attr track Optional analytics event name; emits data-snz-track on the root.
 -->
-<a class="btn" href="{{href}}" aria-label="{{label}}">
+<a class="button" href="{{href}}" aria-label="{{label}}">
   {#if slot:vis}
-  <span class="btn-vis-w" aria-hidden="true">{{slot:vis}}</span>
+  <span class="button-visual" aria-hidden="true">{{slot:vis}}</span>
   {/if}
   {#if image}
-  <span class="btn-vis-w" aria-hidden="true"><img src="/assets/images/{{image}}-320.webp" alt="" loading="lazy" decoding="async"></span>
+  <span class="button-visual" aria-hidden="true"><img src="/assets/images/{{image}}-320.webp" alt="" loading="lazy" decoding="async"></span>
   {/if}
   {#if icon}
-  <span class="btn-vis-w" aria-hidden="true"><span>{{icon}}</span><span>{{icon}}</span></span>
+  <span class="button-visual" aria-hidden="true"><span>{{icon}}</span><span>{{icon}}</span></span>
   {/if}
-  <span class="btn-txt-w" aria-hidden="true">
+  <span class="button-text" aria-hidden="true">
     <span>{{label}}</span>
     <span>{{label}}</span>
   </span>
 </a>
 
 <style>
-  .btn {
+  .button {
     --e-btn-sur: var(--c-fg-80);
     --e-btn-ink: var(--c-bg);
     --e-btn-bor: transparent;
@@ -109,7 +109,7 @@
       border-radius: var(--s-br-sm);
       font-size: var(--t-sm-fs);
 
-      &:has(.btn-vis-w) {
+      &:has(.button-visual) {
         padding: var(--e-btn-pd) var(--s-pd-sm) var(--e-btn-pd) var(--e-btn-pd);
       }
     }
@@ -120,13 +120,13 @@
       border-radius: var(--s-br-lg);
       font-size: var(--t-lg-fs);
 
-      &:has(.btn-vis-w) {
+      &:has(.button-visual) {
         padding: var(--e-btn-pd) var(--s-pd-lg) var(--e-btn-pd) var(--e-btn-pd);
       }
     }
 
     /* with visual content */
-    &:has(.btn-vis-w) {
+    &:has(.button-visual) {
       --e-btn-pd: .2em;
       align-items: center;
       gap: var(--s-gp);
@@ -134,12 +134,12 @@
 
     }
 
-    .btn-vis-w,
-    .btn-txt-w {
+    .button-visual,
+    .button-text {
       overflow: hidden;
     }
 
-    .btn-vis-w {
+    .button-visual {
       flex: none;
       border-radius: calc(var(--s-br) - var(--e-btn-pd));
       border: var(--s-bw) var(--e-btn-vis-bor) solid;
@@ -191,7 +191,7 @@
       }
     }
 
-    .btn-txt-w {
+    .button-text {
       height: 1lh;
 
       span {
@@ -205,10 +205,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .btn {
-      .btn-vis-w :is(span, i, b, svg),
-      .btn-vis-w :is(img, picture),
-      .btn-txt-w span {
+    .button {
+      .button-visual :is(span, i, b, svg),
+      .button-visual :is(img, picture),
+      .button-text span {
         transform: none;
         transition: none;
       }

@@ -4,25 +4,29 @@ import { sourceStylesDir, sourceStylesFile, src } from './paths'
 
 const blocked = [
   { selector: '.grid', owner: 'src/components/Grid.html (use [g])' },
-  { selector: '.stack', owner: 'deprecated (use .w)' },
   { selector: '.section', owner: 'src/components/Section.html (no root class)' },
   { selector: '.faq', owner: 'src/components/FAQ.html' },
   { selector: '.code', owner: 'src/components/Code.html' },
-  { selector: '.img-w', owner: 'src/components/Image.html' },
 ]
 
 const allowed = [
-  { selector: '.c', owner: 'global container primitive' },
-  { selector: '.w', owner: 'global wrap primitive' },
-  { selector: '.crd', owner: 'global card primitive' },
-  { selector: '.btn', owner: 'button primitive may be global or component-owned' },
-  { selector: '.btns', owner: 'button group primitive' },
-  { selector: '.lnk', owner: 'link primitive may be global or component-owned' },
-  { selector: '.lnks', owner: 'link group primitive' },
+  { selector: '.container', owner: 'global container primitive' },
+  { selector: '.stack', owner: 'global rhythm primitive' },
+  { selector: '.card', owner: 'global card primitive' },
+  { selector: '.button', owner: 'button primitive may be global or component-owned' },
+  { selector: '.buttons', owner: 'button group primitive' },
+  { selector: '.link', owner: 'link primitive may be global or component-owned' },
+  { selector: '.links', owner: 'link group primitive' },
+  { selector: '.media', owner: 'media primitive may be global or component-owned' },
+  { selector: '.eyebrow', owner: 'global eyebrow primitive' },
   { selector: '[g]', owner: 'grid container primitive' },
   { selector: '[c]', owner: 'grid column span primitive' },
   { selector: '[r]', owner: 'grid row span primitive' },
   { selector: '[o]', owner: 'grid order primitive' },
+  { selector: '[t]', owner: 'responsive type primitive' },
+  { selector: '[gp]', owner: 'responsive gap primitive' },
+  { selector: '[mg-*]', owner: 'responsive margin primitives' },
+  { selector: '[pd-*]', owner: 'responsive padding primitives' },
 ]
 
 async function collectFiles(dir: string, extensions: string[], base = ''): Promise<string[]> {
@@ -52,7 +56,8 @@ for (const file of roots) {
 }
 
 const craftDrift = [
-  { pattern: /\bf-(lg|md|sm)\b|\.f-(lg|md|sm)\b/, message: 'use .t-lg/.t-md/.t-sm type utilities' },
+  { pattern: /class=["'](?:[^"']*\s)?(c|w|crd|btn|btns|lnk|lnks|img-w|eb)(?=\s|["'])/, message: 'use full-word Craft primitives (.container, .stack, .card, .button, .buttons, .link, .links, .media, .eyebrow)' },
+  { pattern: /\bf-(lg|md|sm)\b|\.f-(lg|md|sm)\b/, message: 'use [t] or .t-lg/.t-md/.t-sm migration utilities' },
   { pattern: /\bc-(i|g|s|a|c)\b|\.c-(i|g|s|a|c)\b/, message: 'use .c-ink/.c-mut/.c-bg/.c-acc/.c-sec color utilities' },
   { pattern: /data-accent=/, message: 'use data-theme="accent" or data-theme="secondary" instead of data-accent' },
   { pattern: /--l-z-head\b/, message: 'use stack token --z-head' },

@@ -69,7 +69,7 @@ const hero: ComponentPreset = {
 -->
 <div class="hero">
   <p class="hero-kicker">Launch-ready sites</p>
-  <div class="w">
+  <div class="stack">
     <h1>Build sharp client sites without setup drag.</h1>
     <p>Start from clean HTML, durable tokens, and production checks that stay out of the way.</p>
   </div>
@@ -93,7 +93,7 @@ const hero: ComponentPreset = {
       line-height: var(--t-h0-lh);
     }
 
-    .w p {
+    .stack p {
       max-width: var(--t-md-mw);
       color: var(--c-mut);
     }
@@ -126,10 +126,10 @@ const cta: ComponentPreset = {
     html: `<!--
   @desc Slot-first call-to-action preset.
 -->
-<div class="cta w">
+<div class="cta stack">
   <h2>Ready to launch?</h2>
   <p>Use this slot-first component as a focused end-of-page action.</p>
-  <div class="btns">
+  <div class="buttons">
     <Button href="/" label="Start project" />
     <Link href="/" label="Learn more" />
   </div>
@@ -341,8 +341,8 @@ const pricing: ComponentPreset = {
 
     p { color: var(--c-mut); }
 
-    .btns,
-    .lnks { margin-top: auto; }
+    .buttons,
+    .links { margin-top: auto; }
   }
 </style>
 `,
@@ -532,8 +532,8 @@ const questions: ComponentPreset = {
     html: `<!--
   @desc FAQ-style questions preset built from Accordion primitives.
 -->
-<div class="questions w">
-  <div class="questions-head w">
+<div class="questions stack">
+  <div class="questions-head stack">
     <p>FAQ</p>
     <h2>Questions before kickoff.</h2>
   </div>

@@ -73,7 +73,7 @@ Example component schema comment:
   @attr description Short summary.
   @schema Service name=title,description=description
 -->
-<article class="crd">
+<article class="card">
   <h2>{{title}}</h2>
   <p>{{description}}</p>
 </article>

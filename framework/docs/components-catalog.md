@@ -37,13 +37,13 @@ See `framework/docs/components.md` in the framework package for the authoring co
 - [`<Products />`](#products) — Product listing wrapper. Use Product cards in the slot, or source="polar" to render Polar products at build time.
 - [`<Radio />`](#radio) — Labeled native radio option.
 - [`<SEO />`](#seo) — Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or rely on defaults.
-- [`<Section />`](#section) — Semantic section with a .c container. No root class.
+- [`<Section />`](#section) — Semantic section with a .container container. No root class.
 - [`<Select />`](#select) — Labeled native select field. Put option tags in the slot.
 - [`<Slider />`](#slider) — Native scroll-snap gallery with previous/next controls.
 - [`<Social />`](#social) — Text-first social/contact link. Add an <Icon> or custom SVG in the slot when needed.
 - [`<Socials />`](#socials) — Social link navigation wrapper. Put <Social> items in the default slot.
 - [`<Split />`](#split) — Text splitter that wraps words for animation or styling.
-- [`<Stack />`](#stack) — Deprecated compatibility wrapper. Prefer <div class="w">…</div> directly.
+- [`<Stack />`](#stack) — Deprecated compatibility wrapper. Prefer <div class="stack">…</div> directly.
 - [`<Statement />`](#statement) — Large editorial statement block.
 - [`<Submit />`](#submit) — Native submit button using the shared button visual style.
 - [`<Tab />`](#tab) — Tab trigger for use inside Tabs. Match id with a TabPanel id.
@@ -870,7 +870,7 @@ Per-route SEO. Defaults from site.json. Place once in route <head> wrapper or re
 
 ## Section
 
-Semantic section with a .c container. No root class.
+Semantic section with a .container container. No root class.
 
 ### Contract
 
@@ -884,7 +884,7 @@ Semantic section with a .c container. No root class.
 |---|---|---|---|
 | `id` | no | string | Optional section id. |
 | `theme` | no | `tone \| accent \| secondary \| invert` | Optional data-theme value. |
-| `center` | no | `center` | Optional center alignment for the inner .c container. |
+| `center` | no | `center` | Optional center alignment for the inner .container container. |
 | `scroll` | no | string | Optional data-scroll timeline name. |
 | `video` | no | string | Optional decorative background video URL. |
 
@@ -1024,7 +1024,7 @@ Text splitter that wraps words for animation or styling.
 
 ## Stack
 
-Deprecated compatibility wrapper. Prefer <div class="w">…</div> directly.
+Deprecated compatibility wrapper. Prefer <div class="stack">…</div> directly.
 
 ### Contract
 

@@ -19,7 +19,7 @@
   <div class="product-buy">
     {#if price}<p class="product-price"><strong>{{price}}</strong><span>{{interval}}</span></p>{/if}
     {#if href}
-    <a class="btn" href="{{href}}" data-polar-checkout="{{embed}}">{{cta}}</a>
+    <a class="button" href="{{href}}" data-polar-checkout="{{embed}}">{{cta}}</a>
     {:else}
     <span class="product-unavailable">Unavailable</span>
     {/if}
@@ -56,7 +56,7 @@
       p,
       .product-price span { color: color-mix(in srgb, var(--c-bg) 62%, var(--c-ink)); }
 
-      .btn {
+      .button {
         background: var(--c-bg);
         color: var(--c-ink);
       }
@@ -90,7 +90,7 @@
     }
   }
 
-  .product .btn {
+  .product .button {
     width: fit-content;
   }
 

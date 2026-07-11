@@ -18,13 +18,13 @@ No JSON sidecars. Component file is contract, template, styles, and optional beh
   @attr title! Heading text.
   @attr variant=[default|accent] :class Visual style.
 -->
-<article class="crd">
+<article class="card">
   <h2>{{title}}</h2>
   <div>{{slot}}</div>
 </article>
 
 <style>
-  .crd.accent {
+  .card.accent {
     background: var(--c-acc-05);
   }
 </style>
@@ -141,12 +141,12 @@ Prefer `:class` enum variants and combo classes. Avoid BEM.
   @attr variant=[default|outlined|ghost|accent|invert] :class Visual style.
   @attr href Optional link-card destination.
 -->
-<article class="crd">
+<article class="card">
   {{slot}}
 </article>
 
 <style>
-  .crd {
+  .card {
     &.outlined { border-color: var(--c-bor); background: transparent; }
     &.ghost { background: transparent; }
     &.accent { background: var(--c-acc); color: var(--c-acc-ink); }
@@ -155,7 +155,7 @@ Prefer `:class` enum variants and combo classes. Avoid BEM.
 </style>
 ```
 
-`<Card variant="ghost">` style should read as `.crd.ghost`, not `.card--ghost`.
+`<Card variant="ghost">` style should read as `.card.ghost`, not `.card--ghost`.
 
 ## Styles
 
@@ -172,7 +172,7 @@ Put component-owned CSS inside component `<style>`.
 
 Build extracts all component styles to `dist/assets/css/components.{hash}.css`. Shell loads it after global CSS.
 
-Global CSS owns tokens, reset/base type, `.c`, `.w`, `.crd`, `.btns`, `.lnks`, `[g]`, `[c]`, `[r]`, `[o]`, themes, and page overrides. Component roots like `.faq`, `.code`, `.img-w`, `.hero`, `.feature` belong in component files.
+Global CSS owns tokens, reset/base type, `.container`, `.stack`, `.card`, `.buttons`, `.links`, `[g]`, `[c]`, `[r]`, `[o]`, themes, and page overrides. Component roots like `.faq`, `.code`, `.media`, `.hero`, `.feature` belong in component files.
 
 ## Lifecycle scripts
 
@@ -202,7 +202,7 @@ Build injects `data-snz-component="Name"` on root. Runtime mounts component scri
 
 Read generated [`../components-catalog.md`](../components-catalog.md) for current built-in list, contracts, attrs, slots, and examples. Common primitives include `Section`, `Grid`, `Card`, `Button`, `Link`, `Image`, `Markdown`, `Accordion`, `FAQ`, and `SEO`.
 
-`Stack` exists for compatibility. Prefer `.w`.
+`Stack` is the component form of the `.stack` rhythm primitive.
 
 ## Slot-first presets
 

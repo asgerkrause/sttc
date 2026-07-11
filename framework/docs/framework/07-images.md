@@ -33,7 +33,7 @@ Anything in `src/images/`, `src/videos/`, or `src/files/` is publishable. Build 
 
 ## Image component
 
-`<Image>` renders responsive image markup inside `.img-w` wrapper.
+`<Image>` renders responsive image markup inside `.media` wrapper.
 
 ```html
 <Image
@@ -94,14 +94,14 @@ Eager images skip preview.
 
 ## Styling images
 
-Wrapper class is `.img-w`. Main image has no private `.img-main` class.
+Wrapper class is `.media`. Main image has no private `.img-main` class.
 
 ```css
-.feature-media .img-w {
+.feature-media .media {
   aspect-ratio: 4 / 3;
 }
 
-.feature-media .img-w img {
+.feature-media .media img {
   object-fit: cover;
 }
 

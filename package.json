@@ -54,6 +54,7 @@
     "test": "bun test framework/tests",
     "new": "bun framework/cli/snz-bp.ts new",
     "add": "bun framework/cli/snz-bp.ts add",
+    "skills": "bun framework/cli/snz-bp.ts skills",
     "migrate": "bun framework/cli/snz-bp.ts migrate",
     "prepare:create-template": "bun framework/scripts/sync-create-template.ts",
     "check:create-template": "bun framework/scripts/sync-create-template.ts --check",
