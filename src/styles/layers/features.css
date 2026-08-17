@@ -101,11 +101,22 @@
 }
 
 :root {
-  --t-pg-i-y: 0em;
-  --t-pg-o-y: 0em;
-  --t-pg-i-x: -1em;
-  --t-pg-o-x: 1em;
-  --t-pg-d: 600ms;
+  --t-pg-blur: .5em;
+  --t-pg-i-y: 1em;
+  --t-pg-i-x: 0em;
+
+  --t-pg-o-y: -1em;
+  --t-pg-o-x: 0em;
+
+  --t-pg-d: 300ms;
+
+  @media (orientation: portrait) {
+    --t-pg-i-y: 0em;
+    --t-pg-i-x: -1em;
+
+    --t-pg-o-y: 0em;
+    --t-pg-o-x: 1em;
+  }
 }
 
 main {
@@ -125,7 +136,7 @@ main {
   to {
     opacity: 0;
     transform: translate(var(--t-pg-o-x), var(--t-pg-o-y));
-    filter: blur(0.2em);
+    filter: blur(var(--t-pg-blur));
   }
 }
 
@@ -133,7 +144,7 @@ main {
   from {
     opacity: 0;
     transform: translate(var(--t-pg-i-x), var(--t-pg-i-y));
-    filter: blur(0.2em);
+    filter: blur(var(--t-pg-blur));
   }
 }
 

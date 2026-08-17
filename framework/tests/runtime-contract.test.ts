@@ -26,6 +26,10 @@ describe('runtime ownership contracts', () => {
     expect(router).toContain('_registerComponent: registerComponent')
     expect(router).toContain('mountComponents(main)')
     expect(router).toContain('unmountComponents(main)')
+    expect(router).toContain("componentRoots(root, '[data-snz-component]')")
+    expect(router).toContain('if (componentCleanups.has(el)) continue')
+    expect(router).toContain('componentCleanups.set(el, teardowns)')
+    expect(router).not.toContain('data-snz-mounted')
   })
 
   test('router owns viewport activity API and autoplay media guard', async () => {

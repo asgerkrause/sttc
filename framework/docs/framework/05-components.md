@@ -92,7 +92,7 @@ return () => el.removeEventListener('click', click)
 </script>
 ```
 
-The router mounts lifecycle components after navigation. Use `snz.onActive` or `snz.onVisible` for timers, animation frames, autoplay media, and scroll work.
+The router mounts lifecycle components after navigation. A scripted root is marked `data-snz-component="Name"`. Mounted state stays in memory, not in the DOM. Use `snz.onActive` or `snz.onVisible` for timers, animation frames, autoplay media, and scroll work.
 
 ## Component CSS
 

@@ -28,6 +28,12 @@
       padding-block: var(--p);
     }
 
+    >main {
+      max-width: 100vw;
+      min-height: 100svh;
+      overflow-x: clip;
+    }
+
     >footer {
       padding-bottom: var(--p);
     }

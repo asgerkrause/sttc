@@ -12,7 +12,7 @@ A script at the top of an authored route is extracted and wrapped with `snz.onPa
 
 ## Component scripts
 
-An executable component `<script>` runs per instance with `el` bound to the component root. Return cleanup. The router mounts instances after initial load and navigation.
+An executable component `<script>` runs per instance with `el` bound to the component root. Return cleanup. The router mounts instances after initial load and navigation. The compiled root keeps `data-snz-component`; it does not get a mounted attribute.
 
 Active work must use `snz.onActive` or `snz.onVisible`. Autoplay media is activity-managed by default; `data-active="manual"` opts out deliberately.
 

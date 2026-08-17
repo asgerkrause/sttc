@@ -87,6 +87,10 @@
 
   :where(a) {
     color: inherit;
+    text-decoration: none;
+    transition-property: opacity, background, color;
+    transition-duration: var(--m-td);
+    transition-timing-function: var(--m-tf);
   }
 
   :where(button, a, input, select, textarea, summary) {
@@ -199,11 +203,6 @@
   [data-skin] {
     background: var(--c-bg);
     color: var(--c-fg);
-  }
-
-  main {
-    max-width: 100vw;
-    overflow-x: clip;
   }
 
   mark {

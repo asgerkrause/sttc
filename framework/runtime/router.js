@@ -37,7 +37,8 @@ function componentRoots(root, selector) {
 }
 
 function mountComponents(root = document) {
-  for (const el of componentRoots(root, '[data-snz-component]:not([data-snz-mounted])')) {
+  for (const el of componentRoots(root, '[data-snz-component]')) {
+    if (componentCleanups.has(el)) continue
     const name = el.getAttribute('data-snz-component')
     const fns = name ? componentRegistry.get(name) : null
     if (!name || !fns) continue
@@ -51,15 +52,14 @@ function mountComponents(root = document) {
         console.error(`[snz] ${name} mount error:`, e)
       }
     }
-    if (teardowns.length) componentCleanups.set(el, teardowns)
-    el.setAttribute('data-snz-mounted', '')
+    componentCleanups.set(el, teardowns)
   }
   mountActiveMedia(root)
 }
 
 function unmountComponents(root) {
   unmountActiveMedia(root)
-  for (const el of componentRoots(root, '[data-snz-mounted]')) {
+  for (const el of componentRoots(root, '[data-snz-component]')) {
     const teardowns = componentCleanups.get(el)
     if (!teardowns) continue
     for (const teardown of teardowns) {
