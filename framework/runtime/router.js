@@ -484,6 +484,12 @@ function isActiveNavigation(navigation) {
   return navigation.id === navigationId && !navigation.signal.aborted
 }
 
+function hasCssViewTransition() {
+  if (!document.startViewTransition) return false
+  const name = getComputedStyle(main).viewTransitionName
+  return Boolean(name && name !== 'none')
+}
+
 async function render(pathname, { is404 = false, transition = true, focus = false, navigation = beginNavigation() } = {}) {
   if (!main) return
 
@@ -526,7 +532,7 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
     syncNavCurrent(pathname)
     emit(slug, detail)
   }
-  if (transition && document.startViewTransition) {
+  if (transition && hasCssViewTransition()) {
     await document.startViewTransition(apply).finished
   } else {
     apply()

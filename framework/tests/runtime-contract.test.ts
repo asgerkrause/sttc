@@ -95,6 +95,24 @@ describe('runtime ownership contracts', () => {
     expect(router).toContain('go(`${a.pathname}${a.search}${a.hash}`)')
   })
 
+  test('router uses View Transitions only when project CSS names the route root', async () => {
+    const router = await readFile('framework/runtime/router.js', 'utf8')
+    const rootCss = await readFile('src/styles/layers/features.css', 'utf8')
+    const starterCss = await readFile('templates/default/src/styles/layers/features.css', 'utf8')
+
+    expect(router).toContain('function hasCssViewTransition()')
+    expect(router).toContain("name && name !== 'none'")
+    expect(router).toContain('if (transition && hasCssViewTransition())')
+    expect(router).not.toContain('if (transition && document.startViewTransition)')
+    for (const css of [rootCss, starterCss]) {
+      expect(css).toContain('@view-transition')
+      expect(css).toContain('view-transition-name: main')
+      expect(css).toContain('::view-transition-old(main)')
+      expect(css).toContain('::view-transition-new(main)')
+      expect(css).toContain('@media (prefers-reduced-motion: reduce)')
+    }
+  })
+
   test('router aborts stale route fetches and guards stale DOM applies', async () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
 

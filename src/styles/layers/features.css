@@ -94,3 +94,52 @@
     }
   }
 }
+
+/* Route transitions are CSS-owned. Without this named transition, the router swaps routes directly. */
+@view-transition {
+  navigation: auto;
+}
+
+:root {
+  --t-pg-i-y: 0em;
+  --t-pg-o-y: 0em;
+  --t-pg-i-x: -1em;
+  --t-pg-o-x: 1em;
+  --t-pg-d: 600ms;
+}
+
+main {
+  view-transition-name: main;
+}
+
+::view-transition-old(main) {
+  animation: var(--t-pg-d) cubic-bezier(0.64, 0, 0.78, 0) both pt-out;
+}
+
+::view-transition-new(main) {
+  animation: var(--t-pg-d) cubic-bezier(0.22, 1, 0.36, 1) both pt-in;
+  animation-delay: var(--t-pg-d);
+}
+
+@keyframes pt-out {
+  to {
+    opacity: 0;
+    transform: translate(var(--t-pg-o-x), var(--t-pg-o-y));
+    filter: blur(0.2em);
+  }
+}
+
+@keyframes pt-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--t-pg-i-x), var(--t-pg-i-y));
+    filter: blur(0.2em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(main),
+  ::view-transition-new(main) {
+    animation: none;
+  }
+}

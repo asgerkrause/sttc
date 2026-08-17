@@ -94,3 +94,50 @@
     }
   }
 }
+
+/* Route transitions are CSS-owned. Without this named transition, the router swaps routes directly. */
+@view-transition {
+  navigation: auto;
+}
+
+:root {
+  --t-pg-i-x: 0;
+  --t-pg-i-y: 1em;
+  --t-pg-o-x: 0;
+  --t-pg-o-y: -1em;
+}
+
+main {
+  view-transition-name: main;
+}
+
+::view-transition-old(main) {
+  animation: 200ms ease-in both snz-route-out;
+}
+
+::view-transition-new(main) {
+  animation: 240ms ease-out 200ms both snz-route-in;
+}
+
+@keyframes snz-route-out {
+  to {
+    opacity: 0;
+    transform: translate(var(--t-pg-o-x), var(--t-pg-o-y));
+    filter: blur(0.2em);
+  }
+}
+
+@keyframes snz-route-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--t-pg-i-x), var(--t-pg-i-y));
+    filter: blur(0.2em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(main),
+  ::view-transition-new(main) {
+    animation: none;
+  }
+}
