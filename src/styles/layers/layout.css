@@ -21,7 +21,7 @@
     >header,
     >main>section,
     >footer {
-      padding: var(--l-bl-y) var(--l-bl-x);
+      padding: var(--l-bl-y) 0;
     }
 
     >header {
@@ -39,6 +39,7 @@
     width: 100%;
     max-width: var(--l-cw);
     margin-inline: auto;
+    padding-inline: var(--l-bl-x);
     gap: var(--s);
 
     &.sm {
