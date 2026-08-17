@@ -1,12 +1,18 @@
 import { afterEach, describe, expect, test } from 'bun:test'
+import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
+import { tmpdir } from 'os'
+import { join } from 'path'
 
 const procs: Bun.Subprocess[] = []
+const tempDirs: string[] = []
+const packageRoot = join(import.meta.dir, '..')
 
 afterEach(async () => {
   for (const proc of procs.splice(0)) {
     proc.kill()
     await proc.exited.catch(() => {})
   }
+  for (const dir of tempDirs.splice(0)) await rm(dir, { recursive: true, force: true })
 })
 
 function randomPort() {
@@ -22,9 +28,9 @@ async function readStream(
   for await (const chunk of stream) onText(decoder.decode(chunk))
 }
 
-async function startDevServer() {
-  const proc = Bun.spawn(['bun', 'framework/dev.ts'], {
-    cwd: process.cwd(),
+async function startDevServer(cwd = process.cwd()) {
+  const proc = Bun.spawn(['bun', join(packageRoot, 'dev.ts')], {
+    cwd,
     env: { ...process.env, PORT: String(randomPort()) },
     stdout: 'pipe',
     stderr: 'pipe',
@@ -69,29 +75,69 @@ async function text(url: string) {
   return { response, body: await response.text() }
 }
 
+async function waitFor(check: () => Promise<boolean>, timeoutMs = 12_000) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (await check()) return
+    await Bun.sleep(100)
+  }
+  throw new Error('timed out waiting for dev rebuild')
+}
+
+async function makeDevProject() {
+  const dir = await mkdtemp(join(tmpdir(), 'snz-dev-watch-'))
+  tempDirs.push(dir)
+  await mkdir(join(dir, 'src', 'pages'), { recursive: true })
+  await mkdir(join(dir, 'src', 'components'), { recursive: true })
+  await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
+    name: 'Dev watch fixture',
+    url: 'https://example.com',
+    description: 'Fixture for real development rebuild behavior.',
+    locale: 'en',
+  }))
+  await writeFile(join(dir, 'src', 'shell.html'), `<!doctype html><html lang="en"><head>
+<meta charset="UTF-8"><script src="/router.js" type="module"></script><script src="/assets/js/app.js" type="module"></script>
+</head><body><main></main></body></html>`)
+  await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>Before rebuild</h1>')
+  await writeFile(join(dir, 'src', 'styles.css'), 'body{margin:0}')
+  await writeFile(join(dir, 'src', 'app.ts'), 'export {}\n')
+  return dir
+}
+
 describe('dev server smoke', () => {
+  test('rebuilds changed and deleted source files without stale cooldown drops', async () => {
+    const dir = await makeDevProject()
+    const base = await startDevServer(dir)
+    expect((await text(`${base}/routes/index.html`)).body).toContain('Before rebuild')
+
+    const publicFile = join(dir, 'src', 'files', 'watch.txt')
+    await mkdir(join(publicFile, '..'), { recursive: true })
+    await writeFile(publicFile, 'watched file')
+    await waitFor(async () => (await text(`${base}/assets/files/watch.txt`)).response.status === 200)
+
+    await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>After rebuild</h1>')
+    await waitFor(async () => (await text(`${base}/routes/index.html`)).body.includes('After rebuild'))
+
+    await rm(publicFile)
+    await waitFor(async () => (await text(`${base}/assets/files/watch.txt`)).response.status === 404)
+
+    const hmr = await text(`${base}/__snz/hmr.js`)
+    expect(hmr.body).toContain('location.reload()')
+    expect(hmr.body).not.toContain('window.snz?._reload')
+  }, 30_000)
+
   test('serves built pages, route fragments, SPA fallback, and 404 fragments', async () => {
     const base = await startDevServer()
 
     const home = await text(`${base}/`)
     expect(home.response.status).toBe(200)
-    expect(home.body).toContain('<main data-route-root>')
+    expect(home.body).toContain('<main>')
     expect(home.body).toContain('<script src="/__snz/hmr.js"></script>')
 
-    const componentsPage = await text(`${base}/components/index.html`)
-    expect(componentsPage.response.status).toBe(200)
-    expect(componentsPage.body).toContain('Accordion + FAQ')
-    expect(componentsPage.body).toContain('<script src="/__snz/hmr.js"></script>')
-
-    const componentsRouteFallback = await text(`${base}/components/`)
-    expect(componentsRouteFallback.response.status).toBe(200)
-    expect(componentsRouteFallback.body).toContain('<main data-route-root>')
-    expect(componentsRouteFallback.body).toContain('<script src="/__snz/hmr.js"></script>')
-
-    const componentsFragment = await text(`${base}/routes/components.html`)
-    expect(componentsFragment.response.status).toBe(200)
-    expect(componentsFragment.body).toContain('Accordion + FAQ')
-    expect(componentsFragment.body).not.toContain('/__snz/hmr.js')
+    const notFoundPage = await text(`${base}/404/index.html`)
+    expect(notFoundPage.response.status).toBe(200)
+    expect(notFoundPage.body).toContain('Not found')
+    expect(notFoundPage.body).toContain('<script src="/__snz/hmr.js"></script>')
 
     const missingFragment = await text(`${base}/routes/not-real.html`)
     expect(missingFragment.response.status).toBe(404)
@@ -102,7 +148,7 @@ describe('dev server smoke', () => {
 
     const fallback = await text(`${base}/not-real/`)
     expect(fallback.response.status).toBe(200)
-    expect(fallback.body).toContain('<main data-route-root>')
+    expect(fallback.body).toContain('<main>')
     expect(fallback.body).toContain('<script src="/__snz/hmr.js"></script>')
   }, 40_000)
 })

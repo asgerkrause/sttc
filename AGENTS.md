@@ -1,242 +1,124 @@
-# AGENTS.md — SANITIZE Boilerplate
+# AGENTS.md — STTC
 
-SANITIZE Boilerplate (`@snz/bp`) static site builder. Repo: `sanitizestudio/snz-bp`. Site work edits `src/` and optional `content/`. Framework work edits `framework/`. Build writes `dist/` (gitignored). Never edit `dist/`. Never put source in `.snz/`; `.snz/` is cache/state only. Loud errors with file/line/hint.
+STTC (`@snz/sttc`) is an HTML-first, Bun-native static renderer. Repo: `sanitizestudio/sttc`.
 
-Need quick framework mental model? Read `framework/docs/agent-guide.md` first, then `framework/docs/components.md` for component work.
+Site work edits `src/` and optional `content/`. Renderer work edits `framework/`. `templates/default/` is the only created-project template and ships in the same package. Build writes `dist/`; never edit it. `.snz/` is cache/state only.
+
+Requires Bun >= 1.3.14. Use Bun only.
 
 ## Commands
 
 ```bash
-bun run dev      # http://localhost:3000 with watch + SSE hot reload + in-page error banner
-bun run build    # writes dist/, runs strict checks at the end
-bun run check    # rebuild + validate without serving
-bun run css:audit # report component-owned selectors left in global CSS
-bun run doctor   # CSS ownership audit + strict check
-bun run doctor -- --launch # launch-ready SEO/a11y/site gate
-bun run new      # scaffolder: component|route|post|page <name>, collection <name>, or cms
+bun run dev
+bun run build
+bun run check
+bun run doctor
+bun run doctor -- --launch
+bun run new route pricing
+bun run new component Hero
+bun run new cms
+bun run skills sync
+bun run framework:verify
 ```
 
-Requires **Bun >= 1.3.14** (for `Bun.Image`). Use Bun only — no npm commands.
+## Mental model
 
-## Layout
+```text
+src/shell.html          persistent document shell
+src/pages/**/*.html     authored routes
+src/components/*.html   build-time components
+src/site.json           site and discovery defaults
+src/app.ts              project-owned TypeScript entry
+src/images/             image masters
+src/videos/             public video files
+src/files/              public raw files
+content/                 optional markdown records
+dist/                    generated output
+```
 
-| Path | What |
-|---|---|
-| `src/shell.html` | Page wrapper — header, main, footer, scripts (build → `dist/index.html`) |
-| `src/pages/**/*.html` | Static routes; one file → one URL |
-| `src/components/*.html` | One HTML file per component. Schema inline at top as `<!-- @desc / @attr -->` comment. |
-| `src/site.json` | Site config: name, url, description, ogImage, locale, scroll |
-| `src/styles.css`, `src/styles/*.css` | Global CSS import shell, tokens, reset, type, grid, wrappers, motion |
-| `src/app.ts` (`src/app.js` escape hatch) | Site code entry |
-| `src/images/` | Public raster masters and opt-in PagesCMS uploads → built to webp at multiple sizes |
-| `src/videos/` | Public video files → copied to `/assets/videos/` (future video pipeline source) |
-| `src/files/` | Public raw files (PDF, audio, Lottie JSON, downloads) → copied to `/assets/files/` |
-| `src/routes/**/*.html` | Legacy static route input; `src/pages` wins on collisions |
-| `src/styles/styles.css` | Legacy global CSS path |
-| `src/app/app.js` | Legacy app entry + optional runtime helpers |
-| `src/templates/post.html` | Opt-in CMS post render shell |
-| `src/templates/*.html` | Custom collection render shells |
-| `content/posts/*.md` | Opt-in PagesCMS posts → `/insights/{slug}/` |
-| `framework/runtime/lib/paths.js` | Shared by router (browser) + build (Bun) |
-| `framework/runtime/router.js` | Client framework, exposes `window.snz` |
-| `framework/build/` | Build pipeline (TypeScript, runs in Bun) |
-| `framework/dev.ts` | Dev server with watch + SSE hot reload + in-page error banner |
-| `framework/docs/agent-guide.md` | Fast orientation for LLMs: mental model, tasks, CSS ownership, checks |
-| `framework/docs/client-site-playbook.md` | End-to-end client-site build playbook for agents and humans |
-| `framework/docs/agent-recipes.md` | Short task recipes for common framework work |
-| `framework/docs/components.md` | Component authoring contract |
-| `framework/docs/component-prompt.md` | Copy-paste prompt for LLM-spawned components |
-| `framework/docs/components-catalog.md` | **Auto-generated** catalog — do not hand-edit |
-| `framework/docs/decisions/` | Short ADRs |
-| `framework/cli/snz-bp.ts` | Package CLI wrapper |
-| `framework/tests/` | Framework test suite |
-| `framework/scripts/` | Private maintenance scripts |
-| `templates/default/` | Starter client site |
-| `site.code-workspace` | Authoring-focused Cursor/VS Code workspace |
-| `.pages.yml` | Opt-in PagesCMS config |
+The starter ships exactly seven components: `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. They are replaceable HTML examples, not a design system. Component behavior stays in that component's lifecycle script. `SEO` remains a renderer directive, not a component file.
 
-## Shell vs route
+## Routes and SEO
 
-- Shell loads once. Router fetches `/routes/{slug}.html` and injects into `<main data-route-root>`.
-- Route files are body markup. Optional `<head>...</head>` wrapper for per-route SEO + transition variant.
+A page may begin with a head wrapper:
 
 ```html
 <head>
-  <SEO title="About" description="..." />
-  <meta name="snz:transition" content="fade">
+  <SEO title="About" description="What this organization does." />
 </head>
 
 <Section>
   <h1>About</h1>
-  <p>...</p>
 </Section>
 ```
 
+`SEO` is a renderer directive, not a component file. Defaults come from `src/site.json`; page-specific inputs are `title`, `description`, and optional `image`. The renderer emits canonical, Open Graph, Twitter, connected JSON-LD, sitemap, feeds, manifests, route Markdown/JSON, `llms.txt`, and `llms-full.txt`.
+
 ## Components
 
-Read **`framework/docs/agent-guide.md`** for framework orientation and **`framework/docs/components.md`** for the full component contract. Highlights:
+One component is one `src/components/PascalCase.html` file. A leading comment declares its contract:
 
-- One file per component: `src/components/PascalName.html`. No JSON sidecars.
-- Leading `<!-- @desc ... @attr name! ... -->` comment declares the contract.
-- `{{attr}}` for attributes, `{{slot}}` for default children, `{{slot:name}}` for named slots.
-- Variants: `@attr variant=[a|b|c] :class` — value gets appended as a class on the template root. Use combo classes + nested CSS, no BEM.
-- Optional `<script>` block runs once per instance; `el` bound to the root, return a function for cleanup.
-- `<style>` colocated and auto-bundled into `dist/assets/css/components.{hash}.css`.
-
-Built-in components: `Header`, `Footer`, `Logo`, `SEO`, `Image`, `Embed`, `Button`, `Link`, `Card`, `Product`, `Products`, `Accordion`, `FAQ`, `Section`, `Markdown`, `Stack` (deprecated; use `.stack`), `Grid`, `Code`, `Badge`, `Icon`, `Socials`, `Social`, `Statement`, `Split`, `Counter`, `Tabs`, `Tab`, `TabPanel`, `Slider`, `Gallery`, `Marquee`, `Masonry`, `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus`.
-
-To spawn a new component via LLM, hand it `framework/docs/component-prompt.md`. Or just write the file yourself.
-
-## Forms
-
-Use form primitives for repeated contact/newsletter UI: `Form`, `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Fieldset`, `Submit`, `FormStatus`. Components stay flat in `src/components/` — no `src/components/form/` folder unless the framework gains recursive component loading. Forms are static-first: set an explicit `action`, use native validation attrs (`required`, `type`, `pattern`, `minlength`, etc.), and keep endpoints/provider secrets outside frontend code. `Button` is a link CTA; use `Submit` for real `<button type="submit">` controls.
-
-## Routes
-
-Drop `src/pages/{slug}.html`. Home is `index.html` (→ `/`). Nested pages map by path: `blog/index.html` → `/blog/`, `work/case.html` → `/work/case/`. 404 is `404.html`. Legacy `src/routes/` still works.
-
-Inline `<script>` allowed only at the top of a route — auto-extracted and wrapped with `snz.onPage('{slug}', ...)` at build time. Route `<style>` is allowed for one-off page CSS; build extracts it to route-owned CSS under `@layer snz.pages.{slug}`.
-
-## Content pipeline
-
-CMS is opt-in and content-record focused. Run `bun run new cms` to create `.pages.yml`, `content/posts/`, `src/images/`, and `src/templates/post.html`. Authored pages stay in `src/pages/`; custom records use `bun run new collection`.
-
-```yaml
----
-title: Hello, world
-date: 2026-05-26
-description: First post.
-tags: [tutorial, intro]
-draft: false
----
-
-Body in **markdown**. Supports headings, lists, links, code, emphasis, blockquotes.
+```html
+<!--
+  @desc Introductory content block.
+  @attr title! Visible heading.
+-->
+<section>
+  <h1>{{title}}</h1>
+  <div>{{slot}}</div>
+</section>
 ```
 
-Drafts (`draft: true`) are excluded from production builds, included in dev. Tags emit `/tags/{tag}/` indexes automatically. Generated `/insights/`, `/tags/`, and `/tags/{tag}/` routes fail loudly if authored/content routes already own those slugs.
+Supported component features:
 
-## Images
+- `{{attr}}`, `{{slot}}`, and named slots;
+- `{#if}` / `{:else}`;
+- build-time `{#each}` with component or route JSON data;
+- optional lifecycle `<script>` with `el` bound to the root and cleanup return; behavior required by a component belongs here, not in `src/app.ts`;
+- optional colocated `<style>` compiled to a hashed stylesheet;
+- optional `@schema Type field=attr` structured data.
 
-- Masters and PagesCMS uploads live in `src/images/`.
-- Build encodes to `dist/assets/images/{name}.webp` via `Bun.Image`, with responsive variants (320, 640, 1024, {max}).
-- `<Image src="hero" alt="..." max="1200" quality="82" />` — `max`/`quality` are pre-scanned to choose the largest needed size.
-- Lazy by default. Lazy images render a temporary `.img-tmp` preview over the main image; `loading="eager"` skips that preview for above-fold images. Main image has no private `.img-main` class.
-- OG: `src/images/og.png` → `dist/assets/og.webp` (+ `og.png` fallback).
+Read `framework/docs/framework/05-components.md` before component engine work. Each build generates the project-local contract catalog at `.snz/components-catalog.md`.
 
-## Media files
+## CSS boundary
 
-- `src/images/`, `src/videos/`, and `src/files/` are public source roots. Anything inside can be published; do not store private drafts there.
-- Videos copy raw from `src/videos/` to `dist/assets/videos/`. Add compression/transcoding later in this folder's pipeline, not as a new source root.
-- Files copy raw from `src/files/` to `dist/assets/files/` for PDFs, audio, Lottie JSON, zips, and downloads.
-- Build validates authored `/assets/images/*`, `/assets/videos/*`, and `/assets/files/*` references exist.
+The renderer does not impose framework CSS. The root dogfood and starter import a pinned, project-owned CRFT copy from `src/styles/`.
 
-## Client framework (`router.js`)
+- Replace `src/styles.css` with project-wide CSS as needed.
+- Put reusable component-specific CSS in that component's `<style>`.
+- Route `<style>` is allowed for authored route-only CSS and compiles separately.
+- Use ordinary platform CSS or the project's chosen external system. Do not invent framework tokens or utility conventions.
+- The router may apply internal visually-hidden styles to its live region for accessibility; that is runtime infrastructure, not project presentation.
 
-Exposes a stable API at `window.snz`:
+## Images and media
 
-```js
-snz.navigate('/about/')                 // programmatic nav
-snz.page()                              // current slug
-snz.onPage('about', fn)                 // run when on /about/; fires immediately if already there
-snz.onPage('*', fn)                     // every navigation
-snz.prefetch('/contact/')               // warm route cache
-snz.beforeNavigate(fn)                  // return false to cancel
-snz.afterNavigate(fn)                   // post-DOM-swap, post-scroll
+`Image` is compiler-assisted. Masters in `src/images/` become WebP output with responsive variants and intrinsic dimensions. Use logical basenames without extensions:
+
+```html
+<Image src="hero" alt="Product interface" max="1600" />
 ```
 
-Disclosure widget: any `<button aria-controls aria-expanded>` toggles on click. Escape closes. `data-snz-ignore` opts out. `nav[id]` + `button[aria-controls="{id}"]` is the standard pair.
+`Video` emits native video markup. Files under `src/videos/` copy to `/assets/videos/`; files under `src/files/` copy to `/assets/files/`. Anything in public media roots can ship.
 
-Route preload: same-origin `<a>` warms the route cache after ~100ms hover/focus. `data-snz-preload="off"` opts out.
+## TypeScript and runtime
 
-Route cache TTL: 5 minutes; invalidates after 10 min in background.
+`src/app.ts` is canonical. `src/app.js` is an escape hatch; never keep both. The renderer bundles project code with Bun, then appends shell scripts, route scripts, and component lifecycle registrations.
 
-Per-route transition variants: `<meta name="snz:transition" content="fade|slide|none">` in the route's `<head>` sets `html[data-transition="..."]` during navigation.
+`window.snz` owns navigation, prefetching, page hooks, lifecycle mounting, focus, live-region announcements, visibility/activity helpers, and analytics events. Preserve native navigation and accessibility behavior.
 
-## Scroll
+Lenis smooth scrolling is optional and self-hosted. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to exclude its bootstrap, CSS, vendor code, and shell configuration from `dist/`. Reduced-motion users always keep native scrolling.
 
-Lenis is **optional and self-hosted** (`src/app/vendor/lenis.min.js`, pinned 1.1.20).
+## Errors and verification
 
-```jsonc
-// src/site.json
-{ "scroll": "lenis" }   // default — loads Lenis (unless prefers-reduced-motion)
-{ "scroll": "native" }  // skips Lenis entirely
+Build errors should include file, line, and hint. Fix source, not output.
+
+After structural changes run:
+
+```bash
+bun run build
+bun test framework/tests
+bun run smoke:create
+bun run framework:verify
 ```
 
-Router's scroll-reset prefers `window.lenis?.scrollTo(0, { immediate: true })` when present; falls back to `window.scrollTo(0,0)`.
-
-## AI-native discovery layer
-
-Every build emits (invisible to authoring — these are build outputs):
-
-| Artifact | Purpose |
-|---|---|
-| `/sitemap.xml`, `/robots.txt` | Classic sitemap + robots |
-| `/feed.xml`, `/feed.json` | RSS + JSON Feed for posts |
-| `/llms.txt`, `/llms-full.txt` | llmstxt.org-style site index |
-| `/.well-known/ai-plugin.json` | Plugin discovery → points at manifest |
-| `/site.manifest.json` | Full index: site config, routes, components, schemas |
-| `/routes/{slug}.json` | Per-route data + extra JSON-LD |
-| `<script type="application/ld+json">` | In every HTML route head |
-
-Structured data auto-emitted:
-- `<Accordion>` / `<FAQ>` → `FAQPage`
-- `content/posts/*` → `BlogPosting`
-- Any component with `@schema TypeName field=attr,...` in its inline comment
-
-## CSS
-
-- Base tokens + reset: `src/styles.css` imports split CSS under `src/styles/`.
-- Token legend: layout `--l-*`, space `--s-*`, type `--t-*`, color `--c-*`, motion `--m-*`, interaction `--i-*`, element roles `--e-*`. Key tokens: `--l-mw`, `--l-gc`, `--s-px`, `--s-py`, `--s-gp`, `--s-pd`, `--s-br`, `--s-bw`; type `--t-fw-l/r/b`, `--t-md-*`, `--t-lg-*`, `--t-sm-*`, `--t-h0-*`…`--t-h6-*`; color `--c-bg`, `--c-fg`, `--c-ink`, `--c-sur`, `--c-mut`, `--c-bor`, `--c-acc`, `--c-sec`, `--c-acc-sur/ink/bor`, `--c-sec-sur/ink/bor`. Use grouped tokens only; no short aliases.
-- Global role primitives: `.container`, `.stack`, `.card`, `.button`, `.buttons`, `.link`, `.links`, `.media`, `.eyebrow`.
-- Responsive attrs: layout `[g]`, `[c]`, `[r]`, `[o]`; type/rhythm `[t]`, `[gp]`; spacing `[mg]`, `[mg-t/r/b/l/tb/lr]`, `[pd]`, `[pd-t/r/b/l/tb/lr]`.
-- Values read large → medium → small. One value applies everywhere; two set large/small; three set large/medium/small. Type accepts `h0`–`h6`, `lg`, `md`, `sm`; spacing accepts `xl`, `lg`, `md`, `sm`, `xs`, `0`. Grid keeps its documented numeric/auto values. Small screens stack by default.
-- Component `<style>` bundled into `dist/assets/css/components.{hash}.css` (content-hashed; cache forever).
-- Component CSS loads **after** base so component rules win at equal specificity.
-- Classes name objects; compact attrs own token-bound responsive composition; nested CSS owns local art direction. Keep `.t-*` only as migration aliases. Private hooks stay concise (`.brg`, `.logo-mk`, `.code-lb`).
-- Component-specific selectors belong in component files. Run `bun run css:audit` or `bun run doctor` when cleaning CSS boundaries.
-- Per-page route CSS: use `<style>` in authored routes for one-off page rules; build extracts to `@layer snz.pages.{slug}`. Use `html[data-page="{slug}"]` in global CSS only for durable cross-route overrides.
-
-## JS bundling
-
-- `src/app.ts` is your site code. `src/app.js` works as an escape hatch; do not keep both. Legacy `src/app/app.js` still works when no root app entry exists.
-- Build bundles `src/app.ts` (or the `src/app.js` escape hatch) with `Bun.build`, then appends shell head inline scripts, component lifecycle scripts, and route top scripts (wrapped with `snz.onPage('{slug}', ...)`) into `dist/assets/js/app.{hash}.js`.
-- Starter projects include `src/snz.d.ts` for typed `window.snz` and `snz:page` events. Runtime `router.js` stays framework-owned JS intentionally.
-
-## Errors
-
-Build throws `BuildError` with file/line/hint for any violation:
-
-- Missing required component attribute
-- Unknown component (PascalCase typo)
-- Unknown attribute on a strict schema
-- `<style>` in a route
-- Broken internal link
-- Missing discovery artifact
-- A leftover `*.schema.json` sidecar in `src/components/` (legacy — migrate to inline comment)
-
-Dev server writes `dist/__build-error.html` and serves it instead of routes until the next successful build. Save a file to retry.
-
-## Adding a page
-
-1. `bun run new route pricing` (or drop `src/pages/pricing.html` by hand).
-2. Use components.
-3. `bun run build`. Page is at `/pricing/`, in manifest, sitemap, llms.txt, `/routes/pricing.json`.
-
-## Adding a component
-
-1. Read `framework/docs/components.md`.
-2. Or copy `framework/docs/component-prompt.md` and hand it to Claude.
-3. `bun run new component MyThing` (or drop `src/components/MyThing.html` by hand).
-4. `bun run build`. Build refuses if the contract is violated.
-
-## Out of scope
-
-- No editing `dist/` (it's generated; gitignored).
-- No runtime JS framework. No virtual DOM. No hydration.
-- No npm dependencies — Bun stdlib only.
-
-## Decisions
-
-`framework/docs/agent-guide.md` — canonical quickstart for LLM agents.
-
-`framework/docs/decisions/` — short notes on architectural choices worth knowing.
+Launch mode intentionally rejects placeholder URLs and incomplete production metadata. Never fabricate production values.

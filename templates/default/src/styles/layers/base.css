@@ -1,0 +1,213 @@
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    color-scheme: light dark;
+    interpolate-size: allow-keywords;
+    scrollbar-gutter: stable;
+    tab-size: 2;
+  }
+
+  html {
+    min-height: 100%;
+    background: var(--c-bg);
+    color: var(--c-fg);
+    accent-color: var(--c-ac);
+    caret-color: var(--c-ac);
+    hanging-punctuation: first last;
+    text-size-adjust: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100svh;
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-family: var(--t-ff-bd);
+  }
+
+  :where(body, button, input, select, textarea) {
+    font: inherit;
+  }
+
+  :where(button, input, select, textarea) {
+    color: inherit;
+    letter-spacing: inherit;
+    border-radius: 0;
+  }
+
+  :where(button, select) {
+    text-transform: none;
+  }
+
+  :where(button, [type="button"], [type="reset"], [type="submit"]) {
+    appearance: button;
+  }
+
+  :where(textarea) {
+    resize: vertical;
+  }
+
+  :where(img, picture, video, canvas, svg) {
+    display: block;
+    max-width: 100%;
+  }
+
+  :where(img, video) {
+    height: auto;
+  }
+
+  :where(svg) {
+    overflow: visible;
+  }
+
+  :where(table) {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  :where(ul, ol) {
+    list-style-position: inside;
+  }
+
+  :where(nav ul, nav ol) {
+    list-style: none;
+  }
+
+  :where(a) {
+    color: inherit;
+  }
+
+  :where(button, a, input, select, textarea, summary) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(button, label, select, summary, [role="button"]) {
+    cursor: pointer;
+  }
+
+  :where(button:disabled, input:disabled, select:disabled, textarea:disabled, [aria-disabled="true"]) {
+    cursor: not-allowed;
+  }
+
+  :where([hidden]) {
+    display: none !important;
+  }
+
+  :where(dialog) {
+    max-width: none;
+    max-height: none;
+    color: inherit;
+
+    &::backdrop {
+      background: color-mix(in srgb, var(--c-sw-da) 80%, transparent);
+    }
+  }
+
+  ::selection {
+    color: var(--c-ac-co);
+    background: var(--c-ac);
+  }
+
+  :focus-visible {
+    outline: max(2px, var(--b-wd)) solid currentColor;
+    outline-offset: 0.2em;
+  }
+
+  :target {
+    scroll-margin-block: var(--l-bl-y);
+  }
+
+  :where(strong, b) {
+    font-weight: var(--t-fw-bd);
+  }
+
+  :where(small) {
+    font-size: 80%;
+  }
+
+  :where(sub, sup) {
+    position: relative;
+    font-size: 75%;
+    line-height: 0;
+    vertical-align: baseline;
+  }
+
+  sub {
+    inset-block-end: -0.25em;
+  }
+
+  sup {
+    inset-block-start: -0.5em;
+  }
+
+  :where(code, pre, kbd, samp) {
+    font-family: var(--t-ff-mo);
+  }
+
+  :where(code) {
+    background: color-mix(in srgb, var(--c-fg) 10%, transparent);
+    padding: .3em .6em;
+    border-radius: .2em;
+    line-height: 1;
+    font-size: 80%;
+  }
+
+  :where(fieldset, iframe) {
+    border: 0;
+  }
+
+  :where(abbr[title]) {
+    text-decoration-thickness: from-font;
+    text-underline-offset: 0.15em;
+  }
+
+  :where(progress) {
+    vertical-align: baseline;
+  }
+
+  ::placeholder {
+    color: var(--c-mu);
+    opacity: 1;
+  }
+
+  textarea {
+    field-sizing: content;
+    min-height: 6lh;
+    resize: vertical;
+  }
+
+  :where(input, textarea) {
+    user-select: auto;
+  }
+
+  :where(button, input, select, textarea) {
+    touch-action: manipulation;
+  }
+
+  [data-skin] {
+    background: var(--c-bg);
+    color: var(--c-fg);
+  }
+
+  main {
+    max-width: 100vw;
+    overflow-x: clip;
+  }
+
+  mark {
+    color: var(--c-ac-co);
+    background: var(--c-ac);
+  }
+}

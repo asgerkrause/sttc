@@ -1,0 +1,13 @@
+<!--
+  @desc Native video with optional controls, autoplay behavior, and track slot.
+  @attr src! Video URL or built /assets/videos/ path.
+  @attr poster Optional poster image URL.
+  @attr label Optional accessible label.
+  @attr title Optional accessible title.
+  @attr auto Emits autoplay, muted, loop, and playsinline.
+  @attr controls Shows native controls.
+  @attr width Optional intrinsic width.
+  @attr height Optional intrinsic height.
+  @attr active=[manual] Opt out of the runtime activity guard.
+-->
+<video class="video" src="{{src}}" poster="{{poster}}" aria-label="{{label}}" title="{{title}}" width="{{width}}" height="{{height}}"{#if auto} autoplay muted loop playsinline{/if}{#if controls} controls{/if}{#if active} data-active="{{active}}"{/if} preload="metadata">{{slot}}</video>

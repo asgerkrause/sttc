@@ -1,190 +1,22 @@
 # Agent workflow
 
-Use this workflow when an AI coding assistant edits a SANITIZE Boilerplate site.
+1. Read `AGENTS.md` and inspect repository truth.
+2. Classify the owner: route, component, media, content, configuration, project code, or renderer.
+3. Reuse the seven starter components when their contracts fit; otherwise create one source-owned component.
+4. Preserve presentation ownership. The editable CRFT starter copy is project source, not framework CSS.
+5. Keep attrs semantic, slots rich, scripts minimal, and active work guarded.
+6. Preserve SEO/AEO/GEO, discovery, native accessibility, and strict errors.
+7. Never edit `dist/` or `.snz/` source.
+8. Run the narrowest proving command after the final change.
 
-## Start card
+Useful gates:
 
-**Goal:** understand source shape before editing.
+| Change | Evidence |
+|---|---|
+| Route or component | `bun run build` |
+| Content/config | `bun run check` |
+| Renderer | `bun test framework/tests` plus focused build |
+| Starter/template | `bun run smoke:create` |
+| Launch-sensitive | `bun run doctor -- --launch` |
 
-**Read first:**
-
-- `AGENTS.md`
-- `framework/docs/agent-guide.md`
-- `framework/docs/components.md` for component work
-- `framework/docs/agent-recipes.md` for task cards
-
-**Rules:**
-
-- Use Bun only.
-- Edit source, never `dist/`.
-- Prefer existing components and primitives before new files.
-- Keep changes narrow and easy to verify.
-
-## Source map
-
-| Need | Path |
-| --- | --- |
-| App shell | `src/shell.html` |
-| Routes | `src/pages/**/*.html` |
-| Components | `src/components/PascalCase.html` |
-| Site config | `src/site.json` |
-| Global CSS | `src/styles.css`, `src/styles/*.css` |
-| Site JS | `src/app.ts` or `src/app.js` |
-| Images | `src/images/` |
-| CMS content | `content/**/*.md` |
-| Build output | `dist/` — generated, do not edit |
-
-## Work loop
-
-1. Identify task type: route, component, CSS, image, content, config, or build error.
-2. Read smallest relevant source files.
-3. Reuse built-ins first: `Section`, `Grid`, `Card`, `Button`, `Link`, `Image`, `Markdown`, `Accordion`, `FAQ`, `SEO`.
-4. Add new component only when markup repeats or needs owned CSS/script.
-5. Put component CSS in component `<style>`.
-6. Put page-only overrides in global CSS with `html[data-page="slug"]`.
-7. Run smallest check that proves the change.
-8. Report files changed and command result.
-
-## Route workflow
-
-**Use for:** new or edited public page.
-
-**Likely files:**
-
-- `src/pages/{slug}.html`
-- `src/site.json` when defaults need update
-- `src/images/*` when page adds images
-
-**Steps:**
-
-```bash
-bun run new route pricing
-```
-
-Then write route body:
-
-```html
-<head>
-  <SEO title="Pricing" description="Clear plans." />
-</head>
-
-<Section>
-  <h1>Pricing</h1>
-  <p>Choose the right fit.</p>
-</Section>
-```
-
-**Check:**
-
-```bash
-bun run check
-```
-
-## Component workflow
-
-**Use for:** reusable section, repeated markup, component-owned CSS, component lifecycle script.
-
-**Likely files:**
-
-- `src/components/PascalCase.html`
-- route/component that uses it
-
-**Steps:**
-
-```bash
-bun run new component Feature
-```
-
-Keep contract inline:
-
-```html
-<!--
-  @desc Feature item.
-  @attr variant=[default|accent] :class Visual variant.
--->
-<article class="card">
-  {{slot}}
-</article>
-
-<style>
-  .card.accent {
-    background: var(--c-acc-sur);
-    color: var(--c-acc-ink);
-  }
-</style>
-```
-
-**Check:**
-
-```bash
-bun run build
-```
-
-Run `bun run doctor` when CSS ownership changed.
-
-## CSS workflow
-
-**Global CSS owns:**
-
-- tokens, reset, base type
-- `.container`, `.stack`, `.card`, `.buttons`, `.links`
-- `[g]`, `[c]`, `[r]`, `[o]`
-- theme tokens and page overrides
-
-**Component CSS owns:**
-
-- private roots
-- component variants
-- component composition edges
-- lifecycle-related states
-
-**Check:**
-
-```bash
-bun run css:audit
-```
-
-Use `bun run doctor` when preparing broader CSS changes.
-
-## Content workflow
-
-**Use CMS when editors need markdown pages/posts.**
-
-```bash
-bun run new cms
-```
-
-Paths:
-
-- `content/posts/intro.md` → `/insights/intro/`
-
-Frontmatter needs `title`.
-
-**Check:**
-
-```bash
-bun run check
-```
-
-## Verification ladder
-
-| Change | Minimum proof |
-| --- | --- |
-| Docs-only | no command required unless links/generated docs changed |
-| Route/content/image/config | `bun run check` |
-| Component/build behavior | `bun run build` |
-| CSS ownership | `bun run css:audit` or `bun run doctor` |
-| Launch handoff | `bun run doctor -- --launch` |
-
-## Done report
-
-Return:
-
-- files changed
-- command run
-- result or exact error
-- any follow-up needed
-
-## Next
-
-[Launch checks](./14-launch-checks.md) · [Docs home](./README.md) · [Recipes](./16-recipes.md)
+Ask only when the answer changes authority, cost, architecture, public contract, or an irreversible effect. Report changed files, checks, limitations, and remaining uncertainty.

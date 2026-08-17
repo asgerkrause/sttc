@@ -9,10 +9,11 @@ import { BuildError, lineOf } from './errors'
 import { compileContentFrom, loadCustomContentCollections } from './content'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs } from './images'
 import { createBuildContext, type BuildContext } from './build-context'
+import { loadSiteConfig } from './site-config'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
-type CheckOptions = { allowBrokenLinks?: boolean; launch?: boolean; context?: BuildContext }
+type CheckOptions = { allowBrokenLinks?: boolean; launch?: boolean; context?: BuildContext; validatedBuildInputs?: boolean }
 
 export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   const context = opts.context ?? createBuildContext()
@@ -23,13 +24,10 @@ export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   const warn = (m: string) => warnings.push(m)
 
   await checkSiteJson(paths.src, fail)
-  await checkSourceContracts(context, fail, warn)
+  await checkSourceContracts(context, fail, warn, !!opts.validatedBuildInputs)
   await checkSourceLayout(paths, warn)
   await checkSeoFiles(context.distDir, fail)
-  await checkJsonLd(context.distDir, fail)
-  await checkBuiltPublicAssetRefs(context.distDir, fail)
-  await checkUnresolvedTemplatePlaceholders(context.distDir, fail)
-  if (!opts.allowBrokenLinks) await checkInternalLinks(context.distDir, fail)
+  await checkBuiltOutput(context.distDir, fail, !!opts.allowBrokenLinks)
   await checkComponentTags(paths, warn)
   await checkDiscoveryArtifacts(context.distDir, fail)
   if (opts.launch) await checkLaunchReadiness(context, fail, warn)
@@ -60,36 +58,6 @@ function extractLdJson(html: string) {
   return blocks
 }
 
-async function checkJsonLd(distDir: string, fail: (m: string) => void) {
-  const files = [join(distDir, 'index.html'), ...(await collectHtmlFiles(join(distDir, 'routes')))]
-  for (const file of files) {
-    let html: string
-    try { html = await readFile(file, 'utf8') } catch { fail(`missing ${file}`); continue }
-    const blocks = extractLdJson(html)
-    if (blocks.length === 0) { fail(`${file}: no application/ld+json`); continue }
-    for (const raw of blocks) {
-      try {
-        const data = JSON.parse(raw)
-        if (!data['@context']) fail(`${file}: JSON-LD missing @context`)
-      } catch {
-        fail(`${file}: invalid JSON-LD`)
-      }
-    }
-  }
-}
-
-async function checkUnresolvedTemplatePlaceholders(distDir: string, fail: (m: string) => void) {
-  const files = await collectHtmlFiles(distDir)
-  const re = /\{\{[\w.-]+(?::[\w.-]+)?\}\}/g
-  for (const file of files) {
-    const html = await readFile(file, 'utf8').catch(() => null)
-    if (!html) continue
-    for (const match of html.matchAll(re)) {
-      fail(`${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`)
-    }
-  }
-}
-
 async function checkSeoFiles(distDir: string, fail: (m: string) => void) {
   const robots = await readFile(join(distDir, 'robots.txt'), 'utf8').catch(() => null)
   if (!robots) fail('missing dist/robots.txt')
@@ -116,6 +84,83 @@ const PUBLIC_ASSET_RE = /\/assets\/(images|videos|files)\/[^"'`\s<>)\\]+/g
 
 function cleanAssetRef(ref: string) {
   return ref.replace(/[.,;:]+$/g, '').replace(/[?#].*$/, '')
+}
+
+async function checkBuiltOutput(distDir: string, fail: (m: string) => void, allowBrokenLinks: boolean) {
+  const indexFile = join(distDir, 'index.html')
+  const routeHtmlFiles = [indexFile, ...(await collectHtmlFiles(join(distDir, 'routes')))].sort()
+  const routeHtmlSet = new Set(routeHtmlFiles)
+
+  const assetOwners = new Map<string, string>()
+  const linkOwners = new Map<string, string>()
+  const rememberAssets = (file: string, text: string) => {
+    for (const ref of extractBuiltPublicAssetRefs(text)) {
+      if (!assetOwners.has(ref)) assetOwners.set(ref, file)
+    }
+  }
+
+  const checkPlaceholders = (file: string, html: string) => {
+    for (const match of html.matchAll(/\{\{[\w.-]+(?::[\w.-]+)?\}\}/g)) {
+      fail(`${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`)
+    }
+  }
+
+  for (const file of routeHtmlFiles) {
+    const html = await readFile(file, 'utf8').catch(() => null)
+    if (!html) { fail(`missing ${file}`); continue }
+
+    const blocks = extractLdJson(html)
+    if (blocks.length === 0) fail(`${file}: no application/ld+json`)
+    for (const raw of blocks) {
+      try {
+        const data = JSON.parse(raw)
+        if (!data['@context']) fail(`${file}: JSON-LD missing @context`)
+      } catch {
+        fail(`${file}: invalid JSON-LD`)
+      }
+    }
+
+    checkPlaceholders(file, html)
+    rememberAssets(file, html)
+    if (!allowBrokenLinks) {
+      for (const match of html.matchAll(/href="(\/[^"#?]*)"/g)) {
+        if (!linkOwners.has(match[1])) linkOwners.set(match[1], file)
+      }
+    }
+  }
+
+  // Preserve the unresolved-placeholder contract for public raw HTML without treating those files
+  // as renderer-owned routes that require JSON-LD or internal-route policy.
+  for (const file of (await collectHtmlFiles(distDir)).sort()) {
+    if (routeHtmlSet.has(file)) continue
+    const html = await readFile(file, 'utf8').catch(() => null)
+    if (html) checkPlaceholders(file, html)
+  }
+
+  const otherFiles = [
+    ...(await collectFilesByExtension(distDir, '.json')),
+    ...(await collectFilesByExtension(join(distDir, 'assets'), '.css')),
+    ...(await collectFilesByExtension(join(distDir, 'assets'), '.js')),
+  ].sort()
+  for (const file of otherFiles) {
+    const text = await readFile(file, 'utf8').catch(() => null)
+    if (text) rememberAssets(file, text)
+  }
+
+  for (const [ref, file] of assetOwners) {
+    if (await builtAssetExists(distDir, ref)) continue
+    fail(`${file}: missing public asset ${ref}\n  hint: ${missingPublicAssetHint(ref)}`)
+  }
+
+  for (const [href, file] of linkOwners) {
+    if (href.startsWith('/assets/') || href.startsWith('/media/') || href.startsWith('/lib/')) {
+      if (!(await assetExists(distDir, href))) fail(`${file}: broken asset ${href}`)
+    } else if (href.endsWith('.html') || href.endsWith('.json') || href.endsWith('.md') || href.endsWith('.txt')) {
+      if (!(await assetExists(distDir, href))) fail(`${file}: broken link ${href}`)
+    } else if (!(await routeExists(distDir, href))) {
+      fail(`${file}: broken route ${href}`)
+    }
+  }
 }
 
 export function extractBuiltPublicAssetRefs(text: string) {
@@ -173,34 +218,17 @@ export async function checkBuiltImageRefs(distRoot: string, fail: (m: string) =>
   await checkBuiltPublicAssetRefs(distRoot, fail)
 }
 
-async function checkInternalLinks(distDir: string, fail: (m: string) => void) {
-  const htmlFiles = [join(distDir, 'index.html'), ...(await collectHtmlFiles(join(distDir, 'routes')))]
-  const hrefRe = /href="(\/[^"#?]*)"/g
-  for (const file of htmlFiles) {
-    const html = await readFile(file, 'utf8').catch(() => null)
-    if (!html) { fail(`missing ${file}`); continue }
-    for (const m of html.matchAll(hrefRe)) {
-      const href = m[1]
-      if (href.startsWith('/assets/') || href.startsWith('/media/') || href.startsWith('/lib/')) {
-        if (!(await assetExists(distDir, href))) fail(`${file}: broken asset ${href}`)
-      } else if (href.endsWith('.html') || href.endsWith('.json') || href.endsWith('.txt')) {
-        if (!(await assetExists(distDir, href))) fail(`${file}: broken link ${href}`)
-      } else {
-        if (!(await routeExists(distDir, href))) fail(`${file}: broken route ${href}`)
-      }
-    }
+async function checkSiteJson(srcDir: string, fail: (m: string) => void) {
+  try { await loadSiteConfig(join(srcDir, 'site.json')) } catch (error) {
+    if (error instanceof BuildError) fail(error.toPretty())
+    else fail(error instanceof Error ? error.message : String(error))
   }
 }
 
-async function checkSiteJson(srcDir: string, fail: (m: string) => void) {
-  try { JSON.parse(await readFile(join(srcDir, 'site.json'), 'utf8')) }
-  catch { fail('src/site.json is not valid JSON') }
-}
-
-async function checkSourceContracts(context: BuildContext, fail: (m: string) => void, warn: (m: string) => void) {
+async function checkSourceContracts(context: BuildContext, fail: (m: string) => void, warn: (m: string) => void, validatedBuildInputs: boolean) {
   await checkVercelConfig(context.rootDir, warn)
 
-  const imageRoots = await imageSourceRoots(context.rootDir).catch((err) => {
+  const imageRoots = validatedBuildInputs ? [] : await imageSourceRoots(context.rootDir).catch((err) => {
     if (err instanceof BuildError) {
       fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
       return []
@@ -208,7 +236,7 @@ async function checkSourceContracts(context: BuildContext, fail: (m: string) => 
     fail(err instanceof Error ? err.message : String(err))
     return []
   })
-  await assertUniqueImageNames(...imageRoots).catch((err) => {
+  if (!validatedBuildInputs) await assertUniqueImageNames(...imageRoots).catch((err) => {
     if (err instanceof BuildError) {
       fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
       return
@@ -216,18 +244,20 @@ async function checkSourceContracts(context: BuildContext, fail: (m: string) => 
     fail(err instanceof Error ? err.message : String(err))
   })
 
-  const routeSlugs = new Map<string, string>()
-  for (const route of await discoverSourceRoutes({ srcDir: context.srcDir })) {
-    routeSlugs.set(route.slug, route.sourceRel)
-  }
+  if (!validatedBuildInputs) {
+    const routeSlugs = new Map<string, string>()
+    for (const route of await discoverSourceRoutes({ srcDir: context.srcDir })) {
+      routeSlugs.set(route.slug, route.sourceRel)
+    }
 
-  const contentRoutes = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir }).catch((err) => {
-    fail(err instanceof Error ? err.message : String(err))
-    return []
-  })
-  for (const route of contentRoutes) {
-    const existing = routeSlugs.get(route.slug)
-    if (existing) fail(`${route.source}: content route collides with ${existing} at /${route.slug}/`)
+    const contentRoutes = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir }).catch((err) => {
+      fail(err instanceof Error ? err.message : String(err))
+      return []
+    })
+    for (const route of contentRoutes) {
+      const existing = routeSlugs.get(route.slug)
+      if (existing) fail(`${route.source}: content route collides with ${existing} at /${route.slug}/`)
+    }
   }
 
   for (const template of ['post.html']) {
@@ -369,7 +399,7 @@ export async function checkVercelConfig(projectRoot: string, warn: (m: string) =
     ['trailingSlash', true, 'true'],
   ]
   for (const [key, value, label] of expected) {
-    if (config[key] !== value) warn(`${rel}: ${key} should be ${label} for snz-bp Bun static deploys`)
+    if (config[key] !== value) warn(`${rel}: ${key} should be ${label} for sttc Bun static deploys`)
   }
 
   const headers = Array.isArray(config.headers) ? config.headers as VercelHeaderRule[] : []
@@ -497,8 +527,8 @@ async function checkLaunchSiteConfig(context: BuildContext, fail: (m: string) =>
   if (!/^https:\/\/[^\s/$.?#].[^\s]*$/i.test(url) || /localhost|127\.0\.0\.1|0\.0\.0\.0|\.local\b|example\.com/i.test(url)) {
     fail(`${rel}: launch site.url must be a public https URL\n  hint: Set site.url to the production origin before launch.`)
   }
-  const og = typeof site.ogImage === 'string' ? site.ogImage : ''
-  if (!og) fail(`${rel}: launch ogImage missing\n  hint: Set ogImage to a real social preview image path.`)
+  const image = typeof site.image === 'string' ? site.image : typeof site.ogImage === 'string' ? site.ogImage : ''
+  if (!image) fail(`${rel}: launch image missing\n  hint: Set image to a real social preview image path.`)
 }
 
 async function checkPrivateOutputUrls(distDir: string, fail: (m: string) => void) {
@@ -550,7 +580,7 @@ async function checkDiscoveryArtifacts(distDir: string, fail: (m: string) => voi
     'llms.txt',
     'llms-full.txt',
     'site.manifest.json',
-    '.well-known/ai-plugin.json',
+    'site.jsonld',
   ]
   for (const rel of required) {
     if (!(await assetExists(distDir, `/${rel}`))) fail(`missing dist/${rel}`)
@@ -559,6 +589,17 @@ async function checkDiscoveryArtifacts(distDir: string, fail: (m: string) => voi
     const manifest = JSON.parse(await readFile(join(distDir, 'site.manifest.json'), 'utf8'))
     if (!Array.isArray(manifest.routes) || !manifest.routes.length) fail('site.manifest.json: routes array empty or missing')
     if (!Array.isArray(manifest.components)) fail('site.manifest.json: components array missing')
+    if (manifest.schemaVersion !== 2) fail('site.manifest.json: unsupported schemaVersion')
+    for (const route of manifest.routes ?? []) {
+      const representations = route.representations
+      if (!representations || typeof representations.html !== 'string' || typeof representations.markdown !== 'string' || typeof representations.metadata !== 'string') {
+        fail(`site.manifest.json: route ${String(route.slug)} representations incomplete`)
+        continue
+      }
+      for (const rel of [representations.html, representations.markdown, representations.metadata]) {
+        if (!(await assetExists(distDir, rel))) fail(`site.manifest.json: missing route representation ${rel}`)
+      }
+    }
   } catch {
     fail('site.manifest.json: invalid JSON')
   }

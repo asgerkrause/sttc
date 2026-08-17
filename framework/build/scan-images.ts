@@ -5,18 +5,59 @@ import { BuildError } from './errors'
 
 const ATTRS_GROUP = '(?:\\s+(?:[\\w-]+(?:="[^"]*")?))*'
 const IMAGE_TAG_RE = new RegExp(`<Image(${ATTRS_GROUP})\\s*\\/?>`, 'g')
-const DEFAULT_MAX = 1200
-const DEFAULT_QUALITY = 82
+export const DEFAULT_IMAGE_MAX = 1200
+export const DEFAULT_IMAGE_QUALITY = 82
 
 export type ImageEncodeOptions = { max: number; quality: number }
 
-function parseIntAttr(value: string | undefined, key: string, file: string): number | undefined {
-  if (value === undefined) return undefined
-  const n = Number.parseInt(value, 10)
-  if (!Number.isFinite(n) || n <= 0) {
-    throw new BuildError(`${file}: Image ${key} must be a positive integer (got "${value}")`)
+export function imageNameFromSrc(value: string, file?: string) {
+  const prefix = file ? `${file}: ` : ''
+  if (!value) {
+    throw new BuildError(`${prefix}Image requires src="name" (no extension)`, {
+      hint: 'Use a logical image name without a path or extension, e.g. <Image src="hero" alt="..." />.',
+    })
   }
-  return n
+  if (
+    value === '.' || value === '..' ||
+    value.includes('/') || value.includes('\\') ||
+    /\.(jpe?g|png|webp)$/i.test(value) ||
+    !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value)
+  ) {
+    throw new BuildError(`${prefix}Image src must be a logical name without a path or extension (got "${value}")`, {
+      hint: 'Use the image master basename only, e.g. src="hero" for src/images/hero.jpg.',
+    })
+  }
+  return value
+}
+
+export function parsePositiveImageInteger(
+  value: string | undefined,
+  key: string,
+  file?: string,
+): number | undefined {
+  if (value === undefined) return undefined
+  const prefix = file ? `${file}: ` : ''
+  if (!/^[1-9]\d*$/.test(value)) {
+    throw new BuildError(`${prefix}Image ${key} must be a positive integer (got "${value}")`)
+  }
+  const number = Number(value)
+  if (!Number.isSafeInteger(number)) {
+    throw new BuildError(`${prefix}Image ${key} is too large (got "${value}")`)
+  }
+  return number
+}
+
+export function imageEncodeOptionsFromAttrs(
+  attrs: Record<string, string>,
+  file?: string,
+): ImageEncodeOptions {
+  const max = parsePositiveImageInteger(attrs.max, 'max', file) ?? DEFAULT_IMAGE_MAX
+  const quality = parsePositiveImageInteger(attrs.quality, 'quality', file) ?? DEFAULT_IMAGE_QUALITY
+  if (quality > 100) {
+    const prefix = file ? `${file}: ` : ''
+    throw new BuildError(`${prefix}Image quality must be 1–100`)
+  }
+  return { max, quality }
 }
 
 function mergeOptions(
@@ -40,13 +81,12 @@ function scanHtml(html: string, file: string, map: Map<string, ImageEncodeOption
   for (const m of html.matchAll(IMAGE_TAG_RE)) {
     const attrs = parseAttrs(m[1] ?? '')
     const rawSrc = attrs.src ?? ''
-    const name = rawSrc.replace(/\.(jpe?g|png|webp)$/i, '')
-    if (!name) throw new BuildError(`${file}: Image requires src="name"`)
+    // Component templates can forward attrs into Image. Their concrete values are
+    // validated when the composed Image instance resolves.
+    if (rawSrc.includes('{{')) continue
+    const name = imageNameFromSrc(rawSrc, file)
 
-    const max = parseIntAttr(attrs.max, 'max', file) ?? DEFAULT_MAX
-    const quality = parseIntAttr(attrs.quality, 'quality', file) ?? DEFAULT_QUALITY
-    if (quality > 100) throw new BuildError(`${file}: Image quality must be 1–100`)
-
+    const { max, quality } = imageEncodeOptionsFromAttrs(attrs, file)
     mergeOptions(map, name, max, quality)
   }
 }

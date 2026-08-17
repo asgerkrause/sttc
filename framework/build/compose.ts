@@ -1,13 +1,11 @@
-import { readFile } from 'fs/promises'
-import { join } from 'path'
 import { buildErrorAt, BuildError, lineOf } from './errors'
 import { resolveImageAttrs, type ImageMeta } from './images'
-import { render as renderMarkdown } from './markdown'
-import { componentsDir, src } from './paths'
+import { componentsDir } from './paths'
 import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
+import { loadSiteConfig as readSiteConfig } from './site-config'
+import { buildYear } from './source-files'
 import { COMPONENT_OPEN_RE, nextComponent, parseAttrs, type ComponentMatch } from './tags'
-import { polarProductsData } from './polar'
 import { renderPlaceholders, renderTemplate, type TemplateContext } from './template-directives'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
@@ -16,6 +14,8 @@ const HEAD_WRAPPER_RE = /^<head[^>]*>([\s\S]*?)<\/head>\s*/i
 const SLOT_DEFAULT_RE = /\{\{slot\}\}/g
 const SLOT_NAMED_RE = /\{\{slot:([\w-]+)\}\}/g
 const NAMED_SLOT_TAG_RE = /<slot\s+name=["']([\w-]+)["']\s*>([\s\S]*?)<\/slot>/gi
+const SEO_RE = /<SEO((?:\s+(?:[\w-]+(?:="[^"]*")?))*)\s*\/>/i
+const SEO_ATTRS = new Set(['title', 'description', 'image', 'ogImage', 'path', 'unlisted'])
 
 export type SchemaAttr = {
   required?: boolean
@@ -65,12 +65,10 @@ export function createComposer(
 ) {
   let siteConfig: SiteConfig | null = null
   let currentRoute: string | undefined
-  let polarProducts: Promise<TemplateContext> | undefined
 
   async function loadSiteConfig(): Promise<SiteConfig> {
     if (siteConfig) return siteConfig
-    const raw = await readFile(options.siteFile ?? join(src, 'site.json'), 'utf8')
-    siteConfig = JSON.parse(raw) as SiteConfig
+    siteConfig = await readSiteConfig(options.siteFile ?? 'src/site.json')
     return siteConfig
   }
 
@@ -81,7 +79,7 @@ export function createComposer(
   function rejectLegacySyntax(html: string, fileHint: string) {
     if (LEGACY_COMMENT_RE.test(html) || LEGACY_COMPONENT_RE.test(html)) {
       throw new BuildError(
-        `Legacy syntax in ${fileHint}: use PascalCase components (<Button … />, <SEO … />)`,
+        `Legacy syntax in ${fileHint}: use PascalCase components (<Hero … />) and the <SEO … /> route directive`,
         { file: fileHint, hint: 'Replace <component> tags and <!-- @component --> comments with PascalCase tags' },
       )
     }
@@ -163,15 +161,15 @@ export function createComposer(
     const description = attrs.description ?? site.description
     const path = attrs.path ?? '/'
     const canonical = absoluteUrl(site.url, path)
-    const ogPath = attrs.ogImage ?? site.ogImage ?? ''
-    const ogImage = ogPath ? absoluteUrl(site.url, ogPath) : ''
+    const imagePath = attrs.image ?? attrs.ogImage ?? site.image ?? site.ogImage ?? ''
+    const image = imagePath ? absoluteUrl(site.url, imagePath) : ''
     const schema = buildSchemaGraph(site, { title, description, canonical })
 
     return {
       title,
       description,
       canonical,
-      ogImage,
+      image,
       locale: site.locale ?? 'en',
       twitter: site.twitter ?? '',
       siteName: site.name,
@@ -180,78 +178,10 @@ export function createComposer(
   }
 
   async function enrichComponentAttrs(name: string, attrs: Record<string, string>) {
-    if (name === 'SEO') return enrichSeoAttrs(attrs)
     if (name === 'Image') return resolveImageAttrs(getImageMeta(), attrs)
 
     const site = await loadSiteConfig()
-    if ((name === 'Header' || name === 'Footer' || name === 'Logo') && !attrs.siteName) attrs.siteName = site.name
-    if (name === 'Logo') {
-      attrs.href ??= '/'
-      attrs.size ??= '1lh'
-    }
-    if (name === 'Button') {
-      attrs.href ??= '#'
-      attrs.label ??= 'Learn more'
-      const icon = attrs.icon?.trim()
-      if (icon && /^[a-z][a-z0-9-]*:/i.test(icon)) {
-        throw new BuildError(`Button icon provider syntax is reserved but not implemented: "${icon}"`, {
-          hint: 'Use a literal decorative icon like icon="→", or slot:vis for custom SVG/markup until an icon provider is added.',
-        })
-      }
-      const image = attrs.image?.trim()
-      if (image) {
-        if (/^(https?:)?\/\//i.test(image) || image.startsWith('/')) {
-          throw new BuildError(`Button image must be a local image name: "${image}"`, {
-            hint: 'Use image="r4" for src/images/r4.webp. Use slot:vis only for intentional raw remote markup.',
-          })
-        }
-        if (!/^[A-Za-z0-9][\w-]*$/.test(image)) {
-          throw new BuildError(`Button image must omit folders and extensions: "${image}"`, {
-            hint: 'Use the logical image name, e.g. image="r4" for src/images/r4.webp.',
-          })
-        }
-        if (!getImageMeta()[image]) {
-          throw new BuildError(`Button image "${image}": add an image master named ${image}.{jpg,png,webp} and rebuild`, {
-            hint: `Add src/images/${image}.jpg, .png, or .webp; or upload ${image} through PagesCMS media.input.`,
-          })
-        }
-      }
-    }
-    if (name === 'Link') {
-      attrs.href ??= '#'
-      attrs.label ??= 'Learn more'
-    }
-    if (name === 'Form') attrs.method ??= 'post'
-    if (name === 'Input') attrs.type ??= 'text'
-    if (name === 'Submit') attrs.label ??= 'Submit'
-    if (name === 'Accordion') {
-      attrs.summary ??= 'Details'
-      attrs.body ??= ''
-    }
-    if (name === 'Embed') attrs.ratio ??= '16/9'
-    if (name === 'Features') attrs.cols ??= '3-2'
-    if (name === 'Partners') attrs.label ??= 'Trusted organizations'
-    if (name === 'Pricing') attrs.cols ??= '3-3'
-    if (name === 'Products') {
-      attrs.cols ??= '3-2'
-      attrs.source ??= 'manual'
-      attrs.empty ??= 'No products available.'
-      dataByComponent.set('Products', { products: [] })
-      if (attrs.source === 'polar') {
-        polarProducts ??= polarProductsData()
-        dataByComponent.set('Products', await polarProducts)
-      }
-    }
-    if (name === 'Product') {
-      attrs.cta ??= 'Buy Now'
-      attrs.featured ??= 'false'
-      attrs.checkout ??= 'link'
-      attrs.embed = attrs.checkout === 'embed' ? 'true' : ''
-    }
-    if (name === 'Plan') attrs.featured ??= 'false'
-    if (name === 'Testimonials') attrs.cols ??= '2'
-    if (name === 'Stats') attrs.cols ??= '3-3'
-    return attrs
+    return { siteName: site.name, currentYear: buildYear(), ...attrs }
   }
 
   function loadComponent(name: string, fileHint: string, source?: string, index?: number) {
@@ -274,7 +204,8 @@ export function createComposer(
 
     const declared = schema.attrs ?? {}
     for (const [key, rule] of Object.entries(declared)) {
-      if (rule.required && (attrs[key] === undefined || attrs[key] === '')) {
+      const allowsEmptyAlt = name === 'Image' && key === 'alt' && attrs[key] === ''
+      if (rule.required && !allowsEmptyAlt && (attrs[key] === undefined || attrs[key] === '')) {
         throw buildErrorAt(`<${name} /> missing required attribute "${key}"`, source, index, {
           file: fileHint,
           hint: rule.description,
@@ -291,10 +222,8 @@ export function createComposer(
     }
     if (!schema.allowUnknownAttrs) {
       for (const key of Object.keys(attrs)) {
-        // built-in enrichers may add keys post-validate; allow common ones for SEO/Image
         if (declared[key] !== undefined) continue
         if (key === 'track') continue
-        if (name === 'SEO' || name === 'Image' || name === 'Header' || name === 'Footer' || name === 'Logo') continue
         throw buildErrorAt(`<${name} /> has unknown attribute "${key}"`, source, index, {
           file: fileHint,
           hint: `Declared attrs: ${Object.keys(declared).join(', ') || '(none)'} — add it to the inline schema comment if intended.`,
@@ -350,8 +279,9 @@ export function createComposer(
     }
     let attrs: Record<string, string>
     try {
-      attrs = await enrichComponentAttrs(m.name, { ...m.attrs })
+      attrs = { ...m.attrs }
       validateAttrs(m.name, attrs, fileHint, source, m.index)
+      attrs = await enrichComponentAttrs(m.name, attrs)
     } catch (err) {
       if (err instanceof BuildError && err.line) throw err
       throw buildErrorAt(err instanceof Error ? err.message : String(err), source, m.index, {
@@ -362,21 +292,7 @@ export function createComposer(
     if (onInstance) onInstance({ name: m.name, attrs: { ...m.attrs }, route: currentRoute })
 
     const template = loadComponent(m.name, fileHint, source, m.index)
-    let children = m.children
-    // Markdown: render children as markdown into the `rendered` attr; default slot stays empty.
-    if (m.name === 'Markdown' && children) {
-      attrs.rendered = renderMarkdown(children, { file: fileHint })
-      children = ''
-    }
-    const slots = readSlots(children, template)
-    if (m.name === 'Button') {
-      if (slots.named.vis) {
-        delete attrs.image
-        delete attrs.icon
-      } else if (attrs.image) {
-        delete attrs.icon
-      }
-    }
+    const slots = readSlots(m.children, template)
     let fragment = renderConditionals(m.name, template, attrs, slots)
     fragment = expandSlots(fragment, slots)
     fragment = substitute(fragment, attrs)
@@ -445,49 +361,104 @@ export function createComposer(
 
   async function compose(html: string, fileHint: string): Promise<string> {
     let out = html
+    let cursor = 0
     let guard = 0
     while (true) {
       if (guard++ > 1024) {
         throw new BuildError('Component expansion exceeded 1024 iterations (cycle?)', { file: fileHint })
       }
-      const m = nextComponent(out, 0, fileHint)
+      const m = nextComponent(out, cursor, fileHint)
       if (!m) return out
       const fragment = await expandOne(m, fileHint, out)
       out = out.slice(0, m.index) + fragment + out.slice(m.index + m.full.length)
+      // expandOne recursively resolves components introduced by this fragment, so resume after it
+      // instead of rescanning the already-rendered prefix for every sibling component.
+      cursor = m.index + fragment.length
     }
   }
 
-  function stripHeadWrapper(html: string) {
+  function stripHeadWrapper(html: string, fileHint: string) {
     const match = html.match(HEAD_WRAPPER_RE)
-    if (!match) return { seoAttrs: {} as Record<string, string>, body: html }
-    // SEO inside head must be self-closing only here.
-    const seoRe = /<SEO((?:\s+[\w-]+="[^"]*")*)\s*\/?>/i
-    const seoMatch = match[1].match(seoRe)
+    if (!match) return { seoAttrs: {} as Record<string, string>, extraHead: '', body: html }
+    const seoMatch = match[1].match(SEO_RE)
+    if (!seoMatch && /<SEO\b/i.test(match[1])) {
+      throw new BuildError('<SEO> must be self-closing', { file: fileHint, hint: 'Use <SEO ... /> inside <head>.' })
+    }
     const seoAttrs = seoMatch ? parseAttrs(seoMatch[1] ?? '') : {}
+    const extraHead = seoMatch ? match[1].replace(seoMatch[0], '').trim() : match[1].trim()
     const body = html.slice(match[0].length).trim()
-    return { seoAttrs, body }
+    return { seoAttrs, extraHead, body }
   }
 
-  function extractInlineSeo(html: string) {
-    const re = /<SEO((?:\s+[\w-]+="[^"]*")*)\s*\/?>/i
-    const m = html.match(re)
-    if (!m) return { attrs: {} as Record<string, string>, rest: html }
+  function extractInlineSeo(html: string, fileHint: string) {
+    const m = html.match(SEO_RE)
+    if (!m) {
+      if (/<SEO\b/i.test(html)) {
+        throw new BuildError('<SEO> must be self-closing', { file: fileHint, hint: 'Use <SEO ... />.' })
+      }
+      return { attrs: {} as Record<string, string>, rest: html }
+    }
     const attrs = parseAttrs(m[1] ?? '')
     const rest = html.replace(m[0], '').trim()
     return { attrs, rest }
   }
 
-  async function mergeSeoAttrs(slug: string, overrides: Record<string, string>) {
+  function validateSeoAttrs(attrs: Record<string, string>, fileHint: string) {
+    for (const name of Object.keys(attrs)) {
+      if (SEO_ATTRS.has(name)) continue
+      throw new BuildError(`<SEO /> has unknown attribute "${name}"`, {
+        file: fileHint,
+        hint: `Supported attrs: ${[...SEO_ATTRS].join(', ')}.`,
+      })
+    }
+  }
+
+  function seoBooleanAttr(attrs: Record<string, string>, name: string, fileHint: string) {
+    const value = attrs[name]
+    if (value === undefined || value === 'false') return false
+    if (value === '1' || value === 'true') return true
+    throw new BuildError(`<SEO /> attribute "${name}" must be bare, "true", or "false"`, {
+      file: fileHint,
+      hint: `Use ${name}, ${name}="true", or remove the attribute.`,
+    })
+  }
+
+  async function mergeSeoAttrs(slug: string, overrides: Record<string, string>, fileHint: string) {
     const defaults = await defaultSeoAttrs(slug)
+    if (overrides.path && overrides.path !== defaults.path) {
+      throw new BuildError('<SEO /> path does not match its route', {
+        file: fileHint,
+        hint: `Remove path, or use path="${defaults.path}". Canonical URLs are derived from the route filename.`,
+      })
+    }
     return { ...defaults, ...overrides }
   }
 
-  async function expandSeoMarkup(attrs: Record<string, string>, fileHint: string) {
-    const enriched = await enrichSeoAttrs(attrs)
-    return substitute(loadComponent('SEO', fileHint), enriched)
+  async function expandSeoMarkup(attrs: Record<string, string>, unlisted = false) {
+    const seo = await enrichSeoAttrs(attrs)
+    const schemaJson = seo.schemaJson.replace(/</g, '\\u003c')
+    const robots = unlisted ? '\n<meta name="robots" content="noindex,nofollow">' : ''
+    const representations = unlisted ? '' : `
+<link rel="alternate" type="text/markdown" href="${escapeAttr(attrs.path === '/' ? '/routes/index.md' : `/routes${attrs.path.replace(/\/$/, '')}.md`)}">
+<link rel="describedby" type="application/json" href="${escapeAttr(attrs.path === '/' ? '/routes/index.json' : `/routes${attrs.path.replace(/\/$/, '')}.json`)}">`
+    return `<title>${escapeAttr(seo.title)}</title>
+<meta name="description" content="${escapeAttr(seo.description)}">${robots}
+<link rel="canonical" href="${escapeAttr(seo.canonical)}">${representations}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${escapeAttr(seo.siteName)}">
+<meta property="og:title" content="${escapeAttr(seo.title)}">
+<meta property="og:description" content="${escapeAttr(seo.description)}">
+<meta property="og:url" content="${escapeAttr(seo.canonical)}">
+<meta property="og:image" content="${escapeAttr(seo.image)}">
+<meta property="og:locale" content="${escapeAttr(seo.locale)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeAttr(seo.title)}">
+<meta name="twitter:description" content="${escapeAttr(seo.description)}">
+<meta name="twitter:image" content="${escapeAttr(seo.image)}">
+<script type="application/ld+json">${schemaJson}</script>`
   }
 
-  async function prepareRouteSource(raw: string, route: RouteComposeInput) {
+  async function prepareRoute(raw: string, route: RouteComposeInput) {
     const { slug, fileHint, headLinks = [], data = {} } = route
     currentRoute = slug
     try {
@@ -502,36 +473,64 @@ export function createComposer(
       rejectLegacySyntax(routedRaw, fileHint)
       rejectStyleInRoute(routedRaw, fileHint)
 
-      const stripped = stripHeadWrapper(routedRaw.trim())
-      const inline = extractInlineSeo(stripped.body)
+      const stripped = stripHeadWrapper(routedRaw.trim(), fileHint)
+      const inline = extractInlineSeo(stripped.body, fileHint)
+      if (Object.keys(stripped.seoAttrs).length && Object.keys(inline.attrs).length) {
+        throw new BuildError('Route contains more than one <SEO /> directive', {
+          file: fileHint,
+          hint: 'Keep exactly one self-closing <SEO ... /> inside the route <head>.',
+        })
+      }
       const seoOverrides = { ...stripped.seoAttrs, ...inline.attrs }
+      validateSeoAttrs(seoOverrides, fileHint)
+      const unlisted = seoBooleanAttr(seoOverrides, 'unlisted', fileHint)
+      delete seoOverrides.unlisted
       const body = inline.rest
 
-      const seoMarkup = await expandSeoMarkup(await mergeSeoAttrs(slug, seoOverrides), fileHint)
+      const seoMarkup = await expandSeoMarkup(await mergeSeoAttrs(slug, seoOverrides, fileHint), unlisted || slug === '404')
       const composedBody = await compose(body, fileHint)
-      const extraHead = headLinks.length ? `\n${headLinks.join('\n')}` : ''
-      return `<head>\n${seoMarkup}${extraHead}\n</head>\n${composedBody}`
+      const headExtras = [stripped.extraHead, ...headLinks].filter(Boolean)
+      const extraHead = headExtras.length ? `\n${headExtras.join('\n')}` : ''
+      return { html: `<head>\n${seoMarkup}${extraHead}\n</head>\n${composedBody}`, unlisted }
     } finally {
       currentRoute = undefined
     }
   }
 
+  async function prepareRouteSource(raw: string, route: RouteComposeInput) {
+    return (await prepareRoute(raw, route)).html
+  }
+
   async function prepareShellSource(raw: string) {
     const fileHint = 'src/shell.html'
     rejectLegacySyntax(raw, fileHint)
+    if (/<SEO\b/i.test(raw)) {
+      throw new BuildError('<SEO /> is route-only and cannot appear in src/shell.html', {
+        file: fileHint,
+        hint: 'Put one <SEO ... /> directive in each route <head>.',
+      })
+    }
     // Substitute shell-level site config placeholders before component expansion.
     const site = await loadSiteConfig()
+    const scroll = site.scroll ?? 'lenis'
     const shellVars: Record<string, string> = {
-      scroll: site.scroll ?? 'lenis',
       siteName: site.name,
+      currentYear: String(new Date().getFullYear()),
       locale: site.locale ?? 'en',
+      scroll,
     }
-    const substituted = raw.replace(/\{\{(\w+)\}\}/g, (m, key) => shellVars[key] ?? m)
+    let substituted = raw.replace(/\{\{(\w+)\}\}/g, (m, key) => shellVars[key] ?? m)
+    if (scroll === 'native') {
+      substituted = substituted
+        .replace(/\s+data-scroll=(['"])[^'"]*\1/i, '')
+        .replace(/\n?[ \t]*<script\b[^>]*\bsrc=(['"])\/assets\/js\/scroll\.js\1[^>]*><\/script>[ \t]*/i, '')
+    }
     return compose(substituted, fileHint)
   }
 
   return {
     resetSiteConfig,
+    prepareRoute,
     prepareRouteSource,
     prepareShellSource,
   }

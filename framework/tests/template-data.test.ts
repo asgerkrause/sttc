@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { createComposer } from '../build/compose'
+import { BuildError } from '../build/errors'
 import { extractTemplateData } from '../build/template-data'
 
 async function withProject(fn: (dir: string) => Promise<void>) {
@@ -35,6 +36,34 @@ describe('build-time JSON template data', () => {
       })
 
       expect(result.data.services).toEqual([{ title: 'Strategy' }])
+    })
+  })
+
+  test('reports external JSON errors against the data file', async () => {
+    await withProject(async (dir) => {
+      await writeFile(join(dir, 'src', 'data', 'faq.json'), '{\n  "items": [\n}')
+      try {
+        await extractTemplateData('<script type="application/json" data-snz src="faq.json"></script>', {
+          file: 'src/pages/faq.html',
+          projectRoot: dir,
+        })
+        throw new Error('expected BuildError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(BuildError)
+        expect((error as BuildError).file).toBe('src/data/faq.json')
+        expect((error as BuildError).line).toBeGreaterThan(1)
+      }
+    })
+  })
+
+  test('rejects symlinked data outside src/data', async () => {
+    await withProject(async (dir) => {
+      await writeFile(join(dir, 'secret.json'), '{"secret":"no"}')
+      await symlink(join(dir, 'secret.json'), join(dir, 'src', 'data', 'secret.json'))
+      await expect(extractTemplateData('<script type="application/json" data-snz src="secret.json"></script>', {
+        file: 'src/pages/page.html',
+        projectRoot: dir,
+      })).rejects.toThrow('must stay inside src/data')
     })
   })
 

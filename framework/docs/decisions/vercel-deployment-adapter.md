@@ -5,7 +5,7 @@
 
 ## Context
 
-SANITIZE Boilerplate client sites deploy to Vercel. Framework defaults should make Bun builds, static output, caching, analytics hooks, and future deploy checks obvious without turning the renderer into a Vercel-only product.
+STTC client sites deploy to Vercel. Framework defaults should make Bun builds, static output, caching, analytics hooks, and future deploy checks obvious without turning the renderer into a Vercel-only product.
 
 ## Chosen
 

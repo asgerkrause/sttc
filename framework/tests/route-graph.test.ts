@@ -9,6 +9,11 @@ function testComposer(): Composer {
   return {
     resetSiteConfig() {},
     prepareShellSource: async (raw: string) => raw,
+    prepareRoute: async (raw: string, route: RouteComposeInput) => ({ html: `<head>
+<title>${route.slug}</title>
+<meta name="description" content="${route.fileHint}">
+</head>
+${raw}`, unlisted: false }),
     prepareRouteSource: async (raw: string, route: RouteComposeInput) => `<head>
 <title>${route.slug}</title>
 <meta name="description" content="${route.fileHint}">
@@ -51,7 +56,20 @@ describe('route graph', () => {
         components: instances,
         internalLinks: ['/insights/one/'],
         schemas: ['CollectionPage'],
+        renderedHtml: expect.stringContaining('<Section>'),
       }])
+    })
+  })
+
+  test('records visible Schema.org microdata types', async () => {
+    await withTempDir(async (distDir) => {
+      const graph = new RouteGraph({ composer: testComposer(), distDir })
+      await graph.compose(
+        { slug: 'faq', kind: 'static', source: 'src/pages/faq.html' },
+        '<section itemscope itemtype="https://schema.org/FAQPage"></section>',
+      )
+
+      expect(graph.records()[0]?.schemas).toEqual(['WebPage', 'FAQPage'])
     })
   })
 

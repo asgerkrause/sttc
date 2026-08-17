@@ -1,6 +1,7 @@
 import { stat } from 'fs/promises'
 import { join } from 'path'
 import { pagesDir, routesDir } from './paths'
+import { BuildError } from './errors'
 
 export type SourceRoute = {
   slug: string
@@ -14,7 +15,25 @@ async function exists(path: string) {
   try { await stat(path); return true } catch { return false }
 }
 
+export function sourceDateEpoch(value = process.env.SOURCE_DATE_EPOCH) {
+  if (value === undefined) return undefined
+  if (!/^\d+$/.test(value)) {
+    throw new BuildError('SOURCE_DATE_EPOCH must be a non-negative integer number of seconds')
+  }
+  const date = new Date(Number(value) * 1000)
+  if (!Number.isFinite(date.valueOf())) {
+    throw new BuildError('SOURCE_DATE_EPOCH is outside the supported date range')
+  }
+  return date
+}
+
+export function buildYear(value = process.env.SOURCE_DATE_EPOCH) {
+  return String((sourceDateEpoch(value) ?? new Date()).getUTCFullYear())
+}
+
 export async function sourceLastModified(path: string) {
+  const reproducible = sourceDateEpoch()
+  if (reproducible) return reproducible.toISOString()
   try {
     return (await stat(path)).mtime.toISOString()
   } catch {

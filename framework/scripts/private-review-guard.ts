@@ -9,24 +9,16 @@ type PackageJson = {
   scripts?: Record<string, unknown>
 }
 
-const repoRoot = process.env.SNZ_BP_PRIVATE_GUARD_ROOT ?? join(import.meta.dir, '..', '..')
+const repoRoot = process.env.STTC_PRIVATE_GUARD_ROOT ?? join(import.meta.dir, '..', '..')
 
 const packageGuards = [
   {
     path: 'package.json',
-    expectedName: '@snz/bp',
-  },
-  {
-    path: 'packages/create-snz-bp/package.json',
-    expectedName: 'create-snz-bp',
+    expectedName: '@snz/sttc',
   },
   {
     path: 'templates/default/package.json',
-    expectedName: 'snz-bp-site',
-  },
-  {
-    path: 'packages/create-snz-bp/template/default/package.json',
-    expectedName: 'snz-bp-site',
+    expectedName: 'sttc-site',
   },
 ] as const
 

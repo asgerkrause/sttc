@@ -2,9 +2,26 @@ import { describe, expect, test } from 'bun:test'
 import { readFile } from 'fs/promises'
 
 describe('runtime ownership contracts', () => {
+  test('starter TypeScript declarations match the runtime API', async () => {
+    const rootTypes = await readFile('src/snz.d.ts', 'utf8')
+    const starterTypes = await readFile('templates/default/src/snz.d.ts', 'utf8')
+    const frameworkTypes = await readFile('framework/types/snz.d.ts', 'utf8')
+    expect(starterTypes).toBe(rootTypes)
+    expect(frameworkTypes).toBe(rootTypes)
+    expect(rootTypes).toContain('pathname: string')
+    expect(rootTypes).toContain('navigate(path: string, options?: { replace?: boolean }): Promise<void>')
+    expect(rootTypes).toContain('prefetch(path: string): Promise<string | null>')
+    expect(rootTypes).toContain('SnzComponentMount = (el: Element)')
+    for (const method of ['onVisible', 'isVisible', 'onActive', 'isActive']) {
+      expect(rootTypes).toContain(`${method}(`)
+    }
+  })
+
   test('router owns component lifecycle API', async () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
 
+    expect(router).toContain("const main = document.querySelector('body > main')")
+    expect(router).not.toContain('main[data-route-root]')
     expect(router).toContain('function registerComponent')
     expect(router).toContain('_registerComponent: registerComponent')
     expect(router).toContain('mountComponents(main)')
@@ -48,20 +65,15 @@ describe('runtime ownership contracts', () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
     const rootShell = await readFile('src/shell.html', 'utf8')
     const starterShell = await readFile('templates/default/src/shell.html', 'utf8')
-    const rootStyles = await readFile('src/styles/wrappers.css', 'utf8')
-    const starterStyles = await readFile('templates/default/src/styles/wrappers.css', 'utf8')
 
     for (const shell of [rootShell, starterShell]) {
       expect(shell).toContain('<Footer />\n  <div data-snz-announcer aria-live="polite" aria-atomic="true"></div>')
       expect(shell).not.toContain('data-snz-announcer aria-live="polite" aria-atomic="true" style=')
     }
-    for (const styles of [rootStyles, starterStyles]) {
-      expect(styles).toContain('[data-snz-announcer]')
-      expect(styles).toContain('clip-path: inset(50%)')
-    }
     expect(router).toContain("document.querySelector('[data-snz-announcer]')")
     expect(router).toContain('routeAnnouncer.hidden = true')
-    expect(router).not.toContain('routeAnnouncer.style.cssText')
+    expect(router).toContain('Object.assign(routeAnnouncer.style')
+    expect(router).toContain("clipPath: 'inset(50%)'")
     expect(router).toContain('function routeAnnouncementLabel')
     expect(router).toContain('announceRoute()')
   })
@@ -98,26 +110,45 @@ describe('runtime ownership contracts', () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
 
     expect(router).toContain('function reloadCurrentRoute')
+    expect(router).toContain('routeCache.delete(fetchPath(location.pathname))')
     expect(router).toContain('render(publicPath(location.pathname), { transition: false })')
     expect(router).toContain('_reload: reloadCurrentRoute')
     expect(router).toContain('navigate: (path, options) => go(path, options)')
     expect(router).toContain("if (replace) history.replaceState(null, '', href)")
   })
+
+  test('uses matching static markup, preserves shell fallback routing, and reuses pending preloads', async () => {
+    const router = await readFile('framework/runtime/router.js', 'utf8')
+
+    expect(router).toContain('function activateInitialRoute')
+    expect(router).toContain('document.documentElement.dataset.snzRoute')
+    expect(router).toContain('if (renderedRoute === slugFromPath(initial))')
+    expect(router).toContain("window.addEventListener('DOMContentLoaded', activateInitialRoute")
+    expect(router).toContain('render(initial, { transition: false })')
+    expect(router.indexOf('if (routePending.has(url))')).toBeLessThan(router.indexOf('if (signal)'))
+  })
 })
 
 describe('dev server runtime contracts', () => {
-  test('HMR reloads through router without pushing history and clears building state', async () => {
+  test('HMR performs a correct full reload for shell, CSS, route, and app changes', async () => {
     const dev = await readFile('framework/dev.ts', 'utf8')
 
-    expect(dev).toContain('window.snz?._reload')
-    expect(dev).toContain("window.snz.navigate(location.pathname, { replace: true })")
-    expect(dev).toContain('delete document.documentElement.dataset.snzBuilding')
+    expect(dev).toContain('location.reload()')
+    expect(dev).toContain('let reloading = false')
+    expect(dev).not.toContain('window.snz?._reload')
+    expect(dev).not.toContain('Hot-swap hashed components.css')
   })
 
-  test('dev watcher includes canonical runtime directory', async () => {
+  test('dev watcher includes canonical runtime and public media directories', async () => {
     const dev = await readFile('framework/dev.ts', 'utf8')
 
     expect(dev).toContain("watchTree(join(packageRoot, 'runtime'), true)")
+    expect(dev).toContain('watchTree(src, false)')
+    expect(dev).toContain('const managedWatchRoots = [')
+    expect(dev).toContain("'images', 'videos', 'files'")
+    expect(dev).toContain("...['content', 'media']")
+    expect(dev).not.toContain('/\\.webp$/i.test(base)')
+    expect(dev).toContain("base === 'dist' || base.startsWith('dist.__')")
     expect(dev).toContain('legacy top-level runtime files')
   })
 })

@@ -1,11 +1,11 @@
 {
-  "name": "SNZ",
+  "name": "STTC",
   "url": "https://example.com",
-  "description": "A simple static site built with snz-renderer.",
+  "description": "A Bun-native HTML renderer with smart routing, components, images, SEO, and discovery built in.",
   "locale": "en",
-  "twitter": "",
-  "ogImage": "/assets/og.webp",
   "scroll": "lenis",
+  "twitter": "",
+  "image": "/assets/og.webp",
   "vercel": {
     "analytics": false,
     "speedInsights": false

@@ -14,14 +14,14 @@ Bun upload APIs support `s3.file(path).write(...)`, `Bun.write(s3file, ...)`, an
 
 ## Decision
 
-Do not implement `snz-bp deploy s3` yet.
+Do not implement `sttc deploy s3` yet.
 
 When implemented, shape should be:
 
 ```bash
-snz-bp deploy s3 --dry-run
-snz-bp deploy s3 --prefix site/
-snz-bp deploy s3 --delete
+sttc deploy s3 --dry-run
+sttc deploy s3 --prefix site/
+sttc deploy s3 --delete
 ```
 
 Owner boundary:

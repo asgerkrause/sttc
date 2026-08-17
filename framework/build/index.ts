@@ -6,6 +6,7 @@ import {
   bundleRouteCss,
   extractRouteStyleBlocks,
   injectComponentStylesLink,
+  injectGlobalStylesLink,
   prepareComponents,
   routeCssLink,
 } from './extract-css'
@@ -27,23 +28,24 @@ import {
   sourceOgImagePath,
   type ImageMeta,
 } from './images'
-import { scanImageEncodeOptions } from './scan-images'
 import {
-  sourceAppDir,
+  DEFAULT_IMAGE_MAX,
+  DEFAULT_IMAGE_QUALITY,
+  imageEncodeOptionsFromAttrs,
+  imageNameFromSrc,
+  scanImageEncodeOptions,
+  type ImageEncodeOptions,
+} from './scan-images'
+import {
   sourceAppFile,
-  sourceFilesDir,
-  sourceImagesDir,
   sourceRouterFile,
   sourceRuntimeLibDir,
-  sourceStylesDir,
-  sourceStylesFile,
-  sourceVideosDir,
 } from './paths'
-import { absoluteUrl, buildSchemaGraph, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
+import { absoluteUrl, buildSchemaGraph, isPublicRoute, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
 import { compileContentFrom, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
-import { copyTree, mediaInputCopyExclusions, shouldSkipMediaCopy } from './assets'
+import { copyAssetsTo, copyMediaFolderTo, copyTree } from './assets'
 import { autoGenerateIndexes } from './generated-routes'
 import { extractTemplateData } from './template-data'
 import { runChecks, failOnReport } from './check'
@@ -54,6 +56,37 @@ import { discoverSourceRoutes } from './source-files'
 import { RouteGraph, type ComposedRoute } from './route-graph'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import { createBuildContext, type BuildContext, type BuildContextOptions, type BuildResult } from './build-context'
+import { mapConcurrent } from './concurrency'
+import { loadSiteConfig } from './site-config'
+import type { TemplateValue } from './template-directives'
+
+function assertImageEncodePlan(
+  instancesByRoute: Map<string, ComposeInstance[]>,
+  planned: Record<string, ImageEncodeOptions>,
+) {
+  const concrete = new Map<string, ImageEncodeOptions>()
+  for (const instances of instancesByRoute.values()) {
+    for (const instance of instances) {
+      if (instance.name !== 'Image') continue
+      const name = imageNameFromSrc(instance.attrs.src ?? '')
+      const next = imageEncodeOptionsFromAttrs(instance.attrs)
+      const previous = concrete.get(name)
+      concrete.set(name, previous
+        ? { max: Math.max(previous.max, next.max), quality: Math.max(previous.quality, next.quality) }
+        : next)
+    }
+  }
+
+  for (const [name, options] of concrete) {
+    const encoded = planned[name] ?? { max: DEFAULT_IMAGE_MAX, quality: DEFAULT_IMAGE_QUALITY }
+    if (encoded.max === options.max && encoded.quality === options.quality) continue
+    // lazy: forwarded encode controls fail instead of silently producing the wrong asset.
+    // Ceiling: max/quality must be statically visible. Upgrade when image planning moves after composition.
+    throw new BuildError(`Image "${name}" has dynamic max or quality that cannot be planned before encoding`, {
+      hint: 'Use a direct <Image src="name" ... /> where max and quality are statically visible, or omit those encode controls in wrapper components.',
+    })
+  }
+}
 
 function splitRouteHtml(html: string) {
   const match = html.match(/^<head[^>]*>([\s\S]*?)<\/head>\s*([\s\S]*)$/i)
@@ -65,14 +98,20 @@ function withAppJs(shellHtml: string, appJsFile: string) {
   return shellHtml.replace(/<script src="\/assets\/js\/app\.js"/, `<script src="/assets/js/${appJsFile}"`)
 }
 
-function replaceSeoHead(shellHtml: string, routeHead: string) {
+function markRouteHead(routeHead: string) {
+  return routeHead.replace(/<(title|meta|link|script)(\s[^>]*?)?>/gi, (tag) => tag.replace(/>$/, ' data-snz-head>'))
+}
+
+function applyRouteHead(shellHtml: string, routeHead: string) {
   const seoBlock = /<title>[\s\S]*?<script type="application\/ld\+json">[\s\S]*?<\/script>/
-  return seoBlock.test(shellHtml) ? shellHtml.replace(seoBlock, routeHead) : shellHtml
+  const markedHead = markRouteHead(routeHead)
+  if (seoBlock.test(shellHtml)) return shellHtml.replace(seoBlock, markedHead)
+  return shellHtml.replace('</head>', `  ${markedHead.replace(/\n/g, '\n  ')}\n</head>`)
 }
 
 function moveRouteCssLinksLast(html: string) {
   const routeLinks: string[] = []
-  const withoutRouteLinks = html.replace(/\n?\s*<link rel="stylesheet" href="\/assets\/css\/routes\/[^"]+" data-snz-route-css>/g, (link) => {
+  const withoutRouteLinks = html.replace(/\n?\s*<link rel="stylesheet" href="\/assets\/css\/routes\/[^"]+" data-snz-route-css data-snz-head>/g, (link) => {
     routeLinks.push(link.trim())
     return ''
   })
@@ -110,12 +149,16 @@ function enrichRouteHead(routeHead: string, site: SiteConfig, record: RouteRecor
 }
 
 function injectRouteBody(shellHtml: string, routeBody: string) {
-  return shellHtml.replace(/<main data-route-root><\/main>/, `<main data-route-root>\n${routeBody}\n  </main>`)
+  return shellHtml.replace(/<main(?:\s+data-route-root)?><\/main>/, `<main>\n${routeBody}\n  </main>`)
 }
 
 function publicRoutePath(distDir: string, slug: string) {
   if (slug === 'index') return join(distDir, 'index.html')
   return join(distDir, slug, 'index.html')
+}
+
+function markStaticRoute(html: string, slug: string) {
+  return html.replace(/<html(\s|>)/i, `<html data-snz-route="${escapeHtml(slug)}"$1`)
 }
 
 async function writeStaticRoutes(
@@ -127,15 +170,18 @@ async function writeStaticRoutes(
   site: SiteConfig,
 ) {
   const recordsBySlug = new Map(records.map((record) => [record.slug, record]))
-  for (const route of routes) {
+  await mapConcurrent(routes, 4, async (route) => {
     const { head, body } = splitRouteHtml(route.html)
     const record = recordsBySlug.get(route.slug)
     const routeHead = record ? enrichRouteHead(head, site, record, extrasBySlug.get(route.slug) ?? []) : head
-    const html = moveRouteCssLinksLast(injectRouteBody(replaceSeoHead(shellHtml, routeHead), body))
+    const html = markStaticRoute(
+      moveRouteCssLinksLast(injectRouteBody(applyRouteHead(shellHtml, routeHead), body)),
+      route.slug,
+    )
     const path = publicRoutePath(distDir, route.slug)
     await mkdir(join(path, '..'), { recursive: true })
     await writeFile(path, html)
-  }
+  })
 }
 
 export type BuildOptions = BuildContextOptions & {
@@ -144,6 +190,39 @@ export type BuildOptions = BuildContextOptions & {
 
 async function exists(path: string) {
   try { await stat(path); return true } catch { return false }
+}
+
+async function acquireBuildLock(context: BuildContext) {
+  const stateDir = join(context.rootDir, '.snz')
+  const lockDir = join(stateDir, 'build.lock')
+  await mkdir(stateDir, { recursive: true })
+  const deadline = Date.now() + 30_000
+
+  while (Date.now() < deadline) {
+    try {
+      await mkdir(lockDir)
+      await Bun.write(join(lockDir, 'pid'), String(process.pid))
+      return async () => { await rm(lockDir, { recursive: true, force: true }) }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+      const owner = Number(await readFile(join(lockDir, 'pid'), 'utf8').catch(() => ''))
+      let alive = Number.isInteger(owner) && owner > 0
+      if (alive) {
+        try { process.kill(owner, 0) } catch { alive = false }
+      }
+      const age = Date.now() - await stat(lockDir).then((entry) => entry.mtimeMs).catch(() => 0)
+      if (!alive && age >= 2_000) {
+        await rm(lockDir, { recursive: true, force: true })
+        continue
+      }
+      await Bun.sleep(25)
+    }
+  }
+
+  throw new BuildError('Timed out waiting for another build to finish.', {
+    file: '.snz/build.lock',
+    hint: 'Wait for the active build, or remove a stale .snz/build.lock after confirming no build process is running.',
+  })
 }
 
 function stagedDistDir(context: BuildContext) {
@@ -156,36 +235,6 @@ function backupDistDir(context: BuildContext) {
 
 function withDistDir(context: BuildContext, distDir: string): BuildContext {
   return { ...context, distDir }
-}
-
-async function copyAssetsTo(context: BuildContext) {
-  const assetsDist = join(context.distDir, 'assets')
-  await mkdir(assetsDist, { recursive: true })
-
-  const cssDist = join(assetsDist, 'css')
-  const jsDist = join(assetsDist, 'js')
-  await mkdir(cssDist, { recursive: true })
-  await mkdir(jsDist, { recursive: true })
-  await copyTree(await sourceStylesDir(context.rootDir), cssDist, (name) => name === 'styles.css')
-  await Bun.write(join(cssDist, 'styles.css'), Bun.file(await sourceStylesFile(context.rootDir)))
-  await copyTree(await sourceAppDir(context.rootDir), jsDist, (name) => name === 'app.js' || name === 'app.ts')
-  const imagesDist = join(assetsDist, 'images')
-  await mkdir(imagesDist, { recursive: true })
-  await copyTree(await sourceImagesDir(context.rootDir), imagesDist, (name) => !name.endsWith('.svg'))
-  await copyTree(await sourceVideosDir(context.rootDir), join(assetsDist, 'videos'))
-  await copyTree(await sourceFilesDir(context.rootDir), join(assetsDist, 'files'))
-}
-
-async function copyMediaFolderTo(context: BuildContext) {
-  const mediaSrc = join(context.rootDir, 'media')
-  const exclusions = await mediaInputCopyExclusions(context.rootDir)
-  try {
-    if ((await stat(mediaSrc)).isDirectory()) {
-      await copyTree(mediaSrc, join(context.distDir, 'media'), (relPath) => shouldSkipMediaCopy(relPath, exclusions))
-    }
-  } catch {
-    /* no media folder */
-  }
 }
 
 async function publishStagedDist(context: BuildContext, stageDir: string) {
@@ -211,26 +260,61 @@ async function restorePublishedDist(context: BuildContext, backupDir: string) {
   if (await exists(backupDir)) await rename(backupDir, context.distDir)
 }
 
+async function seedBuildCache(previousDist: string, stageDir: string, projectRoot: string) {
+  const previousImages = join(previousDist, 'assets', 'images')
+  const stageImages = join(stageDir, 'assets', 'images')
+  await copyTree(previousImages, stageImages, (relPath) => {
+    const rel = relPath.replace(/\\/g, '/')
+    return !rel.endsWith('.webp') && rel !== '.meta' && !rel.startsWith('.meta/')
+  })
+
+  if (await Bun.file(await sourceOgImagePath(projectRoot)).exists()) {
+    for (const rel of ['og.webp', 'og.png', '.meta/og.json']) {
+      const source = join(previousDist, 'assets', rel)
+      if (!(await Bun.file(source).exists())) continue
+      const target = join(stageDir, 'assets', rel)
+      await mkdir(join(target, '..'), { recursive: true })
+      await Bun.write(target, Bun.file(source))
+    }
+  }
+}
+
 export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const context = options.context ?? createBuildContext(options)
+  const totalStarted = performance.now()
+  const lockStarted = performance.now()
+  const releaseBuildLock = await acquireBuildLock(context)
+  const lockMs = Math.round(performance.now() - lockStarted)
   const stageDir = stagedDistDir(context)
   const stageContext = withDistDir(context, stageDir)
   let backupDir: string | null = null
   let result: BuildResult
-  const t0 = performance.now()
 
   try {
+    await rm(stageDir, { recursive: true, force: true })
+    await seedBuildCache(context.distDir, stageDir, context.rootDir)
     result = await buildInto(stageContext)
+    result.timings.lock = lockMs
+    let t = performance.now()
     backupDir = await publishStagedDist(context, stageDir)
-    const t = performance.now()
-    const report = await runChecks({ context, allowBrokenLinks: context.flags.allowBrokenLinks })
+    result.timings.publish = Math.round(performance.now() - t)
+    t = performance.now()
+    const report = await runChecks({
+      context,
+      allowBrokenLinks: context.flags.allowBrokenLinks,
+      validatedBuildInputs: true,
+    })
     await failOnReport(report)
     result.timings.check = Math.round(performance.now() - t)
-    result.totalMs = Math.round(performance.now() - t0)
-    console.log(
-      Object.entries(result.timings).map(([k, v]) => `${k} ${v}ms`).join(' · ') +
-      ` · total ${result.totalMs}ms`,
-    )
+    result.totalMs = Math.round(performance.now() - totalStarted)
+    if (process.argv.includes('--profile')) {
+      console.log(
+        Object.entries(result.timings).map(([k, v]) => `${k} ${v}ms`).join(' · ') +
+        ` · total ${result.totalMs}ms`,
+      )
+    } else {
+      console.log(`built ${result.routes.length} routes in ${result.totalMs}ms`)
+    }
     return { ...result, context }
   } catch (err) {
     if (backupDir) await restorePublishedDist(context, backupDir)
@@ -238,6 +322,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   } finally {
     await rm(stageDir, { recursive: true, force: true }).catch(() => {})
     if (backupDir) await rm(backupDir, { recursive: true, force: true }).catch(() => {})
+    await releaseBuildLock()
   }
 }
 
@@ -249,6 +334,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const tick = (label: string, start: number) => { timings[label] = Math.round(performance.now() - start) }
 
   let t = performance.now()
+  const site = await loadSiteConfig(context.siteFile)
   const { cssBlocks, templates, schemas, scripts: componentScripts, data: componentData } = await prepareComponents(context.componentsDir, context.rootDir)
   tick('components', t)
   let imageMeta: Record<string, ImageMeta> = {}
@@ -271,7 +357,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   )
   composer.resetSiteConfig()
 
-  await rm(context.distDir, { recursive: true, force: true })
+  // The stage is unique. It may contain only validated image-cache artifacts seeded by build().
   await mkdir(context.distDir, { recursive: true })
   await mkdir(join(context.distDir, 'routes'), { recursive: true })
 
@@ -292,27 +378,25 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   tick('images', t)
 
   t = performance.now()
-  await copyAssetsTo(context)
-  await copyMediaFolderTo(context)
+  const hasGlobalStyles = await copyAssetsTo(context.rootDir, context.distDir, {
+    scroll: site.scroll ?? 'lenis',
+  })
+  await copyMediaFolderTo(context.rootDir, context.distDir)
   tick('assets', t)
 
+  t = performance.now()
   const componentsCssDir = join(context.distDir, 'assets', 'css')
-  const componentsCssFile = await bundleComponentCss(cssBlocks, componentsCssDir)
-
   const scriptBlocks: ScriptBlock[] = []
 
   const shellRaw = await readFile(context.shellFile, 'utf8')
   const { blocks: shellScripts } = extractShellHeadScripts(shellRaw)
   scriptBlocks.push(...shellScripts)
-  // Component lifecycle scripts registered before any route scripts run.
-  scriptBlocks.push(...componentScriptBlocks(componentScripts))
 
-  // Compose shell first, then defer writing it until app.js is hashed so we can substitute the script src.
-  const composedShell = await (async () => {
-    const { html: stripped } = extractShellHeadScripts(shellRaw)
-    const composed = await composer.prepareShellSource(stripped)
-    return injectComponentStylesLink(composed, componentsCssFile)
-  })()
+  // Compose the shell before routes so shell component use contributes to site-wide pruning.
+  // Inject assets only after every static, content, and generated route has composed.
+  const { html: strippedShell } = extractShellHeadScripts(shellRaw)
+  const composedShellWithoutStyles = await composer.prepareShellSource(strippedShell)
+  tick('shell-css', t)
 
   t = performance.now()
   const routeGraph = new RouteGraph({
@@ -341,7 +425,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     const cssAsset = await bundleRouteCss(route.slug, css, componentsCssDir)
     await routeGraph.compose(owner, body, {
       headLinks: cssAsset ? [routeCssLink(cssAsset)] : undefined,
-      data: routeData,
+      data: { site: site as unknown as TemplateValue, ...routeData },
     })
   }
 
@@ -356,23 +440,43 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   tick('routes', t)
 
   t = performance.now()
-  const site = JSON.parse(await readFile(context.siteFile, 'utf8')) as SiteConfig
+  const routeRecordsBeforeIndexes = routeGraph.records()
+  const publicContentSlugs = new Set(routeRecordsBeforeIndexes.filter(isPublicRoute).map((record) => record.slug))
 
-  // Auto-generate /insights/ index + /tags/{tag}/ + /tags/ index if not authored manually.
-  const posts = contentRoutes.filter((c) => c.collection === 'posts' && !c.draft)
+  // Auto-generate /insights/ index + /tags/{tag}/ + /tags/ index from public posts only.
+  const posts = contentRoutes.filter((c) => c.collection === 'posts' && !c.draft && publicContentSlugs.has(c.slug))
   await autoGenerateIndexes(routeGraph, posts)
+  assertImageEncodePlan(instancesByRoute, imageEncode)
 
-  await writeSitemap(context.distDir, site.url, routeGraph.records())
-  await writeRobots(context.distDir, site.url)
+  const usedComponents = new Set(componentUseCounts.keys())
+  const usedCssBlocks = cssBlocks.filter(({ source }) => usedComponents.has(source.replace(/\.html$/i, '')))
+  const componentsCssFile = await bundleComponentCss(usedCssBlocks, componentsCssDir)
+  const composedShell = injectComponentStylesLink(
+    injectGlobalStylesLink(composedShellWithoutStyles, hasGlobalStyles),
+    componentsCssFile,
+  )
+  // Component lifecycle scripts register before route scripts, but only when the component
+  // occurs in the fully composed site.
+  scriptBlocks.splice(
+    shellScripts.length,
+    0,
+    ...componentScriptBlocks(new Map(
+      [...componentScripts].filter(([name]) => usedComponents.has(name)),
+    )),
+  )
+
+  const routeRecords = routeGraph.records()
+  await writeSitemap(context.distDir, site.url, routeRecords.filter(isPublicRoute))
+  await writeRobots(context.distDir, site.url, site.robots?.groups)
   await writeFeeds(context.distDir, site, posts)
 
   await writeComponentsReadme(context.rootDir, templates, schemas)
 
-  const routeRecords = routeGraph.records()
-  const schemaExtrasBySlug = new Map(routeRecords.map((record) => [
+  const routeExtrasBySlug = new Map(routeRecords.map((record) => [
     record.slug,
-    routeSchemaExtras(record, schemas, contentByslug.get(record.slug), site).extraJsonLd,
+    routeSchemaExtras(record, schemas, contentByslug.get(record.slug), site),
   ]))
+  const schemaExtrasBySlug = new Map([...routeExtrasBySlug].map(([slug, extras]) => [slug, extras.extraJsonLd]))
 
   await writeDiscovery(context.distDir, {
     site,
@@ -380,21 +484,26 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     componentSchemas: schemas,
     componentUseCounts,
     contentByslug,
+    routeExtrasBySlug,
   })
   tick('discovery', t)
 
+  t = performance.now()
   const appJsFile = await writeAppJs(
     await sourceAppFile('app.ts', context.rootDir),
     join(context.distDir, 'assets', 'js'),
     scriptBlocks,
   )
+  tick('app', t)
 
+  t = performance.now()
   // Substitute hashed asset paths into the shell, then emit full static pages for direct public URLs.
   const shellWithApp = withAppJs(composedShell, appJsFile)
   await writeStaticRoutes(context.distDir, shellWithApp, routeGraph.composedRoutes(), routeRecords, schemaExtrasBySlug, site)
 
   await Bun.write(join(context.distDir, 'router.js'), Bun.file(await sourceRouterFile(context.rootDir)))
   await copyTree(await sourceRuntimeLibDir(context.rootDir), join(context.distDir, 'lib'))
+  tick('static-output', t)
 
   const total = Math.round(performance.now() - t0)
 

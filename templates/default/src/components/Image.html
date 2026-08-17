@@ -1,58 +1,28 @@
 <!--
-  @desc Responsive WebP image. Lazy by default with temporary .img-tmp preview; eager images skip preview. Master in an image source root; build emits optimized /assets/images/{src}.webp variants.
-  @attr src! Unique logical image name (basename without extension).
-  @attr alt! Alt text. Use alt="" for decorative.
-  @attr max Max long edge in px. Default 1200.
-  @attr quality WebP quality 1-100. Default 82.
-  @attr loading=[lazy|eager] Default lazy. Use eager for above-fold.
-  @attr sizes CSS sizes attribute. Default 100vw when responsive.
-  @attr responsive=[true|false] Set false to opt out of srcset emission. Default true.
-  @attr width Override intrinsic width.
-  @attr height Override intrinsic height.
+  @desc Bun-optimized responsive image with intrinsic dimensions and native loading behavior.
+  @attr src! Unique logical image name without extension.
+  @attr alt! Alt text. Use alt="" for decorative images.
+  @attr max Maximum encoded long edge in pixels. Defaults to 1200.
+  @attr quality WebP quality from 1 to 100. Defaults to 82.
+  @attr loading=[lazy|eager] Native loading mode. Defaults to lazy.
+  @attr sizes Optional responsive sizes attribute.
+  @attr responsive=[true|false] Set false to omit srcset. Defaults to true.
+  @attr width Optional intrinsic width override.
+  @attr height Optional intrinsic height override.
 -->
-<div data-scrub class="media" style="aspect-ratio: {{aspectWidth}} / {{aspectHeight}}">
-  {{imgTmp}}
+<div class="img-w" style="aspect-ratio: {{aspectWidth}} / {{aspectHeight}}">
   {{imgMain}}
 </div>
 
 <style>
-  .media {
-    overflow: hidden;
-    position: relative;
+  .img-w {
+    overflow: clip;
     width: 100%;
-    border-radius: var(--s-br);
-    background-image: linear-gradient(35deg, var(--c-bor), var(--c-sur));
-  }
 
-  .media img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .media .img-tmp {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    image-rendering: pixelated;
-  }
-
-  @supports (animation-timeline: view()) {
-    .media[data-scrub] {
-      --plx: 8vh;
-      transition-timing-function: linear;
-    }
-
-    .media[data-scrub] img {
-      height: calc(100% + var(--plx));
-      margin-top: calc(var(--plx) * -1);
-      transform: translateY(calc(var(--plx) * var(--sp-t)));
-    }
-
-    .media[data-scrub] .img-tmp {
-      position: absolute;
-      inset: 0;
+    > img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
   }
 </style>

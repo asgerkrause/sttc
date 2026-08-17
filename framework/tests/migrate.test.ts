@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { MIGRATION_STATE_FILE, readMigrationState } from '../build/migrations/state'
+import { LEGACY_MIGRATION_STATE_FILE, MIGRATION_STATE_FILE, readMigrationState, writeMigrationState } from '../build/migrations/state'
 import { runMigrations } from '../build/migrations/registry'
 
 async function withProject(fn: (root: string) => Promise<void>) {
@@ -54,6 +54,20 @@ describe('migration registry', () => {
     })
   })
 
+  test('reads legacy state and writes only project-local state', async () => {
+    await withProject(async (root) => {
+      await writeFile(join(root, LEGACY_MIGRATION_STATE_FILE), JSON.stringify({
+        frameworkVersion: '1.0.0',
+        appliedMigrations: ['legacy'],
+      }))
+
+      expect(await readMigrationState(root)).toEqual({ frameworkVersion: '1.0.0', appliedMigrations: ['legacy'] })
+      await writeMigrationState(root, await readMigrationState(root))
+      expect(await Bun.file(join(root, MIGRATION_STATE_FILE)).exists()).toBe(true)
+      expect(JSON.parse(await readFile(join(root, MIGRATION_STATE_FILE), 'utf8')).appliedMigrations).toEqual(['legacy'])
+    })
+  })
+
   test('is idempotent after migrations are recorded', async () => {
     await withProject(async (root) => {
       await mkdir(join(root, 'src/routes'), { recursive: true })
@@ -75,6 +89,23 @@ describe('migration registry', () => {
 
       expect(results[0].actions[0]).toMatchObject({ status: 'conflict' })
       expect(await readFile(join(root, 'src/routes/index.html'), 'utf8')).toBe('<h1>Legacy</h1>')
+      expect(await readMigrationState(root)).toEqual({ frameworkVersion: '0.0.0', appliedMigrations: [] })
+    })
+  })
+
+  test('preflights every migration before moving an earlier source', async () => {
+    await withProject(async (root) => {
+      await mkdir(join(root, 'src/routes'), { recursive: true })
+      await mkdir(join(root, 'src/styles'), { recursive: true })
+      await writeFile(join(root, 'src/routes/index.html'), '<h1>Legacy</h1>')
+      await writeFile(join(root, 'src/styles/styles.css'), 'legacy')
+      await writeFile(join(root, 'src/styles.css'), 'current')
+
+      const results = await runMigrations(root)
+
+      expect(results.map((result) => result.actions[0]?.status)).toEqual(['planned', 'conflict'])
+      expect(await readFile(join(root, 'src/routes/index.html'), 'utf8')).toBe('<h1>Legacy</h1>')
+      expect(await Bun.file(join(root, 'src/pages')).exists()).toBe(false)
       expect(await readMigrationState(root)).toEqual({ frameworkVersion: '0.0.0', appliedMigrations: [] })
     })
   })

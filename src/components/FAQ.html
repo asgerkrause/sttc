@@ -1,26 +1,9 @@
 <!--
-  @desc Demo FAQ block. Prefer assembling <Accordion> tags directly in routes — this is a starting-point copy.
+  @desc FAQ section wrapper for visible, truthful questions and answers.
+  @attr id! Stable section id.
+  @attr title! Visible FAQ heading.
 -->
-<script type="application/json" data-snz>
-{
-  "items": [
-    {
-      "summary": "How fast is a static build?",
-      "body": "Most sites rebuild in under a second — HTML in, composed dist out."
-    },
-    {
-      "summary": "Do I need a JavaScript framework?",
-      "body": "No. Write components and routes; the router handles navigation and disclosure wiring."
-    },
-    {
-      "summary": "Can editors change copy without touching HTML?",
-      "body": "Routes are HTML today; structured CMS content can generate routes when enabled."
-    }
-  ]
-}
-</script>
-<div class="faq">
-  {#each items as item}
-  <Accordion group="faq" summary="{{item.summary}}" body="{{item.body}}" />
-  {/each}
-</div>
+<section class="faq" id="{{id}}" aria-labelledby="{{id}}-title">
+  <h2 id="{{id}}-title">{{title}}</h2>
+  {{slot}}
+</section>

@@ -17,6 +17,7 @@ async function makeProject() {
   await mkdir(join(dir, 'src', 'components'), { recursive: true })
   await mkdir(join(dir, 'src', 'pages', 'work'), { recursive: true })
   await mkdir(join(dir, 'src', 'styles'), { recursive: true })
+  await mkdir(join(dir, 'src', 'images'), { recursive: true })
 
   await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
     name: 'Static Routes',
@@ -29,21 +30,14 @@ async function makeProject() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <SEO path="/" />
   <link rel="stylesheet" href="/assets/css/styles.css">
   <script src="/router.js" type="module"></script>
   <script src="/assets/js/app.js" type="module"></script>
 </head>
 <body>
-  <main data-route-root></main>
+  <main></main>
 </body>
 </html>
-`)
-  await writeFile(join(dir, 'src', 'components', 'SEO.html'), `<title>{{title}}</title>
-<meta name="description" content="{{description}}">
-<link rel="canonical" href="{{canonical}}">
-<meta property="og:url" content="{{canonical}}">
-<script type="application/ld+json">{{schemaJson}}</script>
 `)
   await writeFile(join(dir, 'src', 'components', 'Accordion.html'), `<!--
   @desc FAQ accordion.
@@ -56,14 +50,15 @@ async function makeProject() {
 </style>
 `)
   await writeFile(join(dir, 'src', 'styles.css'), 'body{font-family:system-ui}\n')
+  await writeFile(join(dir, 'src', 'images', 'case.png'), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'))
   await writeFile(join(dir, 'src', 'app.ts'), 'window.__staticRoutesTest = true\n')
   await writeFile(join(dir, 'src', 'pages', 'index.html'), `<head>
-  <SEO title="Home" description="Home page." path="/" />
+  <SEO title="Home" description="Home page." />
 </head>
 <h1>Home body</h1>
 `)
   await writeFile(join(dir, 'src', 'pages', 'work', 'case.html'), `<head>
-  <SEO title="Case" description="Case page." path="/work/case/" />
+  <SEO title="Case" description="Case page." image="/assets/images/case.webp" />
 </head>
 <h1>Case body</h1>
 <Accordion summary="What changes?" body="<p>Direct route HTML keeps schema.</p>" />
@@ -101,22 +96,27 @@ describe('static public routes', () => {
     const deep = await readFile(join(dir, 'dist', 'work', 'case', 'index.html'), 'utf8')
     const routerBody = await readFile(join(dir, 'dist', 'routes', 'work', 'case.html'), 'utf8')
 
-    expect(home).toContain('<main data-route-root>\n<h1>Home body</h1>')
+    expect(home).toContain('<html data-snz-route="index" lang="en">')
+    expect(home).toContain('<main>\n<h1>Home body</h1>')
     expect(home).toContain('<script src="/assets/js/app.')
-    expect(deep).toContain('<title>Case</title>')
-    expect(deep).toContain('<link rel="canonical" href="https://example.com/work/case/">')
-    expect(deep).toContain('<main data-route-root>\n<h1>Case body</h1>')
-    expect(deep).toContain('"@type":"FAQPage"')
+    expect(deep).toContain('<html data-snz-route="work/case" lang="en">')
+    expect(deep).toContain('<title data-snz-head>Case</title>')
+    expect(deep).toContain('<link rel="canonical" href="https://example.com/work/case/" data-snz-head>')
+    expect(deep).toContain('<meta property="og:image" content="https://example.com/assets/images/case.webp" data-snz-head>')
+    expect(deep).toContain('<meta name="twitter:image" content="https://example.com/assets/images/case.webp" data-snz-head>')
+    expect(deep).toContain('<main>\n<h1>Case body</h1>')
+    expect(deep).not.toContain('"@type":"FAQPage"')
     expect(deep).toContain('What changes?')
     expect(deep).toContain('href="/assets/css/components.')
-    expect(deep).toContain('href="/assets/css/routes/work-case.')
+    expect(deep).toMatch(/href="\/assets\/css\/routes\/work-case\.[^"]+" data-snz-route-css data-snz-head>/)
     expect(deep.indexOf('/assets/css/components.')).toBeLessThan(deep.indexOf('/assets/css/routes/work-case.'))
     expect(deep).not.toContain('<style>')
     expect(routerBody).toContain('<head>')
+    expect(routerBody).not.toContain('<html data-snz-route=')
     expect(routerBody).toContain('href="/assets/css/routes/work-case.')
     expect(routerBody).toContain('<h1>Case body</h1>')
     expect(routerBody).not.toContain('<style>')
-    expect(routerBody).not.toContain('<main data-route-root>')
+    expect(routerBody).not.toContain('<main>')
 
     const routeCssFile = (await readdir(join(dir, 'dist', 'assets', 'css', 'routes'))).find((file) => file.startsWith('work-case.'))
     expect(routeCssFile).toBeTruthy()

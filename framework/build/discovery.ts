@@ -1,17 +1,15 @@
-// AI-native discovery layer.
-// Emits: /llms.txt, /llms-full.txt, /.well-known/ai-plugin.json,
-//        /routes/{slug}.json (per route), /site.manifest.json (everything).
-//
-// Driven by RouteRecord — populated during the main build as each route is composed.
+// Agent-readable discovery projections, driven by RouteRecord after each route is composed.
 
-import { mkdir, writeFile } from 'fs/promises'
+import { mkdir, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { absoluteUrl, type JsonLdNode, type SiteConfig } from './seo'
+import { absoluteUrl, buildSchemaGraph, isPublicRoute, type JsonLdNode, type SiteConfig } from './seo'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import type { ComponentSchema, ComposeInstance } from './compose'
 import type { ContentRoute } from './content'
-import { extractHtmlDescription, extractHtmlTitle, scanHtmlInternalLinks } from './html'
+import { extractHtmlDescription, extractHtmlMetadata, extractHtmlTitle, scanHtmlInternalLinks } from './html'
 import { GENERATOR_NAME, GENERATOR_VERSION } from './version'
+import { mapConcurrent } from './concurrency'
+import { htmlToMarkdown } from './markdown-output'
 
 export type RouteRecord = {
   slug: string
@@ -20,17 +18,20 @@ export type RouteRecord = {
   components: ComposeInstance[]
   internalLinks: string[]
   schemas: string[]
-  /** Optional markdown body for content routes (used by llms-full.txt). */
-  markdown?: string
+  /** Built and directly reachable, but omitted from public discovery. */
+  unlisted?: boolean
+  /** Composed route HTML used to derive the public Markdown representation. */
+  renderedHtml?: string
   /** Date / lastModified ISO string. */
   lastModified?: string
 }
 
-export const MANIFEST_SCHEMA_VERSION = 1
+export const MANIFEST_SCHEMA_VERSION = 2
 
 export const scanInternalLinks = scanHtmlInternalLinks
 export const extractTitle = extractHtmlTitle
 export const extractDescription = extractHtmlDescription
+export const extractRouteMetadata = extractHtmlMetadata
 
 export type RouteSchemaExtras = {
   schemas: string[]
@@ -41,67 +42,26 @@ function uniqueStrings(values: string[]) {
   return [...new Set(values.filter(Boolean))]
 }
 
-/** Build per-route JSON-LD additions based on what components the route contains. */
 function componentSchemaExtras(record: RouteRecord, schemas: Map<string, ComponentSchema>): RouteSchemaExtras {
   const extraJsonLd: JsonLdNode[] = []
   const schemaTypes: string[] = []
-  const faqQuestions: { name: string; acceptedAnswer: { text: string } }[] = []
-  const howToSteps: { name: string; text: string }[] = []
 
   for (const inst of record.components) {
-    if (inst.name === 'Accordion' || inst.name === 'FAQ') {
-      // Treat any Accordion as a FAQ entry (summary = question, body = answer).
-      if (inst.attrs.summary && inst.attrs.body) {
-        faqQuestions.push({
-          name: stripTags(inst.attrs.summary),
-          acceptedAnswer: { text: stripTags(inst.attrs.body) },
-        })
-      }
-    }
-    if (inst.name === 'Answer' && inst.attrs.question && inst.attrs.short) {
-      faqQuestions.push({
-        name: inst.attrs.question,
-        acceptedAnswer: { text: inst.attrs.short },
-      })
-    }
-    if (inst.name === 'HowTo' && inst.attrs.step) {
-      howToSteps.push({ name: inst.attrs.step, text: inst.attrs.text ?? inst.attrs.step })
-    }
-    // schema mapping declared in ComponentSchema.schema (future hook)
     const decl = schemas.get(inst.name)?.schema
-    if (decl) {
-      const node: JsonLdNode = { '@type': decl.type }
-      for (const [out_key, in_key] of Object.entries(decl.map ?? {})) {
-        if (inst.attrs[in_key]) node[out_key] = inst.attrs[in_key]
-      }
-      schemaTypes.push(decl.type)
-      extraJsonLd.push(node)
+    if (!decl) continue
+    const node: JsonLdNode = { '@type': decl.type }
+    for (const [outKey, inKey] of Object.entries(decl.map ?? {})) {
+      if (inst.attrs[inKey]) node[outKey] = inst.attrs[inKey]
     }
+    schemaTypes.push(decl.type)
+    extraJsonLd.push(node)
   }
 
-  if (faqQuestions.length) {
-    schemaTypes.push('FAQPage')
-    extraJsonLd.push({
-      '@type': 'FAQPage',
-      mainEntity: faqQuestions.map((q) => ({ '@type': 'Question', name: q.name, acceptedAnswer: { '@type': 'Answer', text: q.acceptedAnswer.text } })),
-    })
-  }
-  if (howToSteps.length) {
-    schemaTypes.push('HowTo')
-    extraJsonLd.push({
-      '@type': 'HowTo',
-      step: howToSteps.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.name, text: s.text })),
-    })
-  }
   return { schemas: uniqueStrings([...record.schemas, ...schemaTypes]), extraJsonLd }
 }
 
 export function detectSchemas(record: RouteRecord, schemas: Map<string, ComponentSchema>): JsonLdNode[] {
   return componentSchemaExtras(record, schemas).extraJsonLd
-}
-
-function stripTags(s: string) {
-  return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
 }
 
 function isoDate(value: string | undefined) {
@@ -110,24 +70,24 @@ function isoDate(value: string | undefined) {
   return Number.isFinite(parsed.valueOf()) ? parsed.toISOString() : undefined
 }
 
-function contentDateModified(record: RouteRecord, content: ContentRoute) {
+function contentDateModified(content: ContentRoute) {
   return isoDate(content.data.dateModified)
     ?? isoDate(content.data.modified)
     ?? isoDate(content.data.updated)
-    ?? record.lastModified
-    ?? content.date
-    ?? isoDate(content.data.date)
 }
 
 function blogPostingFor(record: RouteRecord, content: ContentRoute, site: SiteConfig): JsonLdNode {
+  const canonical = absoluteUrl(site.url, publicPathFromSlug(record.slug))
   return {
     '@type': 'BlogPosting',
+    '@id': `${canonical}#article`,
     headline: record.title,
     description: record.description,
     datePublished: content.date ?? content.data.date,
-    dateModified: contentDateModified(record, content),
-    author: { '@type': 'Organization', name: site.name },
-    url: absoluteUrl(site.url, publicPathFromSlug(record.slug)),
+    dateModified: contentDateModified(content),
+    mainEntityOfPage: { '@id': `${canonical}#webpage` },
+    publisher: { '@id': absoluteUrl(site.url, '/#organization') },
+    url: canonical,
   }
 }
 
@@ -145,8 +105,6 @@ export function routeSchemaExtras(
     schemaTypes.push('BlogPosting')
     extraJsonLd.push(blogPostingFor(record, content, site))
   }
-  if (record.slug.startsWith('insights/') && !content) schemaTypes.push('WebPage')
-
   return { schemas: uniqueStrings(schemaTypes), extraJsonLd }
 }
 
@@ -156,45 +114,117 @@ export type DiscoveryInput = {
   componentSchemas: Map<string, ComponentSchema>
   componentUseCounts: Map<string, number>
   contentByslug: Map<string, ContentRoute>
+  routeExtrasBySlug?: Map<string, RouteSchemaExtras>
+}
+
+function publicContact(contact: SiteConfig['contact']) {
+  if (!contact) return undefined
+  return { email: contact.email, telephone: contact.telephone, url: contact.url }
+}
+
+function publicAddress(address: SiteConfig['address']) {
+  if (!address) return undefined
+  return {
+    streetAddress: address.streetAddress,
+    addressLocality: address.addressLocality,
+    addressRegion: address.addressRegion,
+    postalCode: address.postalCode,
+    addressCountry: address.addressCountry,
+  }
+}
+
+function publicSite(site: SiteConfig) {
+  const organization = site.organization ? {
+    name: site.organization.name,
+    legalName: site.organization.legalName,
+    logo: site.organization.logo,
+    sameAs: site.organization.sameAs,
+    contact: publicContact(site.organization.contact),
+    address: publicAddress(site.organization.address),
+  } : undefined
+  const product = site.product ? {
+    type: site.product.type,
+    name: site.product.name,
+    description: site.product.description,
+    path: site.product.path,
+    category: site.product.category,
+    image: site.product.image,
+    sku: site.product.sku,
+    audience: site.product.audience,
+    offers: site.product.offers ? {
+      price: site.product.offers.price,
+      priceCurrency: site.product.offers.priceCurrency,
+      availability: site.product.offers.availability,
+      url: site.product.offers.url,
+    } : undefined,
+  } : undefined
+  return {
+    name: site.name,
+    url: site.url,
+    description: site.description,
+    locale: site.locale,
+    image: site.image ?? site.ogImage,
+    organization,
+    brand: site.brand ? { name: site.brand.name, slogan: site.brand.slogan, logo: site.brand.logo } : undefined,
+    product,
+    sameAs: site.sameAs,
+    contact: publicContact(site.contact),
+    address: publicAddress(site.address),
+    topics: site.topics,
+  }
+}
+
+function routeRepresentation(site: SiteConfig, slug: string) {
+  const path = publicPathFromSlug(slug)
+  const canonical = absoluteUrl(site.url, path)
+  return {
+    id: `${canonical}#webpage`,
+    path,
+    canonical,
+    representations: {
+      html: `/routes/${slug}.html`,
+      markdown: `/routes/${slug}.md`,
+      metadata: `/routes/${slug}.json`,
+    },
+  }
 }
 
 export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
-  const { site, routes, componentSchemas, contentByslug } = input
-
+  const { site, routes, componentSchemas, contentByslug, routeExtrasBySlug } = input
+  await rm(join(distDir, '.well-known', 'ai-plugin.json'), { force: true })
   const enrichedRoutes = routes.map((record) => ({
     ...record,
-    ...routeSchemaExtras(record, componentSchemas, contentByslug.get(record.slug), site),
+    ...(routeExtrasBySlug?.get(record.slug) ?? routeSchemaExtras(record, componentSchemas, contentByslug.get(record.slug), site)),
   }))
+  const publicRoutes = enrichedRoutes.filter((route) => isPublicRoute(route) && route.slug !== '404')
 
-  // Augment each route's JSON-LD with detected schemas and write per-route json.
-  for (const r of enrichedRoutes) {
-    const routeJsonPath = join(distDir, 'routes', `${r.slug}.json`)
-    await mkdir(join(routeJsonPath, '..'), { recursive: true })
-    await writeFile(routeJsonPath, JSON.stringify({
-      schemaVersion: MANIFEST_SCHEMA_VERSION,
-      generator: {
-        name: GENERATOR_NAME,
-        version: GENERATOR_VERSION,
-      },
-      slug: r.slug,
-      path: publicPathFromSlug(r.slug),
-      title: r.title,
-      description: r.description,
-      lastModified: r.lastModified,
-      components: r.components.map((c) => ({ name: c.name, attrs: c.attrs })),
-      internalLinks: r.internalLinks,
-      schemas: r.schemas,
-      extraJsonLd: r.extraJsonLd,
-    }, null, 2))
-  }
+  await mapConcurrent(publicRoutes, 4, async (route) => {
+    const jsonPath = join(distDir, 'routes', `${route.slug}.json`)
+    const markdownPath = join(distDir, 'routes', `${route.slug}.md`)
+    await mkdir(join(jsonPath, '..'), { recursive: true })
+    const representation = routeRepresentation(site, route.slug)
+    await Promise.all([
+      writeFile(markdownPath, `${htmlToMarkdown(route.renderedHtml ?? '')}\n`),
+      writeFile(jsonPath, JSON.stringify({
+        schemaVersion: MANIFEST_SCHEMA_VERSION,
+        generator: { name: GENERATOR_NAME, version: GENERATOR_VERSION },
+        ...representation,
+        slug: route.slug,
+        title: route.title,
+        description: route.description,
+        lastModified: route.lastModified,
+        internalLinks: route.internalLinks,
+        schemas: route.schemas,
+        extraJsonLd: route.extraJsonLd,
+      }, null, 2)),
+    ])
+  })
 
-  await writeLlmsTxt(distDir, site, routes, contentByslug)
-  await writeAiPlugin(distDir, site)
-  await writeManifest(distDir, { ...input, routes: enrichedRoutes })
-}
-
-function siteContactEmail(site: SiteConfig) {
-  return site.organization?.contact?.email ?? site.contact?.email ?? ''
+  await Promise.all([
+    writeLlmsTxt(distDir, site, publicRoutes, contentByslug),
+    writeManifest(distDir, { ...input, routes: publicRoutes }),
+    writeSiteGraph(distDir, site, publicRoutes),
+  ])
 }
 
 function siteFactLines(site: SiteConfig): string[] {
@@ -202,11 +232,9 @@ function siteFactLines(site: SiteConfig): string[] {
   const sameAs = site.organization?.sameAs ?? site.sameAs ?? []
   const contact = site.organization?.contact ?? site.contact
   const topics = site.topics ?? []
-
   if (!sameAs.length && !contact && !topics.length) return lines
 
-  lines.push('## Site facts')
-  lines.push('')
+  lines.push('## Site facts', '')
   if (topics.length) lines.push(`- Topics: ${topics.join(', ')}`)
   if (sameAs.length) lines.push(`- Same-as: ${sameAs.join(', ')}`)
   if (contact?.email) lines.push(`- Contact: ${contact.email}`)
@@ -218,104 +246,84 @@ function siteFactLines(site: SiteConfig): string[] {
 async function writeLlmsTxt(
   distDir: string,
   site: SiteConfig,
-  routes: RouteRecord[],
+  routes: Array<RouteRecord & RouteSchemaExtras>,
   contentByslug: Map<string, ContentRoute>,
 ) {
-  const lines: string[] = []
-  lines.push(`# ${site.name}`)
-  lines.push('')
-  lines.push(`> ${site.description}`)
-  lines.push('')
-  lines.push(...siteFactLines(site))
+  const lines = [`# ${site.name}`, '', `> ${site.description}`, '', ...siteFactLines(site)]
+  const pages = routes.filter((route) => contentByslug.get(route.slug)?.collection !== 'posts')
+  const posts = routes.filter((route) => contentByslug.get(route.slug)?.collection === 'posts')
 
-  const pages = routes.filter((r) => contentByslug.get(r.slug)?.collection !== 'posts' && r.slug !== '404')
-  const posts = routes.filter((r) => contentByslug.get(r.slug)?.collection === 'posts')
-
-  if (pages.length) {
-    lines.push('## Pages')
-    lines.push('')
-    for (const r of pages) {
-      const url = absoluteUrl(site.url, publicPathFromSlug(r.slug))
-      lines.push(`- [${r.title}](${url}): ${r.description}`)
+  for (const [heading, items] of [['Pages', pages], ['Posts', posts]] as const) {
+    if (!items.length) continue
+    lines.push(`## ${heading}`, '')
+    for (const route of items) {
+      lines.push(`- [${route.title}](${absoluteUrl(site.url, `/routes/${route.slug}.md`)}): ${route.description}`)
     }
     lines.push('')
   }
-
-  if (posts.length) {
-    lines.push('## Posts')
-    lines.push('')
-    for (const r of posts) {
-      const url = absoluteUrl(site.url, publicPathFromSlug(r.slug))
-      lines.push(`- [${r.title}](${url}): ${r.description}`)
-    }
-    lines.push('')
-  }
-
+  lines.push('## Optional', '')
+  lines.push(`- [Site manifest](${absoluteUrl(site.url, '/site.manifest.json')}): Machine-readable public route inventory.`)
+  lines.push(`- [Entity graph](${absoluteUrl(site.url, '/site.jsonld')}): Connected Schema.org site graph.`)
+  lines.push('')
   await writeFile(join(distDir, 'llms.txt'), lines.join('\n'))
 
-  // llms-full.txt: include markdown bodies for content routes
-  const full: string[] = [...lines]
-  for (const r of routes) {
-    const content = contentByslug.get(r.slug)
-    if (!content) continue
-    full.push('---')
-    full.push('')
-    full.push(`# ${r.title}`)
-    full.push('')
-    full.push(`URL: ${absoluteUrl(site.url, publicPathFromSlug(r.slug))}`)
-    full.push('')
-    full.push(content.markdown ?? '')
-    full.push('')
+  const full = [...lines]
+  for (const route of routes) {
+    full.push('---', '', `# ${route.title}`, '', `URL: ${absoluteUrl(site.url, publicPathFromSlug(route.slug))}`, '')
+    full.push(htmlToMarkdown(route.renderedHtml ?? ''), '')
   }
   await writeFile(join(distDir, 'llms-full.txt'), full.join('\n'))
 }
 
-async function writeAiPlugin(distDir: string, site: SiteConfig) {
-  const wellKnown = join(distDir, '.well-known')
-  await mkdir(wellKnown, { recursive: true })
-  const plugin = {
-    schema_version: 'v1',
-    name_for_human: site.name,
-    name_for_model: site.name.toLowerCase().replace(/\s+/g, '_'),
-    description_for_human: site.description,
-    description_for_model: `Read ${absoluteUrl(site.url, '/llms.txt')} for a structured index of this site. Per-route JSON at /routes/{slug}.json. Full manifest at /site.manifest.json.`,
-    contact_email: siteContactEmail(site),
-    legal_info_url: absoluteUrl(site.url, '/'),
-    api: {
-      type: 'manifest',
-      url: absoluteUrl(site.url, '/site.manifest.json'),
-    },
-  }
-  await writeFile(join(wellKnown, 'ai-plugin.json'), JSON.stringify(plugin, null, 2))
-}
-
 async function writeManifest(distDir: string, input: DiscoveryInput) {
-  const { site, routes, componentSchemas, componentUseCounts } = input
+  const { site, routes, componentSchemas } = input
+  const publicUseCounts = new Map<string, number>()
+  for (const route of routes) {
+    for (const instance of route.components) publicUseCounts.set(instance.name, (publicUseCounts.get(instance.name) ?? 0) + 1)
+  }
   const manifest = {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
-    generator: {
-      name: GENERATOR_NAME,
-      version: GENERATOR_VERSION,
-    },
-    generatedAt: new Date().toISOString(),
-    site,
-    routes: routes.map((r) => ({
-      slug: r.slug,
-      path: publicPathFromSlug(r.slug),
-      title: r.title,
-      description: r.description,
-      lastModified: r.lastModified,
-      components: r.components.map((c) => ({ name: c.name, attrs: c.attrs })),
-      internalLinks: r.internalLinks,
-      schemas: r.schemas,
-      html: `/routes/${r.slug}.html`,
-      json: `/routes/${r.slug}.json`,
+    generator: { name: GENERATOR_NAME, version: GENERATOR_VERSION },
+    site: publicSite(site),
+    graph: '/site.jsonld',
+    routes: routes.map((route) => ({
+      ...routeRepresentation(site, route.slug),
+      slug: route.slug,
+      title: route.title,
+      description: route.description,
+      lastModified: route.lastModified,
+      internalLinks: route.internalLinks,
+      schemas: route.schemas,
     })),
-    components: [...componentSchemas.entries()].map(([name, schema]) => ({
+    components: [...publicUseCounts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([name, uses]) => ({
       name,
-      uses: componentUseCounts.get(name) ?? 0,
-      schema,
+      uses,
+      schema: componentSchemas.get(name) ?? {},
     })),
   }
   await writeFile(join(distDir, 'site.manifest.json'), JSON.stringify(manifest, null, 2))
+}
+
+async function writeSiteGraph(
+  distDir: string,
+  site: SiteConfig,
+  routes: Array<RouteRecord & RouteSchemaExtras>,
+) {
+  const nodes = new Map<string, JsonLdNode>()
+  for (const route of routes) {
+    const canonical = absoluteUrl(site.url, publicPathFromSlug(route.slug))
+    const graph = buildSchemaGraph(site, {
+      title: route.title,
+      description: route.description,
+      canonical,
+    }, route.extraJsonLd)
+    for (const node of graph['@graph']) {
+      const key = typeof node['@id'] === 'string' ? node['@id'] : JSON.stringify(node)
+      nodes.set(key, node)
+    }
+  }
+  await writeFile(join(distDir, 'site.jsonld'), JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [...nodes.values()],
+  }, null, 2))
 }

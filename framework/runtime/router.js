@@ -1,6 +1,6 @@
 import { slugFromPath, publicPath, fetchPath } from './lib/paths.js'
 
-const main = document.querySelector('main[data-route-root]')
+const main = document.querySelector('body > main')
 let routeAnnouncer = null
 
 const DISCLOSURE_SEL =
@@ -277,6 +277,9 @@ async function fetchRouteHtml(pathname, { signal } = {}) {
   const cached = routeCache.get(url)
   if (cached && Date.now() - cached.at < ROUTE_CACHE_TTL_MS) return cached.html
   if (signal?.aborted) return null
+  // Reuse intent preloads for navigation too. Navigation identity guards stale DOM applies, so an
+  // already-running request does not need a second abortable fetch.
+  if (routePending.has(url)) return routePending.get(url)
 
   if (signal) {
     return fetch(url, { signal })
@@ -288,8 +291,6 @@ async function fetchRouteHtml(pathname, { signal } = {}) {
       })
       .catch(() => null)
   }
-
-  if (routePending.has(url)) return routePending.get(url)
 
   const pending = fetch(url)
     .then(async (res) => {
@@ -423,6 +424,17 @@ function announcer() {
   routeAnnouncer.setAttribute('aria-live', 'polite')
   routeAnnouncer.setAttribute('aria-atomic', 'true')
   routeAnnouncer.dataset.snzAnnouncer = ''
+  Object.assign(routeAnnouncer.style, {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    padding: '0',
+    margin: '-1px',
+    overflow: 'hidden',
+    clipPath: 'inset(50%)',
+    whiteSpace: 'nowrap',
+    border: '0',
+  })
   if (!routeAnnouncer.parentNode) {
     routeAnnouncer.hidden = true
     document.body.append(routeAnnouncer)
@@ -528,11 +540,8 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
 }
 
 function resetScroll() {
-  if (window.lenis?.scrollTo) {
-    window.lenis.scrollTo(0, { immediate: true, force: true })
-  } else {
-    window.scrollTo(0, 0)
-  }
+  const event = new CustomEvent('snz:scroll-reset', { cancelable: true })
+  if (window.dispatchEvent(event)) window.scrollTo(0, 0)
 }
 
 function routeTarget(path) {
@@ -555,6 +564,7 @@ async function go(path, { replace = false } = {}) {
 }
 
 function reloadCurrentRoute() {
+  routeCache.delete(fetchPath(location.pathname))
   return render(publicPath(location.pathname), { transition: false })
 }
 
@@ -673,4 +683,23 @@ syncNavCurrent()
 
 const initial = publicPath(location.pathname)
 if (initial !== location.pathname) history.replaceState(null, '', initial)
-render(initial, { transition: false })
+
+function activateInitialRoute() {
+  const slug = slugFromPath(initial)
+  const detail = { pathname: initial, slug, main }
+  document.documentElement.dataset.page = slug
+  mountComponents(main)
+  syncNavCurrent(initial)
+  emit(slug, detail)
+  afterEmit(detail)
+}
+
+// A generated static document identifies its route. Shell fallbacks do not match the requested
+// path, so they still fetch the route fragment and preserve the normal 404 resolution path.
+const renderedRoute = document.documentElement.dataset.snzRoute
+if (renderedRoute === slugFromPath(initial)) {
+  if (document.readyState === 'complete') activateInitialRoute()
+  else window.addEventListener('DOMContentLoaded', activateInitialRoute, { once: true })
+} else {
+  render(initial, { transition: false })
+}

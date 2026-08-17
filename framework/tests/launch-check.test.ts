@@ -21,7 +21,7 @@ async function makeProject(body: string, site: Record<string, unknown> = {}) {
     url: 'https://launch.example.org',
     description: 'Launch-ready fixture for semantic quality checks.',
     locale: 'en',
-    ogImage: '/assets/og.webp',
+    image: '/assets/og.webp',
     ...site,
   }))
   await writeFile(join(dir, 'src', 'shell.html'), `<!doctype html>
@@ -29,18 +29,11 @@ async function makeProject(body: string, site: Record<string, unknown> = {}) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <SEO path="/" />
   <link rel="stylesheet" href="/assets/css/styles.css">
   <script src="/router.js" type="module"></script>
 </head>
-<body><main data-route-root></main></body>
+<body><main></main></body>
 </html>
-`)
-  await writeFile(join(dir, 'src', 'components', 'SEO.html'), `<title>{{title}}</title>
-<meta name="description" content="{{description}}">
-<link rel="canonical" href="{{canonical}}">
-<meta property="og:image" content="{{ogImage}}">
-<script type="application/ld+json">{{schemaJson}}</script>
 `)
   await writeFile(join(dir, 'src', 'styles.css'), 'body{font-family:system-ui}\n')
   await writeFile(join(dir, 'src', 'pages', 'index.html'), body)
@@ -48,7 +41,7 @@ async function makeProject(body: string, site: Record<string, unknown> = {}) {
 }
 
 async function runCli(dir: string, ...args: string[]) {
-  const proc = Bun.spawn(['bun', join(packageRoot, 'cli', 'snz-bp.ts'), ...args], {
+  const proc = Bun.spawn(['bun', join(packageRoot, 'cli', 'sttc.ts'), ...args], {
     cwd: dir,
     stdout: 'pipe',
     stderr: 'pipe',
@@ -69,7 +62,7 @@ async function runDoctorLaunch(dir: string) {
 describe('launch doctor gate', () => {
   test('passes launch-ready semantic fixture and accepts decorative alt', async () => {
     const dir = await makeProject(`<head>
-  <SEO title="Home" description="Launch fixture home page with specific helpful description for visitors." path="/" />
+  <SEO title="Home" description="Launch fixture home page with specific helpful description for visitors." />
 </head>
 <h1>Launch fixture</h1>
 <p><a href="/">Return to launch fixture home</a></p>
@@ -79,18 +72,17 @@ describe('launch doctor gate', () => {
     const result = await runDoctorLaunch(dir)
 
     expect(result.code).toBe(0)
-    expect(result.stdout).toContain('CSS ownership audit')
     expect(result.stdout).toContain('launch check ok')
     expect(result.stderr).not.toContain('image missing alt')
   })
 
   test('keeps normal check free of launch-only blockers', async () => {
     const dir = await makeProject(`<head>
-  <SEO title="Home" description="Short." path="/" />
+  <SEO title="Home" description="Short." />
 </head>
 <p><a href="http://localhost:3000/contact/">click here</a></p>
 <img src="/assets/og.webp">
-`, { url: 'http://localhost:3000', ogImage: '' })
+`, { url: 'http://localhost:3000', image: '' })
 
     const result = await runCli(dir, 'check')
 
@@ -101,17 +93,17 @@ describe('launch doctor gate', () => {
 
   test('fails on missing alt, missing H1, private URL, and placeholder site config', async () => {
     const dir = await makeProject(`<head>
-  <SEO title="Home" description="Short." path="/" />
+  <SEO title="Home" description="Short." />
 </head>
 <p><a href="http://localhost:3000/contact/">click here</a></p>
 <img src="/assets/og.webp">
-`, { url: 'http://localhost:3000', ogImage: '' })
+`, { url: 'http://localhost:3000', image: '' })
 
     const result = await runDoctorLaunch(dir)
 
     expect(result.code).not.toBe(0)
     expect(result.stderr).toContain('src/site.json: launch site.url must be a public https URL')
-    expect(result.stderr).toContain('src/site.json: launch ogImage missing')
+    expect(result.stderr).toContain('src/site.json: launch image missing')
     expect(result.stderr).toContain('missing H1')
     expect(result.stderr).toContain('image missing alt')
     expect(result.stderr).toContain('private URL in output')
@@ -121,13 +113,13 @@ describe('launch doctor gate', () => {
 
   test('reports duplicate titles/descriptions and icon-only links', async () => {
     const dir = await makeProject(`<head>
-  <SEO title="Shared" description="Shared route description with enough detail for a launch check." path="/" />
+  <SEO title="Shared" description="Shared route description with enough detail for a launch check." />
 </head>
 <h1>Home</h1>
 <p><a href="/about/" aria-label="About the launch fixture"><svg aria-hidden="true"></svg></a></p>
 `)
     await writeFile(join(dir, 'src', 'pages', 'about.html'), `<head>
-  <SEO title="Shared" description="Shared route description with enough detail for a launch check." path="/about/" />
+  <SEO title="Shared" description="Shared route description with enough detail for a launch check." />
 </head>
 <h1>About</h1>
 <p><a href="/"><svg aria-hidden="true"></svg></a></p>
@@ -143,7 +135,7 @@ describe('launch doctor gate', () => {
 
   test('check --launch runs launch checks without CSS audit', async () => {
     const dir = await makeProject(`<head>
-  <SEO title="Home" description="Launch fixture home page with specific helpful description for visitors." path="/" />
+  <SEO title="Home" description="Launch fixture home page with specific helpful description for visitors." />
 </head>
 <h1>Launch fixture</h1>
 <p><a href="/">Return to launch fixture home</a></p>

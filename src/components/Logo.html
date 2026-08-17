@@ -1,42 +1,6 @@
 <!--
-  @desc Text-first site logo. Uses site.json name by default; slot can hold an SVG or img mark.
-  @attr siteName Site or business name. Defaults to site.json name.
+  @desc Text-first site identity link with optional decorative mark content.
   @attr href Destination URL. Defaults to /.
-  @attr size CSS height for the logo wrapper. Defaults to 1lh.
+  @attr siteName Optional site-name override.
 -->
-<a class="logo fw-b t-lg" href="{{href}}" style="--logo-size: {{size}}">
-  {#if slot}
-  <span class="logo-mark">{{slot}}</span>
-  {/if}
-  <span class="logo-type">{{siteName}}</span>
-</a>
-
-<style>
-  .logo {
-    display: inline-flex;
-    align-items: center;
-    position: relative;
-    height: var(--logo-size, 1lh);
-    line-height: 1;
-    color: inherit;
-    text-decoration: none;
-    width: fit-content;
-  }
-
-  .logo:has(.logo-mark) .logo-type {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .logo img,
-  .logo svg {
-    display: block;
-    height: 100%;
-    width: auto;
-    max-width: none;
-  }
-</style>
+<a class="logo" href="{#if href}{{href}}{:else}/{/if}">{#if slot}<span aria-hidden="true">{{slot}}</span>{/if}<span>{{siteName}}</span></a>

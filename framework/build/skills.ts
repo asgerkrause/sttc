@@ -101,7 +101,7 @@ export async function syncSkills({ sourceRoot, projectRoot, check = false }: Syn
 async function main() {
   const args = process.argv.slice(2)
   if (args[0] !== 'sync' || args.some((arg) => !['sync', '--check'].includes(arg))) {
-    console.error('Usage: snz-bp skills sync [--check]')
+    console.error('Usage: sttc skills sync [--check]')
     process.exit(1)
   }
   const packageRoot = join(import.meta.dir, '..', '..')

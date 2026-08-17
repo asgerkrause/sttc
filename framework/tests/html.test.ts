@@ -1,7 +1,16 @@
 import { describe, expect, test } from 'bun:test'
-import { extractHtmlDescription, extractHtmlTitle, scanHtmlInternalLinks } from '../build/html'
+import { extractHtmlDescription, extractHtmlMetadata, extractHtmlTitle, scanHtmlInternalLinks } from '../build/html'
 
 describe('HTML discovery helpers', () => {
+  test('extracts route metadata in one parser pass', () => {
+    expect(extractHtmlMetadata('<title>Page</title><meta name="description" content="Summary"><a href="/about/">About</a>')).toEqual({
+      title: 'Page',
+      description: 'Summary',
+      internalLinks: ['/about/'],
+      schemas: [],
+    })
+  })
+
   test('extracts title text', () => {
     expect(extractHtmlTitle('<html><head><title> Hello world </title></head></html>')).toBe('Hello world')
   })
@@ -21,6 +30,12 @@ describe('HTML discovery helpers', () => {
     `
 
     expect(scanHtmlInternalLinks(html)).toEqual(['/about/'])
+  })
+
+  test('detects visible Schema.org microdata types', () => {
+    const html = '<section itemscope itemtype="https://schema.org/FAQPage"><details itemscope itemtype="https://schema.org/Question"></details></section>'
+
+    expect(extractHtmlMetadata(html).schemas).toEqual(['FAQPage', 'Question'])
   })
 
   test('dedupes internal links', () => {

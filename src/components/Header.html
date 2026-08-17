@@ -1,22 +1,24 @@
 <!--
-  @desc Site header.
+  @desc Self-contained site header with build-time navigation data and component-owned presentation.
 -->
+<script type="application/json" data-snz>
+{
+  "items": [
+    { "label": "Home", "href": "/" },
+    { "label": "Styles", "href": "/styles/" },
+    { "label": "Docs", "href": "/docs/" },
+    { "label": "FAQ", "href": "/faq/" }
+  ]
+}
+</script>
 <header>
-  <div class="container">
-    <Logo size="1lh" />
-    <button
-      type="button"
-      class="brg"
-      aria-expanded="false"
-      aria-controls="primary-nav"
-      aria-label="Menu"
-    ></button>
-    <nav id="primary-nav" aria-label="Primary">
+  <div class="c">
+    <Logo />
+    <nav aria-label="Primary">
       <ul>
-        <li><a class="link" href="/">Home</a></li>
-        <li><a class="link" href="/components/">Components</a></li>
-        <li><a class="link" href="/about/">About</a></li>
-        <li><a class="link" href="/contact/">Contact</a></li>
+        {#each items as item}
+        <li><a href="{{item.href}}">{{item.label}}</a></li>
+        {/each}
       </ul>
     </nav>
   </div>
@@ -24,178 +26,30 @@
 
 <style>
   body>header {
-  --e-head-sur: var(--c-bg);
-  --e-head-ink: var(--c-ink);
-  --e-head-bor: var(--c-bor);
-  --e-head-fade: 1px;
-  --e-head-hero-sur: var(--c-bg-10);
-  --e-head-hero-ink: var(--c-ink);
-  --e-head-hero-bor: var(--c-bor);
+    position: sticky;
+    inset-block-start: 0;
+    background: var(--c-bg, Canvas);
+    color: var(--c-fg, CanvasText);
+    z-index: 100;
 
-  background: var(--e-head-sur);
-  color: var(--e-head-ink);
-  view-transition-name: header;
-  backdrop-filter: blur(2rem);
-  border-bottom: var(--s-bw) var(--e-head-bor) solid;
-  min-height: var(--e-head-hgt);
-  padding: 0 var(--s-px);
-  position: fixed;
-  inset: 0;
-  bottom: auto;
-  z-index: var(--z-head);
-  display: flex;
-
-  .container {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-  }
-
-  nav ul {
-    display: flex;
-    flex-direction: row;
-    list-style: none;
-    align-items: center;
-    padding: 0;
-    margin: 0;
-    gap: var(--s-gp);
-  }
-
-  .brg {
-    position: relative;
-    background: var(--c-fg-05);
-    color: var(--c-ink);
-    z-index: var(--z-head);
-    width: 4em;
-    height: 2em;
-    margin-left: auto;
-    border: none;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    border-radius: 100vw;
-    display: flex;
-    flex-direction: column;
-
-
-    &::before,
-    &::after {
-      content: "";
-      width: 33%;
-      height: var(--s-bw);
-      background: currentColor;
-      position: absolute;
-      border-radius: 100vw;
-      transition-property: color, background, transform;
-      transition-timing-function: var(--m-tf-s);
-      transition-duration: var(--m-td-s);
-    }
-
-    &::after {
-      transform: translateY(-0.2em);
-    }
-
-    &::before {
-      transform: translateY(0.2em);
-    }
-
-    &:hover {
-      background: var(--c-neu-10);
-    }
-
-    &[aria-expanded="true"] {
-      background: var(--c-fg-10);
-
-      &::after {
-        transform: rotate(45deg);
-      }
-
-      &::before {
-        transform: rotate(135deg);
-      }
-    }
-  }
-
-  @media (width > 60rem) {
-    .brg {
-      display: none;
-    }
-
-    nav {
-      display: flex;
-      margin-left: auto;
-    }
-  }
-
-  @media (width <=60rem) {
-    nav {
-      display: none;
-      position: fixed;
-      inset: 0;
-    }
-
-    &:has([aria-expanded="true"]) nav {
-      display: flex;
-      position: fixed;
-      inset: 0;
-      height: 100vh;
-      width: 100vw;
-      padding: var(--s-px);
-      align-items: end;
+    >.c {
+      flex-direction: row;
+      justify-content: space-between;
 
       ul {
-        flex-direction: column;
-        gap: 0;
-        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem;
+        list-style: none;
 
         a {
-          font-size: var(--t-h2-fs);
+          &:not(:hover, [aria-current="page"]) {
+            opacity: .4;
+
+          }
         }
       }
     }
   }
-}
-
-@supports (animation-timeline: view()) {
-  @keyframes snz-hdr-hero {
-    from {
-      --e-head-sur: var(--e-head-hero-sur);
-      --e-head-ink: var(--e-head-hero-ink);
-      --e-head-bor: var(--e-head-hero-bor);
-    }
-
-    to {
-      --e-head-sur: var(--c-bg);
-      --e-head-ink: var(--c-ink);
-      --e-head-bor: var(--c-bor);
-    }
-  }
-
-  body>header {
-    animation-name: snz-hdr-hero;
-    animation-timeline: --snz-hero;
-    animation-range:
-      exit calc(100% - var(--e-head-hgt) - var(--e-head-fade))
-      exit calc(100% - var(--e-head-hgt));
-    animation-fill-mode: both;
-    animation-timing-function: steps(1, end);
-  }
-}
-
-@media (width <=60rem) {
-  body:has(header [aria-expanded="true"]) :is(main, footer) {
-    pointer-events: none;
-    user-select: none;
-  }
-
-  body:has(header [aria-expanded="true"]) main::after {
-    content: "";
-    background: color-mix(in srgb, var(--c-bg) 90%, transparent);
-    position: fixed;
-    inset: 0;
-    z-index: 998;
-    backdrop-filter: blur(10px);
-    pointer-events: none;
-  }
-}
 </style>

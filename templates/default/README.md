@@ -1,37 +1,50 @@
-# SANITIZE Boilerplate site
+# STTC site
 
-Client site starter powered by `@snz/bp`.
-
-Created with:
-
-```bash
-create-snz-bp my-client
-# or inside empty directory
-create-snz-bp .
-```
-
-Ships with:
-
-- `src/pages/index.html` → `/`
-- `src/pages/components.html` → `/components/`
-- flat `src/styles.css`, `src/app.ts`, `src/site.json`
-- TypeScript-first site code: use `src/app.ts`; `src/app.js` works only as an escape hatch and must not exist beside `src/app.ts`
-- no CMS files by default (`bun run new cms` opts in)
-- no demo marketing routes (add your own with `bun run new route about`)
-
-## Commands
+Minimal site starter powered by `@snz/sttc`.
 
 ```bash
 bun install
 bun run dev
 bun run build
 bun run check
-bun run new cms    # optional: add PagesCMS/content scaffolding
-bun run add theme minimal      # neutral, clean default
-bun run add theme editorial    # type-forward, content-heavy
-bun run add theme brutalist    # bold/high-contrast
+bun run doctor -- --launch
 ```
 
-Edit `src/`. Do not edit `dist/`.
+Edit `src/`; never edit `dist/`.
 
-Open `site.code-workspace` in Cursor/VS Code for authoring mode; it hides generated output and package internals.
+## Starting surface
+
+- `src/pages/index.html` and `src/pages/404.html`
+- exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`
+- `src/app.ts` for project TypeScript
+- `src/site.json` for site and discovery defaults
+- pinned CRFT CSS copied into project-owned `src/styles/` and imported by `src/styles.css`
+- no CMS files until `bun run new cms`
+
+Replace or extend `src/styles.css` and the copied `src/styles/` files for project CSS; the renderer links them automatically. Component `<style>` and route `<style>` blocks are optional.
+
+Create source with:
+
+```bash
+bun run new route about
+bun run new component Hero
+bun run new cms
+```
+
+A route can declare metadata with the renderer-owned `<SEO />` directive:
+
+```html
+<head>
+  <SEO title="About" description="What this organization does." image="/assets/images/about.webp" />
+</head>
+
+<Section>
+  <h1>About</h1>
+</Section>
+```
+
+`SEO` is a renderer directive, not a component file. Canonical URLs derive from route filenames; `image` overrides the site-wide share image for one page.
+
+The starter includes self-hosted Lenis. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to exclude all Lenis files and markup from `dist/`. Reduced-motion users always keep native scrolling.
+
+Build emits static pages, responsive images, sitemap, feeds, connected JSON-LD, manifests, route Markdown/JSON, and `llms.txt`. Replace `https://example.com` and starter metadata in `src/site.json` before launch.

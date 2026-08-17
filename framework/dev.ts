@@ -13,9 +13,8 @@ const preferredPort = Number(process.env.PORT ?? 3000)
 let building = false
 let dirty = false           // event arrived while we were building or absorbing — needs a build after the window
 let buildCooldownUntil = 0
-// macOS FSEvents fires many "change" events per single save (atime touches when files are read
-// during the build, plus duplicate events from the kernel). After each build, drop events for
-// ECHO_ABSORB_MS — they're almost always stale echoes of the change that just rebuilt.
+// macOS FSEvents fires many events per save. Content stamps reject read/duplicate echoes; genuine
+// events during ECHO_ABSORB_MS are delayed until the current burst settles, never dropped.
 const ECHO_ABSORB_MS = 2000
 const DEBOUNCE_MS = 300
 
@@ -52,11 +51,10 @@ async function runBuild() {
   } else {
     broadcast('reload')
   }
-  // If a genuine change came in during the build, schedule one rebuild AFTER the absorb window —
-  // not immediately, so echoes from this build's own writes don't pile in.
+  // Route every follow-up through the single debounce timer so one event cannot schedule two builds.
   if (dirty) {
     dirty = false
-    setTimeout(() => { runBuild() }, ECHO_ABSORB_MS)
+    scheduleBuild()
   }
 }
 
@@ -67,42 +65,45 @@ function scheduleBuild() {
     dirty = true
     return
   }
-  // During the post-build echo-absorb window, silently drop events — they're almost certainly
-  // stale FSEvents notifications for files we just touched.
-  if (Date.now() < buildCooldownUntil) return
+  // Do not drop genuine saves during the post-build absorb window. Content stamps filter read
+  // echoes; a real event is queued for the earliest safe rebuild instead.
   clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => runBuild(), DEBOUNCE_MS)
+  const delay = Math.max(DEBOUNCE_MS, buildCooldownUntil - Date.now())
+  debounceTimer = setTimeout(() => runBuild(), delay)
 }
 
 function shouldIgnoreWatch(filename: string | null) {
   if (!filename) return false
   const base = basename(filename)
   if (base === '.DS_Store' || base === '.gitkeep' || base.startsWith('.')) return true
-  if (/\.webp$/i.test(base)) return true
+  if (base === 'dist' || base.startsWith('dist.__')) return true
   if (base === '__build-error.html') return true
   return false
 }
 
 // macOS FSEvents reports atime-only changes (when the build reads source files) as
-// "change" events. Track content-relevant stats per filename and ignore events where
-// mtime + size are unchanged — those are pure access-time noise.
+// "change" events. Track content-relevant stats per path and ignore events where kind, mtime,
+// and size are unchanged — those are pure access-time noise.
 const stamps = new Map<string, string>()
+const missing = new Set<string>()
 
 async function stamp(absPath: string): Promise<string | null> {
   try {
     const s = await fsStat(absPath)
-    if (!s.isFile()) return null
-    return `${s.mtimeMs}:${s.size}`
+    return `${s.isDirectory() ? 'd' : 'f'}:${s.mtimeMs}:${s.size}`
   } catch { return null }
 }
 
 async function looksLikeRealChange(absPath: string): Promise<boolean> {
   const next = await stamp(absPath)
   if (next === null) {
-    // File was deleted — that IS a real change. Drop stamp so re-create re-triggers.
-    if (stamps.delete(absPath)) return true
-    return false
+    // A deletion or directory rename is real once; duplicate kernel notifications are not.
+    const wasKnown = stamps.delete(absPath)
+    const firstMissingEvent = !missing.has(absPath)
+    missing.add(absPath)
+    return wasKnown || firstMissingEvent
   }
+  missing.delete(absPath)
   const prev = stamps.get(absPath)
   if (prev === next) return false
   stamps.set(absPath, next)
@@ -118,53 +119,23 @@ function onWatch(watchRoot: string) {
       return
     }
     if (process.env.SNZ_WATCH_DEBUG) console.log(`[watch] ${_event} ${filename}`)
+    if (watchRoot === root || watchRoot === src) void ensureManagedWatchTrees()
     scheduleBuild()
   }
 }
 
 const HMR_CLIENT = `
-// snz HMR client — injected only in dev. Throttles aggressively to avoid reload pile-on.
+// Full reload is intentional: shell, global CSS, and the hashed app bundle can all change in one
+// build. A partial route swap could report success while leaving any of those assets stale.
 (() => {
   if (window.__snzHmr) return; window.__snzHmr = true
-  let pending = false
-  let lastApplied = 0
-  const COOLDOWN_MS = 2500
-
-  async function applyReload() {
-    if (pending) return
-    pending = true
-    try {
-      const elapsed = Date.now() - lastApplied
-      if (elapsed < COOLDOWN_MS) {
-        await new Promise(r => setTimeout(r, COOLDOWN_MS - elapsed))
-      }
-      const html = await (await fetch('/', { cache: 'no-store' })).text()
-      // Hot-swap hashed components.css if it changed.
-      const m = html.match(/href="(\\/assets\\/css\\/components\\.[a-f0-9]+\\.css)"/)
-      if (m) {
-        const cur = document.querySelector('link[rel="stylesheet"][href*="/assets/css/components"]')
-        if (cur && cur.getAttribute('href') !== m[1]) {
-          const next = cur.cloneNode()
-          next.href = m[1]
-          next.onload = () => cur.remove()
-          cur.parentNode.insertBefore(next, cur.nextSibling)
-        }
-      }
-      // Re-render current route via snz router if possible without adding history entries.
-      if (window.snz?._reload) await window.snz._reload()
-      else if (window.snz?.navigate) await window.snz.navigate(location.pathname, { replace: true })
-      else location.reload()
-      delete document.documentElement.dataset.snzBuilding
-      lastApplied = Date.now()
-    } catch {
-      location.reload()
-    } finally {
-      pending = false
-    }
-  }
-
+  let reloading = false
   const es = new EventSource('/__snz/events')
-  es.addEventListener('reload', () => applyReload())
+  es.addEventListener('reload', () => {
+    if (reloading) return
+    reloading = true
+    location.reload()
+  })
   es.addEventListener('building', () => { document.documentElement.dataset.snzBuilding = '1' })
   es.addEventListener('error', () => { /* server restart, EventSource auto-reconnects */ })
 })()
@@ -295,19 +266,42 @@ poll()
 
 console.log(`http://localhost:${server.port}`)
 
+const watchers = new Map<string, ReturnType<typeof watch>>()
+
 function watchTree(rootPath: string, recursive: boolean) {
-  try { watch(rootPath, { recursive }, onWatch(rootPath)) } catch {}
+  if (watchers.has(rootPath)) return
+  try {
+    const watcher = watch(rootPath, { recursive }, onWatch(rootPath))
+    watchers.set(rootPath, watcher)
+    const release = () => {
+      if (watchers.get(rootPath) === watcher) watchers.delete(rootPath)
+    }
+    watcher.on('close', release)
+    watcher.on('error', release)
+  } catch {}
 }
 
-for (const rel of ['pages', 'routes', 'components', 'assets', 'templates', 'styles', 'app']) {
-  watchTree(join(src, rel), true)
+const managedWatchRoots = [
+  ...['pages', 'routes', 'components', 'assets', 'templates', 'styles', 'app', 'data', 'images', 'videos', 'files']
+    .map((rel) => join(src, rel)),
+  ...['content', 'media'].map((rel) => join(root, rel)),
+]
+async function ensureManagedWatchTrees() {
+  for (const path of managedWatchRoots) {
+    const present = await fsStat(path).then((entry) => entry.isDirectory()).catch(() => false)
+    const current = watchers.get(path)
+    if (present && !current) watchTree(path, true)
+    if (!present && current) {
+      watchers.delete(path)
+      current.close()
+    }
+  }
 }
-watchTree(src, false) // shell.html, site.json, styles.css, app.js/app.ts — watch dir, not file (file watches die on save+rename)
+
+watchTree(src, false) // root files plus creation/removal of managed source subdirectories
 watchTree(join(packageRoot, 'build'), true)
 watchTree(join(packageRoot, 'runtime'), true)
-watchTree(root, false) // .pages.yml and legacy top-level runtime files
+watchTree(root, false) // .pages.yml, optional content/media roots, and legacy top-level runtime files
 watchTree(join(root, 'runtime'), true)
 watchTree(join(root, 'lib'), true)
-for (const rel of ['content', 'media']) {
-  watchTree(join(root, rel), true)
-}
+await ensureManagedWatchTrees()

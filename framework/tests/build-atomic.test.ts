@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, utimes, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 
@@ -30,20 +30,14 @@ async function makeProject(options: { siteJson?: string, body?: string } = {}) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <SEO path="/" />
   <link rel="stylesheet" href="/assets/css/styles.css">
   <script src="/router.js" type="module"></script>
   <script src="/assets/js/app.js" type="module"></script>
 </head>
 <body>
-  <main data-route-root></main>
+  <main></main>
 </body>
 </html>
-`)
-  await writeFile(join(dir, 'src', 'components', 'SEO.html'), `<title>{{title}}</title>
-<meta name="description" content="{{description}}">
-<link rel="canonical" href="{{canonical}}">
-<script type="application/ld+json">{{schemaJson}}</script>
 `)
   await writeFile(join(dir, 'src', 'styles.css'), 'body{font-family:system-ui}\n')
   await writeFile(join(dir, 'src', 'app.ts'), 'window.__atomicDist = true\n')
@@ -99,6 +93,37 @@ describe('atomic dist build', () => {
     expect(await readFile(join(dir, 'dist', 'keep.txt'), 'utf8')).toBe('old dist')
     expect(await readFile(join(dir, 'dist', 'stale.txt'), 'utf8')).toBe('stale output')
     expect(await distSwapTemps(dir)).toEqual([])
+  })
+
+  test('reuses image encodes across atomic stages and prunes deleted masters', async () => {
+    const dir = await makeProject()
+    const imageDir = join(dir, 'src', 'images')
+    const imagePath = join(imageDir, 'hero.png')
+    const png = 'iVBORw0KGgoAAAANSUhEUgAAADwAAABaCAIAAABrM6JiAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAPKADAAQAAAABAAAAWgAAAACdrWuxAAAA4klEQVRoBe3SwQkAIRDF0NH+e97tIKcgDMRr4CNPzzf7zt135Zku/erVkk4aBPoegKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04alop/QME/wGzn3VIjwAAAABJRU5ErkJggg=='
+    await mkdir(imageDir, { recursive: true })
+    await writeFile(imagePath, Buffer.from(png, 'base64'))
+
+    const first = await runBuild(dir)
+    const second = await runBuild(dir)
+    expect(first.code).toBe(0)
+    expect(first.stdout).toContain('image hero.png')
+    expect(second.code).toBe(0)
+    expect(second.stdout).not.toContain('image hero.png')
+    expect(await Bun.file(join(dir, 'dist', 'assets', 'images', 'hero.webp')).exists()).toBe(true)
+
+    const originalMtime = (await stat(imagePath)).mtime
+    const recompressed = await new Bun.Image(Buffer.from(png, 'base64')).png({ compressionLevel: 9 }).bytes()
+    await writeFile(imagePath, recompressed)
+    await utimes(imagePath, originalMtime, originalMtime)
+    expect((await stat(imagePath)).mtimeMs).toBe(originalMtime.getTime())
+    const sameMtimeChange = await runBuild(dir)
+    expect(sameMtimeChange.code).toBe(0)
+    expect(sameMtimeChange.stdout).toContain('image hero.png')
+
+    await rm(imagePath)
+    const afterDelete = await runBuild(dir)
+    expect(afterDelete.code).toBe(0)
+    expect(await Bun.file(join(dir, 'dist', 'assets', 'images', 'hero.webp')).exists()).toBe(false)
   })
 
   test('removes stale output after successful swap', async () => {

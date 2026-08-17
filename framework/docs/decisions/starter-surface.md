@@ -1,43 +1,26 @@
-# Starter surface vs framework demo
+# Starter component scaffold
 
 **Status:** active  
-**Date:** 2026-05-26
+**Date:** 2026-08-17
 
-## Context
+## Decision
 
-`create-snz-bp` copied the full framework repo `src/`, so new client projects inherited studio demo routes (`about`, `contact`, game image, etc.).
+Created projects ship exactly seven replaceable HTML components:
 
-## Chosen
+- `Header`
+- `Footer`
+- `Section`
+- `Logo`
+- compiler-assisted `Image`
+- `Video`
+- `Grid`
 
-| Surface | Purpose |
-| ------- | ------- |
-| Repo root `src/` | Internal dogfood — keep studio demo routes |
-| `templates/default/` | Only files shipped by `create-snz-bp` |
+`Section` provides `section > .c`. `Grid` maps `cols`, `span`, `rows`, and `order` to CRFT `g`, `c`, `r`, and `o` attributes. `SEO` is a renderer directive and has no component file.
 
-Starter routes:
+The starter copies the pinned CRFT CSS into project-owned `src/styles.css`. The renderer does not own that presentation layer.
 
-- `/` — generic landing with built-in component samples
-- `/components/` — full component gallery
-- `/404` — not found
+## Boundary
 
-Starter nav: Home + Components only (template `Header.html` override).
+`templates/default/` is the only creator source and ships inside `@snz/sttc`. `sttc create` copies it directly. There is no creator package, mirrored template, or synchronization step.
 
-Do **not** sync template with `cp -R src`. Curate `templates/default/` by hand.
-
-## Why
-
-Clients start clean. Framework repo keeps realistic demo for development.
-
-## Consequences
-
-- Template may override `Header.html` while root keeps studio nav
-- Template drops demo posts/images; root keeps them
-- Footer year is client-rendered in all projects using `Footer`
-
-## Verification
-
-```bash
-bun run check
-cd templates/default && bun ../../framework/cli/snz-bp.ts check
-create-snz-bp /tmp/bp-starter-test && cd /tmp/bp-starter-test && bun install && bun run check
-```
+Components remain useful without JavaScript. Behavior, provider integrations, credentials, and business validation stay project-owned. The build writes each project's generated component contract to `.snz/components-catalog.md`.

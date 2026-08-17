@@ -24,6 +24,7 @@ function composer(schemas = new Map<string, ComponentSchema>(), data = new Map<s
       ['Image', '<figure>{{imgMain}}</figure>'],
       ['Wrapper', '<section>\n<Image src="missing" alt="Missing" />\n</section>'],
       ['Section', '<section>{{slot}}</section>'],
+      ['Grid', '{#if cols}<div g="{{cols}}" c="{{span}}">{{slot}}</div>{:else}<div g c="{{span}}">{{slot}}</div>{/if}'],
       ['MaybeSlot', '<div>{#if slot:vis}<span>{{slot:vis}}</span>{/if}<b>{{label}}</b></div>'],
       ['MaybeAttr', '<div>{#if eyebrow}<p>{{eyebrow}}</p>{/if}<b>{{title}}</b></div>'],
       ['BadIf', '<div>{#if slot:vis}<span>{{slot:vis}}</span></div>'],
@@ -31,9 +32,9 @@ function composer(schemas = new Map<string, ComponentSchema>(), data = new Map<s
       ['BadElseIf', '<div>{#if title}<b>{{title}}</b>{:else if eyebrow}<i>{{eyebrow}}</i>{/if}</div>'],
       ['BadDoubleElse', '<div>{#if title}<b>{{title}}</b>{:else}<i>Missing</i>{:else}<em>Bad</em>{/if}</div>'],
       ['BadEach', '<div>{#each items as item}<b>{{item}}</b>{/each}</div>'],
-      ['Logo', '<a class="logo">{#if slot}<span class="logo-mark">{{slot}}</span>{/if}<span class="logo-type">{{siteName}}</span></a>'],
-      ['Code', '<figure>{#if lang}<figcaption>{{lang}}</figcaption>{/if}<pre>{{slot}}</pre></figure>'],
-      ['Counter', '<span>{#if prefix}<b>{{prefix}}</b>{/if}<i>0</i>{#if suffix}<b>{{suffix}}</b>{/if}{#if label}<em>{{label}}</em>{/if}</span>'],
+      ['Logo', '<a class="logo">{#if slot}<span aria-hidden="true">{{slot}}</span>{/if}<span>{{siteName}}</span></a>'],
+      ['Code', '<figure class="code">{#if lang}<figcaption>{{lang}}</figcaption>{/if}<pre><code data-language="{{lang}}">{{slot}}</code></pre></figure>'],
+      ['Counter', '<span class="count" data-value="{{value}}" data-duration="{{duration}}"><span>{#if prefix}{{prefix}}{/if}<data value="{{value}}">{{value}}</data>{#if suffix}{{suffix}}{/if}</span>{#if label}<small>{{label}}</small>{/if}</span>'],
       ['Icon', '{#if label}<span class="icon" role="img" aria-label="{{label}}">{{slot}}</span>{:else}<span class="icon" aria-hidden="true">{{slot}}</span>{/if}'],
       ['Split', '{#if label}<span class="split" data-split aria-label="{{label}}">{{slot}}</span>{:else}<span class="split" data-split>{{slot}}</span>{/if}'],
       ['FAQ', '<div class="faq">{#each items as item}<Accordion group="faq" summary="{{item.summary}}" body="{{item.body}}" />{/each}</div>'],
@@ -204,6 +205,15 @@ describe('build error source spans', () => {
     expect(html).toContain('<div><b>Plain</b></div>')
   })
 
+  test('keeps Grid active when cols is omitted', async () => {
+    const html = await composer().prepareRouteSource(
+      '<Grid>Default</Grid>\n<Grid cols="12-6" span="5-3">Responsive</Grid>',
+      { slug: 'page', fileHint: 'src/pages/page.html' },
+    )
+    expect(html).toContain('<div g>Default</div>')
+    expect(html).toContain('<div g="12-6" c="5-3">Responsive</div>')
+  })
+
   test('reports malformed component conditional blocks', async () => {
     try {
       await composer().prepareRouteSource('<BadIf />', { slug: 'page', fileHint: 'src/pages/page.html' })
@@ -276,14 +286,17 @@ describe('build error source spans', () => {
   })
 
   test('omits optional built-in component fragments with conditionals', async () => {
+    const siteName = (await Bun.file('src/site.json').json() as { name: string }).name
     const html = await composer().prepareRouteSource(
       '<Logo />\n<Logo><svg></svg></Logo>\n<Code>plain</Code>\n<Counter value="10" />\n<Counter value="10" prefix="$" suffix="k" label="Revenue" />',
       { slug: 'page', fileHint: 'src/pages/page.html' },
     )
-    expect(html).toContain('<a class="logo"><span class="logo-type">SNZ</span></a>')
-    expect(html).toContain('<a class="logo"><span class="logo-mark"><svg></svg></span><span class="logo-type">SNZ</span></a>')
-    expect(html).toContain('<figure><pre>plain</pre></figure>')
-    expect(html).toContain('<span><i>0</i></span>')
-    expect(html).toContain('<span><b>$</b><i>0</i><b>k</b><em>Revenue</em></span>')
+    expect(html).toContain(`<a class="logo"><span>${siteName}</span></a>`)
+    expect(html).toContain(`<a class="logo"><span aria-hidden="true"><svg></svg></span><span>${siteName}</span></a>`)
+    expect(html).toContain('<figure class="code"><pre><code>plain</code></pre></figure>')
+    expect(html).toContain('<span class="count" data-value="10"><span><data value="10">10</data></span></span>')
+    expect(html).toContain('<span class="count" data-value="10"><span>$<data value="10">10</data>k</span><small>Revenue</small></span>')
+    expect(html).not.toContain('{{prefix}}')
+    expect(html).not.toContain('{{suffix}}')
   })
 })

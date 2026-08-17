@@ -15,7 +15,7 @@ Clones need autonomous search + answer-engine signals without hand-maintained si
 
 ## Chosen
 
-**Shipped:** `build/seo.ts` + `build/discovery.ts` emit `Organization`, `WebSite`, `WebPage`, FAQ-style component schemas, `BlogPosting` for CMS posts, `sitemap.xml`, `robots.txt`, feeds, `llms.txt`, `llms-full.txt`, `site.manifest.json`, route JSON, and ai-plugin metadata. Manifest and route JSON include `schemaVersion` plus structured generator metadata. `bun run check` validates required discovery output.
+**Shipped:** `build/seo.ts` + `build/discovery.ts` emit connected `Organization`, `WebSite`, and `WebPage` nodes, explicit visible Schema.org microdata types, `BlogPosting` for CMS posts, sitemap, robots, feeds, llms indexes, `site.jsonld`, manifest v2, and route Markdown/JSON. The obsolete generic AI plugin manifest is intentionally absent because static sites expose no plugin API. `bun run check` validates required discovery output.
 
 **Next:** extend `site.json` with richer organization/contact/topic fields.
 

@@ -1,6 +1,6 @@
 import { access, mkdir, rename } from 'fs/promises'
 import { dirname, join } from 'path'
-import { GENERATOR_VERSION } from '../version'
+import { PROJECT_FORMAT_VERSION } from '../version'
 import { isVersionAtLeast } from './version'
 import { readMigrationState, writeMigrationState, type MigrationState } from './state'
 
@@ -95,26 +95,52 @@ async function moveAll(ctx: MigrationContext, moves: [string, string][]): Promis
   return actions
 }
 
+async function rollbackMoves(root: string, results: MigrationResult[]) {
+  const completed = results
+    .flatMap((result) => result.actions)
+    .filter((action) => action.status === 'done')
+    .reverse()
+  for (const action of completed) {
+    const from = join(root, action.from)
+    const to = join(root, action.to)
+    await mkdir(dirname(from), { recursive: true })
+    await rename(to, from)
+  }
+}
+
 export async function runMigrations(root: string, options: { dryRun?: boolean } = {}): Promise<MigrationResult[]> {
   const state = await readMigrationState(root)
-  const ctx: MigrationContext = { root, dryRun: options.dryRun ?? false, state }
-  const results: MigrationResult[] = []
-
-  let hasConflict = false
+  const pending: Migration[] = []
+  const previewContext: MigrationContext = { root, dryRun: true, state }
 
   for (const migration of migrations) {
     if (state.appliedMigrations.includes(migration.id)) continue
-    if (!isVersionAtLeast(GENERATOR_VERSION, migration.introducedIn)) continue
-    if (!(await migration.applies(ctx))) continue
-
-    const actions = await migration.run(ctx)
-    results.push({ id: migration.id, description: migration.description, actions })
-
-    hasConflict = actions.some((action) => action.status === 'conflict')
-    if (hasConflict) break
-    if (!ctx.dryRun) state.appliedMigrations.push(migration.id)
+    if (!isVersionAtLeast(PROJECT_FORMAT_VERSION, migration.introducedIn)) continue
+    if (await migration.applies(previewContext)) pending.push(migration)
   }
 
-  if (!ctx.dryRun && results.length && !hasConflict) await writeMigrationState(root, state)
+  const preview: MigrationResult[] = []
+  for (const migration of pending) {
+    const actions = await migration.run(previewContext)
+    preview.push({ id: migration.id, description: migration.description, actions })
+  }
+
+  if (options.dryRun || preview.some((result) => result.actions.some((action) => action.status === 'conflict'))) {
+    return preview
+  }
+
+  const context: MigrationContext = { root, dryRun: false, state }
+  const results: MigrationResult[] = []
+  for (const migration of pending) {
+    const actions = await migration.run(context)
+    results.push({ id: migration.id, description: migration.description, actions })
+    if (actions.some((action) => action.status === 'conflict')) {
+      await rollbackMoves(root, results)
+      return results
+    }
+    state.appliedMigrations.push(migration.id)
+  }
+
+  if (results.length) await writeMigrationState(root, state)
   return results
 }

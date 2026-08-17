@@ -1,0 +1,16 @@
+<script type="application/json" data-snz src="faq.json"></script>
+
+<head>
+  <SEO
+    title="Frequently asked questions"
+    description="Answers about STTC, static output, JavaScript requirements, and generated discovery metadata." />
+</head>
+
+<Section id="faq" label="Frequently asked questions">
+  <h1>Frequently asked questions</h1>
+  <FAQ id="snz-faq" title="STTC">
+    {#each items as item}
+    <Accordion group="faq" summary="{{item.summary}}"><p>{{item.body}}</p></Accordion>
+    {/each}
+  </FAQ>
+</Section>

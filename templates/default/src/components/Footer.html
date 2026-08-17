@@ -1,39 +1,10 @@
 <!--
-  @desc Site footer with dynamic year and site name.
-  @attr siteName Override site name. Defaults to site.json name.
+  @desc Semantic site footer with identity and the build year.
+  @attr siteName Optional site-name override.
 -->
-<footer data-theme="invert">
-  <div class="container">
-    <Logo size="2.5lh" />
-    <p class="footer-copy">
-      <span>©</span>
-      <span data-snz-year></span>
-      <span>{{siteName}}</span>
-      <span>All rights reserved.</span>
-    </p>
+<footer>
+  <div class="c">
+    <Logo />
+    <small>© {{currentYear}} {{siteName}}</small>
   </div>
 </footer>
-
-<style>
-  body > footer {
-    padding: var(--s-px);
-    padding-top: var(--s-py);
-
-    .container {
-      gap: var(--s-gp);
-    }
-  }
-
-  .footer-copy {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35em;
-    margin: 0;
-    font-size: var(--t-sm-fs);
-  }
-</style>
-
-<script>
-const year = el.querySelector('[data-snz-year]')
-if (year) year.textContent = String(new Date().getFullYear())
-</script>

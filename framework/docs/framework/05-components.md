@@ -1,245 +1,134 @@
 # Components
 
-Components are build-time HTML templates in `src/components`. One component equals one `PascalCase.html` file.
+A component is one `src/components/PascalName.html` file compiled at build time. Components are editable project source. STTC does not hydrate components or provide a component library.
 
-```txt
-src/components/Card.html   <Card>...</Card>
-src/components/Hero.html   <Hero>...</Hero>
-```
+## Contract comment
 
-No JSON sidecars. Component file is contract, template, styles, and optional behavior.
-
-## Basic component
+Declare the component contract in its leading comment:
 
 ```html
-<!-- src/components/Feature.html -->
 <!--
-  @desc Feature item with title and body.
-  @attr title! Heading text.
-  @attr variant=[default|accent] :class Visual style.
+  @desc Introductory content block.
+  @attr title! Visible heading.
+  @attr id Optional section id.
+  @attr variant=[default|featured] :class Optional root class.
+  @schema WebPageElement name=title
 -->
-<article class="card">
-  <h2>{{title}}</h2>
+<section id="{{id}}">
+  <h1>{{title}}</h1>
   <div>{{slot}}</div>
-</article>
-
-<style>
-  .card.accent {
-    background: var(--c-acc-05);
-  }
-</style>
+</section>
 ```
 
-Use it in routes or other components:
+Supported directives:
+
+| Syntax | Meaning |
+|---|---|
+| `@desc text` | Component purpose. |
+| `@attr name text` | Optional string attribute. |
+| `@attr name! text` | Required non-empty attribute. `Image alt=""` is the accessibility exception. |
+| `@attr name=[a\|b] text` | Enumerated value. |
+| `@attr name :class text` | Append validated tokens to the root class. |
+| `@schema Type field=attr` | Emit instance JSON-LD. |
+
+When a schema exists, unknown attributes fail except for renderer-owned global attributes such as `track`.
+
+Every component can read `{{siteName}}` and `{{currentYear}}`. Set `SOURCE_DATE_EPOCH` to Unix seconds when reproducible timestamps and year output are required.
+
+## Slots and conditions
+
+`{{slot}}` receives default children. Named slots use `{{slot:name}}` and `<slot name="name">`.
 
 ```html
-<Feature title="Fast" variant="accent">
-  Static output, tiny runtime.
-</Feature>
-```
-
-## Inline schema
-
-Component may start with one HTML comment. Build parses known directives and strips comment from output.
-
-| Directive | Meaning |
-| --- | --- |
-| `@desc Text.` | Catalog description. |
-| `@attr name Text.` | Optional attribute. |
-| `@attr name! Text.` | Required attribute. |
-| `@attr name=[a\|b] Text.` | Enum attribute. |
-| `@attr name :class Text.` | Append value as root class. |
-| `@schema Type field=attr,...` | Emit JSON-LD per instance. |
-
-Combinations work:
-
-```html
-<!--
-  @attr variant=[default|ghost|accent] :class Visual style.
-  @attr href Optional link URL.
--->
-```
-
-Build fails on missing required attrs, invalid enum values, unknown attrs on strict schemas, and PascalCase tag mismatches.
-
-## Build-time JSON data
-
-Components can include local build-only data for small static lists. The script is stripped from output and never runs in the browser.
-
-```html
-<!-- src/components/FeatureList.html -->
-<script type="application/json" data-snz>
-{
-  "items": [
-    { "label": "Fast" },
-    { "label": "Static" }
-  ]
-}
-</script>
-
-<ul>
-  {#each items as item}
-  <li>{{item.label}}</li>
-  {/each}
-</ul>
-```
-
-Loops keep source order unless a sort clause is declared. Sort keys are item-relative dotted paths and can use multiple tie-breakers.
-
-```html
-{#each items sort name asc as item}
-<li>{{item.name}}</li>
-{/each}
-
-{#each cases sort featured desc, date desc as item}
-<Card title="{{item.title}}" />
-{/each}
-```
-
-Placeholders do not run JavaScript. Use built-in filters for common text transforms:
-
-```html
-{{service.name | lower}}
-{{service.name | slug}}
-```
-
-External component data uses the same `src/data/` rule:
-
-```html
-<script type="application/json" data-snz src="features.json"></script>
-```
-
-Attrs and slots still win over component data when names overlap.
-
-## Attributes and slots
-
-Use `{{name}}` for attrs and `{{slot}}` for children.
-
-```html
-<!-- src/components/Banner.html -->
-<aside class="banner">
-  <strong>{{slot:title}}</strong>
+<aside>
+  <header>{{slot:title}}</header>
   <div>{{slot}}</div>
 </aside>
 ```
 
+Conditions can inspect attributes and slots:
+
 ```html
-<Banner>
-  <slot name="title">Heads up</slot>
-  Default slot body.
-</Banner>
+{#if href}
+<a href="{{href}}">{{slot}}</a>
+{:else}
+<span>{{slot}}</span>
+{/if}
 ```
 
-Use attrs for stable configuration: variant, href, IDs, labels, image names, and scoped theme only when the component owns a `data-theme` boundary. Use slots for rich content.
+Conditions stay flat. Nested blocks, expressions, and `else if` are unsupported.
 
-## Variants
+## Build-time JSON
 
-Prefer `:class` enum variants and combo classes. Avoid BEM.
+A component can declare inline JSON or load `src/data/*.json`:
 
 ```html
-<!--
-  @attr variant=[default|outlined|ghost|accent|invert] :class Visual style.
-  @attr href Optional link-card destination.
--->
-<article class="card">
-  {{slot}}
-</article>
+<script type="application/json" data-snz>
+{ "items": [{ "name": "One" }, { "name": "Two" }] }
+</script>
 
-<style>
-  .card {
-    &.outlined { border-color: var(--c-bor); background: transparent; }
-    &.ghost { background: transparent; }
-    &.accent { background: var(--c-acc); color: var(--c-acc-ink); }
-    &.invert { background: var(--c-ink); color: var(--c-bg); }
-  }
-</style>
+<ul>
+{#each items as item, i}
+  <li data-index="{{i}}">{{item.name}}</li>
+{/each}
+</ul>
 ```
 
-`<Card variant="ghost">` style should read as `.card.ghost`, not `.card--ghost`.
+Loops support item-relative dotted paths, stable sorting, and the `lower` and `slug` filters. STTC never executes build-time project JavaScript or TypeScript.
 
-## Styles
+## Lifecycle script
 
-Put component-owned CSS inside component `<style>`.
-
-```html
-<style>
-  .feature {
-    display: grid;
-    gap: var(--s-gp);
-  }
-</style>
-```
-
-Build extracts all component styles to `dist/assets/css/components.{hash}.css`. Shell loads it after global CSS.
-
-Global CSS owns tokens, reset/base type, `.container`, `.stack`, `.card`, `.buttons`, `.links`, `[g]`, `[c]`, `[r]`, `[o]`, themes, and page overrides. Component roots like `.faq`, `.code`, `.media`, `.hero`, `.feature` belong in component files.
-
-## Lifecycle scripts
-
-Optional component `<script>` runs once per instance. `el` is bound to component root. Return cleanup when adding listeners or observers.
+An executable component `<script>` runs once for each rendered instance. `el` is the component root. Return cleanup for registered work:
 
 ```html
-<button class="counter" type="button">
-  <span class="counter-label">{{label}}</span>
-  <span class="counter-value">0</span>
-</button>
+<button type="button">Count: <span>0</span></button>
 
 <script>
-  const value = el.querySelector('.counter-value')
-  let n = 0
-  const onClick = () => {
-    n += 1
-    value.textContent = String(n)
-  }
-  el.addEventListener('click', onClick)
-  return () => el.removeEventListener('click', onClick)
+const value = el.querySelector('span')
+let count = 0
+const click = () => { value.textContent = String(++count) }
+el.addEventListener('click', click)
+return () => el.removeEventListener('click', click)
 </script>
 ```
 
-Build injects `data-snz-component="Name"` on root. Runtime mounts component scripts after initial render and each navigation, and runs cleanup before route replacement.
+The router mounts lifecycle components after navigation. Use `snz.onActive` or `snz.onVisible` for timers, animation frames, autoplay media, and scroll work.
 
-## Built-ins
+## Component CSS
 
-Read generated [`../components-catalog.md`](../components-catalog.md) for current built-in list, contracts, attrs, slots, and examples. Common primitives include `Section`, `Grid`, `Card`, `Button`, `Link`, `Image`, `Markdown`, `Accordion`, `FAQ`, and `SEO`.
-
-`Stack` is the component form of the `.stack` rhythm primitive.
-
-## Slot-first presets
-
-New content components should read like content:
-
-- plural wrapper: `Features`, `Testimonials`, `Stats`, `Partners`
-- singular item: `Feature`, `Testimonial`, `Stat`, `Partner`
-- standalone section: `Hero`, `CTA`, `Contact`
-
-Prefer slots so existing primitives compose:
+A component can own normal CSS:
 
 ```html
-<Section>
-  <Features>
-    <Feature>
-      <Card>
-        <h3>Fast</h3>
-        <p>Static output, tiny runtime.</p>
-      </Card>
-    </Feature>
-  </Features>
-</Section>
+<article class="notice">{{slot}}</article>
+
+<style>
+.notice {
+  border: 1px solid currentColor;
+  padding: 1rem;
+}
+</style>
 ```
 
-## Check component work
+STTC strips component styles from markup. It emits each used component's CSS once in one content-hashed shared stylesheet. It registers each used lifecycle script once in the shared app bundle. Components unused by the shell or any built route contribute neither asset. Selectors remain global and project-owned.
 
-```bash
-bun run build
+Authored route `<style>` blocks compile into route-owned hashed assets. Created projects import an editable CRFT copy from `src/styles/`; this is starter source, not framework CSS.
+
+## Image and SEO boundaries
+
+`Image` is compiler-assisted. Its template must render `{{imgMain}}` exactly once as element content. Image source names omit paths and extensions. Encode controls must be statically visible on a direct Image invocation; STTC fails instead of silently ignoring forwarded `max` or `quality` values.
+
+`SEO` is a renderer directive. `src/components/SEO.html` is invalid.
+
+## Generated catalog
+
+Each build writes the current project's component contracts to:
+
+```text
+.snz/components-catalog.md
 ```
 
-For CSS boundary cleanup:
+The catalog is generated state and must not be edited by hand.
 
-```bash
-bun run css:audit
-bun run doctor
-```
+## Errors
 
-## Next
-
-[Shell](./04-shell.md) · [Docs home](./README.md) · [CSS system](./06-css-system.md)
+Builds fail for unknown or incorrectly cased components, invalid attributes, missing required values, malformed blocks, unresolved placeholders, legacy schema sidecars, component cycles, and invalid Image bridges. Nested failures include their source stack.

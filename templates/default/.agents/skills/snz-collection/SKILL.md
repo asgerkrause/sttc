@@ -2,7 +2,7 @@
 name: snz-collection
 description: Use when deciding whether SANITIZE content belongs in authored pages, posts, or a custom PagesCMS-backed collection.
 ---
-<!-- @snz-skill snz-collection e4a98dad95b5bb4847d9ba849caffb83f72c18da86864d0e54d1d7c553a42b3d -->
+<!-- @snz-skill snz-collection b67794faa89ff6fe7c3e46b365aeb322111a9f113f7ae34e1f6c082bde11a78a -->
 
 # SANITIZE Collection
 
@@ -12,7 +12,7 @@ Choose the content model before scaffolding. Authored pages own layouts; posts o
 
 ## Workflow
 
-1. Read `AGENTS.md` and `node_modules/@snz/bp/framework/docs/decisions/custom-content-collections.md` when available.
+1. Read `AGENTS.md` and `node_modules/@snz/sttc/framework/docs/decisions/custom-content-collections.md` when available.
 2. Classify the request:
    - authored page → `src/pages/`;
    - dated editorial content → built-in posts;

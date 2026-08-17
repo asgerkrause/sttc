@@ -1,122 +1,79 @@
 # SEO, AEO, and GEO
 
-SEO output is build-time. Authors set site and route metadata; framework emits static search and answer-engine discovery files.
-
-## Site metadata
-
-Set `src/site.json` early:
-
-```json
-{
-  "name": "Example Site",
-  "url": "https://example.com",
-  "description": "What this site helps people do.",
-  "locale": "en",
-  "ogImage": "/assets/og.webp"
-}
-```
-
-Before launch, `url` must be public HTTPS and `ogImage` must point to a real social preview image.
-
-## Route metadata
-
-Use `<SEO>` in route `<head>` blocks:
+Every route receives deterministic metadata from `src/site.json`, its filename, and optional route overrides:
 
 ```html
 <head>
-  <SEO title="About" description="What this company does." />
+  <SEO
+    title="About"
+    description="What this organization does."
+    image="/assets/images/about.webp" />
 </head>
-
-<Section>
-  <h1>About</h1>
-</Section>
 ```
 
-Route files are body markup. Optional top `<head>` may hold SEO tags and transition meta.
+`SEO` is a renderer directive, not a component file. `title`, `description`, and optional `image` are the normal page-specific inputs. Canonical URLs derive from route filenames. `ogImage` remains a compatibility alias for `image`.
 
-## Generated artifacts
+The build emits canonical, Open Graph, Twitter, connected JSON-LD, sitemap, robots, feeds, `llms.txt`, `llms-full.txt`, `site.jsonld`, a public site manifest, and HTML/Markdown/JSON representations for public routes.
 
-Every build emits discovery output from route/content/component data:
+Declare canonical organization, brand, and product facts once in `site.json`. Product structured data appears only on its configured `path`; the visible route should use the same `site.product.*` values so published facts do not drift:
 
-| Artifact | Purpose |
-| --- | --- |
-| `/sitemap.xml` | public route index |
-| `/robots.txt` | crawler hints |
-| `/feed.xml` | RSS feed for posts |
-| `/feed.json` | JSON Feed for posts |
-| `/llms.txt` | llmstxt.org-style site index |
-| `/llms-full.txt` | fuller site/content index |
-| `/.well-known/ai-plugin.json` | plugin discovery pointer |
-| `/site.manifest.json` | full site manifest |
-| `/routes/{slug}.json` | per-route data |
-| `<script type="application/ld+json">` | route structured data |
-
-`bun run check` validates required discovery output.
-
-## Structured data
-
-Built-in schema output includes:
-
-- `Organization`
-- `WebSite`
-- `WebPage`
-- `BlogPosting` for `content/posts/*`
-- `FAQPage` from `<FAQ>` / `<Accordion>` content
-- component schemas declared with `@schema Type field=attr,...`
-
-Example component schema comment:
+```json
+{
+  "brand": { "slogan": "Ship with confidence" },
+  "product": {
+    "name": "Acme Platform",
+    "description": "Release management for product teams.",
+    "path": "/platform/",
+    "image": "/assets/images/platform.webp"
+  }
+}
+```
 
 ```html
-<!--
-  @desc Service card.
-  @attr title! Service name.
-  @attr description Short summary.
-  @schema Service name=title,description=description
--->
-<article class="card">
-  <h2>{{title}}</h2>
-  <p>{{description}}</p>
-</article>
+<h1>{{site.product.name}}</h1>
+<p>{{site.product.description}}</p>
 ```
 
-Use schema only when fields represent real page facts. Do not add schema for decorative components.
+Use `<SEO ... unlisted />` only for a directly reachable route that should be omitted from public discovery. It receives `noindex,nofollow`. Unlisted is not authentication or access control.
 
-## Feeds and content
+## FAQ content
 
-Posts generate feeds and post schema. Custom collections do not generate feeds, tags, indexes, or archives by default.
+Only add FAQs where questions genuinely help: a dedicated FAQ page, pricing, product, or support. Do not add filler FAQs to every landing page.
 
-Tags on posts generate `/tags/` and `/tags/{tag}/` routes.
+The starter `FAQ` is an intentionally plain native-HTML recipe. Its visible `<details>` content carries Schema.org microdata, so the human and machine-readable answers have one source of truth:
 
-## Launch checks
-
-Run before deploy or client handoff:
-
-```bash
-bun run doctor -- --launch
+```html
+<section itemscope itemtype="https://schema.org/FAQPage">
+  <details itemprop="mainEntity" itemscope itemtype="https://schema.org/Question">
+    <summary itemprop="name">Can I cancel?</summary>
+    <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+      <p itemprop="text">Yes, at any time.</p>
+    </div>
+  </details>
+</section>
 ```
 
-Launch mode checks:
+For short fixed lists, author literal HTML. For repeated data, use inline build-time JSON or `src/data/faq/*.json` with `{#each}`. The renderer detects explicit Schema.org `itemtype` values; component names never imply structured data.
 
-- public HTTPS `site.url`
-- `ogImage`
-- private URLs in output
-- draft leakage
-- page titles and descriptions
-- duplicate titles
-- duplicate descriptions as warnings
-- H1 and route semantics
-- image `alt`
-- vague or unnamed links
-- discovery artifacts and manifest shape
+FAQ markup improves semantic clarity but does not guarantee rich results, rankings, citations, or inclusion in an answer engine.
 
-Warnings still need review.
+## Crawler policy
 
-## Current limits
+`site.json` may define standard robots groups:
 
-- Rich organization/contact/topic fields beyond current `site.json` are planned, not promised.
-- Runtime SEO mutation is not part of the framework.
-- Custom collection feeds and indexes are not generated by default.
+```json
+{
+  "robots": {
+    "groups": [
+      {
+        "userAgents": ["*"],
+        "allow": ["/"]
+      }
+    ]
+  }
+}
+```
 
-## Next
+Robots rules are advisory crawl instructions, not privacy or authorization. `llms.txt` is an emerging discovery convention, not crawler consent.
 
-[Content and CMS](./08-content-and-cms.md) · [Docs home](./README.md) · [Client router](./10-client-router.md)
+Content posts add `BlogPosting` schema. Components may add explicit structured data with `@schema Type field=attr`, but declared facts must be visible and accurate. Human content review remains required.

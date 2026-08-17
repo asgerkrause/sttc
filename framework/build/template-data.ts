@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises'
+import { readFile, realpath } from 'fs/promises'
 import { join, normalize, relative, resolve } from 'path'
 import { buildErrorAt, BuildError } from './errors'
 import type { TemplateContext, TemplateValue } from './template-directives'
@@ -22,7 +22,29 @@ function toTemplateValue(value: unknown): TemplateValue {
   return String(value)
 }
 
-function parseJsonData(raw: string, file: string, source: string, offset: number): TemplateContext {
+function jsonErrorPosition(error: unknown) {
+  if (!(error instanceof Error)) return undefined
+  const position = error.message.match(/position\s+(\d+)/i)
+  return position ? Number(position[1]) : undefined
+}
+
+function approximateJsonErrorLine(source: string, error: unknown) {
+  const message = error instanceof Error ? error.message : ''
+  const token = message.match(/Unexpected token ['"]?([^'"]+)['"]?/i)?.[1]
+  if (token && token.length === 1) {
+    const index = source.lastIndexOf(token)
+    if (index >= 0) return lineAt(source, index)
+  }
+  return Math.max(1, source.trimEnd().split('\n').length)
+}
+
+function lineAt(source: string, index: number) {
+  let line = 1
+  for (let i = 0; i < index && i < source.length; i++) if (source[i] === '\n') line++
+  return line
+}
+
+function parseJsonData(raw: string, file: string, source: string, offset: number, jsonFile = file): TemplateContext {
   const body = raw.trim()
   if (!body) return {}
   try {
@@ -36,14 +58,23 @@ function parseJsonData(raw: string, file: string, source: string, offset: number
     return Object.fromEntries(Object.entries(parsed).map(([key, value]) => [key, toTemplateValue(value)])) as TemplateContext
   } catch (err) {
     if (err instanceof BuildError) throw err
-    throw buildErrorAt('Invalid SNZ data JSON', source, offset, {
+    const message = err instanceof Error ? err.message : 'Fix JSON syntax.'
+    const position = jsonErrorPosition(err)
+    if (jsonFile !== file) {
+      throw new BuildError('Invalid SNZ data JSON', {
+        file: jsonFile,
+        line: position === undefined ? approximateJsonErrorLine(raw, err) : lineAt(raw, position),
+        hint: message,
+      })
+    }
+    throw buildErrorAt('Invalid SNZ data JSON', source, offset + (position ?? 0), {
       file,
-      hint: err instanceof Error ? err.message : 'Fix JSON syntax.',
+      hint: message,
     })
   }
 }
 
-function safeDataPath(projectRoot: string, srcAttr: string) {
+async function safeDataPath(projectRoot: string, srcAttr: string) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(srcAttr) || srcAttr.startsWith('//')) {
     throw new BuildError('Remote SNZ data src is not allowed', {
       hint: 'Use a JSON file under src/data/ instead.',
@@ -61,6 +92,16 @@ function safeDataPath(projectRoot: string, srcAttr: string) {
   if (rel.startsWith('..') || rel === '' || rel.startsWith('/')) {
     throw new BuildError('SNZ data src must stay inside src/data/', {
       hint: 'Path traversal is not allowed.',
+    })
+  }
+  const [realRoot, realFile] = await Promise.all([
+    realpath(dataRoot).catch(() => dataRoot),
+    realpath(fullPath).catch(() => fullPath),
+  ])
+  const realRel = relative(realRoot, realFile)
+  if (realRel.startsWith('..') || realRel.startsWith('/') || realRel === '') {
+    throw new BuildError('SNZ data src must stay inside src/data/', {
+      hint: 'Symlinked files outside src/data are not allowed.',
     })
   }
   return fullPath
@@ -84,15 +125,17 @@ export async function extractTemplateData(html: string, options: {
   const data: TemplateContext = {}
   for (const block of blocks) {
     const src = block.attrs.match(SRC_RE)?.[1]
-    const raw = src
-      ? await readFile(safeDataPath(options.projectRoot, src), 'utf8').catch((err) => {
+    const dataPath = src ? await safeDataPath(options.projectRoot, src) : undefined
+    const raw = dataPath
+      ? await readFile(dataPath, 'utf8').catch((err) => {
           throw new BuildError(`Could not read SNZ data file "${src}"`, {
             file: options.file,
             hint: err instanceof Error ? err.message : 'Check the src/data path.',
           })
         })
       : block.body
-    Object.assign(data, parseJsonData(raw, options.file, html, block.index))
+    const dataFile = src ? `src/data/${src.replace(/\\/g, '/').replace(/^\/src\/data\//, '').replace(/^src\/data\//, '')}` : options.file
+    Object.assign(data, parseJsonData(raw, options.file, html, block.index, dataFile))
   }
 
   return {

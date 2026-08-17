@@ -1,9 +1,0 @@
-<!--
-  @desc Native fieldset wrapper for grouped form controls.
-  @attr legend! Visible group legend.
-  @attr required Marks the group as required for visual/a11y state.
--->
-<fieldset {#if required}aria-required="true"{/if}>
-  <legend>{{legend}}</legend>
-  <div>{{slot}}</div>
-</fieldset>

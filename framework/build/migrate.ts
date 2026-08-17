@@ -1,10 +1,10 @@
 import { runMigrations } from './migrations/registry'
-import { GENERATOR_VERSION } from './version'
+import { PROJECT_FORMAT_VERSION } from './version'
 
 const dryRun = process.argv.includes('--dry-run')
 const results = await runMigrations(process.cwd(), { dryRun })
 
-console.log(`SANITIZE Boilerplate ${GENERATOR_VERSION} migrate${dryRun ? ' --dry-run' : ''}`)
+console.log(`STTC project format ${PROJECT_FORMAT_VERSION} migrate${dryRun ? ' --dry-run' : ''}`)
 
 if (!results.length) {
   console.log('No migrations to run. Project already at current shape.')

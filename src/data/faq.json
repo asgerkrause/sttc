@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "summary": "What is STTC?",
+      "body": "An HTML-first, Bun-native renderer that builds static websites from routes and components."
+    },
+    {
+      "summary": "Does a site require client-side JavaScript?",
+      "body": "No. The generated HTML remains readable and navigable without JavaScript."
+    },
+    {
+      "summary": "What does the build generate automatically?",
+      "body": "Static routes, responsive images, SEO metadata, structured data, feeds, sitemaps, and agent-readable discovery files."
+    }
+  ]
+}

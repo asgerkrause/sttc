@@ -1,181 +1,40 @@
 # Pages and routing
 
-Routes are HTML files. One file becomes one public URL.
+Files under `src/pages/` map by path:
 
-```txt
-src/pages/index.html        /
-src/pages/about.html        /about/
-src/pages/work/case.html    /work/case/
-src/pages/blog/index.html   /blog/
-src/pages/404.html          /404/
+```text
+index.html       /
+about.html       /about/
+blog/index.html  /blog/
+work/case.html   /work/case/
+404.html         /404/
 ```
 
-`src/pages` is current route source. `src/routes` still works for legacy projects, but `src/pages` wins on same public slug.
-
-## Add a page
-
-Use scaffold:
-
-```bash
-bun run new route pricing
-```
-
-Or create file directly:
-
-```html
-<!-- src/pages/pricing.html -->
-<head>
-  <SEO title="Pricing" description="Clear plans for modern teams." />
-</head>
-
-<Section>
-  <h1>Pricing</h1>
-  <p>Choose plan.</p>
-</Section>
-```
-
-Run:
-
-```bash
-bun run build
-```
-
-Build emits route body, sitemap entry, manifest entry, llms entry, and `/routes/pricing.json`.
-
-## Route file shape
-
-Route files are body markup. Optional top `<head>` block controls per-route head data.
+A route is body markup with an optional leading head wrapper:
 
 ```html
 <head>
-  <SEO title="About" description="What we do and why." />
-  <meta name="snz:transition" content="fade">
+  <SEO title="About" description="What this organization does." />
 </head>
 
-<Section>
+<Section id="intro">
   <h1>About</h1>
-  <p>Page body.</p>
+  <p>Content.</p>
 </Section>
 ```
 
-Allowed transition values:
+`SEO` is a renderer directive. The build supplies default title, description, path, canonical, social metadata, and JSON-LD from the route slug and `site.json`.
 
-```html
-<meta name="snz:transition" content="fade">
-<meta name="snz:transition" content="slide">
-<meta name="snz:transition" content="none">
-```
-
-Router sets `html[data-transition="..."]` during navigation.
-
-## Build-time JSON data
-
-Small local lists can live in a build-only JSON script. The script is stripped from output and never runs in the browser.
-
-```html
-<script type="application/json" data-snz>
-{
-  "services": [
-    { "title": "Strategy", "body": "Positioning and structure." },
-    { "title": "Build", "body": "Static site implementation." }
-  ]
-}
-</script>
-
-<Grid>
-  {#each services as service, i}
-  <Card>
-    <h2>{{service.title}}</h2>
-    <p>{{service.body}}</p>
-  </Card>
-  {/each}
-</Grid>
-```
-
-Reusable data can live under `src/data/`:
-
-```html
-<script type="application/json" data-snz src="services.json"></script>
-```
-
-`src` is JSON-only, local-only, and resolves inside `src/data/`. Values escape by default.
-
-## SEO
-
-Use `<SEO>` once inside route `<head>` when page needs custom title, description, canonical path, or OG image.
+Public discovery is the default. Declare the exception with a boolean flag:
 
 ```html
 <head>
-  <SEO
-    title="Work"
-    description="Selected projects and outcomes."
-    path="/work/"
-    ogImage="/assets/og.webp"
-  />
+  <SEO title="Client preview" description="Shared by direct URL." unlisted />
 </head>
 ```
 
-If omitted, defaults come from `src/site.json` and shell default SEO.
+An unlisted route is still built, directly reachable, link-checked, and represented in its direct route metadata. It emits `noindex,nofollow` and is omitted from sitemap, feeds, generated indexes, `llms*`, and the public site manifest. **Unlisted is not protected**: anyone with the URL can access it.
 
-## Links
+A top route `<script>` is bundled and guarded with `snz.onPage(slug, ...)`. An authored route `<style>` becomes a hashed route asset. Build-time route JSON data may drive `{#each}` loops.
 
-Use normal same-origin links:
-
-```html
-<a href="/about/">About</a>
-<Button href="/contact/" label="Contact" />
-```
-
-Same-origin links navigate through `framework/runtime/router.js`. External links, downloads, hash links on current page, modified clicks, and non-`_self` targets stay native.
-
-## Preload
-
-Same-origin links preload after hover/focus intent. Touch starts preload immediately.
-
-Disable preload per link:
-
-```html
-<a href="/heavy/" data-snz-preload="off">Heavy page</a>
-```
-
-Router cache keeps fresh route HTML for 5 minutes and clears after long background sessions.
-
-## Inline route scripts
-
-A route may include one top-level `<script>` block. Build wraps it with page scope.
-
-```html
-<script>
-  const form = document.querySelector('[data-signup]')
-  form?.addEventListener('submit', (event) => {
-    event.preventDefault()
-  })
-</script>
-
-<Section>
-  <form data-signup>...</form>
-</Section>
-```
-
-Use `src/app.ts` for shared behavior. Use component `<script>` for behavior owned by one component.
-
-## No route styles
-
-`<style>` inside route files is forbidden. Use:
-
-- component `<style>` for component-owned selectors;
-- `html[data-page="slug"]` in global CSS for page-only overrides.
-
-```css
-html[data-page="pricing"] .pricing-note {
-  color: var(--c-mut);
-}
-```
-
-## Slug collisions
-
-Authored pages, legacy routes, CMS content, and generated routes share one public slug registry. Duplicate public URLs fail build loudly. Rename source file or route config instead of editing `dist/`.
-
-## Next
-
-[Project structure](./02-project-structure.md) · [Docs home](./README.md) · [Shell](./04-shell.md)
+Use ordinary internal anchors. Build fails broken internal links unless explicitly bypassed for development. Authored, content, and generated routes share one ownership registry; collisions fail loudly.

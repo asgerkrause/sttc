@@ -159,10 +159,42 @@ content:
         required: true
       - name: locale
         type: string
-      - name: ogImage
+      - name: image
         type: string
       - name: twitter
         type: string
+      - name: organization
+        type: object
+        fields:
+          - name: name
+            type: string
+          - name: legalName
+            type: string
+          - name: logo
+            type: string
+          - name: sameAs
+            type: string
+            list: true
+      - name: brand
+        type: object
+        fields:
+          - name: name
+            type: string
+          - name: slogan
+            type: string
+      - name: product
+        type: object
+        fields:
+          - name: name
+            type: string
+          - name: description
+            type: text
+          - name: path
+            type: string
+          - name: image
+            type: string
+          - name: category
+            type: string
 
 settings:
   merge: false
@@ -191,34 +223,24 @@ Run \`bun run new collection projects --route work/{slug} --template project\` t
 
 const postTemplate = `<head>
   <SEO title="{{title}}" description="{{description}}" path="/insights/{{basename}}/" />
-  <meta name="snz:transition" content="fade">
 </head>
-<article class="post">
+<article>
   <header>
     <h1>{{title}}</h1>
-    <p class="meta">
-      <time datetime="{{date}}">{{date}}</time>
-    </p>
+    <p><time datetime="{{date}}">{{date}}</time></p>
   </header>
-  <div class="post-body">
-    {{body}}
-  </div>
-  <footer>
-    <Link href="/" label="← Home" />
-  </footer>
+  <div>{{body}}</div>
+  <footer><a href="/">← Home</a></footer>
 </article>
 `
 
 function collectionTemplate(collectionName: string, route: string) {
-  const singular = singularize(collectionName)
   return `<head>
   <SEO title="{{title}}" description="{{description}}" path="/${route.replace('{slug}', '{{basename}}')}/" />
 </head>
-<article class="${singular}">
+<article data-collection="${collectionName}">
   <h1>{{title}}</h1>
-  <div class="${singular}-body">
-    {{body}}
-  </div>
+  <div>{{body}}</div>
 </article>
 `
 }
@@ -339,6 +361,10 @@ if (kind === 'cms') {
   console.log('- bun run new route about')
   console.log('- bun run check')
 } else if (kind === 'component') {
+  if (requiredName === 'SEO') {
+    console.error('SEO is a renderer directive and cannot be scaffolded as a component')
+    process.exit(1)
+  }
   if (!/^[A-Z][A-Za-z0-9]*$/.test(requiredName)) {
     console.error(`component name must be PascalCase (got "${requiredName}")`)
     process.exit(1)
@@ -347,16 +373,10 @@ if (kind === 'cms') {
   @desc ${requiredName} — TODO describe what this component does.
   @attr title! Heading text.
 -->
-<article class="${requiredName.toLowerCase()}">
+<article>
   <h2>{{title}}</h2>
   <div>{{slot}}</div>
 </article>
-
-<style>
-  .${requiredName.toLowerCase()} {
-    /* use tokens from src/styles.css; prefer elements/attrs before extra classes */
-  }
-</style>
 `
   await writeIfMissing(join(root, 'src', 'components', `${requiredName}.html`), html)
   if (demo) {
@@ -364,7 +384,7 @@ if (kind === 'cms') {
       ? join(root, 'src', 'pages', 'styles.html')
       : join(root, 'src', 'routes', 'styles.html')
     if (await exists(stylesPath)) {
-      const append = `\n<section><div class="container"><${requiredName} title="${requiredName} demo">Demo content.</${requiredName}></div></section>\n`
+      const append = `\n<section><${requiredName} title="${requiredName} demo">Demo content.</${requiredName}></section>\n`
       const cur = await Bun.file(stylesPath).text()
       await writeFile(stylesPath, cur + append)
       console.log(`appended demo to ${stylesPath}`)

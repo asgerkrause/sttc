@@ -1,0 +1,87 @@
+@layer utility {
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+
+    &.focusable:focus-visible {
+      position: static;
+      width: auto;
+      height: auto;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
+  }
+
+  .c-fg {
+    color: var(--c-fg);
+  }
+
+  .c-mu {
+    color: var(--c-mu);
+  }
+
+  .c-ac {
+    color: var(--c-ac);
+  }
+
+  .c-sc {
+    color: var(--c-sc);
+  }
+
+  .f-sa {
+    font-family: var(--t-ff-sa);
+  }
+
+  .f-se {
+    font-family: var(--t-ff-se);
+  }
+
+  .f-mo {
+    font-family: var(--t-ff-mo);
+  }
+
+  .f-bd {
+    font-family: var(--t-ff-bd);
+  }
+
+  .f-dp {
+    font-family: var(--t-ff-dp);
+  }
+
+  .w-rg {
+    font-weight: var(--t-fw-rg);
+  }
+
+  .w-lt {
+    font-weight: var(--t-fw-lt);
+  }
+
+  .w-bd {
+    font-weight: var(--t-fw-bd);
+  }
+
+  .tt-uc {
+    text-transform: uppercase;
+  }
+
+  .tt-lc {
+    text-transform: lowercase;
+  }
+
+  .tt-no {
+    text-transform: none;
+  }
+
+  .tt-cp {
+    text-transform: capitalize;
+  }
+}

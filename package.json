@@ -1,20 +1,20 @@
 {
-  "name": "@snz/bp",
+  "name": "@snz/sttc",
   "version": "0.1.0",
-  "snzBp": {
-    "generatorVersion": "2.0.0"
+  "sttc": {
+    "projectFormatVersion": "2.0.0"
   },
-  "description": "HTML-first, Bun-native static site builder for SANITIZE Boilerplate sites.",
+  "description": "HTML-first, Bun-native static site builder for STTC sites.",
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sanitizestudio/snz-bp.git"
+    "url": "git+https://github.com/sanitizestudio/sttc.git"
   },
-  "homepage": "https://github.com/sanitizestudio/snz-bp#readme",
+  "homepage": "https://sttc.snz.st",
   "bugs": {
-    "url": "https://github.com/sanitizestudio/snz-bp/issues"
+    "url": "https://github.com/sanitizestudio/sttc/issues"
   },
   "keywords": [
     "bun",
@@ -26,38 +26,38 @@
   "files": [
     "AGENTS.md",
     "README.md",
-    "framework/",
+    "framework/build/",
+    "framework/cli/",
+    "framework/dev.ts",
+    "framework/docs/",
+    "framework/runtime/",
+    "framework/types/",
     "templates/default/"
   ],
   "workspaces": [
-    "templates/default",
-    "packages/create-snz-bp"
+    "templates/default"
   ],
   "bin": {
-    "snz-bp": "./framework/cli/snz-bp.ts"
+    "sttc": "./framework/cli/sttc.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "latest"
+    "@types/bun": "1.3.14",
+    "typescript": "7.0.2"
   },
   "engines": {
     "bun": ">=1.3.14"
   },
   "scripts": {
-    "build": "bun framework/cli/snz-bp.ts build",
-    "check": "bun framework/cli/snz-bp.ts check",
+    "build": "bun framework/cli/sttc.ts build",
+    "check": "bun framework/cli/sttc.ts check",
     "typecheck": "tsc --noEmit",
-    "css:audit": "bun framework/cli/snz-bp.ts css:audit",
-    "dev": "bun framework/cli/snz-bp.ts dev",
-    "doctor": "bun framework/cli/snz-bp.ts doctor && bun run typecheck",
-    "framework:verify": "bun run doctor && bun test && bun run check:create-template && bun run smoke:create",
+    "dev": "bun framework/cli/sttc.ts dev",
+    "doctor": "bun run typecheck && bun framework/cli/sttc.ts doctor",
+    "framework:verify": "bun run doctor && bun test framework/tests && bun run smoke:create",
     "test": "bun test framework/tests",
-    "new": "bun framework/cli/snz-bp.ts new",
-    "add": "bun framework/cli/snz-bp.ts add",
-    "skills": "bun framework/cli/snz-bp.ts skills",
-    "migrate": "bun framework/cli/snz-bp.ts migrate",
-    "prepare:create-template": "bun framework/scripts/sync-create-template.ts",
-    "check:create-template": "bun framework/scripts/sync-create-template.ts --check",
+    "new": "bun framework/cli/sttc.ts new",
+    "skills": "bun framework/cli/sttc.ts skills",
+    "migrate": "bun framework/cli/sttc.ts migrate",
     "check:private": "bun framework/scripts/private-review-guard.ts",
     "smoke:create": "bun framework/scripts/smoke-create.ts"
   }

@@ -1,12 +1,6 @@
 <!--
-  @desc Semantic section with a .container container. No root class.
+  @desc Semantic section wrapper for an authored page topic.
   @attr id Optional section id.
-  @attr theme=[tone|accent|secondary|invert] Optional data-theme value.
-  @attr center=[center] Optional center alignment for the inner .container container.
-  @attr scroll Optional data-scroll timeline name.
-  @attr video Optional decorative background video URL.
+  @attr label Optional accessible label when no visible heading labels the section.
 -->
-<section id="{{id}}" data-theme="{{theme}}" data-scroll="{{scroll}}">
-  {#if video}<video data-hero-bg src="{{video}}" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>{/if}
-  <div class="container {{center}}">{{slot}}</div>
-</section>
+<section id="{{id}}" aria-label="{{label}}"><div class="c">{{slot}}</div></section>

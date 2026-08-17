@@ -1,36 +1,5 @@
 <!--
-  @desc Large editorial statement block.
-  @attr variant=[default|accent|quiet] :class Visual tone.
-  @attr theme=[tone|accent|secondary|invert] Optional data-theme value.
+  @desc Quoted editorial statement supplied through the default slot.
+  @attr cite Optional source URL for the quotation.
 -->
-<blockquote class="statement"{#if theme} data-theme="{{theme}}"{/if}>
-  {{slot}}
-</blockquote>
-
-<style>
-  .statement {
-    max-width: 18ch;
-    margin: 0;
-    color: var(--c-ink);
-    font-size: var(--t-h1-fs);
-    font-weight: var(--t-fw-l);
-    letter-spacing: var(--t-h1-ls);
-    line-height: var(--t-h1-lh);
-    text-wrap: balance;
-  }
-
-  .statement.accent {
-    color: var(--c-acc);
-  }
-
-  .statement.quiet {
-    color: var(--c-mut);
-  }
-
-  .statement[data-theme] {
-    background: var(--c-bg);
-    color: var(--c-ink);
-    border-radius: var(--s-br);
-    padding: var(--s-pd-lg);
-  }
-</style>
+<blockquote class="stmnt" cite="{{cite}}">{{slot}}</blockquote>

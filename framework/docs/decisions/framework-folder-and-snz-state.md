@@ -25,11 +25,11 @@ No external users depend on the old file shape yet, so this is the right time fo
 
 ## Why
 
-Cleaner DX for humans and agents: authoring work targets `src/`; engine work targets `framework/`; starter work targets `templates/default/`; creator work targets `packages/create-snz-bp/`.
+Cleaner DX for humans and agents: authoring work targets `src/`; engine work targets `framework/`; starter and creator work target the one packaged `templates/default/` source.
 
 ## Consequences
 
-- CLI/package paths point at `framework/cli/snz-bp.ts`.
+- CLI/package paths point at `framework/cli/sttc.ts`.
 - Build/dev code must distinguish project root (`process.cwd()`) from framework root (derived from script location).
 - Workspace authoring mode can hide `framework/` without hiding authored source.
 - Docs and tests must use `framework/` paths for engine-owned files.
@@ -40,5 +40,4 @@ Cleaner DX for humans and agents: authoring work targets `src/`; engine work tar
 - `bun run test`
 - `bun run check`
 - `bun run doctor`
-- `bun run check:create-template`
 - `bun run smoke:create`

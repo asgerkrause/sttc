@@ -1,6 +1,6 @@
 # Overview
 
-`@snz/bp` is a Bun-native static site builder. Authors write HTML, CSS, TypeScript/JavaScript, images, and optional markdown content. Build output is static files in `dist/`.
+`@snz/sttc` is a Bun-native static site builder. Authors write HTML, CSS, TypeScript/JavaScript, images, and optional markdown content. Build output is static files in `dist/`.
 
 ## What it provides
 
@@ -27,7 +27,7 @@
 
 ## Runtime model
 
-Shell HTML loads once. The router fetches route fragments from `/routes/{slug}.html` and swaps them into `<main data-route-root>`. Browser API lives on `window.snz`:
+Shell HTML loads once. The router fetches route fragments from `/routes/{slug}.html` and swaps them into the shell's `body > main`. Browser API lives on `window.snz`:
 
 ```js
 snz.navigate('/about/')

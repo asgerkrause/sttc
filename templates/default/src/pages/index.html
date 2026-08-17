@@ -1,89 +1,9 @@
 <head>
-  <SEO title="Home" description="A clean starter site for fast, accessible static pages." />
+  <SEO title="STTC" description="A Bun-native HTML renderer with smart routing, components, images, SEO, and discovery built in." />
 </head>
 
-<section data-theme="accent" class="hero">
-  <div class="container">
-    <div g="12-6">
-      <div class="stack" c="7-4">
-        <p class="eyebrow">HTML-first starter</p>
-        <h1>Launch a sharp static site without framework weight.</h1>
-        <p class="t-lg">Use this starter as a practical base: semantic routes, responsive layout primitives, reusable components, optimized images, and built-in discovery files.</p>
-        <div class="buttons">
-          <Button label="Explore components" href="/components/" />
-          <Button label="Start editing" href="#start" variant="ghost" />
-        </div>
-      </div>
-      <div class="hero-pn stack" c="5-2">
-        <span>Ready in minutes</span>
-        <strong>2 routes</strong>
-        <p>Home and components pages are intentionally small, readable, and safe to replace.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<Section id="start">
-  <div g="3-2">
-    <Card>
-      <h3>Edit routes</h3>
-      <p>Change files in src/pages. One HTML file becomes one public URL with SEO and route data.</p>
-    </Card>
-    <Card>
-      <h3>Compose sections</h3>
-      <p>Use built-in components for cards, actions, images, accordions, code, grids, and markdown.</p>
-    </Card>
-    <Card>
-      <h3>Ship static output</h3>
-      <p>Run Bun checks, then deploy generated files from dist with your host of choice.</p>
-    </Card>
-  </div>
-</Section>
-
-<Section id="showcase">
-  <Grid cols="2">
-    <div class="stack">
-      <p class="eyebrow">Design baseline</p>
-      <h2>Neutral, flexible, and ready for brand work.</h2>
-      <p>Tokens define spacing, type, colors, borders, and motion. Keep global CSS for primitives; move component-specific styles into component files.</p>
-      <div class="buttons">
-        <Button label="View gallery" href="/components/" variant="accent" />
-        <Link label="Read docs" href="https://github.com/sanitizestudio/snz-bp" />
-      </div>
-    </div>
-    <Image src="showcase" alt="Abstract starter site preview" max="1200" loading="eager" />
-  </Grid>
-</Section>
-
-<Section id="workflow">
-  <h2>Starter workflow</h2>
-  <div g="4-2">
-    <div class="stp stack">
-      <span>01</span>
-      <h3>Update config</h3>
-      <p>Set site name, URL, description, locale, and social image in <code>src/site.json</code>.</p>
-    </div>
-    <div class="stp stack">
-      <span>02</span>
-      <h3>Replace pages</h3>
-      <p>Edit <code>src/pages/index.html</code>, add nested pages, and keep route markup semantic.</p>
-    </div>
-    <div class="stp stack">
-      <span>03</span>
-      <h3>Add content</h3>
-      <p>Use HTML, components, images, or opt into markdown-backed content when needed.</p>
-    </div>
-    <div class="stp stack">
-      <span>04</span>
-      <h3>Verify</h3>
-      <p>Run <code>bun run check</code> before handoff so broken links and component issues fail early.</p>
-    </div>
-  </div>
-</Section>
-
-<Section id="faq">
-  <h2>Common questions</h2>
-  <Accordion summary="Where do I start editing?" body="Start with src/pages/index.html for page content, src/site.json for site metadata, and src/styles.css for tokens and global primitives." group="home" />
-  <Accordion summary="Can I add custom components?" body="Yes. Add one PascalCase HTML file to src/components with an inline schema comment, template markup, and optional colocated style or script." group="home" />
-  <Accordion summary="Does the starter require a JavaScript framework?" body="No. Pages are static HTML with a small router and optional component lifecycle scripts." group="home" />
+<Section id="hero" label="Introduction">
+  <p>HTML-first. Bun-native. Framework-free.</p>
+  <h1>A smart static renderer with no visual system imposed.</h1>
+  <p>Compose routes from atomic components, keep presentation project-owned, and generate launch-ready static output.</p>
 </Section>

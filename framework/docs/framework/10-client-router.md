@@ -1,6 +1,6 @@
 # Client router
 
-SANITIZE Boilerplate ships static HTML plus a small client router at `framework/runtime/router.js`. It swaps route bodies into the shell and exposes `window.snz`.
+STTC ships static HTML plus a small client router at `framework/runtime/router.js`. It swaps route bodies into the shell and exposes `window.snz`.
 
 ## Shell and routes
 
@@ -11,7 +11,7 @@ src/shell.html          -> dist/index.html
 src/pages/about.html    -> dist/routes/about.html
 ```
 
-The shell loads once. Same-origin navigation fetches route HTML from `/routes/{slug}.html` and injects it into `<main data-route-root>`.
+The shell loads once. Same-origin navigation fetches route HTML from `/routes/{slug}.html` and injects it into the shell's `body > main`.
 
 Route files contain body markup, not shell chrome.
 
@@ -102,23 +102,19 @@ Add `data-snz-ignore` to opt out of framework disclosure handling.
 
 ## Scroll and transitions
 
-Route scroll reset uses Lenis when available:
+Route navigation resets with native `window.scrollTo(0, 0)`. Projects may add their own scrolling system without a framework coupling.
 
-```js
-window.lenis?.scrollTo(0, { immediate: true })
-```
+The router uses the native View Transitions API when available. Transition presentation is ordinary project-owned CSS in `src/styles.css`; edit or delete the marked route-transition block there. The router adds no transition CSS.
 
-Fallback is native `window.scrollTo(0, 0)`.
-
-Per-route transition variant:
+Projects that need route-specific treatments may set their own hook:
 
 ```html
 <head>
-  <meta name="snz:transition" content="fade">
+  <meta name="snz:transition" content="project-detail">
 </head>
 ```
 
-Supported values: `fade`, `slide`, `none`.
+The value becomes `html[data-transition="project-detail"]`. The framework provides no named visual variants.
 
 ## Tracking hook
 

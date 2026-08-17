@@ -1,8 +1,8 @@
 <!--
-  @desc Attribute grid container. cols maps to [g]; supports fixed counts, subgrid (sg), and auto-fit grids (a, a-sm, a-lg). span/rows/order map to [c]/[r]/[o] when this grid is also a grid child.
-  @attr cols Column count as large-medium split value, sg, a, a-sm, or a-lg. Default grid is 12 large / 6 medium.
-  @attr span Column span when this grid is nested as a child.
-  @attr rows Row span when this grid is nested as a child.
-  @attr order Visual order as large-medium-small split value.
+  @desc Responsive CRFT grid that preserves source order.
+  @attr cols Optional column count mapped to the CRFT g attribute. Omit for CRFT's default grid.
+  @attr span Item span mapped to the CRFT c attribute when Grid is nested.
+  @attr rows Row span mapped to the CRFT r attribute when Grid is nested.
+  @attr order Responsive order mapped to the CRFT o attribute when Grid is nested.
 -->
-<div g="{{cols}}" c="{{span}}" r="{{rows}}" o="{{order}}">{{slot}}</div>
+{#if cols}<div g="{{cols}}" c="{{span}}" r="{{rows}}" o="{{order}}">{{slot}}</div>{:else}<div g c="{{span}}" r="{{rows}}" o="{{order}}">{{slot}}</div>{/if}

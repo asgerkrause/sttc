@@ -136,6 +136,6 @@ describe('canonical SANITIZE skills', () => {
 
   test('starter exposes explicit skill synchronization', async () => {
     const pkg = JSON.parse(await readFile(join(repoRoot, 'templates', 'default', 'package.json'), 'utf8'))
-    expect(pkg.scripts.skills).toBe('snz-bp skills')
+    expect(pkg.scripts.skills).toBe('sttc skills')
   })
 })

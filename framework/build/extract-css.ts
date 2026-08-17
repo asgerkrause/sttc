@@ -19,6 +19,16 @@ export type RouteCssAsset = { href: string; filename: string; layer: string }
 const COMPONENTS_LAYER = 'snz.components'
 const PAGES_LAYER_ROOT = 'snz.pages'
 
+function rendersImageBridge(html: string) {
+  const renderable = html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(script|style|textarea|title|template|noscript|iframe|noembed|xmp)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
+  const positions = [...renderable.matchAll(/\{\{imgMain\}\}/g)].map((match) => match.index)
+  if (positions.length !== 1) return false
+  const index = positions[0]!
+  return renderable.lastIndexOf('<', index) < renderable.lastIndexOf('>', index)
+}
+
 function minifyCss(css: string) {
   // Keep nesting intact — aggressive minify broke nested selectors in component bundles.
   return css
@@ -114,6 +124,12 @@ export async function prepareComponents(componentsDir: string, projectRoot = roo
     const path = join(componentsDir, file)
     const raw = await readFile(path, 'utf8')
     const name = file.replace(/\.html$/i, '')
+    if (name === 'SEO') {
+      throw new BuildError('SEO is a renderer directive, not a component', {
+        file: `src/components/${file}`,
+        hint: 'Delete SEO.html and use one self-closing <SEO ... /> directive in each route <head>.',
+      })
+    }
     // 1. Pull build-time JSON data before runtime scripts so it never ships or mounts.
     const { html: noData, data: componentData } = await extractTemplateData(raw, { file: `src/components/${file}`, projectRoot })
     if (Object.keys(componentData).length) data.set(name, componentData)
@@ -127,6 +143,12 @@ export async function prepareComponents(componentsDir: string, projectRoot = roo
     }
     // 4. Pull <style>
     const { html, css } = stripStyleBlocks(noComment)
+    if (name === 'Image' && !rendersImageBridge(html)) {
+      throw new BuildError('Image component must render the compiler image bridge exactly once as element content', {
+        file: `src/components/${file}`,
+        hint: 'Add one {{imgMain}} text placeholder to Image.html where the generated <img> must render. Do not put it in a comment or attribute.',
+      })
+    }
     templates.set(name, html)
     for (const chunk of css) cssBlocks.push({ source: file, css: chunk })
   }
@@ -211,11 +233,15 @@ export function injectComponentStylesLink(shellHtml: string, hashedFilename: str
     return shellHtml.replace(COMPONENTS_MARKER, link)
   }
 
-  if (!html.includes(STYLES_LINK)) return html
+  if (html.match(/<link rel="stylesheet" href="\/assets\/css\/components/)) return html
+  if (html.includes(STYLES_LINK)) return html.replace(STYLES_LINK, `${STYLES_LINK}\n${link}`)
+  return html.replace('</head>', `${link}\n</head>`)
+}
 
-  if (!html.match(/<link rel="stylesheet" href="\/assets\/css\/components/)) {
-    return html.replace(STYLES_LINK, `${STYLES_LINK}\n${link}`)
-  }
-
-  return html
+export function injectGlobalStylesLink(shellHtml: string, enabled: boolean) {
+  const link = '  <link rel="stylesheet" href="/assets/css/styles.css">'
+  const withoutLink = shellHtml.replace(/\n?\s*<link rel="stylesheet" href="\/assets\/css\/styles\.css">/g, '')
+  if (!enabled) return withoutLink
+  if (shellHtml.includes(STYLES_LINK)) return shellHtml
+  return withoutLink.replace('</head>', `${link}\n</head>`)
 }

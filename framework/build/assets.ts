@@ -35,8 +35,12 @@ export async function copyTree(
   }
 }
 
-export async function copyAssets() {
-  const assetsDist = join(dist, 'assets')
+export async function copyAssetsTo(
+  projectRoot = root,
+  outputDir = dist,
+  options: { scroll?: 'lenis' | 'native' } = {},
+) {
+  const assetsDist = join(outputDir, 'assets')
   await mkdir(assetsDist, { recursive: true })
 
   // Wipe stale js bundles so old hashed app.*.js bundles don't linger.
@@ -46,14 +50,31 @@ export async function copyAssets() {
   const jsDist = join(assetsDist, 'js')
   await mkdir(cssDist, { recursive: true })
   await mkdir(jsDist, { recursive: true })
-  await copyTree(await sourceStylesDir(), cssDist, (name) => name === 'styles.css')
-  await Bun.write(join(cssDist, 'styles.css'), Bun.file(await sourceStylesFile()))
-  await copyTree(await sourceAppDir(), jsDist, (name) => name === 'app.js' || name === 'app.ts')
+  const stylesFile = await sourceStylesFile(projectRoot)
+  const hasGlobalStyles = await Bun.file(stylesFile).exists()
+  const nativeScroll = options.scroll === 'native'
+  if (hasGlobalStyles) {
+    await copyTree(await sourceStylesDir(projectRoot), cssDist, (name) =>
+      name === 'styles.css' || (nativeScroll && slashPath(name) === 'lenis.css'),
+    )
+    await Bun.write(join(cssDist, 'styles.css'), Bun.file(stylesFile))
+  }
+  await copyTree(await sourceAppDir(projectRoot), jsDist, (name) => {
+    const path = slashPath(name)
+    return name === 'app.js'
+      || name === 'app.ts'
+      || (nativeScroll && (path === 'scroll.js' || path === 'vendor/lenis.min.js'))
+  })
   const imagesDist = join(assetsDist, 'images')
   await mkdir(imagesDist, { recursive: true })
-  await copyTree(await sourceImagesDir(), imagesDist, (name) => !name.endsWith('.svg'))
-  await copyTree(await sourceVideosDir(), join(assetsDist, 'videos'))
-  await copyTree(await sourceFilesDir(), join(assetsDist, 'files'))
+  await copyTree(await sourceImagesDir(projectRoot), imagesDist, (name) => !name.endsWith('.svg'))
+  await copyTree(await sourceVideosDir(projectRoot), join(assetsDist, 'videos'))
+  await copyTree(await sourceFilesDir(projectRoot), join(assetsDist, 'files'))
+  return hasGlobalStyles
+}
+
+export async function copyAssets() {
+  await copyAssetsTo(root, dist)
 }
 
 function slashPath(path: string) {
@@ -82,19 +103,23 @@ export function shouldSkipMediaCopy(relPath: string, exclusions: string[]) {
   )
 }
 
-export async function copyMediaFolder() {
+export async function copyMediaFolderTo(projectRoot = root, outputDir = dist) {
   // Configured media.input roots are source input for the optimizer, not public raw asset trees.
   // Other media folders can still be copied for non-image CMS files if added later.
-  const mediaSrc = join(root, 'media')
-  const exclusions = await mediaInputCopyExclusions(root)
+  const mediaSrc = join(projectRoot, 'media')
+  const exclusions = await mediaInputCopyExclusions(projectRoot)
   for (const exclusion of exclusions) {
-    await rm(join(dist, 'media', exclusion), { recursive: true, force: true })
+    await rm(join(outputDir, 'media', exclusion), { recursive: true, force: true })
   }
   try {
     if ((await stat(mediaSrc)).isDirectory()) {
-      await copyTree(mediaSrc, join(dist, 'media'), (relPath) => shouldSkipMediaCopy(relPath, exclusions))
+      await copyTree(mediaSrc, join(outputDir, 'media'), (relPath) => shouldSkipMediaCopy(relPath, exclusions))
     }
   } catch {
     /* no media folder */
   }
+}
+
+export async function copyMediaFolder() {
+  return copyMediaFolderTo(root, dist)
 }

@@ -1,160 +1,20 @@
 <!--
-  @desc Site header.
+  @desc Semantic site header with build-time navigation data.
 -->
+<script type="application/json" data-snz>
+{
+  "items": [
+    { "label": "Home", "href": "/" }
+  ]
+}
+</script>
 <header>
-  <div class="container">
-    <Logo size="1lh" />
-    <button
-      type="button"
-      class="brg"
-      aria-expanded="false"
-      aria-controls="nav"
-      aria-label="Menu"
-    ></button>
-    <nav id="nav">
-      <ul>
-        <li><a class="link" href="/">Home</a></li>
-        <li><a class="link" href="/components/">Components</a></li>
-      </ul>
-    </nav>
-  </div>
+  <nav class="c" aria-label="Primary">
+    <Logo />
+    <ul>
+      {#each items as item}
+      <li><a href="{{item.href}}">{{item.label}}</a></li>
+      {/each}
+    </ul>
+  </nav>
 </header>
-
-<style>
-  body>header {
-  background: var(--e-head-sur);
-  color: var(--e-head-ink);
-  view-transition-name: header;
-  border-bottom: var(--s-bw) var(--e-head-bor) solid;
-  padding: var(--s-pd) var(--s-px);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-
-  .container {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  nav ul {
-    display: flex;
-    flex-direction: row;
-    list-style: none;
-    align-items: center;
-    padding: 0;
-    margin: 0;
-    gap: var(--s-gp-lg);
-  }
-
-  .brg {
-    position: relative;
-    background: var(--c-sur);
-    color: var(--c-ink);
-    z-index: 1000;
-    width: 4em;
-    height: 2em;
-    margin-left: auto;
-    border: none;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    border-radius: 100vw;
-    display: flex;
-    flex-direction: column;
-    backdrop-filter: blur(2rem);
-
-    &::before,
-    &::after {
-      content: "";
-      width: 33%;
-      height: var(--s-bw);
-      background: currentColor;
-      position: absolute;
-      border-radius: 100vw;
-      transition-property: color, background, transform;
-      transition-timing-function: var(--m-tf-s);
-      transition-duration: var(--m-td-s);
-    }
-
-    &::after {
-      transform: translateY(-0.2em);
-    }
-
-    &::before {
-      transform: translateY(0.2em);
-    }
-
-    &:hover {
-      background: var(--c-neu-10);
-    }
-
-    &[aria-expanded="true"] {
-      background: var(--c-neu-10);
-
-      &::after {
-        transform: rotate(45deg);
-      }
-
-      &::before {
-        transform: rotate(135deg);
-      }
-    }
-  }
-
-  @media (width > 60rem) {
-    .brg {
-      display: none;
-    }
-
-    nav {
-      display: flex;
-      margin-left: auto;
-    }
-  }
-
-  @media (width <=60rem) {
-    nav {
-      display: none;
-      position: fixed;
-      inset: 0;
-    }
-
-    &:has([aria-expanded="true"]) nav {
-      display: flex;
-      position: fixed;
-      inset: 0;
-      height: 100vh;
-      width: 100vw;
-      padding: var(--s-px);
-      align-items: end;
-
-      ul {
-        flex-direction: column;
-        gap: 0;
-        width: 100%;
-
-        a {
-          font-size: var(--t-h2-fs);
-        }
-      }
-    }
-  }
-}
-
-@media (width <=60rem) {
-  body:has(header [aria-expanded="true"]) :is(main, footer) {
-    pointer-events: none;
-    user-select: none;
-  }
-
-  body:has(header [aria-expanded="true"]) main::after {
-    content: "";
-    background: color-mix(in srgb, var(--c-bg) 90%, transparent);
-    position: fixed;
-    inset: 0;
-    z-index: 998;
-    backdrop-filter: blur(10px);
-    pointer-events: none;
-  }
-}
-</style>

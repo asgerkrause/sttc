@@ -1,27 +1,25 @@
 {
-  "name": "snz-bp-site",
+  "name": "sttc-site",
   "private": true,
   "type": "module",
   "engines": {
     "bun": ">=1.3.14"
   },
   "scripts": {
-    "dev": "snz-bp dev",
-    "build": "snz-bp build",
-    "check": "snz-bp check",
+    "dev": "sttc dev",
+    "build": "sttc build",
+    "check": "sttc check",
     "typecheck": "tsc --noEmit",
-    "css:audit": "snz-bp css:audit",
-    "doctor": "snz-bp doctor && bun run typecheck",
-    "new": "snz-bp new",
-    "add": "snz-bp add",
-    "skills": "snz-bp skills",
-    "migrate": "snz-bp migrate"
+    "doctor": "bun run typecheck && sttc doctor",
+    "new": "sttc new",
+    "skills": "sttc skills",
+    "migrate": "sttc migrate"
   },
   "dependencies": {
-    "@snz/bp": "file:../.."
+    "@snz/sttc": "file:../.."
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "latest"
+    "@types/bun": "1.3.14",
+    "typescript": "7.0.2"
   }
 }

@@ -1,11 +1,11 @@
 {
   "name": "Starter Site",
   "url": "https://example.com",
-  "description": "A clean starter site built with SANITIZE Boilerplate.",
+  "description": "A Bun-native HTML renderer with smart routing, components, images, SEO, and discovery built in.",
   "locale": "en",
-  "twitter": "",
-  "ogImage": "/assets/og.webp",
   "scroll": "lenis",
+  "twitter": "",
+  "image": "/assets/og.webp",
   "vercel": {
     "analytics": false,
     "speedInsights": false

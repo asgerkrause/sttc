@@ -1,136 +1,89 @@
 #!/usr/bin/env bun
 
-import { mkdir, mkdtemp, rm } from 'fs/promises'
+import { mkdir, mkdtemp, readdir, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 
 const repoRoot = join(import.meta.dir, '..', '..')
-const creator = join(repoRoot, 'packages', 'create-snz-bp', 'bin', 'create-snz-bp.ts')
-const root = await mkdtemp(join(tmpdir(), 'snz-create-smoke-'))
+const cli = join(repoRoot, 'framework', 'cli', 'sttc.ts')
+const root = await mkdtemp(join(tmpdir(), 'sttc-create-smoke-'))
 const localTarget = join(root, 'site-local')
 const packagedTarget = join(root, 'site-packaged')
+const packedHarness = join(root, 'packed-harness')
+const packedDir = join(root, 'packed')
 const dotTarget = join(root, 'site-dot')
-const rootPkg = JSON.parse(await Bun.file(join(repoRoot, 'package.json')).text())
-const expectedVersion = `^${rootPkg.version}`
+const rootPackage = JSON.parse(await Bun.file(join(repoRoot, 'package.json')).text())
+const packedArchive = join(packedDir, `snz-sttc-${rootPackage.version}.tgz`)
+const expectedVersion = `^${rootPackage.version}`
 
-async function run(cmd: string[], cwd = repoRoot, env: Record<string, string> = {}) {
-  const proc = Bun.spawn(cmd, {
+async function run(command: string[], cwd = repoRoot) {
+  const proc = Bun.spawn(command, {
     cwd,
     stdout: 'inherit',
     stderr: 'inherit',
     stdin: 'inherit',
-    env: { ...process.env, ...env },
+    env: process.env,
   })
   const code = await proc.exited
-  if (code !== 0) {
-    throw new Error(`${cmd.join(' ')} failed with exit code ${code}`)
-  }
+  if (code !== 0) throw new Error(`${command.join(' ')} failed with exit code ${code}`)
 }
 
-async function packageJson(target: string) {
+async function readPackage(target: string) {
   return JSON.parse(await Bun.file(join(target, 'package.json')).text())
 }
 
-async function packageDependency(target: string) {
-  const pkg = await packageJson(target)
-  return pkg.dependencies?.['@snz/bp']
-}
-
-async function assertFile(target: string, relativePath: string) {
-  if (!(await Bun.file(join(target, relativePath)).exists())) {
-    throw new Error(`created starter missing ${relativePath}`)
-  }
-}
-
-async function assertNoFile(target: string, relativePath: string) {
-  if (await Bun.file(join(target, relativePath)).exists()) {
-    throw new Error(`created starter should not include ${relativePath}`)
-  }
-}
-
-async function assertNoGeneratedOrIgnoredArtifacts(target: string) {
-  for (const path of ['dist', 'node_modules', 'bun.lock', '.snz/components-catalog.md']) {
-    await assertNoFile(target, path)
-  }
-}
-
-async function assertStarterSurface(target: string) {
-  for (const file of [
-    'AGENTS.md',
-    'README.md',
-    'src/shell.html',
-    'src/site.json',
-    'src/styles.css',
-    'src/app.ts',
-    'src/snz.d.ts',
-    'tsconfig.json',
-    'vercel.json',
-    'src/pages/index.html',
-    'src/pages/404.html',
-    'src/pages/components.html',
-    'src/components/Header.html',
-    'src/components/Footer.html',
-    'src/components/Section.html',
-    'src/components/Button.html',
-    'src/components/Card.html',
-    'src/components/Accordion.html',
-    'src/components/FAQ.html',
-    'src/components/Image.html',
-    'src/images/og.png',
-    'src/images/showcase.png',
-    '.agents/skills/snz-component/SKILL.md',
-    '.agents/skills/snz-collection/SKILL.md',
-    '.agents/skills/snz-launch/SKILL.md',
-    '.agents/skills/snz-diagnose/SKILL.md',
+async function assertStarter(target: string) {
+  for (const path of [
+    'AGENTS.md', 'README.md', 'src/shell.html', 'src/site.json', 'src/app.ts', 'src/snz.d.ts',
+    'src/styles.css', 'src/styles/global.css', 'src/styles/sans.ttf', 'src/styles/mono.ttf',
+    'src/styles/layers/base.css', 'src/styles/layers/tokens.css', 'src/styles/layers/type.css',
+    'src/styles/layers/layout.css', 'src/styles/layers/features.css', 'src/styles/layers/utility.css',
+    'src/pages/index.html', 'src/pages/404.html', 'src/images/og.png', 'tsconfig.json', 'vercel.json',
   ]) {
-    await assertFile(target, file)
+    if (!(await Bun.file(join(target, path)).exists())) throw new Error(`created starter missing ${path}`)
   }
 
-  await assertNoFile(target, 'src/app.js')
-  await assertNoGeneratedOrIgnoredArtifacts(target)
+  const components = (await readdir(join(target, 'src', 'components')))
+    .filter((file) => file.endsWith('.html'))
+    .sort()
+  const expected = ['Footer.html', 'Grid.html', 'Header.html', 'Image.html', 'Logo.html', 'Section.html', 'Video.html']
+  if (components.join(',') !== expected.join(',')) {
+    throw new Error(`created starter has unexpected components: ${components.join(', ')}`)
+  }
 
-  const scripts = (await packageJson(target)).scripts ?? {}
-  for (const script of ['build', 'check', 'doctor', 'typecheck', 'new', 'add', 'skills', 'migrate']) {
-    if (typeof scripts[script] !== 'string') {
-      throw new Error(`created starter missing package script "${script}"`)
-    }
+  for (const path of ['dist', 'node_modules', 'bun.lock', '.snz/components-catalog.md']) {
+    if (await Bun.file(join(target, path)).exists()) throw new Error(`created starter should not include ${path}`)
   }
 }
 
 try {
-  await run(['bun', creator, localTarget])
-  await assertStarterSurface(localTarget)
-  if (!(await packageDependency(localTarget)).startsWith('file:')) {
-    throw new Error('local create did not write file: @snz/bp dependency')
-  }
+  await run(['bun', cli, 'create', localTarget])
+  await assertStarter(localTarget)
+  const localDependency = (await readPackage(localTarget)).dependencies?.['@snz/sttc']
+  if (!localDependency?.startsWith('file:')) throw new Error('local create did not write file: @snz/sttc dependency')
   await run(['bun', 'install'], localTarget)
   await run(['bun', 'run', 'skills', 'sync', '--check'], localTarget)
-  await run(['bun', 'run', 'new', 'cms'], localTarget)
-  await run(['bun', 'run', 'new', 'post', 'smoke-post'], localTarget)
   await run(['bun', 'run', 'new', 'route', 'smoke-page'], localTarget)
-  await run(['bun', 'run', 'add', 'theme', 'minimal'], localTarget)
-  await run(['bun', 'run', 'add', 'component', 'hero'], localTarget)
-  await Bun.write(join(localTarget, 'src', 'pages', 'smoke.html'), `<head>
-  <SEO title="Smoke" description="Smoke route." path="/smoke/" />
-</head>
-<Section><Hero /></Section>
-`)
+  await run(['bun', 'run', 'new', 'component', 'Hero'], localTarget)
   await run(['bun', 'run', 'doctor'], localTarget)
 
-  await run(['bun', creator, packagedTarget], repoRoot, { SNZ_BP_CREATE_MODE: 'packaged' })
-  await assertStarterSurface(packagedTarget)
-  const packagedDependency = await packageDependency(packagedTarget)
+  await mkdir(packedDir)
+  await mkdir(packedHarness)
+  await Bun.write(join(packedHarness, 'package.json'), '{"name":"sttc-packed-smoke","private":true,"type":"module"}\n')
+  await run(['bun', 'pm', 'pack', '--destination', packedDir, '--quiet'])
+  await run(['bun', 'add', packedArchive], packedHarness)
+  await run(['bunx', 'sttc', 'create', packagedTarget], packedHarness)
+  await assertStarter(packagedTarget)
+  const packagedDependency = (await readPackage(packagedTarget)).dependencies?.['@snz/sttc']
   if (packagedDependency !== expectedVersion) {
     throw new Error(`packaged create wrote ${packagedDependency}; expected ${expectedVersion}`)
   }
-  await run(['bun', join(repoRoot, 'framework', 'cli', 'snz-bp.ts'), 'doctor'], packagedTarget)
+  const installedCli = join(packedHarness, 'node_modules', '@snz', 'sttc', 'framework', 'cli', 'sttc.ts')
+  await run(['bun', installedCli, 'doctor'], packagedTarget)
 
   await mkdir(dotTarget)
-  await run(['bun', creator, '.'], dotTarget)
-  await assertStarterSurface(dotTarget)
-  if (!(await packageDependency(dotTarget)).startsWith('file:')) {
-    throw new Error('dot create did not write file: @snz/bp dependency')
-  }
+  await run(['bun', cli, 'create', '.'], dotTarget)
+  await assertStarter(dotTarget)
 
   console.log(`create smoke ok: ${root}`)
 } finally {

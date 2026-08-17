@@ -1,25 +1,25 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { createComposer } from '../build/compose'
-import { outFileFromSlug, slugFromPageRel } from '../build/source-files'
+import { buildYear, outFileFromSlug, slugFromPageRel, sourceDateEpoch } from '../build/source-files'
 import { slugifyTag } from '../build/content'
 import { BuildError } from '../build/errors'
 import { mediaInputCopyExclusions, shouldSkipMediaCopy } from '../build/assets'
-import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, resolveImageAttrs } from '../build/images'
+import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, processImages, resolveImageAttrs } from '../build/images'
+import { imageNameFromSrc, parsePositiveImageInteger } from '../build/scan-images'
 import { publicPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
 import { checkBuiltImageRefs, checkPagesCmsConfig, checkVercelConfig, extractBuiltImageRefs, extractBuiltPublicAssetRefs } from '../build/check'
 import { selectAppEntry, sourceRuntimeLibDir } from '../build/paths'
 
 async function composeRoute(slug: string, fileHint: string) {
-  const seoTemplate = await readFile('src/components/SEO.html', 'utf8')
-  const composer = createComposer(new Map([['SEO', seoTemplate]]), new Map(), () => ({}))
+  const composer = createComposer(new Map(), new Map(), () => ({}))
   return composer.prepareRouteSource('<h1>Page</h1>', { slug, fileHint })
 }
 
 async function tempProject() {
-  return mkdtemp(join(tmpdir(), 'snz-bp-media-'))
+  return mkdtemp(join(tmpdir(), 'sttc-media-'))
 }
 
 describe('build path contracts', () => {
@@ -44,10 +44,35 @@ describe('build path contracts', () => {
     expect(slugFromPath('/work/case/')).toBe('work/case')
   })
 
+  test('supports reproducible timestamps through SOURCE_DATE_EPOCH', () => {
+    expect(sourceDateEpoch('0')?.toISOString()).toBe('1970-01-01T00:00:00.000Z')
+    expect(buildYear('1767225600')).toBe('2026')
+    expect(() => sourceDateEpoch('-1')).toThrow('non-negative integer')
+    expect(() => sourceDateEpoch('tomorrow')).toThrow('non-negative integer')
+  })
+
+  test('validates Image logical names and integer attrs strictly', () => {
+    expect(imageNameFromSrc('hero.v2')).toBe('hero.v2')
+    expect(() => imageNameFromSrc('hero.jpg')).toThrow('without a path or extension')
+    expect(() => imageNameFromSrc('../hero')).toThrow('without a path or extension')
+    expect(() => imageNameFromSrc('team photo')).toThrow('without a path or extension')
+    expect(parsePositiveImageInteger('1200', 'max')).toBe(1200)
+    expect(() => parsePositiveImageInteger('1200px', 'max')).toThrow('positive integer')
+    expect(() => parsePositiveImageInteger('0', 'quality')).toThrow('positive integer')
+    expect(() => resolveImageAttrs({ hero: { width: 1200, height: 800 } }, {
+      src: 'hero', alt: 'Hero', quality: '101',
+    })).toThrow('quality must be 1–100')
+  })
+
+  test('rejects invalid Image output dimensions before rendering', () => {
+    const meta = { hero: { width: 1200, height: 800 } }
+    expect(() => resolveImageAttrs(meta, { src: 'hero.png', alt: 'Hero' })).toThrow('without a path or extension')
+    expect(() => resolveImageAttrs(meta, { src: 'hero', alt: 'Hero', width: '12px' })).toThrow('positive integer')
+  })
+
   test('prunes optional unresolved placeholders from component attributes', async () => {
-    const seoTemplate = await readFile('src/components/SEO.html', 'utf8')
     const boxTemplate = '<section id="{{id}}" data-theme="{{theme}}" class="c {{center}}" style="--x: {{x}}; color: red">{{slot}}</section>'
-    const composer = createComposer(new Map([['SEO', seoTemplate], ['Box', boxTemplate]]), new Map(), () => ({}))
+    const composer = createComposer(new Map([['Box', boxTemplate]]), new Map(), () => ({}))
 
     const html = await composer.prepareRouteSource('<Box><p>Hi</p></Box>', { slug: 'index', fileHint: 'test.html' })
 
@@ -144,14 +169,14 @@ content:
 
       await checkVercelConfig(dir, (warning) => warnings.push(warning))
 
-      expect(warnings).toContain('vercel.json: framework should be null for snz-bp Bun static deploys')
-      expect(warnings).toContain('vercel.json: installCommand should be "bun install" for snz-bp Bun static deploys')
-      expect(warnings).toContain('vercel.json: buildCommand should be "bun run build" for snz-bp Bun static deploys')
-      expect(warnings).toContain('vercel.json: devCommand should be "bun run dev" for snz-bp Bun static deploys')
-      expect(warnings).toContain('vercel.json: outputDirectory should be "dist" for snz-bp Bun static deploys')
-      expect(warnings).toContain('vercel.json: bunVersion should be "1.x" for snz-bp Bun static deploys')
-      expect(warnings).toContain('vercel.json: cleanUrls should be true for snz-bp Bun static deploys')
-      expect(warnings).toContain('vercel.json: trailingSlash should be true for snz-bp Bun static deploys')
+      expect(warnings).toContain('vercel.json: framework should be null for sttc Bun static deploys')
+      expect(warnings).toContain('vercel.json: installCommand should be "bun install" for sttc Bun static deploys')
+      expect(warnings).toContain('vercel.json: buildCommand should be "bun run build" for sttc Bun static deploys')
+      expect(warnings).toContain('vercel.json: devCommand should be "bun run dev" for sttc Bun static deploys')
+      expect(warnings).toContain('vercel.json: outputDirectory should be "dist" for sttc Bun static deploys')
+      expect(warnings).toContain('vercel.json: bunVersion should be "1.x" for sttc Bun static deploys')
+      expect(warnings).toContain('vercel.json: cleanUrls should be true for sttc Bun static deploys')
+      expect(warnings).toContain('vercel.json: trailingSlash should be true for sttc Bun static deploys')
       expect(warnings).toContain('vercel.json: /assets/(.*) should use immutable Cache-Control headers')
       expect(warnings).toContain('vercel.json: discovery files should use short Cache-Control headers')
     } finally {
@@ -242,10 +267,25 @@ content:
     const dir = await tempProject()
     try {
       await writeFile(join(dir, '.pages.yml'), `media:\n  - name: images\n    input: ../outside\n    output: /assets/images\n`)
-
       await expect(imageSourceRoots(dir)).rejects.toThrow('Invalid PagesCMS media.input "../outside"')
+
+      await writeFile(join(dir, '.pages.yml'), `media:\n  - name: images\n    input: C:\\outside\\images\n    output: /assets/images\n`)
+      await expect(imageSourceRoots(dir)).rejects.toThrow('Invalid PagesCMS media.input "C:\\outside\\images"')
     } finally {
       await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects image source roots symlinked outside the project', async () => {
+    const dir = await tempProject()
+    const outside = await tempProject()
+    try {
+      await mkdir(join(dir, 'src'), { recursive: true })
+      await symlink(outside, join(dir, 'src', 'images'))
+      await expect(imageSourceRoots(dir)).rejects.toThrow('Image source root escapes the project')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+      await rm(outside, { recursive: true, force: true })
     }
   })
 
@@ -302,6 +342,50 @@ content:
     }
   })
 
+  test('uses actual portrait variant widths in srcset descriptors', () => {
+    const attrs = resolveImageAttrs({ portrait: {
+      width: 600,
+      height: 900,
+      variants: [
+        { file: 'portrait-320.webp', width: 213 },
+        { file: 'portrait-640.webp', width: 427 },
+        { file: 'portrait-900.webp', width: 600 },
+      ],
+    } }, { src: 'portrait', alt: 'Portrait' })
+    expect(attrs.imgMain).toContain('/assets/images/portrait-320.webp 213w')
+    expect(attrs.imgMain).toContain('/assets/images/portrait-640.webp 427w')
+    expect(attrs.imgMain).toContain('/assets/images/portrait-900.webp 600w')
+    expect(attrs.imgMain).toContain('width="600" height="900"')
+  })
+
+  test('does not enlarge a source smaller than the requested max', async () => {
+    const dir = await tempProject()
+    try {
+      const srcDir = join(dir, 'src')
+      const distDir = join(dir, 'dist')
+      await mkdir(srcDir, { recursive: true })
+      const png = 'iVBORw0KGgoAAAANSUhEUgAAADwAAABaCAIAAABrM6JiAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAPKADAAQAAAABAAAAWgAAAACdrWuxAAAA4klEQVRoBe3SwQkAIRDF0NH+e97tIKcgDMRr4CNPzzf7zt135Zku/erVkk4aBPoegKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04alop/QME/wGzn3VIjwAAAABJRU5ErkJggg=='
+      await writeFile(join(srcDir, 'portrait.png'), Buffer.from(png, 'base64'))
+      const meta = await processImages(srcDir, distDir, { portrait: { max: 1200, quality: 82 } })
+      expect(meta.portrait.width).toBe(60)
+      expect(meta.portrait.height).toBe(90)
+      expect(meta.portrait.variants).toEqual([{ file: 'portrait-90.webp', width: 60 }])
+      const encoded = await Bun.file(join(distDir, 'portrait.webp')).image().metadata()
+      expect(encoded.width).toBe(60)
+      expect(encoded.height).toBe(90)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('accepts empty alt for decorative Image output', () => {
+    const attrs = resolveImageAttrs({ decoration: { width: 400, height: 300 } }, {
+      src: 'decoration',
+      alt: '',
+    })
+    expect(attrs.imgMain).toContain('alt=""')
+  })
+
   test('keeps eager Image output as plain main image', () => {
     const attrs = resolveImageAttrs({ hero: { width: 1200, height: 800, sizes: [320, 640] } }, {
       src: 'hero',
@@ -314,15 +398,79 @@ content:
     expect(attrs.imgMain).toContain('fetchpriority="high"')
   })
 
-  test('keeps lazy Image tmp separate from plain main image', () => {
-    const attrs = resolveImageAttrs({ hero: { width: 1200, height: 800, placeholder: 'data:image/png;base64,x' } }, {
+  test('keeps lazy Image output native and CSS-independent', () => {
+    const attrs = resolveImageAttrs({ hero: { width: 1200, height: 800 } }, {
       src: 'hero',
       alt: 'Hero',
     })
 
-    expect(attrs.imgTmp).toContain('class="img-tmp"')
+    expect(attrs.imgTmp).toBe('')
     expect(attrs.imgMain).not.toContain('class=')
     expect(attrs.imgMain).toContain('loading="lazy"')
+  })
+
+  test('preserves non-SEO route head metadata', async () => {
+    const composer = createComposer(new Map(), new Map(), () => ({}))
+    const html = await composer.prepareRouteSource(`<head>
+  <SEO title="About" description="About this organization." />
+  <meta name="snz:transition" content="fade">
+</head>
+<h1>About</h1>`, { slug: 'about', fileHint: 'src/pages/about.html' })
+    expect(html).toContain('<meta name="snz:transition" content="fade">')
+    expect(html).toContain('<title>About</title>')
+  })
+
+  test('treats bare and quoted SEO unlisted flags as route policy', async () => {
+    const composer = createComposer(new Map(), new Map(), () => ({}))
+    for (const flag of ['unlisted', 'unlisted="true"']) {
+      const route = await composer.prepareRoute(`<head><SEO title="Preview" ${flag} /></head><h1>Preview</h1>`, {
+        slug: 'preview',
+        fileHint: 'src/pages/preview.html',
+      })
+      expect(route.unlisted).toBe(true)
+      expect(route.html).toContain('<meta name="robots" content="noindex,nofollow">')
+      expect(route.html).toContain('<link rel="canonical" href="https://example.com/preview/">')
+    }
+  })
+
+  test('keeps explicitly false SEO unlisted routes public', async () => {
+    const composer = createComposer(new Map(), new Map(), () => ({}))
+    const route = await composer.prepareRoute('<head><SEO title="Public" unlisted="false" /></head><h1>Public</h1>', {
+      slug: 'public',
+      fileHint: 'src/pages/public.html',
+    })
+    expect(route.unlisted).toBe(false)
+    expect(route.html).not.toContain('name="robots"')
+  })
+
+  test('rejects duplicate route SEO directives', async () => {
+    const composer = createComposer(new Map(), new Map(), () => ({}))
+    expect(composer.prepareRouteSource('<head><SEO title="Head" /></head><SEO title="Body" /><h1>Page</h1>', {
+      slug: 'page',
+      fileHint: 'src/pages/page.html',
+    })).rejects.toThrow('more than one <SEO /> directive')
+  })
+
+  test('rejects SEO directives in the shell', async () => {
+    const composer = createComposer(new Map(), new Map(), () => ({}))
+    expect(composer.prepareShellSource('<html><head><SEO /></head><body><main></main></body></html>'))
+      .rejects.toThrow('route-only')
+  })
+
+  test('rejects non-self-closing SEO directives', async () => {
+    const composer = createComposer(new Map(), new Map(), () => ({}))
+    expect(composer.prepareRouteSource('<head><SEO title="Preview" unlisted></head><h1>Preview</h1>', {
+      slug: 'preview',
+      fileHint: 'src/pages/preview.html',
+    })).rejects.toThrow('<SEO> must be self-closing')
+  })
+
+  test('rejects invalid SEO unlisted values', async () => {
+    const composer = createComposer(new Map(), new Map(), () => ({}))
+    expect(composer.prepareRoute('<head><SEO unlisted="private" /></head><h1>Preview</h1>', {
+      slug: 'preview',
+      fileHint: 'src/pages/preview.html',
+    })).rejects.toThrow('attribute "unlisted" must be bare, "true", or "false"')
   })
 
   test('uses explicit route slug for default SEO instead of source file path', async () => {

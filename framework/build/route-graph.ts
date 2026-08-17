@@ -3,9 +3,7 @@ import { isAbsolute, join } from 'path'
 import type { Composer, ComposeInstance } from './compose'
 import type { TemplateContext } from './template-directives'
 import {
-  extractDescription,
-  extractTitle,
-  scanInternalLinks,
+  extractRouteMetadata,
   type RouteRecord,
 } from './discovery'
 import { dist, root } from './paths'
@@ -13,8 +11,10 @@ import { RouteRegistry, type RouteOwner } from './routes'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import { sourceLastModified } from './source-files'
 
+type RouteComposer = Pick<Composer, 'prepareRouteSource'> & Partial<Pick<Composer, 'prepareRoute'>>
+
 export type RouteGraphOptions = {
-  composer: Composer
+  composer: RouteComposer
   instancesFor?: (slug: string) => ComposeInstance[]
   distDir?: string
   sourceRoot?: string
@@ -36,8 +36,9 @@ export type ComposedRoute = {
 export class RouteGraph {
   #registry = new RouteRegistry()
   #records: RouteRecord[] = []
+  #modifiedByPath = new Map<string, string | undefined>()
   #composed: ComposedRoute[] = []
-  #composer: Composer
+  #composer: RouteComposer
   #instancesFor: (slug: string) => ComposeInstance[]
   #distDir: string
   #sourceRoot: string
@@ -55,9 +56,8 @@ export class RouteGraph {
   }
 
   #linkedLastModified(links: string[]) {
-    const modified = new Map(this.#records.map((record) => [publicPathFromSlug(record.slug), record.lastModified]))
     return links
-      .map((link) => modified.get(link))
+      .map((link) => this.#modifiedByPath.get(link))
       .filter((value): value is string => !!value)
       .sort()
       .at(-1)
@@ -65,30 +65,37 @@ export class RouteGraph {
 
   async compose(owner: RouteOwner, body: string, options: RouteComposeOptions = {}) {
     const route = this.#registry.register(owner)
-    const html = await this.#composer.prepareRouteSource(body, {
+    const input = {
       slug: route.slug,
       fileHint: route.source,
       headLinks: options.headLinks,
       data: options.data,
-    })
+    }
+    const prepared = this.#composer.prepareRoute
+      ? await this.#composer.prepareRoute(body, input)
+      : { html: await this.#composer.prepareRouteSource(body, input), unlisted: false }
+    const { html, unlisted } = prepared
     const outPath = join(this.#distDir, 'routes', route.outFile)
     await mkdir(join(outPath, '..'), { recursive: true })
     await writeFile(outPath, html)
     this.#composed.push({ slug: route.slug, outFile: route.outFile, html })
 
-    const internalLinks = scanInternalLinks(html)
+    const { title, description, internalLinks, schemas } = extractRouteMetadata(html)
     let lastModified = options.lastModified
     if (!lastModified) lastModified = await this.#sourceLastModified(route.source)
     if (!lastModified) lastModified = this.#linkedLastModified(internalLinks)
     this.#records.push({
       slug: route.slug,
-      title: extractTitle(html),
-      description: extractDescription(html),
+      title,
+      description,
       components: this.#instancesFor(route.slug),
       internalLinks,
-      schemas: options.schemas ?? ['WebPage'],
+      schemas: [...new Set([...(options.schemas ?? ['WebPage']), ...schemas])],
+      unlisted,
+      renderedHtml: html,
       lastModified,
     })
+    this.#modifiedByPath.set(publicPathFromSlug(route.slug), lastModified)
 
     return { route, html }
   }
