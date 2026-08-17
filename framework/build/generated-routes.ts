@@ -1,18 +1,15 @@
 import { slugifyTag, type ContentRoute } from './content'
 import type { RouteGraph } from './route-graph'
-
-function escapeHtmlBasic(s: string) {
-  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
-}
+import { escapeHtml } from './html'
 
 function postLinkList(posts: ContentRoute[]) {
   return posts
     .sort((a, b) => (b.data.date ?? '').localeCompare(a.data.date ?? ''))
     .map((p) => `
   <article class="post-item">
-    <h2 class="post-item-title"><a href="/${p.slug}/">${escapeHtmlBasic(p.data.title)}</a></h2>
+    <h2 class="post-item-title"><a href="/${p.slug}/">${escapeHtml(p.data.title)}</a></h2>
     <p class="post-item-meta"><time datetime="${p.data.date ?? ''}">${p.data.date ?? ''}</time></p>
-    <p class="post-item-desc">${escapeHtmlBasic(p.data.description ?? '')}</p>
+    <p class="post-item-desc">${escapeHtml(p.data.description ?? '')}</p>
   </article>`)
     .join('\n')
 }
@@ -49,7 +46,7 @@ export async function autoGenerateIndexes(
 
   for (const [tagSlug, group] of byTag) {
     const { label, posts: postsForTag } = group
-    const safeLabel = escapeHtmlBasic(label)
+    const safeLabel = escapeHtml(label)
     const body = `<head>
   <SEO title="Tag: ${safeLabel}" description="Posts tagged ${safeLabel}." path="/tags/${tagSlug}/" />
 </head>
@@ -68,7 +65,7 @@ export async function autoGenerateIndexes(
 
   const tagLinks = [...byTag.entries()]
     .sort(([, a], [, b]) => a.label.localeCompare(b.label))
-    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${escapeHtmlBasic(group.label)}</a> <small>(${group.posts.length})</small></li>`)
+    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${escapeHtml(group.label)}</a> <small>(${group.posts.length})</small></li>`)
     .join('\n  ')
   const body = `<head>
   <SEO title="Tags" description="All tags." path="/tags/" />

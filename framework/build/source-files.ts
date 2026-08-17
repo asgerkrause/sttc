@@ -1,6 +1,6 @@
 import { stat } from 'fs/promises'
 import { join } from 'path'
-import { pagesDir, routesDir } from './paths'
+import { routesDir } from './paths'
 import { BuildError } from './errors'
 
 export type SourceRoute = {

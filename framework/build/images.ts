@@ -1,6 +1,8 @@
 import { mkdir, readdir, readFile, realpath, stat, unlink, writeFile } from 'fs/promises'
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'path'
 import { BuildError } from './errors'
+import { escapeHtml } from './html'
+import { CPU_CONCURRENCY, mapConcurrent } from './concurrency'
 import {
   DEFAULT_IMAGE_MAX,
   DEFAULT_IMAGE_QUALITY,
@@ -168,7 +170,7 @@ function buildSrcset(name: string, sizes: number[] | undefined, variants: ImageV
 }
 
 function escapeImageAttr(value: string) {
-  return value.replace(/[&<>\"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]!)
+  return escapeHtml(value)
 }
 
 export function resolveImageAttrs(
@@ -265,20 +267,6 @@ function warnHugeMaster(file: string, width: number, height: number) {
   console.warn(
     `  images: large master ${relative(process.cwd(), file)} (${width}×${height}) — consider resizing source`,
   )
-}
-
-/**
- * Removes stale sized variants from a previous build. Call ONCE before any processImages call.
- * Keeps the unprefixed canonical files (e.g. hero.webp); rewrites sized variants on demand.
- */
-export async function pruneStaleVariants(distDir: string) {
-  try {
-    for (const entry of await readdir(distDir, { withFileTypes: true })) {
-      if (entry.isFile() && /-\d+\.webp$/i.test(entry.name)) {
-        await unlink(join(distDir, entry.name))
-      }
-    }
-  } catch { /* dist dir not present yet */ }
 }
 
 export async function pruneStaleImages(distDir: string, currentNames: Iterable<string>) {
@@ -380,10 +368,9 @@ export async function processImages(
   await mkdir(distDir, { recursive: true })
   await mkdir(join(distDir, '.meta'), { recursive: true })
 
-  for (const file of await rasterFiles(srcDir)) {
+  const files = (await rasterFiles(srcDir)).filter((file) => basename(file, extname(file)) !== 'og')
+  await mapConcurrent(files, CPU_CONCURRENCY, async (file) => {
     const name = basename(file, extname(file))
-    if (name === 'og') continue
-
     const { max, quality } = encodeOpts(name, options)
     const out = join(distDir, `${name}.webp`)
     const sourceBytes = await readFile(file)
@@ -392,7 +379,6 @@ export async function processImages(
     const { width = 0, height = 0 } = await new Bun.Image(sourceBytes).metadata()
     warnHugeMaster(file, width, height)
 
-    // Encode responsive long-edge variants up to the canonical output size.
     const canonicalEdge = Math.min(max, Math.max(width, height))
     const responsiveSizes = [...new Set(
       [...RESPONSIVE_BREAKPOINTS.filter((edge) => edge < canonicalEdge), canonicalEdge]
@@ -405,8 +391,6 @@ export async function processImages(
     let sidecarData = await readSidecar(sidecar)
     const sizesChanged = !sidecarData?.sizes || sidecarData.sizes.join(',') !== responsiveSizes.join(',')
     const metadataMissing = !sidecarData?.width || !sidecarData?.height || !sidecarData?.variants
-    // If any expected variant file is missing on disk, force re-encode (covers cases where pruneStaleVariants
-    // or external cleanup wiped them but the sidecar still claims they're cached).
     let variantsMissing = false
     for (const w of responsiveSizes) {
       if (!(await Bun.file(join(distDir, `${name}-${w}.webp`)).exists())) { variantsMissing = true; break }
@@ -445,7 +429,7 @@ export async function processImages(
       sizes: sidecarData?.sizes,
       variants: sidecarData?.variants,
     }
-  }
+  })
 
   return meta
 }

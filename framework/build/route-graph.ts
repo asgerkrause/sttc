@@ -11,7 +11,7 @@ import { RouteRegistry, type RouteOwner } from './routes'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import { sourceLastModified } from './source-files'
 
-type RouteComposer = Pick<Composer, 'prepareRouteSource'> & Partial<Pick<Composer, 'prepareRoute'>>
+type RouteComposer = Pick<Composer, 'prepareRoute'>
 
 export type RouteGraphOptions = {
   composer: RouteComposer
@@ -25,6 +25,7 @@ export type RouteComposeOptions = {
   lastModified?: string
   headLinks?: string[]
   data?: TemplateContext
+  index?: number
 }
 
 export type ComposedRoute = {
@@ -35,9 +36,10 @@ export type ComposedRoute = {
 
 export class RouteGraph {
   #registry = new RouteRegistry()
-  #records: RouteRecord[] = []
+  #records: Array<RouteRecord | undefined> = []
   #modifiedByPath = new Map<string, string | undefined>()
-  #composed: ComposedRoute[] = []
+  #composed: Array<ComposedRoute | undefined> = []
+  #nextIndex = 0
   #composer: RouteComposer
   #instancesFor: (slug: string) => ComposeInstance[]
   #distDir: string
@@ -63,28 +65,31 @@ export class RouteGraph {
       .at(-1)
   }
 
+  register(owner: RouteOwner) {
+    return this.#registry.register(owner)
+  }
+
   async compose(owner: RouteOwner, body: string, options: RouteComposeOptions = {}) {
-    const route = this.#registry.register(owner)
+    const route = this.#registry.get(owner.slug) ?? this.#registry.register(owner)
     const input = {
       slug: route.slug,
       fileHint: route.source,
       headLinks: options.headLinks,
       data: options.data,
     }
-    const prepared = this.#composer.prepareRoute
-      ? await this.#composer.prepareRoute(body, input)
-      : { html: await this.#composer.prepareRouteSource(body, input), unlisted: false }
-    const { html, unlisted } = prepared
+    const { html, unlisted } = await this.#composer.prepareRoute(body, input)
     const outPath = join(this.#distDir, 'routes', route.outFile)
     await mkdir(join(outPath, '..'), { recursive: true })
     await writeFile(outPath, html)
-    this.#composed.push({ slug: route.slug, outFile: route.outFile, html })
 
     const { title, description, internalLinks, schemas } = extractRouteMetadata(html)
     let lastModified = options.lastModified
     if (!lastModified) lastModified = await this.#sourceLastModified(route.source)
     if (!lastModified) lastModified = this.#linkedLastModified(internalLinks)
-    this.#records.push({
+    const index = options.index ?? this.#nextIndex++
+    if (index >= this.#nextIndex) this.#nextIndex = index + 1
+    this.#composed[index] = { slug: route.slug, outFile: route.outFile, html }
+    this.#records[index] = {
       slug: route.slug,
       title,
       description,
@@ -94,7 +99,7 @@ export class RouteGraph {
       unlisted,
       renderedHtml: html,
       lastModified,
-    })
+    }
     this.#modifiedByPath.set(publicPathFromSlug(route.slug), lastModified)
 
     return { route, html }
@@ -113,10 +118,10 @@ export class RouteGraph {
   }
 
   records() {
-    return [...this.#records]
+    return this.#records.filter((record): record is RouteRecord => !!record)
   }
 
   composedRoutes() {
-    return [...this.#composed]
+    return this.#composed.filter((route): route is ComposedRoute => !!route)
   }
 }

@@ -8,6 +8,8 @@ import { join } from 'path'
 import { BuildError, lineOf } from './errors'
 import { fmString, fmStringArray, parseFrontMatter, render as renderMarkdown } from './markdown'
 import { root, src } from './paths'
+import { escapeHtml } from './html'
+import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
 import { html as safeHtml, renderTemplate, type TemplateContext, type TemplateValue } from './template-directives'
 
 export type ContentFieldConfig = {
@@ -82,10 +84,6 @@ async function loadTemplate(srcDir: string, name: string): Promise<string> {
     })
   }
   return readFile(path, 'utf8')
-}
-
-function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 }
 
 export function slugifyTag(tag: string) {
@@ -462,8 +460,10 @@ export async function compileContentFrom(options: {
     const files = await markdownFiles(dir)
     if (files.length === 0) continue
     const template = await loadTemplate(sourceRoot, collection.template)
-    for (const f of files) {
-      const route = await compileFile(projectRoot, collection, f, template)
+    const compiled = await mapConcurrent(files, IO_CONCURRENCY, async (file) => (
+      compileFile(projectRoot, collection, file, template)
+    ))
+    for (const route of compiled) {
       if (route.draft && !includeDrafts) continue
       const existing = seenSlugs.get(route.slug)
       if (existing) {

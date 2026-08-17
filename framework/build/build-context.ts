@@ -2,6 +2,7 @@ import { projectPaths, root } from './paths'
 
 export type BuildFlags = {
   allowBrokenLinks: boolean
+  launch: boolean
 }
 
 export type BuildContext = {
@@ -18,6 +19,7 @@ export type BuildContextOptions = {
   argv?: string[]
   rootDir?: string
   allowBrokenLinks?: boolean
+  launch?: boolean
 }
 
 export type BuildResult = {
@@ -41,6 +43,7 @@ export function createBuildContext(options: BuildContextOptions = {}): BuildCont
     siteFile: paths.siteFile,
     flags: {
       allowBrokenLinks: options.allowBrokenLinks ?? argv.includes('--allow-broken-links'),
+      launch: options.launch ?? argv.includes('--launch'),
     },
   }
 }

@@ -1,11 +1,11 @@
 import { buildErrorAt, BuildError, lineOf } from './errors'
 import { resolveImageAttrs, type ImageMeta } from './images'
-import { componentsDir } from './paths'
 import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { loadSiteConfig as readSiteConfig } from './site-config'
 import { buildYear } from './source-files'
-import { COMPONENT_OPEN_RE, nextComponent, parseAttrs, type ComponentMatch } from './tags'
+import { nextComponent, parseAttrs, type ComponentMatch } from './tags'
+import { escapeHtml } from './html'
 import { renderPlaceholders, renderTemplate, type TemplateContext } from './template-directives'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
@@ -86,11 +86,7 @@ export function createComposer(
   }
 
   function escapeAttr(value: string) {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
+    return escapeHtml(value)
   }
 
   const UNRESOLVED_PLACEHOLDER_RE = /\{\{[\w.-]+(?::[\w.-]+)?\}\}/
@@ -515,7 +511,7 @@ export function createComposer(
     const scroll = site.scroll ?? 'lenis'
     const shellVars: Record<string, string> = {
       siteName: site.name,
-      currentYear: String(new Date().getFullYear()),
+      currentYear: buildYear(),
       locale: site.locale ?? 'en',
       scroll,
     }
@@ -536,4 +532,4 @@ export function createComposer(
   }
 }
 
-export { componentsDir }
+

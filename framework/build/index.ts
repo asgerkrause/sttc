@@ -1,13 +1,13 @@
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { createComposer } from './compose'
+import { prepareComponents } from './components'
 import {
   bundleComponentCss,
   bundleRouteCss,
   extractRouteStyleBlocks,
   injectComponentStylesLink,
   injectGlobalStylesLink,
-  prepareComponents,
   routeCssLink,
 } from './extract-css'
 import {
@@ -52,11 +52,12 @@ import { runChecks, failOnReport } from './check'
 import { routeSchemaExtras, writeDiscovery, type RouteRecord } from './discovery'
 import type { ComposeInstance } from './compose'
 import { writeComponentsReadme } from './docs'
-import { discoverSourceRoutes } from './source-files'
+import { discoverSourceRoutes, sourceLastModified } from './source-files'
 import { RouteGraph, type ComposedRoute } from './route-graph'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import { createBuildContext, type BuildContext, type BuildContextOptions, type BuildResult } from './build-context'
-import { mapConcurrent } from './concurrency'
+import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
+import { escapeHtml } from './html'
 import { loadSiteConfig } from './site-config'
 import type { TemplateValue } from './template-directives'
 
@@ -302,6 +303,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const report = await runChecks({
       context,
       allowBrokenLinks: context.flags.allowBrokenLinks,
+      launch: context.flags.launch,
       validatedBuildInputs: true,
     })
     await failOnReport(report)
@@ -406,36 +408,56 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     sourceRoot: context.rootDir,
   })
 
-  for (const route of await discoverSourceRoutes({ srcDir: context.srcDir })) {
+  const sourceRoutes = await discoverSourceRoutes({ srcDir: context.srcDir })
+  const staticOwners = sourceRoutes.map((route) => ({
+    slug: route.slug,
+    kind: route.legacy ? 'legacy-static' as const : 'static' as const,
+    source: route.sourceRel,
+    outFile: route.outFile,
+  }))
+  for (const owner of staticOwners) routeGraph.register(owner)
+
+  const lastModifiedBySource = new Map<string, string | undefined>()
+  await mapConcurrent(sourceRoutes, IO_CONCURRENCY, async (route) => {
+    lastModifiedBySource.set(route.sourceRel, await sourceLastModified(route.sourcePath))
+  })
+
+  const routeScripts = await mapConcurrent(sourceRoutes, IO_CONCURRENCY, async (route, index) => {
     const routeRaw = await readFile(route.sourcePath, 'utf8')
     const { html: routeHtml, data: routeData } = await extractTemplateData(routeRaw, {
       file: route.sourceRel,
       projectRoot: context.rootDir,
     })
-    const owner = {
-      slug: route.slug,
-      kind: route.legacy ? 'legacy-static' as const : 'static' as const,
-      source: route.sourceRel,
-      outFile: route.outFile,
-    }
     const { body: withoutScripts, scripts } = extractRouteTopScripts(routeHtml, route.sourceRel)
-    scriptBlocks.push(...routeScriptBlocks(route.slug, scripts))
-
     const { html: body, css } = extractRouteStyleBlocks(withoutScripts)
     const cssAsset = await bundleRouteCss(route.slug, css, componentsCssDir)
-    await routeGraph.compose(owner, body, {
+    await routeGraph.compose(staticOwners[index]!, body, {
       headLinks: cssAsset ? [routeCssLink(cssAsset)] : undefined,
       data: { site: site as unknown as TemplateValue, ...routeData },
+      lastModified: lastModifiedBySource.get(route.sourceRel),
+      index,
     })
-  }
+    return routeScriptBlocks(route.slug, scripts)
+  })
+  scriptBlocks.push(...routeScripts.flat())
 
-  // Compile posts and configured content records via templates → dist/routes/...
   const contentRoutes = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir })
   const contentByslug = new Map<string, ContentRoute>()
-  for (const c of contentRoutes) {
-    contentByslug.set(c.slug, c)
-    await routeGraph.compose({ slug: c.slug, kind: 'content', source: c.source, outFile: c.routeFile }, c.body)
+  const contentStart = sourceRoutes.length
+  for (const route of contentRoutes) {
+    contentByslug.set(route.slug, route)
+    routeGraph.register({ slug: route.slug, kind: 'content', source: route.source, outFile: route.routeFile })
   }
+  await mapConcurrent(contentRoutes, IO_CONCURRENCY, async (route, index) => {
+    await routeGraph.compose(
+      { slug: route.slug, kind: 'content', source: route.source, outFile: route.routeFile },
+      route.body,
+      {
+        lastModified: await sourceLastModified(join(context.rootDir, route.source)),
+        index: contentStart + index,
+      },
+    )
+  })
 
   tick('routes', t)
 
@@ -514,10 +536,6 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     routes: routeGraph.slugs(),
     appJsFile,
   }
-}
-
-function escapeHtml(s: string) {
-  return s.replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 }
 
 async function writeErrorPage(err: unknown, context: BuildContext = createBuildContext()) {

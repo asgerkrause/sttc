@@ -73,10 +73,6 @@ export async function copyAssetsTo(
   return hasGlobalStyles
 }
 
-export async function copyAssets() {
-  await copyAssetsTo(root, dist)
-}
-
 function slashPath(path: string) {
   return path.split(sep).join('/')
 }
@@ -120,6 +116,4 @@ export async function copyMediaFolderTo(projectRoot = root, outputDir = dist) {
   }
 }
 
-export async function copyMediaFolder() {
-  return copyMediaFolderTo(root, dist)
-}
+

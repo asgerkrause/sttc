@@ -23,4 +23,12 @@ describe('bounded build concurrency', () => {
       if (item === 1) throw new Error('first')
     })).rejects.toThrow('first')
   })
+
+  test('returns results aligned to input index', async () => {
+    const values = await mapConcurrent([10, 20, 30], 2, async (item) => {
+      await Bun.sleep(item === 10 ? 4 : 1)
+      return item * 2
+    })
+    expect(values).toEqual([20, 40, 60])
+  })
 })

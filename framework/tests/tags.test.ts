@@ -3,7 +3,7 @@ import { BuildError } from '../build/errors'
 import { autoGenerateIndexes } from '../build/generated-routes'
 import { normalizeContentTags, slugifyTag, type ContentRoute } from '../build/content'
 import type { RouteGraph } from '../build/route-graph'
-import { detectLowercaseComponentLike, nextComponent, parseAttrs } from '../build/tags'
+import { nextComponent, parseAttrs } from '../build/tags'
 
 describe('component tag parser', () => {
   test('parses attrs including boolean flags', () => {
@@ -41,11 +41,6 @@ describe('component tag parser', () => {
 
   test('throws on missing close tag', () => {
     expect(() => nextComponent('<Card>Missing close')).toThrow(BuildError)
-  })
-
-  test('detects lowercase component-like self-closing tags', () => {
-    expect(detectLowercaseComponentLike('<card />')).toEqual({ name: 'card', index: 0 })
-    expect(detectLowercaseComponentLike('<br />')).toBeNull()
   })
 
   test('normalizes content tag labels separately from route slugs', () => {

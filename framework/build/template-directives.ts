@@ -1,4 +1,5 @@
 import { BuildError } from './errors'
+import { escapeHtml } from './html'
 
 export type SafeHtml = { kind: 'html'; value: string }
 export type TemplateValue = string | number | boolean | null | undefined | SafeHtml | TemplateValue[] | { [key: string]: TemplateValue }
@@ -32,10 +33,6 @@ const FILTER_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\|\s*([A-Za-z_$]
 
 function assertNever(value: never): never {
   throw new Error(`Unhandled template directive token ${(value as { kind?: string }).kind}`)
-}
-
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 }
 
 export function html(value: string): SafeHtml {

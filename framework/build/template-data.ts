@@ -1,5 +1,5 @@
 import { readFile, realpath } from 'fs/promises'
-import { join, normalize, relative, resolve } from 'path'
+import { normalize, relative, resolve } from 'path'
 import { buildErrorAt, BuildError } from './errors'
 import type { TemplateContext, TemplateValue } from './template-directives'
 
@@ -144,6 +144,4 @@ export async function extractTemplateData(html: string, options: {
   }
 }
 
-export function hasTemplateData(data: TemplateContext) {
-  return Object.keys(data).length > 0
-}
+

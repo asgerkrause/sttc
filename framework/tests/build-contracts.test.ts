@@ -10,7 +10,7 @@ import { mediaInputCopyExclusions, shouldSkipMediaCopy } from '../build/assets'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, processImages, resolveImageAttrs } from '../build/images'
 import { imageNameFromSrc, parsePositiveImageInteger } from '../build/scan-images'
 import { publicPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
-import { checkBuiltImageRefs, checkPagesCmsConfig, checkVercelConfig, extractBuiltImageRefs, extractBuiltPublicAssetRefs } from '../build/check'
+import { checkBuiltOutput, checkPagesCmsConfig, checkVercelConfig, extractBuiltPublicAssetRefs } from '../build/check'
 import { selectAppEntry, sourceRuntimeLibDir } from '../build/paths'
 
 async function composeRoute(slug: string, fileHint: string) {
@@ -49,6 +49,30 @@ describe('build path contracts', () => {
     expect(buildYear('1767225600')).toBe('2026')
     expect(() => sourceDateEpoch('-1')).toThrow('non-negative integer')
     expect(() => sourceDateEpoch('tomorrow')).toThrow('non-negative integer')
+  })
+
+  test('shell currentYear honors SOURCE_DATE_EPOCH', async () => {
+    const dir = await tempProject()
+    const previous = process.env.SOURCE_DATE_EPOCH
+    try {
+      await mkdir(join(dir, 'src'), { recursive: true })
+      await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
+        name: 'Year Site',
+        url: 'https://example.com',
+        description: 'Year fixture',
+        locale: 'en',
+      }))
+      process.env.SOURCE_DATE_EPOCH = '0'
+      const composer = createComposer(new Map(), new Map(), () => ({}), undefined, undefined, new Map(), {
+        siteFile: join(dir, 'src', 'site.json'),
+      })
+      const html = await composer.prepareShellSource('<footer>{{currentYear}}</footer>')
+      expect(html).toContain('1970')
+    } finally {
+      if (previous === undefined) delete process.env.SOURCE_DATE_EPOCH
+      else process.env.SOURCE_DATE_EPOCH = previous
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 
   test('validates Image logical names and integer attrs strictly', () => {
@@ -193,11 +217,12 @@ content:
   })
 
   test('extracts built image refs from HTML attrs, meta content, srcset, and JSON', () => {
-    const refs = extractBuiltImageRefs(`<img src="/assets/images/hero.webp">
+    const refs = extractBuiltPublicAssetRefs(`<img src="/assets/images/hero.webp">
 <meta property="og:image" content="/assets/images/og.webp">
 <video poster="/assets/images/poster.webp"></video>
 <img srcset="/assets/images/hero-320.webp 320w, /assets/images/hero-640.webp 640w">
 {"image":"/assets/images/team.webp","template":"/assets/images/{src}.webp"}`)
+      .filter((ref) => ref.startsWith('/assets/images/'))
 
     expect(refs).toEqual([
       '/assets/images/hero-320.webp',
@@ -228,17 +253,19 @@ content:
     try {
       await mkdir(join(dir, 'assets', 'images'), { recursive: true })
       await mkdir(join(dir, 'routes'), { recursive: true })
-      await writeFile(join(dir, 'index.html'), '<meta property="og:image" content="/assets/images/og.webp"><img src="/assets/images/hero.webp">')
+      const ld = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage"}</script>'
+      await writeFile(join(dir, 'index.html'), `${ld}<meta property="og:image" content="/assets/images/og.webp"><img src="/assets/images/hero.webp">`)
       await writeFile(join(dir, 'assets', 'images', 'og.webp'), 'ok')
       await writeFile(join(dir, 'assets', 'images', 'hero.webp'), 'ok')
       await writeFile(join(dir, 'routes', 'team.json'), JSON.stringify({ image: '/assets/images/team.webp' }))
-      await writeFile(join(dir, 'routes', 'media.html'), '<video src="/assets/videos/intro.mp4"></video><a href="/assets/files/menu.pdf">Menu</a>')
+      await writeFile(join(dir, 'routes', 'media.html'), `${ld}<video src="/assets/videos/intro.mp4"></video><a href="/assets/files/menu.pdf">Menu</a>`)
       const errors: string[] = []
 
-      await checkBuiltImageRefs(dir, (error) => errors.push(error))
+      await checkBuiltOutput(dir, (error) => errors.push(error), false)
 
-      expect(errors).toHaveLength(3)
-      const joined = errors.join('\n')
+      const missing = errors.filter((error) => error.includes('missing public asset'))
+      expect(missing).toHaveLength(3)
+      const joined = missing.join('\n')
       expect(joined).toContain('missing public asset /assets/images/team.webp')
       expect(joined).toContain('PagesCMS media.input')
       expect(joined).toContain('CMS /src/images/* refs publish as /assets/images/*.webp')

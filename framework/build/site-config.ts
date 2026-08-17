@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises'
 import { BuildError, lineOf } from './errors'
 import { resolve } from 'path'
-import type { RobotsGroup, SiteConfig } from './seo'
+import type { SiteConfig } from './seo'
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
@@ -108,6 +108,4 @@ export async function loadSiteConfig(file: string) {
   return parseSiteConfig(raw, shown)
 }
 
-export function robotsGroups(site: SiteConfig): RobotsGroup[] | undefined {
-  return site.robots?.groups
-}
+

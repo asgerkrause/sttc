@@ -1,6 +1,16 @@
 // Narrow HTMLRewriter helpers for discovery-only extraction.
 // Keep parser-sensitive component transforms in compose.ts.
 
+export function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[char]!)
+}
+
 function schemaTypeName(value: string | null) {
   if (!value) return undefined
   const match = value.match(/(?:https?:\/\/schema\.org\/|^)([A-Za-z][A-Za-z0-9]*)$/)

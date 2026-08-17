@@ -18,10 +18,10 @@
 
 1. Read site config from `src/site.json`.
 2. Parse components from `src/components/*.html`.
-3. Compose routes from `src/pages/**/*.html`, legacy `src/routes/**/*.html`, and optional content markdown.
-4. Extract component styles and lifecycle scripts.
-5. Bundle site code with `Bun.build`.
-6. Process images with `Bun.Image`.
+3. Process images with `Bun.Image` before any copy, so encode does not race `fs.cp`.
+4. Compose routes from `src/pages/**/*.html`, legacy `src/routes/**/*.html`, and optional content markdown.
+5. Extract component styles and lifecycle scripts.
+6. Bundle site code with `Bun.build`.
 7. Emit HTML, assets, route JSON, discovery files, feeds, sitemap, and robots.
 8. Run strict checks.
 

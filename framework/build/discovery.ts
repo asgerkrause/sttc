@@ -6,7 +6,7 @@ import { absoluteUrl, buildSchemaGraph, isPublicRoute, type JsonLdNode, type Sit
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import type { ComponentSchema, ComposeInstance } from './compose'
 import type { ContentRoute } from './content'
-import { extractHtmlDescription, extractHtmlMetadata, extractHtmlTitle, scanHtmlInternalLinks } from './html'
+import { extractHtmlMetadata } from './html'
 import { GENERATOR_NAME, GENERATOR_VERSION } from './version'
 import { mapConcurrent } from './concurrency'
 import { htmlToMarkdown } from './markdown-output'
@@ -28,9 +28,6 @@ export type RouteRecord = {
 
 export const MANIFEST_SCHEMA_VERSION = 2
 
-export const scanInternalLinks = scanHtmlInternalLinks
-export const extractTitle = extractHtmlTitle
-export const extractDescription = extractHtmlDescription
 export const extractRouteMetadata = extractHtmlMetadata
 
 export type RouteSchemaExtras = {
@@ -58,10 +55,6 @@ function componentSchemaExtras(record: RouteRecord, schemas: Map<string, Compone
   }
 
   return { schemas: uniqueStrings([...record.schemas, ...schemaTypes]), extraJsonLd }
-}
-
-export function detectSchemas(record: RouteRecord, schemas: Map<string, ComponentSchema>): JsonLdNode[] {
-  return componentSchemaExtras(record, schemas).extraJsonLd
 }
 
 function isoDate(value: string | undefined) {
@@ -197,14 +190,17 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
     ...(routeExtrasBySlug?.get(record.slug) ?? routeSchemaExtras(record, componentSchemas, contentByslug.get(record.slug), site)),
   }))
   const publicRoutes = enrichedRoutes.filter((route) => isPublicRoute(route) && route.slug !== '404')
+  const markdownBySlug = new Map<string, string>()
 
   await mapConcurrent(publicRoutes, 4, async (route) => {
     const jsonPath = join(distDir, 'routes', `${route.slug}.json`)
     const markdownPath = join(distDir, 'routes', `${route.slug}.md`)
     await mkdir(join(jsonPath, '..'), { recursive: true })
     const representation = routeRepresentation(site, route.slug)
+    const markdown = htmlToMarkdown(route.renderedHtml ?? '')
+    markdownBySlug.set(route.slug, markdown)
     await Promise.all([
-      writeFile(markdownPath, `${htmlToMarkdown(route.renderedHtml ?? '')}\n`),
+      writeFile(markdownPath, `${markdown}\n`),
       writeFile(jsonPath, JSON.stringify({
         schemaVersion: MANIFEST_SCHEMA_VERSION,
         generator: { name: GENERATOR_NAME, version: GENERATOR_VERSION },
@@ -221,7 +217,7 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
   })
 
   await Promise.all([
-    writeLlmsTxt(distDir, site, publicRoutes, contentByslug),
+    writeLlmsTxt(distDir, site, publicRoutes, contentByslug, markdownBySlug),
     writeManifest(distDir, { ...input, routes: publicRoutes }),
     writeSiteGraph(distDir, site, publicRoutes),
   ])
@@ -248,6 +244,7 @@ async function writeLlmsTxt(
   site: SiteConfig,
   routes: Array<RouteRecord & RouteSchemaExtras>,
   contentByslug: Map<string, ContentRoute>,
+  markdownBySlug: Map<string, string>,
 ) {
   const lines = [`# ${site.name}`, '', `> ${site.description}`, '', ...siteFactLines(site)]
   const pages = routes.filter((route) => contentByslug.get(route.slug)?.collection !== 'posts')
@@ -270,7 +267,7 @@ async function writeLlmsTxt(
   const full = [...lines]
   for (const route of routes) {
     full.push('---', '', `# ${route.title}`, '', `URL: ${absoluteUrl(site.url, publicPathFromSlug(route.slug))}`, '')
-    full.push(htmlToMarkdown(route.renderedHtml ?? ''), '')
+    full.push(markdownBySlug.get(route.slug) ?? htmlToMarkdown(route.renderedHtml ?? ''), '')
   }
   await writeFile(join(distDir, 'llms-full.txt'), full.join('\n'))
 }

@@ -10,6 +10,8 @@ import { compileContentFrom, loadCustomContentCollections } from './content'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs } from './images'
 import { createBuildContext, type BuildContext } from './build-context'
 import { loadSiteConfig } from './site-config'
+import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
+import { INLINE_SCRIPT_RE } from './extract-js'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
@@ -35,20 +37,28 @@ export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   return { errors, warnings }
 }
 
-async function collectFilesByExtension(dir: string, extension: string, base = ''): Promise<string[]> {
+async function collectFilesByExtension(dir: string, extension: string): Promise<string[]> {
+  try {
+    if (!(await stat(dir)).isDirectory()) return []
+  } catch {
+    return []
+  }
   const out: string[] = []
-  let entries
-  try { entries = await readdir(join(dir, base), { withFileTypes: true }) } catch { return out }
-  for (const entry of entries) {
-    const rel = base ? `${base}/${entry.name}` : entry.name
-    if (entry.isDirectory()) out.push(...(await collectFilesByExtension(dir, extension, rel)))
-    else if (entry.name.endsWith(extension)) out.push(join(dir, rel))
+  const glob = new Bun.Glob(`**/*${extension}`)
+  for await (const rel of glob.scan({ cwd: dir, onlyFiles: true })) {
+    out.push(join(dir, rel))
   }
   return out
 }
 
-async function collectHtmlFiles(dir: string, base = ''): Promise<string[]> {
-  return collectFilesByExtension(dir, '.html', base)
+async function collectHtmlFiles(dir: string): Promise<string[]> {
+  return collectFilesByExtension(dir, '.html')
+}
+
+function isComposedPublicPage(distDir: string, file: string) {
+  const rel = file.slice(distDir.length).replace(/\\/g, '/').replace(/^\//, '')
+  if (rel === 'index.html' || rel.startsWith('routes/') || rel.startsWith('assets/')) return false
+  return rel.endsWith('/index.html')
 }
 
 function extractLdJson(html: string) {
@@ -86,7 +96,7 @@ function cleanAssetRef(ref: string) {
   return ref.replace(/[.,;:]+$/g, '').replace(/[?#].*$/, '')
 }
 
-async function checkBuiltOutput(distDir: string, fail: (m: string) => void, allowBrokenLinks: boolean) {
+export async function checkBuiltOutput(distDir: string, fail: (m: string) => void, allowBrokenLinks: boolean) {
   const indexFile = join(distDir, 'index.html')
   const routeHtmlFiles = [indexFile, ...(await collectHtmlFiles(join(distDir, 'routes')))].sort()
   const routeHtmlSet = new Set(routeHtmlFiles)
@@ -99,42 +109,54 @@ async function checkBuiltOutput(distDir: string, fail: (m: string) => void, allo
     }
   }
 
-  const checkPlaceholders = (file: string, html: string) => {
+  const placeholderErrors = (file: string, html: string) => {
+    const errors: string[] = []
     for (const match of html.matchAll(/\{\{[\w.-]+(?::[\w.-]+)?\}\}/g)) {
-      fail(`${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`)
+      errors.push(`${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`)
     }
+    return errors
   }
 
-  for (const file of routeHtmlFiles) {
+  const routeResults = await mapConcurrent(routeHtmlFiles, IO_CONCURRENCY, async (file) => {
+    const errors: string[] = []
     const html = await readFile(file, 'utf8').catch(() => null)
-    if (!html) { fail(`missing ${file}`); continue }
-
+    if (!html) return { file, errors: [`missing ${file}`], html: null }
     const blocks = extractLdJson(html)
-    if (blocks.length === 0) fail(`${file}: no application/ld+json`)
+    if (blocks.length === 0) errors.push(`${file}: no application/ld+json`)
     for (const raw of blocks) {
       try {
         const data = JSON.parse(raw)
-        if (!data['@context']) fail(`${file}: JSON-LD missing @context`)
+        if (!data['@context']) errors.push(`${file}: JSON-LD missing @context`)
       } catch {
-        fail(`${file}: invalid JSON-LD`)
+        errors.push(`${file}: invalid JSON-LD`)
       }
     }
+    errors.push(...placeholderErrors(file, html))
+    return { file, errors, html }
+  })
 
-    checkPlaceholders(file, html)
-    rememberAssets(file, html)
+  for (const result of routeResults) {
+    for (const error of result.errors) fail(error)
+    if (!result.html) continue
+    rememberAssets(result.file, result.html)
     if (!allowBrokenLinks) {
-      for (const match of html.matchAll(/href="(\/[^"#?]*)"/g)) {
-        if (!linkOwners.has(match[1])) linkOwners.set(match[1], file)
+      for (const match of result.html.matchAll(/href="(\/[^"#?]*)"/g)) {
+        if (!linkOwners.has(match[1])) linkOwners.set(match[1], result.file)
       }
     }
   }
 
-  // Preserve the unresolved-placeholder contract for public raw HTML without treating those files
-  // as renderer-owned routes that require JSON-LD or internal-route policy.
-  for (const file of (await collectHtmlFiles(distDir)).sort()) {
-    if (routeHtmlSet.has(file)) continue
+  // Public `{slug}/index.html` pages are shell + already-checked fragments.
+  // Still scan other HTML (raw public files) for unresolved placeholders.
+  const extraHtml = (await collectHtmlFiles(distDir))
+    .filter((file) => !routeHtmlSet.has(file) && !isComposedPublicPage(distDir, file))
+    .sort()
+  const extraResults = await mapConcurrent(extraHtml, IO_CONCURRENCY, async (file) => {
     const html = await readFile(file, 'utf8').catch(() => null)
-    if (html) checkPlaceholders(file, html)
+    return html ? placeholderErrors(file, html) : []
+  })
+  for (const errors of extraResults) {
+    for (const error of errors) fail(error)
   }
 
   const otherFiles = [
@@ -142,25 +164,31 @@ async function checkBuiltOutput(distDir: string, fail: (m: string) => void, allo
     ...(await collectFilesByExtension(join(distDir, 'assets'), '.css')),
     ...(await collectFilesByExtension(join(distDir, 'assets'), '.js')),
   ].sort()
-  for (const file of otherFiles) {
-    const text = await readFile(file, 'utf8').catch(() => null)
+  const otherTexts = await mapConcurrent(otherFiles, IO_CONCURRENCY, async (file) => ({
+    file,
+    text: await readFile(file, 'utf8').catch(() => null),
+  }))
+  for (const { file, text } of otherTexts) {
     if (text) rememberAssets(file, text)
   }
 
-  for (const [ref, file] of assetOwners) {
-    if (await builtAssetExists(distDir, ref)) continue
-    fail(`${file}: missing public asset ${ref}\n  hint: ${missingPublicAssetHint(ref)}`)
-  }
+  const assetErrors = await mapConcurrent([...assetOwners], IO_CONCURRENCY, async ([ref, file]) => {
+    if (await builtAssetExists(distDir, ref)) return null
+    return `${file}: missing public asset ${ref}\n  hint: ${missingPublicAssetHint(ref)}`
+  })
+  for (const error of assetErrors.filter((value): value is string => !!value).sort()) fail(error)
 
-  for (const [href, file] of linkOwners) {
+  const linkErrors = await mapConcurrent([...linkOwners], IO_CONCURRENCY, async ([href, file]) => {
     if (href.startsWith('/assets/') || href.startsWith('/media/') || href.startsWith('/lib/')) {
-      if (!(await assetExists(distDir, href))) fail(`${file}: broken asset ${href}`)
+      if (!(await assetExists(distDir, href))) return `${file}: broken asset ${href}`
     } else if (href.endsWith('.html') || href.endsWith('.json') || href.endsWith('.md') || href.endsWith('.txt')) {
-      if (!(await assetExists(distDir, href))) fail(`${file}: broken link ${href}`)
+      if (!(await assetExists(distDir, href))) return `${file}: broken link ${href}`
     } else if (!(await routeExists(distDir, href))) {
-      fail(`${file}: broken route ${href}`)
+      return `${file}: broken route ${href}`
     }
-  }
+    return null
+  })
+  for (const error of linkErrors.filter((value): value is string => !!value).sort()) fail(error)
 }
 
 export function extractBuiltPublicAssetRefs(text: string) {
@@ -171,10 +199,6 @@ export function extractBuiltPublicAssetRefs(text: string) {
     refs.add(ref)
   }
   return [...refs].sort()
-}
-
-export function extractBuiltImageRefs(text: string) {
-  return extractBuiltPublicAssetRefs(text).filter((ref) => ref.startsWith('/assets/images/'))
 }
 
 async function builtAssetExists(distRoot: string, ref: string) {
@@ -190,32 +214,6 @@ function missingPublicAssetHint(ref: string) {
   if (ref.startsWith('/assets/videos/')) return 'Add the public video source file under src/videos, then rebuild.'
   if (ref.startsWith('/assets/files/')) return 'Add the public file under src/files, then rebuild.'
   return 'Add the public source file, then rebuild.'
-}
-
-export async function checkBuiltPublicAssetRefs(distRoot: string, fail: (m: string) => void) {
-  const files = [
-    join(distRoot, 'index.html'),
-    ...(await collectHtmlFiles(join(distRoot, 'routes'))),
-    ...(await collectFilesByExtension(distRoot, '.json')),
-    ...(await collectFilesByExtension(join(distRoot, 'assets'), '.css')),
-    ...(await collectFilesByExtension(join(distRoot, 'assets'), '.js')),
-  ]
-  const seen = new Set<string>()
-
-  for (const file of files) {
-    if (seen.has(file)) continue
-    seen.add(file)
-    const text = await readFile(file, 'utf8').catch(() => null)
-    if (!text) continue
-    for (const ref of extractBuiltPublicAssetRefs(text)) {
-      if (await builtAssetExists(distRoot, ref)) continue
-      fail(`${file}: missing public asset ${ref}\n  hint: ${missingPublicAssetHint(ref)}`)
-    }
-  }
-}
-
-export async function checkBuiltImageRefs(distRoot: string, fail: (m: string) => void) {
-  await checkBuiltPublicAssetRefs(distRoot, fail)
 }
 
 async function checkSiteJson(srcDir: string, fail: (m: string) => void) {
@@ -296,7 +294,7 @@ async function checkSourceContracts(context: BuildContext, fail: (m: string) => 
   await checkComponentActiveScripts(context.componentsDir, warn)
 }
 
-const COMPONENT_SCRIPT_RE = /<script(?![^>]*type=["']application\/ld\+json["'])(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi
+const COMPONENT_SCRIPT_RE = INLINE_SCRIPT_RE
 
 function hasRecursiveRaf(code: string) {
   for (const match of code.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*{[\s\S]*?requestAnimationFrame\(\s*\1\s*\)/g)) {
@@ -608,13 +606,18 @@ async function checkDiscoveryArtifacts(distDir: string, fail: (m: string) => voi
 // CLI entry — `bun run check`
 if (import.meta.main) {
   const skipBuild = process.argv.includes('--skip-build')
-  if (!skipBuild) {
-    const proc = Bun.spawn(['bun', join(packageRoot, 'build', 'index.ts')], { cwd: root, stdout: 'inherit', stderr: 'inherit' })
-    const code = await proc.exited
-    if (code !== 0) process.exit(code)
-  }
   const allowBrokenLinks = process.argv.includes('--allow-broken-links')
   const launch = process.argv.includes('--launch')
+  if (!skipBuild) {
+    const buildArgs = ['bun', join(packageRoot, 'build', 'index.ts')]
+    if (allowBrokenLinks) buildArgs.push('--allow-broken-links')
+    if (launch) buildArgs.push('--launch')
+    const proc = Bun.spawn(buildArgs, { cwd: root, stdout: 'inherit', stderr: 'inherit' })
+    const code = await proc.exited
+    if (code !== 0) process.exit(code)
+    console.log(launch ? 'launch check ok' : 'check ok')
+    process.exit(0)
+  }
   const report = await runChecks({ allowBrokenLinks, launch })
   for (const w of report.warnings) console.warn(`warn: ${w}`)
   if (report.errors.length) {

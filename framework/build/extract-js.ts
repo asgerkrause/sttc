@@ -1,9 +1,9 @@
-import { mkdir, readFile, rm, writeFile } from 'fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { buildErrorAt, BuildError } from './errors'
 import { assetHash } from './hash'
 
-const INLINE_SCRIPT_RE =
+export const INLINE_SCRIPT_RE =
   /<script(?![^>]*\bsrc=)(?![^>]*type=["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>/gi
 
 export type ScriptBlock = { label: string; slug?: string; code: string }
@@ -116,7 +116,7 @@ function publicEnvDefines() {
 }
 
 async function removeOldAppBundles(distAppDir: string, keep: string) {
-  for (const entry of await (await import('fs/promises')).readdir(distAppDir).catch(() => [])) {
+  for (const entry of await readdir(distAppDir).catch(() => [])) {
     if (/^app(\.[a-f0-9]+)?\.js$/i.test(entry) && entry !== keep) {
       await rm(join(distAppDir, entry), { force: true })
     }

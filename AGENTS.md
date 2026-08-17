@@ -36,7 +36,7 @@ content/                 optional markdown records
 dist/                    generated output
 ```
 
-The starter ships exactly seven components: `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. They are replaceable HTML examples, not a design system. Component behavior stays in that component's lifecycle script. `SEO` remains a renderer directive, not a component file.
+The starter ships exactly seven components: `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. They are replaceable HTML examples, not a design system. This repo's dogfood site may add extra components under `src/components/`; created projects get only the seven from `templates/default`. Component behavior stays in that component's lifecycle script. `SEO` remains a renderer directive, not a component file.
 
 ## Routes and SEO
 

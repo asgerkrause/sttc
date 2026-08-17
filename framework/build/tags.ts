@@ -81,16 +81,4 @@ export function nextComponent(html: string, from = 0, fileHint?: string): Compon
   return null
 }
 
-/** Catch lowercase or kebab tags that look like component invocations but aren't. */
-export function detectLowercaseComponentLike(html: string): { name: string; index: number } | null {
-  const re = /<([a-z][\w-]*)\b[^>]*\/>/g
-  for (const m of html.matchAll(re)) {
-    const name = m[1]
-    if (name === 'br' || name === 'hr' || name === 'img' || name === 'input' || name === 'meta' || name === 'link') continue
-    // Heuristic: a self-closing custom-looking tag with no dash that isn't a known void HTML element.
-    if (!name.includes('-')) {
-      return { name, index: m.index ?? 0 }
-    }
-  }
-  return null
-}
+

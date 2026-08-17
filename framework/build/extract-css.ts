@@ -1,12 +1,7 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
-import { dirname, join } from 'path'
-import { buildErrorAt, BuildError } from './errors'
-import type { ComponentSchema } from './compose'
-import { parseInlineSchema } from './component-meta'
+import { mkdir, readdir, rm, writeFile } from 'fs/promises'
+import { join } from 'path'
+import { buildErrorAt } from './errors'
 import { assetHash } from './hash'
-import { root } from './paths'
-import { extractTemplateData } from './template-data'
-import type { TemplateContext } from './template-directives'
 
 const STYLE_RE = /<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi
 const STYLES_LINK = '<link rel="stylesheet" href="/assets/css/styles.css">'
@@ -18,16 +13,6 @@ export type RouteCssAsset = { href: string; filename: string; layer: string }
 
 const COMPONENTS_LAYER = 'snz.components'
 const PAGES_LAYER_ROOT = 'snz.pages'
-
-function rendersImageBridge(html: string) {
-  const renderable = html
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<(script|style|textarea|title|template|noscript|iframe|noembed|xmp)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
-  const positions = [...renderable.matchAll(/\{\{imgMain\}\}/g)].map((match) => match.index)
-  if (positions.length !== 1) return false
-  const index = positions[0]!
-  return renderable.lastIndexOf('<', index) < renderable.lastIndexOf('>', index)
-}
 
 function minifyCss(css: string) {
   // Keep nesting intact — aggressive minify broke nested selectors in component bundles.
@@ -52,22 +37,7 @@ export function stripStyleBlocks(html: string): { html: string; css: string[] } 
   return { html: cleaned, css }
 }
 
-const COMPONENT_SCRIPT_RE =
-  /<script(?![^>]*type=["']application\/ld\+json["'])(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi
-
-/**
- * Extract lifecycle <script> blocks from a component template.
- * Each block becomes a per-instance mount function registered with the router runtime.
- */
-export function extractComponentScripts(html: string): { html: string; scripts: string[] } {
-  const scripts: string[] = []
-  const cleaned = html.replace(COMPONENT_SCRIPT_RE, (_, body: string) => {
-    const trimmed = body.trim()
-    if (trimmed) scripts.push(trimmed)
-    return ''
-  }).replace(/\n{3,}/g, '\n\n').trim()
-  return { html: cleaned, scripts }
-}
+export { prepareComponents } from './components'
 
 export function rejectStyleInRoute(html: string, file: string) {
   const match = html.match(/<style\b/i)
@@ -97,76 +67,6 @@ export function routeCssLayer(slug: string) {
 
 function wrapLayer(layer: string, css: string) {
   return `@layer ${layer} {\n${css}\n}`
-}
-
-/** Read components: strip inline <style> + <script>, build template + schema + script registries. */
-export async function prepareComponents(componentsDir: string, projectRoot = root): Promise<{
-  cssBlocks: CssBlock[]
-  templates: Map<string, string>
-  schemas: Map<string, ComponentSchema>
-  scripts: Map<string, string[]>
-  data: Map<string, TemplateContext>
-}> {
-  const cssBlocks: CssBlock[] = []
-  const templates = new Map<string, string>()
-  const schemas = new Map<string, ComponentSchema>()
-  const scripts = new Map<string, string[]>()
-  const data = new Map<string, TemplateContext>()
-  let entries: string[]
-  try {
-    entries = await readdir(componentsDir)
-  } catch {
-    return { cssBlocks, templates, schemas, scripts, data }
-  }
-
-  const htmlFiles = entries.filter((f) => f.endsWith('.html')).sort()
-  for (const file of htmlFiles) {
-    const path = join(componentsDir, file)
-    const raw = await readFile(path, 'utf8')
-    const name = file.replace(/\.html$/i, '')
-    if (name === 'SEO') {
-      throw new BuildError('SEO is a renderer directive, not a component', {
-        file: `src/components/${file}`,
-        hint: 'Delete SEO.html and use one self-closing <SEO ... /> directive in each route <head>.',
-      })
-    }
-    // 1. Pull build-time JSON data before runtime scripts so it never ships or mounts.
-    const { html: noData, data: componentData } = await extractTemplateData(raw, { file: `src/components/${file}`, projectRoot })
-    if (Object.keys(componentData).length) data.set(name, componentData)
-    // 2. Pull <script> (so its content isn't swept by stripStyleBlocks comment regex)
-    const { html: noScript, scripts: blocks } = extractComponentScripts(noData)
-    if (blocks.length) scripts.set(name, blocks)
-    // 3. Pull leading <!-- @desc / @attr / @schema --> comment (inline schema)
-    const { html: noComment, schema } = parseInlineSchema(noScript)
-    if (schema.description || (schema.attrs && Object.keys(schema.attrs).length) || schema.schema) {
-      schemas.set(name, schema)
-    }
-    // 4. Pull <style>
-    const { html, css } = stripStyleBlocks(noComment)
-    if (name === 'Image' && !rendersImageBridge(html)) {
-      throw new BuildError('Image component must render the compiler image bridge exactly once as element content', {
-        file: `src/components/${file}`,
-        hint: 'Add one {{imgMain}} text placeholder to Image.html where the generated <img> must render. Do not put it in a comment or attribute.',
-      })
-    }
-    templates.set(name, html)
-    for (const chunk of css) cssBlocks.push({ source: file, css: chunk })
-  }
-
-  // Legacy .schema.json sidecars are no longer supported. If any exist, fail loudly so the
-  // author knows to migrate them into an inline <!-- @desc … @attr … --> comment.
-  const stragglers = entries.filter((f) => f.endsWith('.schema.json'))
-  if (stragglers.length) {
-    throw new BuildError(
-      `Found legacy .schema.json sidecars: ${stragglers.join(', ')}`,
-      {
-        file: `src/components/`,
-        hint: 'Move the schema into a <!-- @desc / @attr --> comment at the top of the matching .html file, then delete the .schema.json.',
-      },
-    )
-  }
-
-  return { cssBlocks, templates, schemas, scripts, data }
 }
 
 /**
