@@ -28,7 +28,6 @@ const activeMediaCleanups = new WeakMap()
 const activeMediaPaused = new WeakMap()
 let navigationId = 0
 let navigationController = null
-let pointerInput = false
 
 function componentRoots(root, selector) {
   const out = []
@@ -449,18 +448,10 @@ function focusRouteRoot() {
   if (!(target instanceof HTMLElement)) return
   const hadTabindex = target.hasAttribute('tabindex')
   if (!hadTabindex) target.setAttribute('tabindex', '-1')
-  target.focus({ preventScroll: true })
+  target.focus({ preventScroll: true, focusVisible: false })
   if (!hadTabindex) {
     target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true })
   }
-}
-
-function markPointerInput() {
-  pointerInput = true
-}
-
-function markKeyboardInput() {
-  pointerInput = false
 }
 
 function routeAnnouncementLabel() {
@@ -548,8 +539,7 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
   }
   if (!isActiveNavigation(navigation)) return
   if (focus) {
-    // Safari treats programmatic heading focus as :focus-visible after a click.
-    if (!pointerInput) focusRouteRoot()
+    focusRouteRoot()
     announceRoute()
   }
   afterEmit(detail)
@@ -664,9 +654,6 @@ function onPreloadCancel(e) {
   if (related instanceof Node && a.contains(related)) return
   clearPreloadTimer(a)
 }
-
-document.addEventListener('pointerdown', markPointerInput, true)
-document.addEventListener('keydown', markKeyboardInput, true)
 
 for (const type of ['mouseover', 'focusin']) {
   document.addEventListener(type, onPreloadIntent, { passive: true })

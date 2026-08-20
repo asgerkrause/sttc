@@ -60,6 +60,21 @@ describe('project CSS flatten', () => {
     expect((await readdir(distCss)).filter((name) => name.endsWith('.css'))).toEqual([result!.filename])
   })
 
+  test('fails when @font-face points at a missing WOFF', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sttc-css-'))
+    tempDirs.push(dir)
+    const stylesDir = join(dir, 'src', 'styles')
+    const distCss = join(dir, 'dist', 'assets', 'css')
+    await mkdir(stylesDir, { recursive: true })
+    await mkdir(distCss, { recursive: true })
+    await writeFile(join(dir, 'src', 'styles.css'), `@font-face {
+  font-family: "Missing";
+  src: url("./styles/ghost.woff") format("woff");
+}
+`)
+    await expect(bundleProjectCss(join(dir, 'src', 'styles.css'), stylesDir, distCss)).rejects.toBeInstanceOf(BuildError)
+  })
+
   test('refuses TTF sources', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'sttc-css-'))
     tempDirs.push(dir)

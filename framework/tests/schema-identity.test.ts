@@ -98,6 +98,21 @@ describe('schema identity and breadcrumbs', () => {
     })
   })
 
+  test('site graph breadcrumbs use other route titles', () => {
+    const graph = buildSchemaGraph(baseSite, {
+      title: 'Hello',
+      description: 'Post page.',
+      canonical: 'https://example.com/insights/hello/',
+      slug: 'insights/hello',
+      titlesBySlug: { insights: 'Writing' },
+    })
+    expect(nodeOf(graph, 'BreadcrumbList')?.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Example Studio', item: 'https://example.com' },
+      { '@type': 'ListItem', position: 2, name: 'Writing', item: 'https://example.com/insights/' },
+      { '@type': 'ListItem', position: 3, name: 'Hello', item: 'https://example.com/insights/hello/' },
+    ])
+  })
+
   test('uses provided route titles for intermediate breadcrumbs', () => {
     const crumbs = breadcrumbList(baseSite, {
       title: 'Hello',

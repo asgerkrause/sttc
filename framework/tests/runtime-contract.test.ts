@@ -60,10 +60,9 @@ describe('runtime ownership contracts', () => {
 
     expect(router).toContain('function focusRouteRoot')
     expect(router).toContain("main.querySelector('h1, h2, [role=\"heading\"]') ?? main")
-    expect(router).toContain('target.focus({ preventScroll: true })')
-    expect(router).toContain('if (!pointerInput) focusRouteRoot()')
-    expect(router).toContain("document.addEventListener('pointerdown', markPointerInput, true)")
-    expect(router).toContain("document.addEventListener('keydown', markKeyboardInput, true)")
+    expect(router).toContain('target.focus({ preventScroll: true, focusVisible: false })')
+    expect(router).toContain('if (focus) {\n    focusRouteRoot()')
+    expect(router).not.toContain('pointerInput')
     expect(router).toContain("render(location.pathname, { focus: true })")
   })
 

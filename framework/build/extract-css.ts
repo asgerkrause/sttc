@@ -1,7 +1,7 @@
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
 import { basename, dirname, join, resolve } from 'path'
 import { buildErrorAt, BuildError } from './errors'
-import { destFontName, emitStyleFonts, fontFormat, fontMime, fontPreloadsFromCss } from './fonts'
+import { emitStyleFonts, fontFormat, fontMime, fontPreloadsFromCss, isFontFile } from './fonts'
 import { assetHash } from './hash'
 
 const STYLE_RE = /<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi
@@ -85,10 +85,16 @@ function rewriteLocalUrls(css: string, fromFile: string, stylesDir: string, dest
   return css.replace(URL_RE, (all, _quote: string, spec: string) => {
     const resolved = resolveCssSpecifier(spec, fromFile, stylesDir)
     if (!resolved) return all
-    const dest = destBySource.get(resolved)
-      ?? destBySource.get(basename(resolved))
-      ?? destBySource.get(destFontName(resolved))
-      ?? destFontName(resolved)
+    const dest = destBySource.get(resolved) ?? destBySource.get(basename(resolved))
+    if (!dest) {
+      if (isFontFile(resolved) || /\.(ttf|otf)$/i.test(resolved)) {
+        throw new BuildError(`Missing font file "${spec}"`, {
+          file: fromFile,
+          hint: 'Point @font-face at a WOFF or WOFF2 file under src/styles.',
+        })
+      }
+      return all
+    }
     return `url("./${dest}")`
   }).replace(
     /url\("\.\/([^"]+\.woff2?)"\)\s*format\(\s*["'](?:truetype|opentype)["']\s*\)/gi,

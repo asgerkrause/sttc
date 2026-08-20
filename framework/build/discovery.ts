@@ -373,6 +373,7 @@ async function writeSiteGraph(
   routes: Array<RouteRecord & RouteSchemaExtras>,
 ) {
   const nodes = new Map<string, JsonLdNode>()
+  const titlesBySlug = Object.fromEntries(routes.map((route) => [route.slug, route.title]))
   for (const route of routes) {
     const canonical = absoluteUrl(site.url, publicPathFromSlug(route.slug))
     const graph = buildSchemaGraph(site, {
@@ -380,6 +381,7 @@ async function writeSiteGraph(
       description: route.description,
       canonical,
       slug: route.slug,
+      titlesBySlug,
     }, route.extraJsonLd)
     for (const node of graph['@graph']) {
       const key = typeof node['@id'] === 'string' ? node['@id'] : JSON.stringify(node)
