@@ -4,9 +4,11 @@ import { createComposer } from './compose'
 import { prepareComponents } from './components'
 import {
   bundleComponentCss,
+  bundleProjectCss,
   bundleRouteCss,
   extractRouteStyleBlocks,
   injectComponentStylesLink,
+  injectFontPreloads,
   injectGlobalStylesLink,
   routeCssLink,
 } from './extract-css'
@@ -16,6 +18,7 @@ import {
   extractShellHeadScripts,
   routeScriptBlocks,
   writeAppJs,
+  writeRouterJs,
   type ScriptBlock,
 } from './extract-js'
 import {
@@ -39,7 +42,8 @@ import {
 import {
   sourceAppFile,
   sourceRouterFile,
-  sourceRuntimeLibDir,
+  sourceStylesDir,
+  sourceStylesFile,
 } from './paths'
 import { absoluteUrl, buildSchemaGraph, isPublicRoute, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
 import { compileContentFrom, type ContentRoute } from './content'
@@ -95,8 +99,10 @@ function splitRouteHtml(html: string) {
   return { head: match[1].trim(), body: match[2].trim() }
 }
 
-function withAppJs(shellHtml: string, appJsFile: string) {
-  return shellHtml.replace(/<script src="\/assets\/js\/app\.js"/, `<script src="/assets/js/${appJsFile}"`)
+function withHashedScripts(shellHtml: string, appJsFile: string, routerJsFile: string) {
+  return shellHtml
+    .replace(/<script src="\/assets\/js\/app\.js"/, `<script src="/assets/js/${appJsFile}"`)
+    .replace(/<script src="\/router\.js"/, `<script src="/assets/js/${routerJsFile}"`)
 }
 
 function markRouteHead(routeHead: string) {
@@ -124,7 +130,7 @@ function moveRouteCssLinksLast(html: string) {
     return withoutRouteLinks.replace(componentLink, (match) => `${match}${insert}`)
   }
 
-  const stylesLink = /\n\s*<link rel="stylesheet" href="\/assets\/css\/styles\.css">/
+  const stylesLink = /\n\s*<link rel="stylesheet" href="\/assets\/css\/styles(\.[a-f0-9]+)?\.css">/
   if (stylesLink.test(withoutRouteLinks)) {
     return withoutRouteLinks.replace(stylesLink, (match) => `${match}${insert}`)
   }
@@ -139,14 +145,42 @@ function replaceSchemaJson(routeHead: string, graph: unknown) {
   return schemaBlock.test(routeHead) ? routeHead.replace(schemaBlock, next) : `${routeHead}\n${next}`
 }
 
-function enrichRouteHead(routeHead: string, site: SiteConfig, record: RouteRecord, extraJsonLd: JsonLdNode[]) {
-  if (!extraJsonLd.length) return routeHead
-  const graph = buildSchemaGraph(site, {
+function articleMeta(extraJsonLd: JsonLdNode[]) {
+  const article = extraJsonLd.find((node) => node['@type'] === 'BlogPosting')
+  if (!article) return ''
+  const published = typeof article.datePublished === 'string' ? article.datePublished : ''
+  const modified = typeof article.dateModified === 'string' ? article.dateModified : ''
+  return [
+    '<meta property="og:type" content="article">',
+    published ? `<meta property="article:published_time" content="${escapeHtml(published)}">` : '',
+    modified ? `<meta property="article:modified_time" content="${escapeHtml(modified)}">` : '',
+  ].filter(Boolean).join('\n')
+}
+
+function applyArticleMeta(routeHead: string, extraJsonLd: JsonLdNode[]) {
+  const tags = articleMeta(extraJsonLd)
+  if (!tags) return routeHead
+  return routeHead.replace('<meta property="og:type" content="website">', tags)
+}
+
+function enrichRouteHead(
+  routeHead: string,
+  site: SiteConfig,
+  record: RouteRecord,
+  extraJsonLd: JsonLdNode[],
+  titlesBySlug?: Record<string, string>,
+) {
+  const article = extraJsonLd.find((node) => node['@type'] === 'BlogPosting')
+  const dateModified = typeof article?.dateModified === 'string' ? article.dateModified : undefined
+  const graph = replaceSchemaJson(routeHead, buildSchemaGraph(site, {
     title: record.title,
     description: record.description,
     canonical: absoluteUrl(site.url, publicPathFromSlug(record.slug)),
-  }, extraJsonLd)
-  return replaceSchemaJson(routeHead, graph)
+    slug: record.slug,
+    titlesBySlug,
+    dateModified,
+  }, extraJsonLd))
+  return applyArticleMeta(graph, extraJsonLd)
 }
 
 function injectRouteBody(shellHtml: string, routeBody: string) {
@@ -171,10 +205,13 @@ async function writeStaticRoutes(
   site: SiteConfig,
 ) {
   const recordsBySlug = new Map(records.map((record) => [record.slug, record]))
+  const titlesBySlug = Object.fromEntries(
+    records.filter((record) => isPublicRoute(record) && record.slug !== '404').map((record) => [record.slug, record.title]),
+  )
   await mapConcurrent(routes, 4, async (route) => {
     const { head, body } = splitRouteHtml(route.html)
     const record = recordsBySlug.get(route.slug)
-    const routeHead = record ? enrichRouteHead(head, site, record, extrasBySlug.get(route.slug) ?? []) : head
+    const routeHead = record ? enrichRouteHead(head, site, record, extrasBySlug.get(route.slug) ?? [], titlesBySlug) : head
     const html = markStaticRoute(
       moveRouteCssLinksLast(injectRouteBody(applyRouteHead(shellHtml, routeHead), body)),
       route.slug,
@@ -182,6 +219,7 @@ async function writeStaticRoutes(
     const path = publicRoutePath(distDir, route.slug)
     await mkdir(join(path, '..'), { recursive: true })
     await writeFile(path, html)
+    await writeFile(join(distDir, 'routes', route.outFile), `<head>\n${routeHead}\n</head>\n${body}`)
   })
 }
 
@@ -384,6 +422,13 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     scroll: site.scroll ?? 'lenis',
   })
   await copyMediaFolderTo(context.rootDir, context.distDir)
+  const projectCss = hasGlobalStyles
+    ? await bundleProjectCss(
+      await sourceStylesFile(context.rootDir),
+      await sourceStylesDir(context.rootDir),
+      join(context.distDir, 'assets', 'css'),
+    )
+    : null
   tick('assets', t)
 
   t = performance.now()
@@ -473,9 +518,12 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const usedComponents = new Set(componentUseCounts.keys())
   const usedCssBlocks = cssBlocks.filter(({ source }) => usedComponents.has(source.replace(/\.html$/i, '')))
   const componentsCssFile = await bundleComponentCss(usedCssBlocks, componentsCssDir)
-  const composedShell = injectComponentStylesLink(
-    injectGlobalStylesLink(composedShellWithoutStyles, hasGlobalStyles),
-    componentsCssFile,
+  const composedShell = injectFontPreloads(
+    injectComponentStylesLink(
+      injectGlobalStylesLink(composedShellWithoutStyles, projectCss?.filename ?? null),
+      componentsCssFile,
+    ),
+    projectCss?.fontPreloads ?? [],
   )
   // Component lifecycle scripts register before route scripts, but only when the component
   // occurs in the fully composed site.
@@ -516,15 +564,15 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     join(context.distDir, 'assets', 'js'),
     scriptBlocks,
   )
+  const routerJsFile = await writeRouterJs(
+    await sourceRouterFile(context.rootDir),
+    join(context.distDir, 'assets', 'js'),
+  )
   tick('app', t)
 
   t = performance.now()
-  // Substitute hashed asset paths into the shell, then emit full static pages for direct public URLs.
-  const shellWithApp = withAppJs(composedShell, appJsFile)
+  const shellWithApp = withHashedScripts(composedShell, appJsFile, routerJsFile)
   await writeStaticRoutes(context.distDir, shellWithApp, routeGraph.composedRoutes(), routeRecords, schemaExtrasBySlug, site)
-
-  await Bun.write(join(context.distDir, 'router.js'), Bun.file(await sourceRouterFile(context.rootDir)))
-  await copyTree(await sourceRuntimeLibDir(context.rootDir), join(context.distDir, 'lib'))
   tick('static-output', t)
 
   const total = Math.round(performance.now() - t0)

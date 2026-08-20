@@ -58,7 +58,7 @@ const BUILTIN_COLLECTIONS: ContentCollectionConfig[] = [
     path: 'content/posts',
     template: 'post.html',
     route: 'insights/{slug}',
-    required: ['title'],
+    required: ['title', 'description'],
     builtin: 'posts',
   },
 ]

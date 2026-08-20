@@ -189,7 +189,7 @@ async function handleRequest(req: Request) {
         // Inject HMR client into HTML responses
         if (p.endsWith('.html')) {
           const text = await f.text()
-          const withHmr = text.replace('</body>', '<script src="/__snz/hmr.js"></script></body>')
+          const withHmr = text.replace('</body>', '<script src="/__snz/hmr.js" defer></script></body>')
           return new Response(withHmr, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
         }
         return new Response(f)
@@ -208,7 +208,7 @@ async function handleRequest(req: Request) {
       })
     }
     const idx = await shell.text()
-    const withHmr = idx.replace('</body>', '<script src="/__snz/hmr.js"></script></body>')
+    const withHmr = idx.replace('</body>', '<script src="/__snz/hmr.js" defer></script></body>')
     return new Response(withHmr, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
 }
 

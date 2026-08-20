@@ -2,5 +2,8 @@
   @desc Semantic section wrapper for an authored page topic.
   @attr id Optional section id.
   @attr label Optional accessible label when no visible heading labels the section.
+  @attr c Optional CRFT measure flags: sm, lg, ct.
 -->
-<section id="{{id}}" aria-label="{{label}}"><div class="c">{{slot}}</div></section>
+<section id="{{id}}" aria-label="{{label}}">
+  {#if c}<div c="{{c}}">{{slot}}</div>{:else}<div c>{{slot}}</div>{/if}
+</section>

@@ -10,6 +10,7 @@ Requires Bun >= 1.3.14. Use Bun only.
 
 ```bash
 bun run dev
+bun run preview
 bun run build
 bun run check
 bun run doctor
@@ -52,7 +53,7 @@ A page may begin with a head wrapper:
 </Section>
 ```
 
-`SEO` is a renderer directive, not a component file. Defaults come from `src/site.json`; page-specific inputs are `title`, `description`, and optional `image`. The renderer emits canonical, Open Graph, Twitter, connected JSON-LD, sitemap, feeds, manifests, route Markdown/JSON, `llms.txt`, and `llms-full.txt`.
+`SEO` is a renderer directive, not a component file. Defaults come from `src/site.json`; page-specific inputs are `title`, `description`, and optional `image`. The renderer emits canonical, Open Graph, Twitter, connected JSON-LD, sitemap, feeds, manifests, route Markdown/JSON, same-path markdown aliases, `llms.txt`, and `llms-full.txt`.
 
 ## Components
 
@@ -82,7 +83,9 @@ Read `framework/docs/framework/05-components.md` before component engine work. E
 
 ## CSS boundary
 
-The renderer does not impose framework CSS. The root dogfood and starter import a pinned, project-owned CRFT copy from `src/styles/`.
+The renderer does not impose framework CSS. The root dogfood and starter import a pinned, project-owned CRFT copy from `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. Optional SNZ faces live in `layers/fonts.css`. The build copies and hashes WOFF/WOFF2 files from `src/styles/` and rewrites `@font-face` URLs. It does not convert TTF or OTF.
+
+Attributes are the composition API: `c` measure, `s` stack, `t` type, `g` / `x` / `y` / `o` grid, `l` clamp. `data-skin`, `data-accent`, and `data-scrub` own canvas and opt-in behavior. Classes own override and product use. `.btn`, `.crd`, and `.lnk` stay project conventions.
 
 - Replace `src/styles.css` with project-wide CSS as needed.
 - Put reusable component-specific CSS in that component's `<style>`.

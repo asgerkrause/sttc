@@ -4,9 +4,11 @@ import { rejectStyleInRoute } from './extract-css'
 import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { loadSiteConfig as readSiteConfig } from './site-config'
 import { buildYear } from './source-files'
+import { publicMarkdownPathFromSlug, routeJsonPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
 import { nextComponent, parseAttrs, type ComponentMatch } from './tags'
 import { escapeHtml } from './html'
 import { renderPlaceholders, renderTemplate, type TemplateContext } from './template-directives'
+import { ensureHeadingIds } from './heading-ids'
 
 const LEGACY_COMPONENT_RE = /<component\s+/i
 const LEGACY_COMMENT_RE = /<!--\s*@(component|seo)\b/
@@ -159,7 +161,12 @@ export function createComposer(
     const canonical = absoluteUrl(site.url, path)
     const imagePath = attrs.image ?? attrs.ogImage ?? site.image ?? site.ogImage ?? ''
     const image = imagePath ? absoluteUrl(site.url, imagePath) : ''
-    const schema = buildSchemaGraph(site, { title, description, canonical })
+    const schema = buildSchemaGraph(site, {
+      title,
+      description,
+      canonical,
+      slug: slugFromPath(path),
+    })
 
     return {
       title,
@@ -430,13 +437,22 @@ export function createComposer(
     return { ...defaults, ...overrides }
   }
 
+  function twitterSiteMeta(handle: string) {
+    const value = handle.trim()
+    if (!value || /^https?:\/\//i.test(value)) return ''
+    const site = value.startsWith('@') ? value : `@${value}`
+    return `\n<meta name="twitter:site" content="${escapeAttr(site)}">`
+  }
+
   async function expandSeoMarkup(attrs: Record<string, string>, unlisted = false) {
     const seo = await enrichSeoAttrs(attrs)
     const schemaJson = seo.schemaJson.replace(/</g, '\\u003c')
     const robots = unlisted ? '\n<meta name="robots" content="noindex,nofollow">' : ''
+    const slug = slugFromPath(attrs.path ?? '/')
     const representations = unlisted ? '' : `
-<link rel="alternate" type="text/markdown" href="${escapeAttr(attrs.path === '/' ? '/routes/index.md' : `/routes${attrs.path.replace(/\/$/, '')}.md`)}">
-<link rel="describedby" type="application/json" href="${escapeAttr(attrs.path === '/' ? '/routes/index.json' : `/routes${attrs.path.replace(/\/$/, '')}.json`)}">`
+<link rel="alternate" type="text/markdown" href="${escapeAttr(publicMarkdownPathFromSlug(slug))}">
+<link rel="describedby" type="application/json" href="${escapeAttr(routeJsonPathFromSlug(slug))}">
+<link rel="describedby" href="/llms.txt">`
     return `<title>${escapeAttr(seo.title)}</title>
 <meta name="description" content="${escapeAttr(seo.description)}">${robots}
 <link rel="canonical" href="${escapeAttr(seo.canonical)}">${representations}
@@ -446,7 +462,7 @@ export function createComposer(
 <meta property="og:description" content="${escapeAttr(seo.description)}">
 <meta property="og:url" content="${escapeAttr(seo.canonical)}">
 <meta property="og:image" content="${escapeAttr(seo.image)}">
-<meta property="og:locale" content="${escapeAttr(seo.locale)}">
+<meta property="og:locale" content="${escapeAttr(seo.locale)}">${twitterSiteMeta(seo.twitter)}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeAttr(seo.title)}">
 <meta name="twitter:description" content="${escapeAttr(seo.description)}">
@@ -484,7 +500,7 @@ export function createComposer(
       const body = inline.rest
 
       const seoMarkup = await expandSeoMarkup(await mergeSeoAttrs(slug, seoOverrides, fileHint), unlisted || slug === '404')
-      const composedBody = await compose(body, fileHint)
+      const composedBody = ensureHeadingIds(await compose(body, fileHint), fileHint)
       const headExtras = [stripped.extraHead, ...headLinks].filter(Boolean)
       const extraHead = headExtras.length ? `\n${headExtras.join('\n')}` : ''
       return { html: `<head>\n${seoMarkup}${extraHead}\n</head>\n${composedBody}`, unlisted }

@@ -2,7 +2,7 @@
 
 `@snz/sttc` is an HTML-first, Bun-native static site renderer. Authors write routes, atomic components, TypeScript, images, and optional markdown content. The build emits a static `dist/` site with routing, responsive images, SEO/AEO/GEO metadata, feeds, manifests, discovery files, and strict launch checks.
 
-It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM or hydration layer. Presentation is project-owned: the starter ships no CSS framework, only a removable font and root-scale stylesheet.
+It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM or hydration layer. Presentation is project-owned. The starter copies pinned CRFT CSS into `src/styles/` and you may replace or delete that copy.
 
 ## Requirements
 
@@ -13,6 +13,7 @@ It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM or hydr
 
 ```bash
 bun run dev
+bun run preview
 bun run build
 bun run check
 bun run doctor
@@ -35,8 +36,8 @@ src/
   snz.d.ts
   styles.css
   styles/
-    sans.ttf
-    mono.ttf
+    sans.woff
+    mono.woff
   pages/
     index.html
     404.html
@@ -54,7 +55,7 @@ src/
 
 The starter ships exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. They are replaceable HTML examples, not a UI library. `SEO` remains a renderer directive.
 
-The starter copies pinned CRFT CSS into project-owned `src/styles.css`. Replace or delete it freely. Component-specific `<style>` blocks compile into one pruned hashed stylesheet. Route `<style>` blocks compile into route-owned assets.
+The starter copies pinned CRFT CSS into project-owned `src/styles/`. Replace or delete it freely. Composition uses attributes (`c`, `s`, `t`, `g`, `x`, `y`, `o`, `l`), not a class matrix. The build flattens that import tree into one hashed stylesheet. Component-specific `<style>` blocks compile into one pruned hashed stylesheet. Route `<style>` blocks compile into route-owned assets.
 
 ## Pages
 
@@ -135,7 +136,7 @@ Every build emits:
 - `llms.txt` and `llms-full.txt`;
 - `site.manifest.json` and per-route JSON;
 - `site.jsonld`, baseline JSON-LD, and component-declared JSON-LD;
-- Markdown and JSON representations for each public route;
+- Markdown and JSON representations for each public route, plus same-path markdown aliases such as `/about/index.md`;
 - hashed TypeScript, component-style, and route-style assets when present.
 
 ## Optional smooth scrolling

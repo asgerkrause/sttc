@@ -12,7 +12,8 @@ Run the exact failing command and read the complete file, line, and hint.
 | Unresolved placeholder | Template data path and optional conditional. |
 | Duplicate slug | Authored/content/generated route ownership. |
 | Missing metadata | Route `SEO` directive and `site.json`. |
-| Missing stylesheet | Restore or replace `src/styles.css`; the build links it whenever present. |
+| Missing stylesheet | Restore or replace `src/styles.css`; the build flattens it to a hashed `/assets/css/styles.[hash].css`. |
+| Lighthouse under 100 on localhost | Use `bun run preview` after `bun run build`. Do not score `bun run dev`. |
 | Component style absent | Confirm non-empty `<style>` and generated link. |
 | App entry conflict | Keep `src/app.ts` or `src/app.js`, not both. |
 

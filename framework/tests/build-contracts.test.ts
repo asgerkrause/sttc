@@ -9,7 +9,7 @@ import { BuildError } from '../build/errors'
 import { mediaInputCopyExclusions, shouldSkipMediaCopy } from '../build/assets'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, processImages, resolveImageAttrs } from '../build/images'
 import { imageNameFromSrc, parsePositiveImageInteger } from '../build/scan-images'
-import { publicPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
+import { publicMarkdownPathFromSlug, publicPathFromSlug, routeJsonPathFromSlug, routeMarkdownPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
 import { checkBuiltOutput, checkPagesCmsConfig, checkVercelConfig, extractBuiltPublicAssetRefs } from '../build/check'
 import { selectAppEntry, sourceRuntimeLibDir } from '../build/paths'
 
@@ -42,6 +42,12 @@ describe('build path contracts', () => {
     expect(publicPathFromSlug('work/case')).toBe('/work/case/')
     expect(slugFromPath('/')).toBe('index')
     expect(slugFromPath('/work/case/')).toBe('work/case')
+    expect(publicMarkdownPathFromSlug('index')).toBe('/index.md')
+    expect(publicMarkdownPathFromSlug('about')).toBe('/about/index.md')
+    expect(publicMarkdownPathFromSlug('work/case')).toBe('/work/case/index.md')
+    expect(routeMarkdownPathFromSlug('index')).toBe('/routes/index.md')
+    expect(routeMarkdownPathFromSlug('work/case')).toBe('/routes/work/case.md')
+    expect(routeJsonPathFromSlug('about')).toBe('/routes/about.json')
   })
 
   test('supports reproducible timestamps through SOURCE_DATE_EPOCH', () => {
@@ -515,5 +521,46 @@ content:
     expect(html).toContain('<link rel="canonical" href="https://example.com/">')
     expect(html).toContain('<meta property="og:url" content="https://example.com/">')
     expect(html).not.toContain('/index/')
+  })
+
+  test('points markdown alternate at the same-path alias and describes JSON plus llms.txt', async () => {
+    const html = await composeRoute('about', 'src/pages/about.html')
+
+    expect(html).toContain('<link rel="alternate" type="text/markdown" href="/about/index.md">')
+    expect(html).toContain('<link rel="describedby" type="application/json" href="/routes/about.json">')
+    expect(html).toContain('<link rel="describedby" href="/llms.txt">')
+    expect(html).not.toContain('href="/routes/about.md"')
+  })
+
+  test('assigns stable heading ids on authored headings', async () => {
+    const composer = createComposer(new Map(), new Map(), () => ({}))
+    const html = await composer.prepareRouteSource('<head><SEO title="About" description="About this organization." /></head><h1>About</h1><h2>Next steps</h2>', {
+      slug: 'about',
+      fileHint: 'src/pages/about.html',
+    })
+    expect(html).toContain('<h1 id="about">About</h1>')
+    expect(html).toContain('<h2 id="next-steps">Next steps</h2>')
+  })
+
+  test('emits twitter:site from a configured handle', async () => {
+    const dir = await tempProject()
+    try {
+      await writeFile(join(dir, 'site.json'), JSON.stringify({
+        name: 'Example',
+        url: 'https://example.com',
+        description: 'Useful site.',
+        twitter: 'sttc',
+      }))
+      const composer = createComposer(new Map(), new Map(), () => ({}), undefined, undefined, undefined, {
+        siteFile: join(dir, 'site.json'),
+      })
+      const html = await composer.prepareRouteSource('<head><SEO title="Home" description="Home page for the twitter handle test." /></head><h1>Home</h1>', {
+        slug: 'index',
+        fileHint: 'src/pages/index.html',
+      })
+      expect(html).toContain('<meta name="twitter:site" content="@sttc">')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 })

@@ -33,8 +33,8 @@ describe('app bundle writer', () => {
 
     expect(filename).toMatch(/^app\.[a-f0-9]+\.js$/)
     expect(bundled).toContain('bundled')
-    expect(bundled).toContain("window.snz?.onPage('about'")
-    expect(bundled).toContain('window.__routeRan = true')
+    expect(bundled).toContain('window.snz?.onPage("about"')
+    expect(bundled).toContain('window.__routeRan=!0')
   })
 
   test('registers component lifecycle scripts against router runtime API', async () => {
@@ -48,8 +48,9 @@ describe('app bundle writer', () => {
     const filename = await writeAppJs(join(src, 'app.js'), dist, blocks)
     const bundled = await readFile(join(dist, filename), 'utf8')
 
-    expect(bundled).toContain("window.snz?._registerComponent('Counter'")
-    expect(bundled).toContain('window.__mountedComponent = el.dataset.snzComponent')
+    expect(bundled).toContain('window.snz?._registerComponent("Counter"')
+    expect(bundled).toContain('window.__mountedComponent=')
+    expect(bundled).toContain('.dataset.snzComponent')
   })
 
   test('inlines PUBLIC env values without private env values', async () => {

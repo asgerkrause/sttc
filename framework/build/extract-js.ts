@@ -1,5 +1,5 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'fs/promises'
-import { join } from 'path'
+import { dirname, join } from 'path'
 import { buildErrorAt, BuildError } from './errors'
 import { assetHash } from './hash'
 
@@ -144,6 +144,7 @@ export async function writeAppJs(
       outdir: tempDir,
       target: 'browser',
       format: 'esm',
+      minify: true,
       splitting: false,
       sourcemap: 'none',
       define: publicEnvDefines(),
@@ -163,6 +164,7 @@ export async function writeAppJs(
 
   let out = appCode.endsWith('\n') ? appCode : `${appCode}\n`
   out += generatedScriptCode(blocks)
+  out = await minifyBrowserJs(out, join(tempDir, 'app.combined.js'))
 
   const hash = assetHash(out)
   const filename = `app.${hash}.js`
@@ -170,4 +172,57 @@ export async function writeAppJs(
   await removeOldAppBundles(distAppDir, filename)
   await rm(tempDir, { recursive: true, force: true })
   return filename
+}
+
+export async function writeRouterJs(srcRouterPath: string, distJsDir: string): Promise<string> {
+  await mkdir(distJsDir, { recursive: true })
+  const tempDir = join(distJsDir, '.router-build')
+  await rm(tempDir, { recursive: true, force: true })
+  await mkdir(tempDir, { recursive: true })
+
+  const result = await Bun.build({
+    entrypoints: [srcRouterPath],
+    outdir: tempDir,
+    target: 'browser',
+    format: 'esm',
+    minify: true,
+    splitting: false,
+    sourcemap: 'none',
+  })
+  if (!result.success) {
+    const message = result.logs.map((log) => log.message).filter(Boolean).join('\n') || `Could not bundle ${srcRouterPath}`
+    throw new BuildError(message, {
+      file: srcRouterPath,
+      hint: 'Check framework/runtime/router.js and its lib/paths.js import.',
+    })
+  }
+  const output = result.outputs.find((file) => file.path.endsWith('.js'))
+  const code = output ? await output.text() : await readFile(srcRouterPath, 'utf8')
+  const hash = assetHash(code)
+  const filename = `router.${hash}.js`
+  await writeFile(join(distJsDir, filename), code)
+  for (const entry of await readdir(distJsDir).catch(() => [])) {
+    if (/^router(\.[a-f0-9]+)?\.js$/i.test(entry) && entry !== filename) {
+      await rm(join(distJsDir, entry), { force: true })
+    }
+  }
+  await rm(tempDir, { recursive: true, force: true })
+  return filename
+}
+
+async function minifyBrowserJs(code: string, tempFile: string) {
+  await writeFile(tempFile, code)
+  const result = await Bun.build({
+    entrypoints: [tempFile],
+    outdir: dirname(tempFile),
+    target: 'browser',
+    format: 'esm',
+    minify: true,
+    splitting: false,
+    sourcemap: 'none',
+    naming: 'app.min.js',
+  })
+  if (!result.success) return code
+  const output = result.outputs.find((file) => file.path.endsWith('.js'))
+  return output ? await output.text() : code
 }

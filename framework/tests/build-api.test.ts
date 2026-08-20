@@ -126,9 +126,9 @@ describe('build API spine', () => {
       expect(css).toContain('.used-marker')
       expect(css).toContain('.inner-marker')
       expect(css).not.toContain('.unused-marker')
-      expect(app).toContain("_registerComponent('Used'")
-      expect(app).toContain("_registerComponent('Inner'")
-      expect(app).not.toContain("_registerComponent('Unused'")
+      expect(app).toContain('_registerComponent("Used"')
+      expect(app).toContain('_registerComponent("Inner"')
+      expect(app).not.toContain('_registerComponent("Unused"')
       expect(html.match(/components\.[a-f0-9]+\.css/g)).toHaveLength(1)
       expect(html.match(/app\.[a-f0-9]+\.js/g)).toHaveLength(1)
     } finally {
@@ -167,8 +167,12 @@ describe('build API spine', () => {
       expect(report.errors).toEqual([])
       expect(await Bun.file(join(dir, 'dist', 'index.html')).exists()).toBe(true)
       expect(await Bun.file(join(dir, 'dist', 'routes', 'index.html')).exists()).toBe(true)
-      expect(await Bun.file(join(dir, 'dist', 'assets', 'css', 'styles.css')).exists()).toBe(true)
-      expect(await Bun.file(join(dir, 'dist', 'index.html')).text()).toContain('/assets/css/styles.css')
+      const html = await Bun.file(join(dir, 'dist', 'index.html')).text()
+      const styles = html.match(/\/assets\/css\/styles\.[a-f0-9]+\.css/)
+      expect(styles?.[0]).toBeTruthy()
+      expect(await Bun.file(join(dir, 'dist', styles![0])).exists()).toBe(true)
+      expect(html).toMatch(/\/assets\/js\/router\.[a-f0-9]+\.js/)
+      expect(html).not.toContain('src="/router.js"')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

@@ -2,7 +2,7 @@
 // --allow-broken-links). Also runnable as `bun run check` for an out-of-band scan.
 
 import { readdir, readFile, stat } from 'fs/promises'
-import { basename, join } from 'path'
+import { basename, join, sep } from 'path'
 import { packageRoot, projectPaths, root } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError, lineOf } from './errors'
@@ -30,6 +30,7 @@ export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   await checkSourceLayout(paths, warn)
   await checkSeoFiles(context.distDir, fail)
   await checkBuiltOutput(context.distDir, fail, !!opts.allowBrokenLinks)
+  await checkEmitContracts(context.distDir, paths.src, fail, warn)
   await checkComponentTags(paths, warn)
   await checkDiscoveryArtifacts(context.distDir, fail)
   if (opts.launch) await checkLaunchReadiness(context, fail, warn)
@@ -372,6 +373,83 @@ function hasCacheHeader(rule: VercelHeaderRule, source: string, valueIncludes: s
   ))
 }
 
+const STYLESHEET_TAG_RE = /<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi
+const SCRIPT_TAG_RE = /<script\b([^>]*)>/gi
+const HREF_RE = /\bhref=("([^"]*)"|'([^']*)'|([^\s>]+))/i
+const SRC_RE = /\bsrc=("([^"]*)"|'([^']*)'|([^\s>]+))/i
+
+function tagAttr(tag: string, re: RegExp) {
+  const match = tag.match(re)
+  return match ? (match[2] ?? match[3] ?? match[4] ?? '') : ''
+}
+
+export async function checkEmitContracts(
+  distDir: string,
+  srcDir: string,
+  fail: (m: string) => void,
+  warn: (m: string) => void,
+) {
+  const stylesDir = join(srcDir, 'styles')
+  for (const file of [
+    ...await collectFilesByExtension(stylesDir, '.ttf'),
+    ...await collectFilesByExtension(stylesDir, '.otf'),
+  ]) {
+    fail(`${file}: TTF and OTF fonts are not emitted\n  hint: Commit WOFF or WOFF2 under src/styles and point @font-face at those files.`)
+  }
+
+  const publicPages = (await collectHtmlFiles(distDir)).filter((file) => (
+    file === join(distDir, 'index.html') || isComposedPublicPage(distDir, file)
+  )).sort()
+
+  for (const file of publicPages) {
+    const html = await readFile(file, 'utf8').catch(() => '')
+    if (!html) continue
+    if (html.includes('/__snz/hmr')) {
+      fail(`${file}: HMR client leaked into production HTML\n  hint: HMR is injected only by the dev server. Rebuild without the dev injector.`)
+    }
+
+    const stylesheets: string[] = []
+    for (const match of html.matchAll(STYLESHEET_TAG_RE)) {
+      const tag = match[0]
+      if (/\bdata-snz-route-css\b/i.test(tag)) continue
+      if (/\bmedia=["']print["']/i.test(tag)) continue
+      const href = tagAttr(tag, HREF_RE)
+      if (href) stylesheets.push(href)
+    }
+    if (stylesheets.length > 2) {
+      fail(`${file}: ${stylesheets.length} render-blocking stylesheets\n  hint: Keep project CSS and component CSS as the only head stylesheets. Route CSS may use data-snz-route-css.`)
+    }
+
+    const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? html
+    for (const match of head.matchAll(SCRIPT_TAG_RE)) {
+      const attrs = match[1] ?? ''
+      const src = tagAttr(attrs, SRC_RE) || tagAttr(match[0], SRC_RE)
+      if (!src) continue
+      if (src === '/router.js') {
+        fail(`${file}: unhashed /router.js\n  hint: The build should emit /assets/js/router.[hash].js.`)
+      }
+      const deferred = /\btype=["']module["']/i.test(attrs) || /\bdefer\b/i.test(attrs) || /\basync\b/i.test(attrs)
+      if (!deferred) {
+        fail(`${prettyFileLine(file, html, match.index ?? 0)}: render-blocking script ${src}\n  hint: Use type="module", defer, or async for head scripts.`)
+      }
+    }
+  }
+
+  const cssFiles = (await collectFilesByExtension(join(distDir, 'assets', 'css'), '.css'))
+    .filter((file) => !file.includes(`${sep}routes${sep}`) && !file.endsWith(`${sep}lenis.css`))
+    .sort()
+  for (const file of cssFiles) {
+    const css = await readFile(file, 'utf8').catch(() => '')
+    if (!css) continue
+    if (/@import\b/.test(css)) {
+      fail(`${file}: emitted CSS still contains @import\n  hint: The build flattens src/styles.css. Avoid remote @import in project CSS.`)
+    }
+    if (/url\([^)]*\.(ttf|otf)(\?|#|["')])/i.test(css)) {
+      fail(`${file}: emitted CSS still references TTF/OTF\n  hint: Point @font-face at WOFF or WOFF2 files under src/styles.`)
+    }
+  }
+}
+
 export async function checkVercelConfig(projectRoot: string, warn: (m: string) => void) {
   const rel = 'vercel.json'
   const path = join(projectRoot, rel)
@@ -571,6 +649,16 @@ async function checkLaunchReadiness(context: BuildContext, fail: (m: string) => 
   }
   await checkPrivateOutputUrls(context.distDir, fail)
   await checkDraftLeakage(context, fail)
+  await checkPostAuthors(context, warn)
+}
+
+async function checkPostAuthors(context: BuildContext, warn: (m: string) => void) {
+  const content = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir }).catch(() => [])
+  for (const route of content) {
+    if (route.collection !== 'posts' || route.draft) continue
+    if (route.data.author?.trim()) continue
+    warn(`${route.source}: public post has no author\n  hint: Set front-matter author and a matching site.author or site.authors entry.`)
+  }
 }
 
 async function checkDiscoveryArtifacts(distDir: string, fail: (m: string) => void) {

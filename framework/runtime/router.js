@@ -28,6 +28,7 @@ const activeMediaCleanups = new WeakMap()
 const activeMediaPaused = new WeakMap()
 let navigationId = 0
 let navigationController = null
+let pointerInput = false
 
 function componentRoots(root, selector) {
   const out = []
@@ -454,6 +455,14 @@ function focusRouteRoot() {
   }
 }
 
+function markPointerInput() {
+  pointerInput = true
+}
+
+function markKeyboardInput() {
+  pointerInput = false
+}
+
 function routeAnnouncementLabel() {
   return main?.querySelector('h1, h2, [role="heading"]')?.textContent?.trim()
     || document.title
@@ -539,7 +548,8 @@ async function render(pathname, { is404 = false, transition = true, focus = fals
   }
   if (!isActiveNavigation(navigation)) return
   if (focus) {
-    focusRouteRoot()
+    // Safari treats programmatic heading focus as :focus-visible after a click.
+    if (!pointerInput) focusRouteRoot()
     announceRoute()
   }
   afterEmit(detail)
@@ -654,6 +664,9 @@ function onPreloadCancel(e) {
   if (related instanceof Node && a.contains(related)) return
   clearPreloadTimer(a)
 }
+
+document.addEventListener('pointerdown', markPointerInput, true)
+document.addEventListener('keydown', markKeyboardInput, true)
 
 for (const type of ['mouseover', 'focusin']) {
   document.addEventListener(type, onPreloadIntent, { passive: true })

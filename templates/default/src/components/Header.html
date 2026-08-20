@@ -9,12 +9,16 @@
 }
 </script>
 <header>
-  <nav class="c" aria-label="Primary">
-    <Logo />
-    <ul>
-      {#each items as item}
-      <li><a href="{{item.href}}">{{item.label}}</a></li>
-      {/each}
-    </ul>
-  </nav>
+  <div c>
+    <div s="h sb ct">
+      <Logo />
+      <nav aria-label="Primary">
+        <ul s="h w">
+          {#each items as item}
+          <li><a href="{{item.href}}">{{item.label}}</a></li>
+          {/each}
+        </ul>
+      </nav>
+    </div>
+  </div>
 </header>

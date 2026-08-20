@@ -1,4 +1,5 @@
-@layer base {
+/* Reset: neutralize the user agent. No brand. No layout. */
+@layer reset {
   *,
   *::before,
   *::after {
@@ -10,15 +11,19 @@
     margin: 0;
     padding: 0;
   }
+}
 
+/* Base: native HTML and document defaults, including gated native enhancement. */
+@layer base {
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
     interpolate-size: allow-keywords;
     scrollbar-gutter: stable;
     tab-size: 2;
+    text-wrap: pretty;
   }
 
-  html {
+  :where(html) {
     min-height: 100%;
     background: var(--c-bg);
     color: var(--c-fg);
@@ -28,9 +33,12 @@
     text-size-adjust: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--c-fg) 20%, transparent) transparent;
   }
 
-  body {
+  :where(body) {
     min-height: 100svh;
     background: var(--c-bg);
     color: var(--c-fg);
@@ -53,6 +61,59 @@
 
   :where(button, [type="button"], [type="reset"], [type="submit"]) {
     appearance: button;
+    min-height: 2.75rem;
+    padding: var(--p-sm) var(--p);
+    color: inherit;
+    background: var(--c-bg);
+    border: var(--b-wd) solid var(--c-bc);
+    border-radius: var(--r-sm);
+  }
+
+  :where(
+    input:not(
+      [type="button"],
+      [type="submit"],
+      [type="reset"],
+      [type="checkbox"],
+      [type="radio"],
+      [type="range"],
+      [type="file"],
+      [type="hidden"],
+      [type="image"],
+      [type="color"]
+    ),
+    select,
+    textarea
+  ) {
+    min-height: 2.75rem;
+    padding: var(--p-sm) var(--p);
+    color: inherit;
+    background: var(--c-bg);
+    border: var(--b-wd) solid var(--c-bc);
+    border-radius: var(--r-sm);
+  }
+
+  :where(
+    input:not(
+      [type="button"],
+      [type="submit"],
+      [type="reset"],
+      [type="checkbox"],
+      [type="radio"],
+      [type="range"],
+      [type="file"],
+      [type="hidden"],
+      [type="image"],
+      [type="color"]
+    ),
+    select,
+    textarea
+  )[aria-invalid="true"] {
+    border-color: var(--c-fb-dn);
+  }
+
+  :where(button, input, select, textarea):disabled {
+    color: var(--c-mu);
   }
 
   :where(textarea) {
@@ -78,19 +139,29 @@
   }
 
   :where(ul, ol) {
-    list-style-position: inside;
+    list-style-position: outside;
+    padding-inline-start: 1.25em;
   }
 
   :where(nav ul, nav ol) {
     list-style: none;
+    padding-inline-start: 0;
   }
 
   :where(a) {
     color: inherit;
     text-decoration: none;
-    transition-property: opacity, background, color;
+  }
+
+  :where(a, button, label) {
+    transition-property: color, background, border, transform, opacity;
     transition-duration: var(--m-td);
-    transition-timing-function: var(--m-tf);
+    transition-timing-function: var(--m-tf-o);
+  }
+
+  :where([aria-current="page"]) {
+    text-decoration: underline;
+    font-weight: var(--t-fw-bd);
   }
 
   :where(button, a, input, select, textarea, summary) {
@@ -148,11 +219,11 @@
     vertical-align: baseline;
   }
 
-  sub {
+  :where(sub) {
     inset-block-end: -0.25em;
   }
 
-  sup {
+  :where(sup) {
     inset-block-start: -0.5em;
   }
 
@@ -186,7 +257,7 @@
     opacity: 1;
   }
 
-  textarea {
+  :where(textarea) {
     field-sizing: content;
     min-height: 6lh;
     resize: vertical;
@@ -205,8 +276,41 @@
     color: var(--c-fg);
   }
 
-  mark {
+  :where(mark) {
     color: var(--c-ac-co);
     background: var(--c-ac);
+  }
+
+  @supports selector(details::details-content) {
+    details {
+      overflow: clip;
+
+      &::details-content {
+        height: 0;
+        overflow: clip;
+        content-visibility: hidden;
+        transition:
+          height var(--m-td) var(--m-tf-o),
+          content-visibility var(--m-td) allow-discrete;
+      }
+
+      &[open]::details-content {
+        height: auto;
+        content-visibility: visible;
+      }
+    }
+
+    summary {
+      cursor: pointer;
+      user-select: none;
+    }
+  }
+
+  @supports (corner-shape: squircle) {
+    *,
+    *::before,
+    *::after {
+      corner-shape: squircle;
+    }
   }
 }

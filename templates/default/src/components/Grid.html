@@ -1,8 +1,8 @@
 <!--
   @desc Responsive CRFT grid that preserves source order.
   @attr cols Optional column count mapped to the CRFT g attribute. Omit for CRFT's default grid.
-  @attr span Item span mapped to the CRFT c attribute when Grid is nested.
-  @attr rows Row span mapped to the CRFT r attribute when Grid is nested.
+  @attr x Item column span mapped to the CRFT x attribute when Grid is nested.
+  @attr y Item row span mapped to the CRFT y attribute when Grid is nested.
   @attr order Responsive order mapped to the CRFT o attribute when Grid is nested.
 -->
-{#if cols}<div g="{{cols}}" c="{{span}}" r="{{rows}}" o="{{order}}">{{slot}}</div>{:else}<div g c="{{span}}" r="{{rows}}" o="{{order}}">{{slot}}</div>{/if}
+{#if cols}<div g="{{cols}}" x="{{x}}" y="{{y}}" o="{{order}}">{{slot}}</div>{:else}<div g x="{{x}}" y="{{y}}" o="{{order}}">{{slot}}</div>{/if}

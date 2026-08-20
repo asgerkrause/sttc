@@ -1,7 +1,7 @@
 # Starter component scaffold
 
 **Status:** active  
-**Date:** 2026-08-17
+**Date:** 2026-08-20
 
 ## Decision
 
@@ -15,9 +15,20 @@ Created projects ship exactly seven replaceable HTML components:
 - `Video`
 - `Grid`
 
-`Section` provides `section > .c`. `Grid` maps `cols`, `span`, `rows`, and `order` to CRFT `g`, `c`, `r`, and `o` attributes. `SEO` is a renderer directive and has no component file.
+`Section` provides `section > [c]`. Optional `c` flags are `sm`, `lg`, and `ct`. `Grid` maps `cols`, `x`, `y`, and `order` to CRFT `g`, `x`, `y`, and `o` attributes. `SEO` is a renderer directive and has no component file.
 
-The starter copies the pinned CRFT CSS into project-owned `src/styles.css`. The renderer does not own that presentation layer.
+The starter copies pinned CRFT CSS (`16e70a4`) into project-owned `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. Optional SNZ faces live in `layers/fonts.css` plus `sans.woff` and `mono.woff`. The renderer does not own that presentation layer. Created sites keep their copy until they migrate.
+
+Dogfood `src/styles/` matches that pin except these brand overrides:
+
+| Observed | CRFT `16e70a4` | Dogfood | Action |
+| --- | --- | --- | --- |
+| `--l-bl-x` | `2rem` | `calc(2vw + 1em)` | keep brand bleed |
+| `--c-sw-li` | `#fbfbfa` | `#fff` | keep canvas |
+| `--c-bc` | 25% mix | 15% mix | keep quieter border |
+| `--c-mu` | 45% mix | 60% mix | keep stronger muted |
+| heading `ls` / `fw` | `-0.01em`, regular | tighter tracking, `h1`/`h3`–`h6` bold | keep type voice |
+| `color-scheme` | `light dark` | `light` | keep light-only dogfood |
 
 ## Boundary
 

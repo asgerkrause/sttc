@@ -50,6 +50,14 @@ export type SiteOrganization = {
   address?: SiteAddress
 }
 
+export type SitePerson = {
+  name: string
+  url?: string
+  sameAs?: string[]
+  jobTitle?: string
+  image?: string
+}
+
 export type SiteConfig = {
   name: string
   url: string
@@ -68,14 +76,22 @@ export type SiteConfig = {
   organization?: SiteOrganization
   brand?: SiteBrand
   product?: SiteProduct
+  author?: SitePerson
+  authors?: SitePerson[]
   sameAs?: string[]
   contact?: SiteContact
   address?: SiteAddress
   topics?: string[]
+  discovery?: {
+    featured?: string[]
+    notes?: string
+  }
   robots?: {
     groups?: RobotsGroup[]
   }
 }
+
+export type JsonLdNode = Record<string, unknown>
 
 export function absoluteUrl(base: string, path: string) {
   if (/^https?:\/\//i.test(path)) return new URL(path).href
@@ -90,6 +106,106 @@ function cleanObject<T extends Record<string, unknown>>(value: T): T {
     }
   }
   return value
+}
+
+function personSlug(value: string) {
+  return value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+export function authorsFor(site: SiteConfig): SitePerson[] {
+  if (site.authors) return site.authors
+  if (site.author) return [site.author]
+  return []
+}
+
+export function personId(site: SiteConfig, person: SitePerson): string {
+  return `${new URL(site.url).origin}/#person-${personSlug(person.name)}`
+}
+
+export function matchAuthor(site: SiteConfig, name: string): SitePerson | undefined {
+  const slug = personSlug(name)
+  const lower = name.trim().toLowerCase()
+  return authorsFor(site).find((person) => (
+    person.name.trim().toLowerCase() === lower || personSlug(person.name) === slug
+  ))
+}
+
+export function isHomeCanonical(siteUrl: string, canonical: string): boolean {
+  if (canonical === '/') return true
+  try {
+    const origin = new URL(siteUrl).origin
+    const page = canonical.startsWith('/') ? new URL(canonical, origin) : new URL(canonical)
+    return page.origin === origin && (page.pathname === '/' || page.pathname === '')
+  } catch {
+    return false
+  }
+}
+
+function titleCaseSegment(segment: string) {
+  return segment
+    .split('-')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+export function breadcrumbList(
+  site: SiteConfig,
+  page: { title: string; canonical: string; slug: string; titlesBySlug?: Record<string, string> },
+): JsonLdNode | undefined {
+  if (isHomeCanonical(site.url, page.canonical) || page.slug === 'index' || page.slug === '/' || page.slug === '') {
+    return undefined
+  }
+  const segments = page.slug.split('/').filter(Boolean)
+  if (!segments.length) return undefined
+
+  const items: JsonLdNode[] = [{
+    '@type': 'ListItem',
+    position: 1,
+    name: site.name,
+    item: site.url,
+  }]
+
+  let prefix = ''
+  for (const segment of segments.slice(0, -1)) {
+    prefix = prefix ? `${prefix}/${segment}` : segment
+    items.push({
+      '@type': 'ListItem',
+      position: items.length + 1,
+      name: page.titlesBySlug?.[prefix] ?? titleCaseSegment(segment),
+      item: absoluteUrl(site.url, publicPathFromSlug(prefix)),
+    })
+  }
+
+  items.push({
+    '@type': 'ListItem',
+    position: items.length + 1,
+    name: page.title,
+    item: page.canonical,
+  })
+
+  return {
+    '@type': 'BreadcrumbList',
+    '@id': `${page.canonical}#breadcrumb`,
+    itemListElement: items,
+  }
+}
+
+function personNode(site: SiteConfig, person: SitePerson): JsonLdNode {
+  return cleanObject({
+    '@type': 'Person',
+    '@id': personId(site, person),
+    name: person.name,
+    url: person.url ? absoluteUrl(site.url, person.url) : undefined,
+    sameAs: person.sameAs?.filter((item) => item.trim()),
+    jobTitle: person.jobTitle,
+    image: person.image ? absoluteUrl(site.url, person.image) : undefined,
+  })
 }
 
 function organizationNode(site: SiteConfig): Record<string, unknown> {
@@ -156,8 +272,6 @@ function productNode(site: SiteConfig, canonical: string): JsonLdNode | undefine
   })
 }
 
-export type JsonLdNode = Record<string, unknown>
-
 export type RobotsGroup = {
   userAgents: string[]
   allow?: string[]
@@ -166,18 +280,44 @@ export type RobotsGroup = {
 
 export function buildSchemaGraph(
   site: SiteConfig,
-  page: { title: string; description: string; canonical: string },
+  page: {
+    title: string
+    description: string
+    canonical: string
+    slug?: string
+    titlesBySlug?: Record<string, string>
+    dateModified?: string
+  },
   extraNodes: JsonLdNode[] = [],
 ) {
   const organization = organizationNode(site)
   const brand = brandNode(site)
+  const people = authorsFor(site).map((person) => personNode(site, person))
   const product = productNode(site, page.canonical)
+  const crumbs = page.slug !== undefined
+    ? breadcrumbList(site, {
+      title: page.title,
+      canonical: page.canonical,
+      slug: page.slug,
+      titlesBySlug: page.titlesBySlug,
+    })
+    : undefined
+  const webPage: JsonLdNode = {
+    '@type': 'WebPage',
+    '@id': `${page.canonical}#webpage`,
+    name: page.title,
+    description: page.description,
+    url: page.canonical,
+    isPartOf: { '@id': absoluteUrl(site.url, '/#website') },
+  }
+  if (page.dateModified) webPage.dateModified = page.dateModified
 
   return {
     '@context': 'https://schema.org',
     '@graph': [
       organization,
       ...(brand ? [brand] : []),
+      ...people,
       cleanObject({
         '@type': 'WebSite',
         '@id': absoluteUrl(site.url, '/#website'),
@@ -187,14 +327,8 @@ export function buildSchemaGraph(
         sameAs: site.sameAs,
         knowsAbout: site.topics,
       }),
-      {
-        '@type': 'WebPage',
-        '@id': `${page.canonical}#webpage`,
-        name: page.title,
-        description: page.description,
-        url: page.canonical,
-        isPartOf: { '@id': absoluteUrl(site.url, '/#website') },
-      },
+      webPage,
+      ...(crumbs ? [crumbs] : []),
       ...(product ? [product] : []),
       ...extraNodes,
     ],

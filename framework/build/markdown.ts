@@ -16,7 +16,7 @@ export type MarkdownOptions = {
 
 function esc(s: string) { return s.replace(/[&<>\"]/g, (c) => ESC[c] ?? c) }
 
-function slugify(s: string) {
+export function slugify(s: string) {
   return stripTags(s)
     .toLowerCase()
     .normalize('NFKD')

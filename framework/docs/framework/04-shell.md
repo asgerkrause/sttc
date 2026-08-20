@@ -20,7 +20,7 @@
 </html>
 ```
 
-The build expands shell components, substitutes locale and site name, replaces the app path with its hash, links global/component stylesheets when present, and inserts route metadata for static public pages.
+The build expands shell components, substitutes locale and site name, replaces the app and router paths with hashed `/assets/js/` files, flattens `src/styles.css` into one hashed stylesheet, links component styles when present, and inserts route metadata for static public pages.
 
 Keep one semantic `<main>` as a direct child of `<body>`. The router targets `body > main` and owns its contents, focus movement, route announcements, navigation, and route-head updates.
 

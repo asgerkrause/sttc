@@ -35,3 +35,17 @@ export function publicPathFromSlug(slug) {
   if (slug === 'index') return '/'
   return `/${slug}/`
 }
+
+/** Guessable markdown alias next to the public HTML URL. */
+export function publicMarkdownPathFromSlug(slug) {
+  if (slug === 'index') return '/index.md'
+  return `/${slug}/index.md`
+}
+
+export function routeMarkdownPathFromSlug(slug) {
+  return `/routes/${slug}.md`
+}
+
+export function routeJsonPathFromSlug(slug) {
+  return `/routes/${slug}.json`
+}

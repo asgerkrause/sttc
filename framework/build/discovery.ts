@@ -2,14 +2,20 @@
 
 import { mkdir, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { absoluteUrl, buildSchemaGraph, isPublicRoute, type JsonLdNode, type SiteConfig } from './seo'
-import { publicPathFromSlug } from '../runtime/lib/paths.js'
+import { absoluteUrl, buildSchemaGraph, isPublicRoute, matchAuthor, personId, type JsonLdNode, type SiteConfig } from './seo'
+import {
+  publicMarkdownPathFromSlug,
+  publicPathFromSlug,
+  routeJsonPathFromSlug,
+  routeMarkdownPathFromSlug,
+} from '../runtime/lib/paths.js'
 import type { ComponentSchema, ComposeInstance } from './compose'
 import type { ContentRoute } from './content'
 import { extractHtmlMetadata } from './html'
 import { GENERATOR_NAME, GENERATOR_VERSION } from './version'
 import { mapConcurrent } from './concurrency'
 import { htmlToMarkdown } from './markdown-output'
+import { BuildError } from './errors'
 
 export type RouteRecord = {
   slug: string
@@ -71,7 +77,7 @@ function contentDateModified(content: ContentRoute) {
 
 function blogPostingFor(record: RouteRecord, content: ContentRoute, site: SiteConfig): JsonLdNode {
   const canonical = absoluteUrl(site.url, publicPathFromSlug(record.slug))
-  return {
+  const node: JsonLdNode = {
     '@type': 'BlogPosting',
     '@id': `${canonical}#article`,
     headline: record.title,
@@ -82,6 +88,13 @@ function blogPostingFor(record: RouteRecord, content: ContentRoute, site: SiteCo
     publisher: { '@id': absoluteUrl(site.url, '/#organization') },
     url: canonical,
   }
+  const authorName = content.data.author?.trim()
+  if (!authorName) return node
+  const matched = matchAuthor(site, authorName)
+  node.author = matched
+    ? { '@id': personId(site, matched) }
+    : { '@type': 'Person', name: authorName }
+  return node
 }
 
 export function routeSchemaExtras(
@@ -176,10 +189,49 @@ function routeRepresentation(site: SiteConfig, slug: string) {
     canonical,
     representations: {
       html: `/routes/${slug}.html`,
-      markdown: `/routes/${slug}.md`,
-      metadata: `/routes/${slug}.json`,
+      markdown: publicMarkdownPathFromSlug(slug),
+      metadata: routeJsonPathFromSlug(slug),
     },
   }
+}
+
+function distFromPublicPath(distDir: string, publicPath: string) {
+  return join(distDir, publicPath.slice(1))
+}
+
+function selectFeaturedRoutes<T extends { slug: string }>(featured: string[], routes: T[]): T[] {
+  const bySlug = new Map(routes.map((route) => [route.slug, route]))
+  const selected: T[] = []
+  const seen = new Set<string>()
+  for (const slug of featured) {
+    const route = bySlug.get(slug)
+    if (!route) {
+      throw new BuildError(`Unknown featured discovery slug "${slug}"`, {
+        file: 'src/site.json',
+        hint: 'Use a public route slug.',
+      })
+    }
+    if (seen.has(slug)) continue
+    seen.add(slug)
+    selected.push(route)
+  }
+  return selected
+}
+
+function featuredRoutes<T extends { slug: string }>(site: SiteConfig, routes: T[]): T[] | undefined {
+  const featured = site.discovery?.featured
+  if (!Array.isArray(featured) || !featured.length) return undefined
+  return selectFeaturedRoutes(featured, routes)
+}
+
+function discoveryNoteLines(notes: string | undefined): string[] {
+  if (!notes?.trim()) return []
+  const paragraphs = notes.trim().split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean)
+  return paragraphs.flatMap((paragraph) => [paragraph, ''])
+}
+
+function llmsRouteLink(site: SiteConfig, route: { slug: string; title: string; description: string }) {
+  return `- [${route.title}](${absoluteUrl(site.url, publicMarkdownPathFromSlug(route.slug))}): ${route.description}`
 }
 
 export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
@@ -190,17 +242,24 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
     ...(routeExtrasBySlug?.get(record.slug) ?? routeSchemaExtras(record, componentSchemas, contentByslug.get(record.slug), site)),
   }))
   const publicRoutes = enrichedRoutes.filter((route) => isPublicRoute(route) && route.slug !== '404')
+  const featured = featuredRoutes(site, publicRoutes)
   const markdownBySlug = new Map<string, string>()
 
   await mapConcurrent(publicRoutes, 4, async (route) => {
-    const jsonPath = join(distDir, 'routes', `${route.slug}.json`)
-    const markdownPath = join(distDir, 'routes', `${route.slug}.md`)
-    await mkdir(join(jsonPath, '..'), { recursive: true })
+    const jsonPath = distFromPublicPath(distDir, routeJsonPathFromSlug(route.slug))
+    const markdownPath = distFromPublicPath(distDir, routeMarkdownPathFromSlug(route.slug))
+    const publicMarkdownPath = distFromPublicPath(distDir, publicMarkdownPathFromSlug(route.slug))
+    await Promise.all([
+      mkdir(join(jsonPath, '..'), { recursive: true }),
+      mkdir(join(publicMarkdownPath, '..'), { recursive: true }),
+    ])
     const representation = routeRepresentation(site, route.slug)
     const markdown = htmlToMarkdown(route.renderedHtml ?? '')
+    const markdownFile = `${markdown}\n`
     markdownBySlug.set(route.slug, markdown)
     await Promise.all([
-      writeFile(markdownPath, `${markdown}\n`),
+      writeFile(markdownPath, markdownFile),
+      writeFile(publicMarkdownPath, markdownFile),
       writeFile(jsonPath, JSON.stringify({
         schemaVersion: MANIFEST_SCHEMA_VERSION,
         generator: { name: GENERATOR_NAME, version: GENERATOR_VERSION },
@@ -217,7 +276,7 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
   })
 
   await Promise.all([
-    writeLlmsTxt(distDir, site, publicRoutes, contentByslug, markdownBySlug),
+    writeLlmsTxt(distDir, site, publicRoutes, contentByslug, markdownBySlug, featured),
     writeManifest(distDir, { ...input, routes: publicRoutes }),
     writeSiteGraph(distDir, site, publicRoutes),
   ])
@@ -245,20 +304,27 @@ async function writeLlmsTxt(
   routes: Array<RouteRecord & RouteSchemaExtras>,
   contentByslug: Map<string, ContentRoute>,
   markdownBySlug: Map<string, string>,
+  featured: Array<RouteRecord & RouteSchemaExtras> | undefined,
 ) {
-  const lines = [`# ${site.name}`, '', `> ${site.description}`, '', ...siteFactLines(site)]
-  const pages = routes.filter((route) => contentByslug.get(route.slug)?.collection !== 'posts')
-  const posts = routes.filter((route) => contentByslug.get(route.slug)?.collection === 'posts')
+  const lines = [`# ${site.name}`, '', `> ${site.description}`, '', ...discoveryNoteLines(site.discovery?.notes), ...siteFactLines(site)]
+  const primary = featured ?? routes
+  const pages = primary.filter((route) => contentByslug.get(route.slug)?.collection !== 'posts')
+  const posts = primary.filter((route) => contentByslug.get(route.slug)?.collection === 'posts')
 
   for (const [heading, items] of [['Pages', pages], ['Posts', posts]] as const) {
     if (!items.length) continue
     lines.push(`## ${heading}`, '')
-    for (const route of items) {
-      lines.push(`- [${route.title}](${absoluteUrl(site.url, `/routes/${route.slug}.md`)}): ${route.description}`)
-    }
+    for (const route of items) lines.push(llmsRouteLink(site, route))
     lines.push('')
   }
   lines.push('## Optional', '')
+  if (featured) {
+    const featuredSlugs = new Set(featured.map((route) => route.slug))
+    for (const route of routes) {
+      if (featuredSlugs.has(route.slug)) continue
+      lines.push(llmsRouteLink(site, route))
+    }
+  }
   lines.push(`- [Site manifest](${absoluteUrl(site.url, '/site.manifest.json')}): Machine-readable public route inventory.`)
   lines.push(`- [Entity graph](${absoluteUrl(site.url, '/site.jsonld')}): Connected Schema.org site graph.`)
   lines.push('')
@@ -313,6 +379,7 @@ async function writeSiteGraph(
       title: route.title,
       description: route.description,
       canonical,
+      slug: route.slug,
     }, route.extraJsonLd)
     for (const node of graph['@graph']) {
       const key = typeof node['@id'] === 'string' ? node['@id'] : JSON.stringify(node)

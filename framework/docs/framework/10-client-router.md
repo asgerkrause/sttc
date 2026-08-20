@@ -1,6 +1,6 @@
 # Client router
 
-STTC ships static HTML plus a small client router at `framework/runtime/router.js`. It swaps route bodies into the shell and exposes `window.snz`.
+STTC ships static HTML plus a small client router sourced from `framework/runtime/router.js`. The build emits a minified hashed `/assets/js/router.[hash].js`. It swaps route bodies into the shell and exposes `window.snz`.
 
 ## Shell and routes
 
