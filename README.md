@@ -6,7 +6,7 @@ It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM or hydr
 
 ## Requirements
 
-- Bun >= 1.3.14
+- Bun >= 1.4.0
 - Bun only; no npm commands
 
 ## Commands
