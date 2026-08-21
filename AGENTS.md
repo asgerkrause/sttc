@@ -122,3 +122,12 @@ bun run framework:verify
 ```
 
 Launch mode intentionally rejects placeholder URLs and incomplete production metadata. Never fabricate production values.
+
+## Cursor Cloud specific instructions
+
+This is a Bun-only static site renderer; there are no databases, servers, or external services to provision. The VM startup update script runs `bun install`. Bun (>= 1.4.0) lives at `~/.bun/bin` and is on `PATH` via `~/.bashrc` for interactive shells.
+
+- Commands are documented above and in `README.md` (`bun run dev|build|check|doctor`, `bun test framework/tests`, `bun run smoke:create`, `bun run framework:verify`). Use Bun only; never npm.
+- `bun run dev` serves on `http://localhost:3000` (auto-increments up to +20 if the port is busy; override with `PORT`). It rebuilds `dist/` on file changes.
+- The dev server is a client-routed SPA: a direct `curl http://localhost:3000/<route>` returns the shell (homepage markup), not the route's rendered body. To verify a route's actual content from the shell, read the built file at `dist/<route>/index.html` or request the router fragment at `http://localhost:3000/routes/<route>.html`. A real browser renders the route correctly.
+- Never edit `dist/` (generated) or `.snz/` (cache/state); both are gitignored. Fix source under `src/` or `framework/`.
