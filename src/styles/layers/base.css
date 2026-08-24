@@ -160,8 +160,8 @@
   }
 
   :where([aria-current="page"]) {
-    text-decoration: underline;
     font-weight: var(--t-fw-bd);
+    font-variation-settings: "wght" var(--t-fw-bd);
   }
 
   :where(button, a, input, select, textarea, summary) {
