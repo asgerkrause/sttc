@@ -156,7 +156,7 @@ export async function sourceOgImagePath(projectRoot = process.cwd()) {
 
 export function assertImageApi() {
   if (typeof Bun.Image !== 'function') {
-    throw new Error('Bun.Image requires Bun >= 1.3.14. Run: bun upgrade')
+    throw new Error('Bun.Image requires Bun >= 1.4.0. Run: bun upgrade')
   }
 }
 

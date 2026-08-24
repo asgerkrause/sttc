@@ -4,7 +4,7 @@ STTC (`@snz/sttc`) is an HTML-first, Bun-native static renderer. Repo: `sanitize
 
 Site work edits `src/` and optional `content/`. Renderer work edits `framework/`. `templates/default/` is the only created-project template and ships in the same package. Build writes `dist/`; never edit it. `.snz/` is cache/state only.
 
-Requires Bun >= 1.3.14. Use Bun only.
+Requires Bun >= 1.4.0. Use Bun only.
 
 ## Commands
 

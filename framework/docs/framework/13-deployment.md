@@ -19,7 +19,7 @@ Deploy settings:
 | Output directory | `dist` |
 | Dev command | `bun run dev` |
 | Install command | `bun install` |
-| Runtime | Bun `>= 1.3.14` |
+| Runtime | Bun `>= 1.4.0` |
 
 ## Vercel
 
