@@ -35,9 +35,9 @@ async function readPackage(target: string) {
 async function assertStarter(target: string) {
   for (const path of [
     'AGENTS.md', 'README.md', 'src/shell.html', 'src/site.json', 'src/app.ts', 'src/snz.d.ts',
-    'src/styles.css', 'src/styles/global.css', 'src/styles/sans.ttf', 'src/styles/mono.ttf',
+    'src/styles.css', 'src/styles/global.css', 'src/styles/sans.woff', 'src/styles/mono.woff',
     'src/styles/layers/base.css', 'src/styles/layers/tokens.css', 'src/styles/layers/type.css',
-    'src/styles/layers/layout.css', 'src/styles/layers/features.css', 'src/styles/layers/utility.css',
+    'src/styles/layers/layout.css', 'src/styles/layers/grid.css', 'src/styles/layers/motion.css', 'src/styles/layers/utility.css',
     'src/pages/index.html', 'src/pages/404.html', 'src/images/og.png', 'tsconfig.json', 'vercel.json',
   ]) {
     if (!(await Bun.file(join(target, path)).exists())) throw new Error(`created starter missing ${path}`)

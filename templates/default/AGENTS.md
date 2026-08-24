@@ -6,6 +6,7 @@ Use Bun only.
 
 ```bash
 bun run dev
+bun run preview
 bun run build
 bun run check
 bun run doctor
@@ -28,7 +29,7 @@ The starter contains exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Vi
 
 ## SEO directive
 
-Use `<SEO title="…" description="…" image="…" />` inside an optional route `<head>` wrapper. It is renderer-owned, not a component file. Canonical URLs derive from route filenames. The build automatically emits canonical metadata, Open Graph, Twitter cards, connected JSON-LD, sitemap, feeds, route Markdown/JSON, manifests, and llms files.
+Use `<SEO title="…" description="…" image="…" />` inside an optional route `<head>` wrapper. It is renderer-owned, not a component file. Canonical URLs derive from route filenames. The build automatically emits canonical metadata, Open Graph, Twitter cards, connected JSON-LD, sitemap, feeds, route Markdown/JSON, same-path markdown aliases, manifests, and llms files.
 
 ## Components
 
@@ -36,10 +37,10 @@ Declare attrs in the leading comment. Use `{{attr}}`, `{{slot}}`, named slots, `
 
 ## CSS
 
-The starter imports a pinned, project-owned CRFT copy from `src/styles/`. Replace or delete that import and copy when the project adopts another system. Component and route styles remain optional. Use at most one stable root class per component; style descendants with nested semantic or data-attribute selectors instead of inner classes. Do not invent framework tokens or utility classes.
+The starter imports a pinned, project-owned CRFT copy from `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. Optional SNZ faces live in `layers/fonts.css`. Attributes are the composition API: `c`, `s`, `t`, `g`, `x`, `y`, `o`, `l`. Weight flags on `t` are `lt`, `rg`, and `bo`. Family flags are `sa`, `se`, `mo`, `fb`, and `dp`. `data-skin`, `data-accent`, and `data-scrub` own canvas and opt-in behavior. Classes own override and product use. Replace or delete that import and copy when the project adopts another system. Component and route styles remain optional. Use at most one stable root class per component; style descendants with nested semantic or data-attribute selectors instead of inner classes. Do not invent framework tokens or utility classes.
 
 Lenis smooth scrolling is optional and self-hosted. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to exclude its bootstrap, CSS, vendor code, and shell configuration from `dist/`. Reduced-motion users always keep native scrolling.
 
 ## Verification
 
-Run `bun run build` after structural edits and `bun run doctor -- --launch` before handoff. Launch mode rejects placeholder URLs and incomplete metadata; never fabricate production values.
+Run `bun run build` after structural edits and `bun run doctor -- --launch` before handoff. Measure Lighthouse against `bun run preview` or the production origin, not `bun run dev`. Launch mode rejects placeholder URLs and incomplete metadata; never fabricate production values.

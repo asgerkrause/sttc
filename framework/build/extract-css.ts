@@ -1,15 +1,19 @@
 import { mkdir, readdir, rm, writeFile } from 'fs/promises'
-import { join } from 'path'
-import { buildErrorAt } from './errors'
+import { basename, dirname, join, resolve } from 'path'
+import { buildErrorAt, BuildError } from './errors'
+import { emitStyleFonts, fontFormat, fontMime, fontPreloadsFromCss, isFontFile } from './fonts'
 import { assetHash } from './hash'
 
 const STYLE_RE = /<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi
-const STYLES_LINK = '<link rel="stylesheet" href="/assets/css/styles.css">'
 const COMPONENTS_LINK = '<link rel="stylesheet" href="/assets/css/components.css">'
 const COMPONENTS_MARKER = '<!-- @snz-components-css -->'
+const PUBLIC_CSS_PREFIX = '/assets/css/'
+const IMPORT_RE = /@import\s+(?:url\(\s*)?(?:"([^"]+)"|'([^']+)'|([^;\s)]+))\s*\)?\s*([^;]*);/g
+const URL_RE = /url\(\s*(['"]?)([^'")]+)\1\s*\)/gi
 
 export type CssBlock = { source: string; css: string }
 export type RouteCssAsset = { href: string; filename: string; layer: string }
+export type ProjectCssAsset = { filename: string; fontPreloads: string[] }
 
 const COMPONENTS_LAYER = 'snz.components'
 const PAGES_LAYER_ROOT = 'snz.pages'
@@ -69,6 +73,122 @@ function wrapLayer(layer: string, css: string) {
   return `@layer ${layer} {\n${css}\n}`
 }
 
+function resolveCssSpecifier(specifier: string, fromFile: string, stylesDir: string) {
+  const spec = specifier.trim()
+  if (!spec || /^(data:|https?:|\/\/)/i.test(spec)) return null
+  if (spec.startsWith(PUBLIC_CSS_PREFIX)) return resolve(stylesDir, spec.slice(PUBLIC_CSS_PREFIX.length))
+  if (spec.startsWith('/')) return null
+  return resolve(dirname(fromFile), spec)
+}
+
+function rewriteLocalUrls(css: string, fromFile: string, stylesDir: string, destBySource: Map<string, string>) {
+  return css.replace(URL_RE, (all, _quote: string, spec: string) => {
+    const resolved = resolveCssSpecifier(spec, fromFile, stylesDir)
+    if (!resolved) return all
+    const dest = destBySource.get(resolved) ?? destBySource.get(basename(resolved))
+    if (!dest) {
+      if (isFontFile(resolved) || /\.(ttf|otf)$/i.test(resolved)) {
+        throw new BuildError(`Missing font file "${spec}"`, {
+          file: fromFile,
+          hint: 'Point @font-face at a WOFF or WOFF2 file under src/styles.',
+        })
+      }
+      return all
+    }
+    return `url("./${dest}")`
+  }).replace(
+    /url\("\.\/([^"]+\.woff2?)"\)\s*format\(\s*["'](?:truetype|opentype)["']\s*\)/gi,
+    (_all, file: string) => `url("./${file}") format("${fontFormat(file)}")`,
+  )
+}
+
+async function flattenCss(
+  entryFile: string,
+  stylesDir: string,
+  destBySource: Map<string, string>,
+  stack: string[] = [],
+): Promise<string> {
+  const real = resolve(entryFile)
+  if (stack.includes(real)) {
+    throw new BuildError(`Circular CSS @import: ${[...stack, real].join(' -> ')}`, {
+      file: entryFile,
+      hint: 'Remove the cycle, or import the shared file from one parent only.',
+    })
+  }
+  const source = await Bun.file(real).text().catch(() => null)
+  if (source === null) {
+    throw new BuildError(`Missing CSS import "${entryFile}"`, {
+      file: stack.at(-1) ?? entryFile,
+      hint: 'Point @import at a file under src/styles, or use @import "/assets/css/..." for that tree.',
+    })
+  }
+
+  const nextStack = [...stack, real]
+  const parts: string[] = []
+  let cursor = 0
+  const importRe = new RegExp(IMPORT_RE.source, IMPORT_RE.flags)
+  for (const match of source.matchAll(importRe)) {
+    const index = match.index ?? 0
+    if (inCssComment(source, index)) continue
+    parts.push(rewriteLocalUrls(source.slice(cursor, index), real, stylesDir, destBySource))
+    const specifier = match[1] ?? match[2] ?? match[3] ?? ''
+    const media = (match[4] ?? '').trim()
+    const resolved = resolveCssSpecifier(specifier, real, stylesDir)
+    if (!resolved) {
+      parts.push(match[0])
+    } else {
+      const nested = await flattenCss(resolved, stylesDir, destBySource, nextStack)
+      parts.push(media ? `@media ${media} {\n${nested}\n}` : nested)
+    }
+    cursor = index + match[0].length
+  }
+  parts.push(rewriteLocalUrls(source.slice(cursor), real, stylesDir, destBySource))
+  return parts.join('\n')
+}
+
+function inCssComment(source: string, index: number) {
+  const before = source.slice(0, index)
+  const lastOpen = before.lastIndexOf('/*')
+  if (lastOpen < 0) return false
+  return before.indexOf('*/', lastOpen) < 0
+}
+
+export async function bundleProjectCss(
+  stylesFile: string,
+  stylesDir: string,
+  distCssDir: string,
+): Promise<ProjectCssAsset | null> {
+  for (const entry of await readdir(distCssDir).catch(() => [])) {
+    if (/^styles(\.[a-f0-9]+)?\.css$/i.test(entry)) {
+      await rm(join(distCssDir, entry), { force: true })
+    }
+  }
+  if (!(await Bun.file(stylesFile).exists())) return null
+
+  await mkdir(distCssDir, { recursive: true })
+  const fonts = await emitStyleFonts(stylesDir, distCssDir)
+  const flattened = await flattenCss(stylesFile, stylesDir, fonts)
+  const minified = minifyCss(flattened)
+  const hash = assetHash(minified)
+  const filename = `styles.${hash}.css`
+  await writeFile(join(distCssDir, filename), minified)
+
+  return { filename, fontPreloads: fontPreloadsFromCss(minified) }
+}
+
+export function injectFontPreloads(shellHtml: string, hrefs: string[]) {
+  const stripped = shellHtml.replace(/\n?\s*<link rel="preload"[^>]*as="font"[^>]*>/g, '')
+  if (!hrefs.length) return stripped
+  const links = hrefs.map((href) =>
+    `  <link rel="preload" href="${href}" as="font" type="${fontMime(href)}" crossorigin>`,
+  ).join('\n')
+  const styles = stripped.match(/\n\s*<link rel="stylesheet" href="\/assets\/css\/styles(\.[a-f0-9]+)?\.css">/)
+  if (styles?.index !== undefined) {
+    return `${stripped.slice(0, styles.index)}\n${links}${stripped.slice(styles.index)}`
+  }
+  return stripped.replace('</head>', `${links}\n</head>`)
+}
+
 /**
  * Bundles all component <style> blocks into dist/assets/css/components.{hash}.css.
  * Returns the hashed filename, or null when there are no styles to bundle.
@@ -120,7 +240,6 @@ export function routeCssLink(asset: RouteCssAsset) {
 
 export function injectComponentStylesLink(shellHtml: string, hashedFilename: string | null) {
   let html = shellHtml.replace(COMPONENTS_LINK, '').replace(COMPONENTS_MARKER, '')
-  // Strip any previously injected hashed link
   html = html.replace(/<link rel="stylesheet" href="\/assets\/css\/components(\.[a-f0-9]+)?\.css">/g, '')
 
   if (!hashedFilename) {
@@ -134,14 +253,14 @@ export function injectComponentStylesLink(shellHtml: string, hashedFilename: str
   }
 
   if (html.match(/<link rel="stylesheet" href="\/assets\/css\/components/)) return html
-  if (html.includes(STYLES_LINK)) return html.replace(STYLES_LINK, `${STYLES_LINK}\n${link}`)
+  const stylesLink = html.match(/<link rel="stylesheet" href="\/assets\/css\/styles(\.[a-f0-9]+)?\.css">/)
+  if (stylesLink) return html.replace(stylesLink[0], `${stylesLink[0]}\n${link}`)
   return html.replace('</head>', `${link}\n</head>`)
 }
 
-export function injectGlobalStylesLink(shellHtml: string, enabled: boolean) {
-  const link = '  <link rel="stylesheet" href="/assets/css/styles.css">'
-  const withoutLink = shellHtml.replace(/\n?\s*<link rel="stylesheet" href="\/assets\/css\/styles\.css">/g, '')
-  if (!enabled) return withoutLink
-  if (shellHtml.includes(STYLES_LINK)) return shellHtml
+export function injectGlobalStylesLink(shellHtml: string, hashedFilename: string | null) {
+  const withoutLink = shellHtml.replace(/\n?\s*<link rel="stylesheet" href="\/assets\/css\/styles(\.[a-f0-9]+)?\.css">/g, '')
+  if (!hashedFilename) return withoutLink
+  const link = `  <link rel="stylesheet" href="/assets/css/${hashedFilename}">`
   return withoutLink.replace('</head>', `${link}\n</head>`)
 }

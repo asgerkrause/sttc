@@ -10,7 +10,10 @@ Edit `src/pages/index.html`, then run:
 ```bash
 bun run build
 bun run check
+bun run preview
 ```
+
+Measure Lighthouse against preview or production, not `bun run dev`.
 
 ## Add a route
 

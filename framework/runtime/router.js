@@ -448,7 +448,7 @@ function focusRouteRoot() {
   if (!(target instanceof HTMLElement)) return
   const hadTabindex = target.hasAttribute('tabindex')
   if (!hadTabindex) target.setAttribute('tabindex', '-1')
-  target.focus({ preventScroll: true })
+  target.focus({ preventScroll: true, focusVisible: false })
   if (!hadTabindex) {
     target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true })
   }

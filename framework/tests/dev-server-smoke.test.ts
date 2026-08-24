@@ -132,12 +132,12 @@ describe('dev server smoke', () => {
     const home = await text(`${base}/`)
     expect(home.response.status).toBe(200)
     expect(home.body).toContain('<main>')
-    expect(home.body).toContain('<script src="/__snz/hmr.js"></script>')
+    expect(home.body).toContain('<script src="/__snz/hmr.js" defer></script>')
 
     const notFoundPage = await text(`${base}/404/index.html`)
     expect(notFoundPage.response.status).toBe(200)
     expect(notFoundPage.body).toContain('Not found')
-    expect(notFoundPage.body).toContain('<script src="/__snz/hmr.js"></script>')
+    expect(notFoundPage.body).toContain('<script src="/__snz/hmr.js" defer></script>')
 
     const missingFragment = await text(`${base}/routes/not-real.html`)
     expect(missingFragment.response.status).toBe(404)
@@ -149,6 +149,6 @@ describe('dev server smoke', () => {
     const fallback = await text(`${base}/not-real/`)
     expect(fallback.response.status).toBe(200)
     expect(fallback.body).toContain('<main>')
-    expect(fallback.body).toContain('<script src="/__snz/hmr.js"></script>')
+    expect(fallback.body).toContain('<script src="/__snz/hmr.js" defer></script>')
   }, 40_000)
 })

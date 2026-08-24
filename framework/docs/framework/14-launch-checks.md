@@ -25,8 +25,9 @@ Launch mode checks:
 - private or local URLs;
 - internal routes and public assets;
 - discovery artifacts and JSON-LD;
-- Vercel configuration intent when present.
+- Vercel configuration intent when present;
+- production emit: flattened CSS, hashed router, no HMR, no TTF or OTF source fonts.
 
-A passing command is evidence, not visual or editorial approval. Review content accuracy, keyboard flow, assistive technology, responsive presentation, consent, external services, and deployment ownership separately.
+Measure Lighthouse against `bun run preview` or production. A passing command is evidence, not visual or editorial approval. Review content accuracy, keyboard flow, assistive technology, responsive presentation, consent, external services, and deployment ownership separately.
 
 Fix source only. Placeholder starter configuration should fail the production gate until the project supplies real values.

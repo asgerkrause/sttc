@@ -18,7 +18,7 @@ Edit `src/`; never edit `dist/`.
 - exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`
 - `src/app.ts` for project TypeScript
 - `src/site.json` for site and discovery defaults
-- pinned CRFT CSS copied into project-owned `src/styles/` and imported by `src/styles.css`
+- pinned CRFT CSS copied into project-owned `src/styles/` and imported by `src/styles.css`. Composition uses attributes (`c`, `s`, `t`, `g`, `x`, `y`, `o`, `l`)
 - no CMS files until `bun run new cms`
 
 Replace or extend `src/styles.css` and the copied `src/styles/` files for project CSS; the renderer links them automatically. Component `<style>` and route `<style>` blocks are optional.
@@ -47,4 +47,4 @@ A route can declare metadata with the renderer-owned `<SEO />` directive:
 
 The starter includes self-hosted Lenis. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to exclude all Lenis files and markup from `dist/`. Reduced-motion users always keep native scrolling.
 
-Build emits static pages, responsive images, sitemap, feeds, connected JSON-LD, manifests, route Markdown/JSON, and `llms.txt`. Replace `https://example.com` and starter metadata in `src/site.json` before launch.
+Build emits static pages, responsive images, sitemap, feeds, connected JSON-LD, manifests, route Markdown/JSON, same-path markdown aliases, and `llms.txt`. Replace `https://example.com` and starter metadata in `src/site.json` before launch.

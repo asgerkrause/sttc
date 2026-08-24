@@ -27,6 +27,7 @@ The renderer owns deterministic compilation, routing, media processing, metadata
 
 ```bash
 bun run dev
+bun run preview
 bun run build
 bun run check
 bun run doctor -- --launch

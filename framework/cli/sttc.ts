@@ -12,6 +12,7 @@ const rest = args.slice(1)
 
 const commands: Record<string, string[]> = {
   dev: ['bun', join(frameworkRoot, 'dev.ts')],
+  preview: ['bun', join(frameworkRoot, 'preview.ts')],
   build: ['bun', join(frameworkRoot, 'build', 'index.ts')],
   check: ['bun', join(frameworkRoot, 'build', 'check.ts')],
   new: ['bun', join(frameworkRoot, 'build', 'scaffold.ts')],
@@ -20,7 +21,7 @@ const commands: Record<string, string[]> = {
 }
 
 function usage(): never {
-  console.error('Usage: sttc <create|dev|build|check|doctor|new|skills|migrate> [...args]')
+  console.error('Usage: sttc <create|dev|preview|build|check|doctor|new|skills|migrate> [...args]')
   process.exit(1)
 }
 

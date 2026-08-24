@@ -1,438 +1,105 @@
-@property --l-gc {
-  syntax: "<integer>";
-  inherits: true;
-  initial-value: 3;
-}
-
-@property --l-cs {
-  syntax: "<integer>";
-  inherits: true;
-  initial-value: 1;
-}
-
-@property --l-rs {
-  syntax: "<integer>";
-  inherits: true;
-  initial-value: 1;
-}
-
+/* Layout: page chrome, containers, stacks, and the image frame. */
 @layer layout {
   body {
+    display: flex;
+    flex-direction: column;
+
     >header,
     >main>section,
     >footer {
-      padding: var(--l-bl-y) 0;
+      padding: var(--l-bl-y) var(--l-bl-x);
     }
 
     >header {
       padding-block: var(--p);
+      view-transition-name: header;
     }
 
     >main {
+      width: 100%;
       max-width: 100vw;
       min-height: 100svh;
       overflow-x: clip;
+      view-transition-name: main;
     }
 
     >footer {
       padding-bottom: var(--p);
+      view-transition-name: footer;
     }
   }
 
-  .c {
+  [c] {
     display: flex;
     flex-direction: column;
     width: 100%;
     max-width: var(--l-cw);
     margin-inline: auto;
-    padding-inline: var(--l-bl-x);
     gap: var(--s);
 
-    &.sm {
+    &[c~="sm"] {
       max-width: calc(var(--l-cw) / 3 * 2);
     }
 
-    &.lg {
+    &[c~="lg"] {
       max-width: calc(var(--l-cw) / 3 * 4);
+    }
+
+    &[c~="ct"] {
+      align-items: center;
     }
   }
 
-  section>.c {
+  section>[c] {
     container: container / inline-size;
   }
 
-  .s {
+  [s] {
     display: flex;
     flex-direction: column;
     gap: var(--g);
 
-    &.h {
+    &[s~="h"] {
       flex-direction: row;
     }
 
-    &.w {
+    &[s~="w"] {
       flex-wrap: wrap;
     }
 
-    &.center {
+    &[s~="ct"] {
       align-items: center;
     }
 
-    &.sb {
+    &[s~="sb"] {
       justify-content: space-between;
     }
-  }
 
-  [g] {
-    --l-gc: 3;
-
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    column-gap: var(--g);
-    row-gap: var(--g);
-
-    &[g="sg"] {
-      --l-gc: inherit;
+    &[s~="xs"] {
+      gap: var(--g-xs);
     }
 
-    >* {
-      --or: 0;
-      --l-cs: 1;
-      --l-rs: 1;
+    &[s~="sm"] {
+      gap: var(--g-sm);
+    }
 
+    &[s~="lg"] {
+      gap: var(--g-lg);
+    }
+
+    &[s~="xl"] {
+      gap: var(--g-xl);
+    }
+  }
+
+  .img-w {
+    display: block;
+    overflow: clip;
+
+    >img {
+      display: block;
       width: 100%;
-      order: var(--or);
-      grid-column: auto / span var(--l-cs);
-      grid-row: auto / span var(--l-rs);
-    }
-  }
-
-  [g]>[o$="-f"] {
-    --or: -2;
-  }
-
-  [g]>[o$="-a"] {
-    --or: 0;
-  }
-
-  [g]>[o$="-l"] {
-    --or: 2;
-  }
-
-  @container container (width >=30rem) {
-    [g] {
-      display: grid;
-      grid-template-columns: repeat(var(--l-gc), minmax(0, 1fr));
-
-      &[g="sg"] {
-        display: grid;
-        grid-template-columns: subgrid;
-      }
-
-      &[g="a"] {
-        grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
-      }
-
-      &[g="a-sm"] {
-        grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
-      }
-
-      &[g="a-lg"] {
-        grid-template-columns: repeat(auto-fill, minmax(min(25rem, 100%), 1fr));
-      }
-    }
-
-    [g$="1"] {
-      --l-gc: 1;
-    }
-
-    [g$="2"] {
-      --l-gc: 2;
-    }
-
-    [g$="3"] {
-      --l-gc: 3;
-    }
-
-    [g$="4"] {
-      --l-gc: 4;
-    }
-
-    [g$="5"] {
-      --l-gc: 5;
-    }
-
-    [g$="6"] {
-      --l-gc: 6;
-    }
-
-    [g$="7"] {
-      --l-gc: 7;
-    }
-
-    [g$="8"] {
-      --l-gc: 8;
-    }
-
-    [g$="9"] {
-      --l-gc: 9;
-    }
-
-    [g$="10"] {
-      --l-gc: 10;
-    }
-
-    [g$="11"] {
-      --l-gc: 11;
-    }
-
-    [g$="12"] {
-      --l-gc: 12;
-    }
-
-    [g]>[c$="0"] {
-      --l-cs: var(--l-gc);
-    }
-
-    [g]>[c$="1"] {
-      --l-cs: 1;
-    }
-
-    [g]>[c$="2"] {
-      --l-cs: 2;
-    }
-
-    [g]>[c$="3"] {
-      --l-cs: 3;
-    }
-
-    [g]>[c$="4"] {
-      --l-cs: 4;
-    }
-
-    [g]>[c$="5"] {
-      --l-cs: 5;
-    }
-
-    [g]>[c$="6"] {
-      --l-cs: 6;
-    }
-
-    [g]>[c$="7"] {
-      --l-cs: 7;
-    }
-
-    [g]>[c$="8"] {
-      --l-cs: 8;
-    }
-
-    [g]>[c$="9"] {
-      --l-cs: 9;
-    }
-
-    [g]>[c$="10"] {
-      --l-cs: 10;
-    }
-
-    [g]>[c$="11"] {
-      --l-cs: 11;
-    }
-
-    [g]>[c$="12"] {
-      --l-cs: 12;
-    }
-
-    [g]> :is([c="0"], [c$="-0"]) {
-      grid-column: 1 / -1;
-    }
-
-    [g]>[r$="1"] {
-      --l-rs: 1;
-    }
-
-    [g]>[r$="2"] {
-      --l-rs: 2;
-    }
-
-    [g]>[r$="3"] {
-      --l-rs: 3;
-    }
-
-    [g]>[r$="4"] {
-      --l-rs: 4;
-    }
-
-    [g]>[o] {
-      --or: 0;
-    }
-
-    [g]>[o*="-f-"] {
-      --or: -2;
-    }
-
-    [g]>[o*="-a-"] {
-      --or: 0;
-    }
-
-    [g]>[o*="-l-"] {
-      --or: 2;
-    }
-  }
-
-  @container container (width >=60rem) {
-    [g] {
-      --l-gc: 3;
-
-      &[g="sg"] {
-        --l-gc: inherit;
-      }
-    }
-
-    [g]>[c] {
-      --l-cs: 1;
-      grid-column: auto / span var(--l-cs);
-    }
-
-    [g]>[r] {
-      --l-rs: 1;
-      grid-row: auto / span var(--l-rs);
-    }
-
-    [g]>[o] {
-      --or: 0;
-    }
-
-    [g^="1"] {
-      --l-gc: 1;
-    }
-
-    [g^="2"] {
-      --l-gc: 2;
-    }
-
-    [g^="3"] {
-      --l-gc: 3;
-    }
-
-    [g^="4"] {
-      --l-gc: 4;
-    }
-
-    [g^="5"] {
-      --l-gc: 5;
-    }
-
-    [g^="6"] {
-      --l-gc: 6;
-    }
-
-    [g^="7"] {
-      --l-gc: 7;
-    }
-
-    [g^="8"] {
-      --l-gc: 8;
-    }
-
-    [g^="9"] {
-      --l-gc: 9;
-    }
-
-    [g^="10"] {
-      --l-gc: 10;
-    }
-
-    [g^="11"] {
-      --l-gc: 11;
-    }
-
-    [g^="12"] {
-      --l-gc: 12;
-    }
-
-    [g]>[c^="0"] {
-      --l-cs: var(--l-gc);
-    }
-
-    [g]>[c^="1"] {
-      --l-cs: 1;
-    }
-
-    [g]>[c^="2"] {
-      --l-cs: 2;
-    }
-
-    [g]>[c^="3"] {
-      --l-cs: 3;
-    }
-
-    [g]>[c^="4"] {
-      --l-cs: 4;
-    }
-
-    [g]>[c^="5"] {
-      --l-cs: 5;
-    }
-
-    [g]>[c^="6"] {
-      --l-cs: 6;
-    }
-
-    [g]>[c^="7"] {
-      --l-cs: 7;
-    }
-
-    [g]>[c^="8"] {
-      --l-cs: 8;
-    }
-
-    [g]>[c^="9"] {
-      --l-cs: 9;
-    }
-
-    [g]>[c^="10"] {
-      --l-cs: 10;
-    }
-
-    [g]>[c^="11"] {
-      --l-cs: 11;
-    }
-
-    [g]>[c^="12"] {
-      --l-cs: 12;
-    }
-
-    [g]> :is([c="0"], [c^="0-"]) {
-      grid-column: 1 / -1;
-    }
-
-    [g]>[r^="1"] {
-      --l-rs: 1;
-    }
-
-    [g]>[r^="2"] {
-      --l-rs: 2;
-    }
-
-    [g]>[r^="3"] {
-      --l-rs: 3;
-    }
-
-    [g]>[r^="4"] {
-      --l-rs: 4;
-    }
-
-    [g]>[o^="f"] {
-      --or: -2;
-    }
-
-    [g]>[o^="a"] {
-      --or: 0;
-    }
-
-    [g]>[o^="l"] {
-      --or: 2;
+      height: auto;
     }
   }
 }

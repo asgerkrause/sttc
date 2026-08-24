@@ -11,7 +11,7 @@
 - Optional markdown content from `content/`.
 - Bundled app code from `src/app.ts` or `src/app.js`.
 - Router runtime from `framework/runtime/router.js`.
-- SEO, sitemap, feeds, manifest, route JSON, llms files, and JSON-LD output.
+- SEO, sitemap, feeds, manifest, route JSON, same-path markdown, llms files, and JSON-LD output.
 - Strict build errors with file, line, and hint where possible.
 
 ## Build flow

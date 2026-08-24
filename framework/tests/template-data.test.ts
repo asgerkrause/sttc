@@ -89,8 +89,8 @@ describe('build-time JSON template data', () => {
       data: { services: [{ title: 'Strategy' }, { title: 'Build' }] },
     })
 
-    expect(html).toContain('<h2>0 Strategy</h2>')
-    expect(html).toContain('<h2>1 Build</h2>')
+    expect(html).toContain('<h2 id="0-strategy">0 Strategy</h2>')
+    expect(html).toContain('<h2 id="1-build">1 Build</h2>')
   })
 
   test('renders component each blocks with component JSON data', async () => {

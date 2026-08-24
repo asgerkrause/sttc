@@ -2,7 +2,9 @@
   @desc Semantic section wrapper for an authored page topic.
   @attr id Optional section id.
   @attr label Optional accessible label when no visible heading labels the section.
+  @attr c Optional CRFT measure flags: sm, lg, ct.
+  @attr skin Optional CRFT data-skin value.
 -->
 <section id="{{id}}" data-skin="{{skin}}">
-  <div class="c">{{slot}}</div>
+  {#if c}<div c="{{c}}">{{slot}}</div>{:else}<div c>{{slot}}</div>{/if}
 </section>

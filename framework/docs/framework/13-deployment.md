@@ -77,6 +77,8 @@ bun run check
 bun run doctor -- --launch
 ```
 
+Measure Lighthouse against `bun run preview` or the deployed origin. `bun run dev` injects HMR and does not gzip or cache; it is the wrong target.
+
 Fix source files, not generated output.
 
 Launch mode may fail starter placeholder config until `src/site.json` contains production values.

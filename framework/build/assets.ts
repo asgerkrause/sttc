@@ -54,10 +54,14 @@ export async function copyAssetsTo(
   const hasGlobalStyles = await Bun.file(stylesFile).exists()
   const nativeScroll = options.scroll === 'native'
   if (hasGlobalStyles) {
-    await copyTree(await sourceStylesDir(projectRoot), cssDist, (name) =>
-      name === 'styles.css' || (nativeScroll && slashPath(name) === 'lenis.css'),
-    )
-    await Bun.write(join(cssDist, 'styles.css'), Bun.file(stylesFile))
+    await copyTree(await sourceStylesDir(projectRoot), cssDist, (name) => {
+      const path = slashPath(name)
+      if (name === 'styles.css') return true
+      if (/\.(ttf|otf|woff2?)$/i.test(path)) return true
+      if (path.endsWith('.css') && path !== 'lenis.css') return true
+      return nativeScroll && path === 'lenis.css'
+    })
+    await pruneEmptyDirs(cssDist)
   }
   await copyTree(await sourceAppDir(projectRoot), jsDist, (name) => {
     const path = slashPath(name)
@@ -75,6 +79,16 @@ export async function copyAssetsTo(
 
 function slashPath(path: string) {
   return path.split(sep).join('/')
+}
+
+async function pruneEmptyDirs(dir: string) {
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
+    const child = join(dir, entry.name)
+    await pruneEmptyDirs(child)
+    if ((await readdir(child)).length === 0) await rm(child, { recursive: true, force: true })
+  }
 }
 
 export async function mediaInputCopyExclusions(projectRoot = root) {

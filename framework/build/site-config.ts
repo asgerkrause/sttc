@@ -48,6 +48,51 @@ function validateRobots(raw: string, value: unknown) {
   }
 }
 
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function validatePerson(raw: string, value: unknown, key: string) {
+  if (!isObject(value)) fail(raw, key, `site.json "${key}" must be an object`, `Set "${key}" to an object with a non-empty name.`)
+  if (typeof value.name !== 'string' || !value.name.trim()) {
+    fail(raw, key, `site.json "${key}.name" is required`, `Set "${key}.name" to a non-empty string.`)
+  }
+  for (const field of ['url', 'jobTitle', 'image']) optionalString(raw, value, field)
+  if (value.sameAs === undefined) return
+  if (!Array.isArray(value.sameAs) || value.sameAs.some((item) => typeof item !== 'string' || (item.trim() !== '' && !isHttpUrl(item)))) {
+    fail(raw, 'sameAs', `site.json "${key}.sameAs" must be HTTP(S) URLs`, `Use an array of http(s) URLs, or omit sameAs.`)
+  }
+}
+
+function validateAuthors(raw: string, parsed: Record<string, unknown>) {
+  if (parsed.author !== undefined) validatePerson(raw, parsed.author, 'author')
+  if (parsed.authors === undefined) return
+  if (!Array.isArray(parsed.authors)) fail(raw, 'authors', 'site.json "authors" must be an array', 'Use an array of people, each with a name.')
+  for (const person of parsed.authors) validatePerson(raw, person, 'authors')
+}
+
+function validateDiscovery(raw: string, value: unknown) {
+  if (value === undefined) return
+  if (!isObject(value)) fail(raw, 'discovery', 'site.json discovery must be an object', 'Use { "featured": ["about"], "notes": "..." }.')
+  if (value.featured !== undefined) {
+    if (!Array.isArray(value.featured) || value.featured.some((item) => (
+      typeof item !== 'string' || !item.trim() || item.startsWith('/') || item.includes('.html')
+    ))) {
+      fail(raw, 'featured', 'site.json discovery.featured must be slug strings', 'Use slugs such as "index" or "insights/hello" with no leading slash or .html.')
+    }
+  }
+  if (value.notes === undefined) return
+  if (typeof value.notes !== 'string') fail(raw, 'notes', 'site.json discovery.notes must be a string', 'Set discovery.notes to a string or remove it.')
+  if (value.notes.includes('##')) {
+    fail(raw, 'notes', 'site.json discovery.notes cannot contain markdown headings', 'llms.txt v2 forbids headings in the notes block. Remove ## from discovery.notes.')
+  }
+}
+
 function validateProduct(raw: string, value: unknown) {
   if (value === undefined) return
   if (!isObject(value)) fail(raw, 'product', 'site.json product must be an object', 'Declare name, description, and canonical path.')
@@ -93,6 +138,8 @@ export function parseSiteConfig(raw: string, file = 'src/site.json'): SiteConfig
   }
   validateProduct(raw, parsed.product)
   validateRobots(raw, parsed.robots)
+  validateAuthors(raw, parsed)
+  validateDiscovery(raw, parsed.discovery)
   return parsed as SiteConfig
 }
 

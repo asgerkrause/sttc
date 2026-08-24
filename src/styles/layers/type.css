@@ -1,20 +1,5 @@
+/* Type: roles, line clamp, and type flags. Optional faces live in fonts.css. */
 @layer type {
-  @font-face {
-    font-family: "SNZ Sans";
-    src: url("../sans.ttf") format("truetype");
-    font-style: normal;
-    font-weight: 100 900;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: "SNZ Mono";
-    src: url("../mono.ttf") format("truetype");
-    font-style: normal;
-    font-weight: 100 900;
-    font-display: swap;
-  }
-
   :where(body, h1, h2, h3, h4, h5, h6, [t]) {
     --t-st: 0;
     --t-fs-lo: calc(var(--t-fs-min) * pow(var(--t-rt-min), var(--t-st)));
@@ -25,7 +10,7 @@
   }
 
   body,
-  [t="bd"] {
+  [t~="bd"] {
     font-family: var(--t-ff-bd);
     line-height: var(--t-bd-lh);
     letter-spacing: var(--t-bd-ls);
@@ -35,11 +20,11 @@
   }
 
   p,
-  [t="bd"] {
+  [t~="bd"] {
     max-width: var(--t-bd-mw);
   }
 
-  [t="lg"] {
+  [t~="lg"] {
     --t-st: 1;
 
     max-width: var(--t-lg-mw);
@@ -51,7 +36,7 @@
     text-wrap: pretty;
   }
 
-  [t="sm"] {
+  [t~="sm"] {
     --t-st: -1;
 
     max-width: var(--t-sm-mw);
@@ -63,7 +48,7 @@
     text-wrap: pretty;
   }
 
-  [t="h0"] {
+  [t~="h0"] {
     --t-st: 5;
 
     max-width: var(--t-h0-mw);
@@ -76,7 +61,7 @@
   }
 
   h1,
-  [t="h1"] {
+  [t~="h1"] {
     --t-st: 4;
 
     max-width: var(--t-h1-mw);
@@ -89,7 +74,7 @@
   }
 
   h2,
-  [t="h2"] {
+  [t~="h2"] {
     --t-st: 3;
 
     max-width: var(--t-h2-mw);
@@ -102,7 +87,7 @@
   }
 
   h3,
-  [t="h3"] {
+  [t~="h3"] {
     --t-st: 2;
 
     max-width: var(--t-h3-mw);
@@ -115,7 +100,7 @@
   }
 
   h4,
-  [t="h4"] {
+  [t~="h4"] {
     --t-st: 1;
 
     max-width: var(--t-h4-mw);
@@ -128,7 +113,7 @@
   }
 
   h5,
-  [t="h5"] {
+  [t~="h5"] {
     --t-st: 0;
 
     max-width: var(--t-h5-mw);
@@ -141,7 +126,7 @@
   }
 
   h6,
-  [t="h6"] {
+  [t~="h6"] {
     --t-st: -1;
 
     max-width: var(--t-h6-mw);
@@ -151,5 +136,97 @@
     font-weight: var(--t-h6-fw);
     text-transform: var(--t-h6-tt);
     text-wrap: balance;
+  }
+
+  [t~="fg"] {
+    color: var(--c-fg);
+  }
+
+  [t~="mu"] {
+    color: var(--c-mu);
+  }
+
+  [t~="ac"] {
+    color: var(--c-ac);
+  }
+
+  [t~="sc"] {
+    color: var(--c-sc);
+  }
+
+  [t~="uc"] {
+    text-transform: uppercase;
+  }
+
+  [t~="lc"] {
+    text-transform: lowercase;
+  }
+
+  [t~="no"] {
+    text-transform: none;
+  }
+
+  [t~="cp"] {
+    text-transform: capitalize;
+  }
+
+  [t~="lt"] {
+    font-weight: var(--t-fw-lt);
+  }
+
+  [t~="rg"] {
+    font-weight: var(--t-fw-rg);
+  }
+
+  [t~="bo"] {
+    font-weight: var(--t-fw-bd);
+  }
+
+  [t~="sa"] {
+    font-family: var(--t-ff-sa);
+  }
+
+  [t~="se"] {
+    font-family: var(--t-ff-se);
+  }
+
+  [t~="mo"] {
+    font-family: var(--t-ff-mo);
+  }
+
+  [t~="fb"] {
+    font-family: var(--t-ff-bd);
+  }
+
+  [t~="dp"] {
+    font-family: var(--t-ff-dp);
+  }
+
+  [l] {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  [l="1"] {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  [l="2"] {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  [l="3"] {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  [l="4"] {
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
   }
 }

@@ -1,3 +1,4 @@
+/* Tokens: public values, skins, scales, and reduced motion. */
 @layer tokens {
   :root {
     /* Layout */
@@ -5,8 +6,10 @@
     --l-vp-min: 400;
     --l-vp-max: 1600;
     --l-cw: calc(var(--l-vp-max) * 0.0625rem);
-    --l-bl-x: 2rem;
+    --l-bl-x: calc(2vw + 1em);
     --l-bl-y: 12rem;
+    --l-cq-md: 30rem;
+    --l-cq-lg: 60rem;
 
     /* Unified Sizing / Spacing Scale */
     --s-rt: 2;
@@ -57,7 +60,7 @@
     --c-sw-mag: #f3f;
 
     /* Fixed Light / Dark Swatches */
-    --c-sw-li: #fbfbfa;
+    --c-sw-li: #fff;
     --c-sw-da: #121416;
 
     /* Semantic Colors */
@@ -85,8 +88,8 @@
     --c-bg: var(--c-bg-base);
     --c-fg: var(--c-fg-base);
     --c-sf: color-mix(in srgb, var(--c-fg) 5%, var(--c-bg));
-    --c-bc: color-mix(in srgb, var(--c-fg) 25%, transparent);
-    --c-mu: color-mix(in srgb, var(--c-fg) 80%, transparent);
+    --c-bc: color-mix(in srgb, var(--c-fg) 15%, transparent);
+    --c-mu: color-mix(in srgb, var(--c-fg) 60%, transparent);
 
     --c-ac-bg: color-mix(in srgb, var(--c-ac) 15%, var(--c-bg));
     --c-ac-fg: color-mix(in srgb, var(--c-ac) 25%, var(--c-fg));
@@ -169,44 +172,44 @@
 
     /* Heading zero & Headings */
     --t-h0-lh: 1;
-    --t-h0-ls: -0.01em;
+    --t-h0-ls: -0.04em;
     --t-h0-fw: var(--t-fw-rg);
     --t-h0-tt: none;
     --t-h0-mw: 70ch;
 
     --t-h1-lh: 1;
-    --t-h1-ls: -0.01em;
-    --t-h1-fw: var(--t-fw-rg);
+    --t-h1-ls: -0.04em;
+    --t-h1-fw: var(--t-fw-bd);
     --t-h1-tt: none;
     --t-h1-mw: 70ch;
 
     --t-h2-lh: 1.05;
-    --t-h2-ls: -0.01em;
+    --t-h2-ls: -0.03em;
     --t-h2-fw: var(--t-fw-rg);
     --t-h2-tt: none;
     --t-h2-mw: 70ch;
 
     --t-h3-lh: 1.1;
-    --t-h3-ls: -0.01em;
-    --t-h3-fw: var(--t-fw-rg);
+    --t-h3-ls: -0.02em;
+    --t-h3-fw: var(--t-fw-bd);
     --t-h3-tt: none;
     --t-h3-mw: 70ch;
 
     --t-h4-lh: 1.2;
     --t-h4-ls: -0.02em;
-    --t-h4-fw: var(--t-fw-rg);
+    --t-h4-fw: var(--t-fw-bd);
     --t-h4-tt: none;
     --t-h4-mw: 70ch;
 
     --t-h5-lh: 1.2;
-    --t-h5-ls: -0.01em;
-    --t-h5-fw: var(--t-fw-rg);
+    --t-h5-ls: -0.02em;
+    --t-h5-fw: var(--t-fw-bd);
     --t-h5-tt: none;
     --t-h5-mw: 70ch;
 
     --t-h6-lh: 1.2;
-    --t-h6-ls: -0.01em;
-    --t-h6-fw: var(--t-fw-rg);
+    --t-h6-ls: -0.02em;
+    --t-h6-fw: var(--t-fw-bd);
     --t-h6-tt: none;
     --t-h6-mw: 70ch;
 
@@ -244,6 +247,20 @@
     --m-td: 200ms;
     --m-td-s: 400ms;
     --m-td-ss: 800ms;
+
+    --m-vt-blur: .5em;
+    --m-vt-i-y: 1em;
+    --m-vt-i-x: 0em;
+    --m-vt-o-y: -1em;
+    --m-vt-o-x: 0em;
+    --m-vt-d: var(--m-td);
+
+    @media (orientation: portrait) {
+      --m-vt-i-y: 0em;
+      --m-vt-i-x: -1em;
+      --m-vt-o-y: 0em;
+      --m-vt-o-x: 1em;
+    }
 
     @media (prefers-reduced-motion: reduce) {
       --m-tf-i: linear;

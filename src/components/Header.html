@@ -12,15 +12,17 @@
 }
 </script>
 <header>
-  <div class="c">
-    <Logo />
-    <nav aria-label="Primary">
-      <ul>
-        {#each items as item}
-        <li><a href="{{item.href}}">{{item.label}}</a></li>
-        {/each}
-      </ul>
-    </nav>
+  <div c>
+    <div s="h sb ct">
+      <Logo />
+      <nav aria-label="Primary">
+        <ul s="h w">
+          {#each items as item}
+          <li><a href="{{item.href}}">{{item.label}}</a></li>
+          {/each}
+        </ul>
+      </nav>
+    </div>
   </div>
 </header>
 
@@ -32,22 +34,12 @@
     color: var(--c-fg, CanvasText);
     z-index: 100;
 
-    >.c {
-      flex-direction: row;
-      justify-content: space-between;
+    nav ul {
+      gap: .5rem;
 
-      ul {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: .5rem;
-        list-style: none;
-
-        a {
-          &:not(:hover, [aria-current="page"]) {
-            opacity: .4;
-
-          }
+      a {
+        &:not(:hover, [aria-current="page"]) {
+          color: var(--c-mu);
         }
       }
     }

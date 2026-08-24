@@ -2,7 +2,7 @@
 name: snz-launch
 description: Use when preparing a SANITIZE site for preview, production deployment, or client handoff.
 ---
-<!-- @snz-skill snz-launch e92bc18ddbc13b69a5ba99481fea34ab22585ae34e071037ae46e7a0717490e2 -->
+<!-- @snz-skill snz-launch 4ae4f3c99f6e4569d584ab1b649654e29f9675efb13aaa773bbeb29cf42792ad -->
 
 # SANITIZE Launch
 
@@ -19,8 +19,9 @@ A passing build is not launch approval. Production readiness combines determinis
    - `bun run check`
    - `bun run doctor`
    - `bun run doctor -- --launch`
-5. Fix source only and repeat the failing gate. Never patch `dist/`.
-6. Return a report grouped as blockers, warnings, and human-review items. Stop at readiness evidence unless deployment was explicitly requested through an approved deployment workflow.
+5. Measure Lighthouse against `bun run preview` or the production origin. Do not score `bun run dev` (HMR, no gzip, no cache).
+6. Fix source only and repeat the failing gate. Never patch `dist/`.
+7. Return a report grouped as blockers, warnings, and human-review items. Stop at readiness evidence unless deployment was explicitly requested through an approved deployment workflow.
 
 ## Blockers
 

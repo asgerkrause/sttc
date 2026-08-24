@@ -182,7 +182,8 @@ describe('AEO/GEO site facts', () => {
       const markdown = await readFile(join(distDir, 'routes', 'index.md'), 'utf8')
 
       expect(llms).not.toContain('## Site facts')
-      expect(llms).toContain('https://example.com/routes/index.md')
+      expect(llms).toContain('https://example.com/index.md')
+      expect(llms).not.toContain('https://example.com/routes/index.md')
       expect(markdown).toContain('# Home')
       expect(manifest.schemaVersion).toBe(MANIFEST_SCHEMA_VERSION)
       expect(manifest.generator).toEqual({ name: GENERATOR_NAME, version: GENERATOR_VERSION })

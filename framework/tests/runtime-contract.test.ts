@@ -60,8 +60,9 @@ describe('runtime ownership contracts', () => {
 
     expect(router).toContain('function focusRouteRoot')
     expect(router).toContain("main.querySelector('h1, h2, [role=\"heading\"]') ?? main")
-    expect(router).toContain('target.focus({ preventScroll: true })')
-    expect(router).toContain('focusRouteRoot()')
+    expect(router).toContain('target.focus({ preventScroll: true, focusVisible: false })')
+    expect(router).toContain('if (focus) {\n    focusRouteRoot()')
+    expect(router).not.toContain('pointerInput')
     expect(router).toContain("render(location.pathname, { focus: true })")
   })
 
@@ -101,19 +102,23 @@ describe('runtime ownership contracts', () => {
 
   test('router uses View Transitions only when project CSS names the route root', async () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
-    const rootCss = await readFile('src/styles/layers/features.css', 'utf8')
-    const starterCss = await readFile('templates/default/src/styles/layers/features.css', 'utf8')
+    const rootMotion = await readFile('src/styles/layers/motion.css', 'utf8')
+    const starterMotion = await readFile('templates/default/src/styles/layers/motion.css', 'utf8')
+    const rootLayout = await readFile('src/styles/layers/layout.css', 'utf8')
+    const starterLayout = await readFile('templates/default/src/styles/layers/layout.css', 'utf8')
 
     expect(router).toContain('function hasCssViewTransition()')
     expect(router).toContain("name && name !== 'none'")
     expect(router).toContain('if (transition && hasCssViewTransition())')
     expect(router).not.toContain('if (transition && document.startViewTransition)')
-    for (const css of [rootCss, starterCss]) {
+    for (const css of [rootMotion, starterMotion]) {
       expect(css).toContain('@view-transition')
-      expect(css).toContain('view-transition-name: main')
       expect(css).toContain('::view-transition-old(main)')
       expect(css).toContain('::view-transition-new(main)')
       expect(css).toContain('@media (prefers-reduced-motion: reduce)')
+    }
+    for (const css of [rootLayout, starterLayout]) {
+      expect(css).toContain('view-transition-name: main')
     }
   })
 

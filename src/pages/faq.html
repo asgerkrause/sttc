@@ -8,9 +8,14 @@
 
 <Section id="faq" label="Frequently asked questions">
   <h1>Frequently asked questions</h1>
-  <FAQ id="snz-faq" title="STTC">
+  <section itemscope itemtype="https://schema.org/FAQPage">
     {#each items as item}
-    <Accordion group="faq" summary="{{item.summary}}"><p>{{item.body}}</p></Accordion>
+    <details name="faq" itemprop="mainEntity" itemscope itemtype="https://schema.org/Question">
+      <summary itemprop="name">{{item.summary}}</summary>
+      <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+        <p itemprop="text">{{item.body}}</p>
+      </div>
+    </details>
     {/each}
-  </FAQ>
+  </section>
 </Section>
