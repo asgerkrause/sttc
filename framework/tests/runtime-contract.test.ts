@@ -17,6 +17,18 @@ describe('runtime ownership contracts', () => {
     }
   })
 
+  test('Lenis stops inertia before internal route navigation', async () => {
+    const rootScroll = await readFile('src/app/scroll.js', 'utf8')
+    const starterScroll = await readFile('templates/default/src/app/scroll.js', 'utf8')
+    const rootVendor = await readFile('src/app/vendor/lenis.min.js', 'utf8')
+    const starterVendor = await readFile('templates/default/src/app/vendor/lenis.min.js', 'utf8')
+
+    expect(starterScroll).toBe(rootScroll)
+    expect(rootScroll).toContain('stopInertiaOnNavigate: true')
+    expect(starterVendor).toBe(rootVendor)
+    expect(rootVendor).toContain('stopInertiaOnNavigate')
+  })
+
   test('router owns component lifecycle API', async () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
 
