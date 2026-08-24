@@ -16,6 +16,7 @@ if (!reduceMotion) {
       autoRaf: true,
       lerp: 0.25,
       syncTouch: true,
+      stopInertiaOnNavigate: true,
       anchors: { offset: -100 },
       touchMultiplier: 0.75,
     })
