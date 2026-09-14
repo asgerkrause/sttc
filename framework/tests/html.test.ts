@@ -15,6 +15,12 @@ describe('HTML discovery helpers', () => {
     expect(extractHtmlTitle('<html><head><title> Hello world </title></head></html>')).toBe('Hello world')
   })
 
+  test('decodes entities in title and description', () => {
+    const html = '<title>Terms &amp; Conditions</title><meta name="description" content="Fish &amp; chips &lt;3">'
+
+    expect(extractHtmlMetadata(html)).toMatchObject({ title: 'Terms & Conditions', description: 'Fish & chips <3' })
+  })
+
   test('extracts meta description content', () => {
     const html = '<meta name="description" content=" Useful summary. ">'
 

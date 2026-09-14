@@ -11,6 +11,18 @@ export function escapeHtml(value: string) {
   })[char]!)
 }
 
+export function decodeEntities(value: string) {
+  return value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&amp;/gi, '&')
+}
+
 function schemaTypeName(value: string | null) {
   if (!value) return undefined
   const match = value.match(/(?:https?:\/\/schema\.org\/|^)([A-Za-z][A-Za-z0-9]*)$/)
@@ -50,7 +62,7 @@ export function extractHtmlMetadata(html: string) {
     })
     .transform(html)
 
-  return { title: title.trim(), description: description.trim(), internalLinks: [...links], schemas: [...schemas] }
+  return { title: decodeEntities(title).trim(), description: decodeEntities(description).trim(), internalLinks: [...links], schemas: [...schemas] }
 }
 
 export function extractHtmlTitle(html: string): string {

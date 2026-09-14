@@ -481,7 +481,7 @@ content:
     expect(composer.prepareRouteSource('<head><SEO title="Head" /></head><SEO title="Body" /><h1>Page</h1>', {
       slug: 'page',
       fileHint: 'src/pages/page.html',
-    })).rejects.toThrow('more than one <SEO /> directive')
+    })).rejects.toThrow('only accepted inside the route <head>')
   })
 
   test('rejects SEO directives in the shell', async () => {

@@ -32,7 +32,7 @@ export async function writeComponentsReadme(
   for (const name of names) {
     const schema = schemas.get(name)
     const template = templates.get(name) ?? ''
-    const slots = slotNames(template, schema)
+    const slots = slotNames(template)
     const variantAttrs = Object.entries(schema?.attrs ?? {}).filter(([, rule]) => rule.enum?.length)
     const classAttrs = Object.entries(schema?.attrs ?? {}).filter(([, rule]) => rule.asClass)
     const notes = accessibilityNotes(schema)
@@ -48,7 +48,7 @@ export async function writeComponentsReadme(
     lines.push('')
     lines.push(`- Tag: \`<${name}>\`${slots.includes('default') ? ' wraps default slot content' : ' can be self-closing'}.`)
     lines.push(`- Slots: ${slots.length ? slots.map((slot) => slot === 'default' ? '`default`' : `\`${slot}\``).join(', ') : 'none detected'}.`)
-    lines.push(`- Unknown attributes: ${schema?.allowUnknownAttrs ? 'allowed' : 'rejected when schema exists'}.`)
+    lines.push('- Unknown attributes: rejected when schema exists.')
     if (classAttrs.length) {
       lines.push(`- Class-mapped attrs: ${classAttrs.map(([attr]) => `\`${attr}\``).join(', ')} append value to root class.`)
     }
@@ -115,12 +115,11 @@ export async function writeComponentsReadme(
 }
 
 function attrType(rule: SchemaAttr): string {
-  if (rule.enum) return `\`${rule.enum.join(' \\| ')}\``
-  return rule.type ?? 'string'
+  return rule.enum ? `\`${rule.enum.join(' \\| ')}\`` : 'string'
 }
 
-function slotNames(template: string, schema?: ComponentSchema): string[] {
-  const names = new Set(schema?.slots ?? [])
+function slotNames(template: string): string[] {
+  const names = new Set<string>()
   if (/\{\{slot\}\}/.test(template)) names.add('default')
   for (const match of template.matchAll(/\{\{slot:([\w-]+)\}\}/g)) names.add(match[1])
   return [...names].sort((a, b) => a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b))
@@ -150,8 +149,6 @@ function exampleAttrs(schema?: ComponentSchema): Record<string, string> {
 
 function exampleValue(key: string, rule: SchemaAttr): string {
   if (rule.enum) return rule.enum[0]
-  if (rule.type === 'number') return '1'
-  if (rule.type === 'boolean') return 'true'
   if (key === 'href') return '/'
   if (key === 'src') return 'example'
   if (key === 'alt') return 'Descriptive alt text'
