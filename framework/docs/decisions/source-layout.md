@@ -1,6 +1,8 @@
 # Source layout
 
-**Status:** active
+**Status:** superseded
+
+Superseded by starter-surface.md.
 
 ## Decision
 
@@ -13,9 +15,12 @@ src/images/       image masters
 src/videos/       public video files
 src/files/        public raw files
 src/app.ts        project TypeScript
-src/styles.css    minimal replaceable project CSS
+src/styles.css    project CSS entry
+src/styles/       pinned CRFT copy
+src/templates/    optional content templates
+content/          optional markdown records
 ```
 
 Renderer runtime remains package-owned under `framework/runtime/`. Build output remains under `dist/`.
 
-Legacy source paths may be migrated, but new projects receive only the minimal canonical surface. Optional directories are absent until used.
+This is the only layout the renderer reads. Optional directories are absent until used.

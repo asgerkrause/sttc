@@ -10,7 +10,7 @@ Most clones use [Pages CMS](https://pagescms.org/) lightly: marketing shells in 
 ## Options considered
 
 1. **A — Pages only** — editors own almost all URLs; weak for fixed marketing IA
-2. **B — Hybrid** — static `src/routes/` + CMS collections
+2. **B — Hybrid** — static `src/pages/` + CMS collections
 3. **C — Posts-first** — too little agent-controlled structure for studio clones
 
 ## Chosen
@@ -30,14 +30,14 @@ Most clones use [Pages CMS](https://pagescms.org/) lightly: marketing shells in 
 
 ## Why
 
-Clean tree for agents; client-friendly editor (Insights + Site settings); router already supports nested paths (`/insights/foo/` → `dist/routes/insights/foo.html`).
+Clean tree for agents; client-friendly editor (Insights + Site settings); the build already emits nested paths (`/insights/foo/` → `dist/insights/foo/index.html`).
 
 ## Consequences
 
 - Build compiles `content/posts/` and custom collections into generated route files.
 - Generic CMS pages are intentionally removed; authored pages live in `src/pages/` to avoid page-builder drift.
 - Dev watches `content/` and rebuilds on edits.
-- Do not add per-post files under `src/routes/`.
+- Do not add per-post files under `src/pages/`.
 - Markdown renders at build time through `build/markdown.ts`; unsafe HTML and unsafe URLs fail loudly.
 - Current hardening work lives in GitHub issues: media path alignment, content safety, tag slugging, and source collision checks.
 

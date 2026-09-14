@@ -1,18 +1,10 @@
 <!--
-  @desc Semantic site footer with identity and a current-year fallback rendered at build time.
+  @desc Semantic site footer with identity and the build year.
   @attr siteName Optional site-name override.
 -->
 <footer>
   <div c>
-    <div>
-      <span>{{siteName}}</span>
-      <span>&copy;</span>
-      <span data-snz-year> </span>
-    </div>
+    <Logo />
+    <small>© {{currentYear}} {{siteName}}</small>
   </div>
 </footer>
-
-<script>
-  const year = el.querySelector('[data-snz-year]')
-  if (year) year.textContent = String(new Date().getFullYear())
-</script>

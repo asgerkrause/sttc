@@ -34,6 +34,5 @@ Build validates authored references to `/assets/images/*`, `/assets/videos/*`, a
 ## Consequences
 
 - Do not store private drafts in `src/images/`, `src/videos/`, or `src/files/`.
-- First implementation is passthrough for videos/files only; no transcoder or `<Video>` component yet.
-- Future `<Video auto="true" />` should emit `autoplay muted loop playsinline` so native autoplay media inherits the runtime activity guard.
+- Videos and files are passthrough; there is no transcoder. The starter `Video` component emits native markup, and `<Video auto />` emits `autoplay muted loop playsinline` so native autoplay media inherits the runtime activity guard.
 - Usage-only publishing can be considered later as opt-in with an explicit manifest/escape hatch, not default behavior.

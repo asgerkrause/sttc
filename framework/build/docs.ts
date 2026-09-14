@@ -16,7 +16,7 @@ export async function writeComponentsReadme(
   lines.push('')
   lines.push('Purpose: give agents one deterministic source for project component contracts, slots, variants, schema metadata, and accessibility requirements before editing routes.')
   lines.push('')
-  lines.push('See `framework/docs/framework/05-components.md` in the framework package for the authoring contract.')
+  lines.push('See `framework/docs/framework/components.md` in the framework package for the authoring contract.')
   lines.push('')
 
   const names = [...templates.keys()].sort()

@@ -1,5 +1,7 @@
 # Simplified authoring surface
 
+Superseded by starter-surface.md.
+
 ## Decision
 
 The default author surface is:

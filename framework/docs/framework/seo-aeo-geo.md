@@ -11,7 +11,7 @@ Every route receives deterministic metadata from `src/site.json`, its filename, 
 </head>
 ```
 
-`SEO` is a renderer directive, not a component file. `title`, `description`, and optional `image` are the normal page-specific inputs. Canonical URLs derive from route filenames. `ogImage` remains a compatibility alias for `image`.
+The renderer handles `<SEO />` itself; it is accepted only in the route's leading `<head>` wrapper. `title`, `description`, and optional `image` are the normal page-specific inputs. Canonical URLs derive from route filenames. `ogImage` remains a compatibility alias for `image`.
 
 Use `<SEO ... unlisted />` only for a directly reachable route that should be omitted from public discovery. It receives `noindex,nofollow`. Unlisted is not authentication or access control.
 
@@ -50,7 +50,7 @@ On-site search is optional later, when the project has a real `/search/` route. 
 
 ## Discovery files the build emits
 
-The build writes these for public routes:
+The build writes these for public routes. A 404 route is also written to `dist/404.html` so static hosts serve it with status 404 on a hard load.
 
 - canonical `link` tags
 - Open Graph tags
@@ -62,10 +62,12 @@ The build writes these for public routes:
 - `llms.txt` and `llms-full.txt`
 - `site.jsonld`
 - `site.manifest.json`
-- `/routes/{slug}.html`, `/routes/{slug}.md`, and `/routes/{slug}.json`
+- route Markdown and JSON under `/routes/`, such as `/routes/about.md` and `/routes/about.json`
 - same-path markdown aliases, such as `/about/index.md` next to `/about/`
 
 `rel="alternate" type="text/markdown"` points at the same-path markdown. `rel="describedby"` points at the route JSON and at `/llms.txt`.
+
+`feed.xml` and `feed.json` exist only when the site has at least one public post. Sitemap `lastmod` comes from content front matter (`dateModified`, else `date`), never from file modification time, so authored pages carry no `lastmod`.
 
 ## llms.txt
 
@@ -104,7 +106,7 @@ Optional `site.author` or `site.authors` emit Schema.org `Person` nodes.
 
 Post front matter `author` maps onto those people when the name matches. The renderer does not invent an author if the name is missing or unmatched. Launch checks warn when a public post has no author.
 
-Content posts add `BlogPosting` schema. Components may add explicit structured data with `@schema Type field=attr`. Declared facts must be visible and accurate. Human content review remains required.
+Posts add `BlogPosting` schema. Components may add explicit structured data with `@schema Type field=attr`. Declared facts must be visible and accurate. Human content review remains required.
 
 ## Breadcrumbs
 

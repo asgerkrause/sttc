@@ -1,13 +1,9 @@
 {
   "name": "STTC",
   "url": "https://example.com",
-  "description": "A Bun-native HTML renderer with smart routing, components, images, SEO, and discovery built in.",
+  "description": "The @snz/sttc renderer's own site: docs, a style sheet page, and a FAQ built with the renderer.",
   "locale": "en",
   "scroll": "lenis",
   "twitter": "",
-  "image": "/assets/og.webp",
-  "vercel": {
-    "analytics": false,
-    "speedInsights": false
-  }
+  "image": "/assets/og.webp"
 }

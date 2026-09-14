@@ -11,5 +11,3 @@ Route metadata uses a reserved `<SEO />` build directive inside an optional lead
 ## Why
 
 Components stay source-owned and replaceable while metadata, canonical URLs, social cards, JSON-LD, and discovery remain consistent across authored, content, and generated routes.
-
-Legacy `<component>` and SEO comment directives fail with migration hints.
