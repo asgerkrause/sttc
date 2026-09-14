@@ -356,17 +356,8 @@ type VercelConfig = {
   headers?: unknown
 }
 
-// Unhashed public paths the build emits. An immutable rule must not match any of them.
-const UNHASHED_ASSET_PATHS = ['/assets/og.webp', '/assets/images/hero.webp', '/assets/videos/intro.mp4', '/assets/files/menu.pdf', '/assets/css/lenis.css', '/assets/js/scroll.js']
-
-// ponytail: approximates path-to-regexp; `:name` and `:name*` become wildcards, everything else is used as regex.
-function sourceMatches(source: string, path: string) {
-  try {
-    return new RegExp(`^${source.replace(/:\w+\*/g, '.*').replace(/:\w+/g, '[^/]+')}$`).test(path)
-  } catch {
-    return false
-  }
-}
+// The build names hashed assets `name.{8 hex}.ext` (framework/build/hash.ts). An immutable rule must match only those.
+const HASH_GROUP_RE = /\[(?:a-f0-9|0-9a-f)\]\{8/
 
 function hasCacheHeader(rule: VercelHeaderRule, valueIncludes: string) {
   if (!Array.isArray(rule.headers)) return false
@@ -480,10 +471,8 @@ export async function checkVercelConfig(projectRoot: string, warn: (m: string) =
 
   const headers = Array.isArray(config.headers) ? config.headers as VercelHeaderRule[] : []
   for (const rule of headers) {
-    const source = rule.source
-    if (typeof source !== 'string' || !hasCacheHeader(rule, 'immutable')) continue
-    const hit = UNHASHED_ASSET_PATHS.find((path) => sourceMatches(source, path))
-    if (hit) warn(`${rel}: immutable Cache-Control on "${rule.source}" also matches unhashed ${hit}; replaced media would stay cached`)
+    if (typeof rule.source !== 'string' || !hasCacheHeader(rule, 'immutable') || HASH_GROUP_RE.test(rule.source)) continue
+    warn(`${rel}: immutable Cache-Control on "${rule.source}" is not limited to hashed assets; replaced media would stay cached. Match the hash group, e.g. /assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)`)
   }
   if (!headers.some((rule) => (
     typeof rule.source === 'string'
