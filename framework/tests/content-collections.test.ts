@@ -22,7 +22,7 @@ async function writeCollectionConfig(dir: string, collections: unknown[]) {
 }
 
 describe('custom content collections', () => {
-  test('keeps built-in posts implicit and rejects generic CMS pages loudly', async () => {
+  test('defaults posts to /insights/ and rejects generic CMS pages loudly', async () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'posts'), { recursive: true })
       await mkdir(join(dir, 'content', 'pages'), { recursive: true })
@@ -302,10 +302,38 @@ describe('custom content collections', () => {
     })
   })
 
-  test('rejects custom collections using reserved built-in names', async () => {
+  test('lets collections.json declare posts with its own route and template', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeCollectionConfig(dir, [{ name: 'posts', route: 'blog/{slug}', template: 'entry.html' }])
+      await writeFile(join(dir, 'src', 'templates', 'entry.html'), '<h1>{{title}}</h1>{{tagsHtml}}{{body}}')
+      await writeFile(join(dir, 'content', 'posts', 'hello.md'), '---\ntitle: Hello\ndate: 2026-05-26\ndescription: Post\ntags: [R&D]\n---\nBody')
+
+      const [route] = await compileContentFrom({ rootDir: dir, includeDrafts: false })
+
+      expect(route.collection).toBe('posts')
+      expect(route.slug).toBe('blog/hello')
+      expect(route.date).toBe('2026-05-26T00:00:00.000Z')
+      expect(route.body).toContain('<a href="/tags/r-d/">R&amp;D</a>')
+      expect(route.body).not.toContain('<Tag')
+    })
+  })
+
+  test('still rejects posts without a date when declared in collections.json', async () => {
+    await withProject(async (dir) => {
+      await mkdir(join(dir, 'content', 'posts'), { recursive: true })
+      await writeCollectionConfig(dir, [{ name: 'posts', route: 'blog/{slug}' }])
+      await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
+      await writeFile(join(dir, 'content', 'posts', 'hello.md'), '---\ntitle: Hello\ndescription: Post\n---\nBody')
+
+      await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('missing "date"')
+    })
+  })
+
+  test('rejects custom collections using the reserved pages name', async () => {
     await withProject(async (dir) => {
       await writeCollectionConfig(dir, [{
-        name: 'posts',
+        name: 'pages',
         path: 'content/projects',
         template: 'project.html',
         route: 'work/{slug}',

@@ -1,23 +1,24 @@
-import { mkdir, writeFile } from 'fs/promises'
-import { isAbsolute, join } from 'path'
 import type { Composer, ComposeInstance } from './compose'
 import type { TemplateContext } from './template-directives'
 import {
   extractRouteMetadata,
   type RouteRecord,
 } from './discovery'
-import { dist, root } from './paths'
-import { RouteRegistry, type RouteOwner } from './routes'
-import { publicPathFromSlug } from '../runtime/lib/paths.js'
-import { sourceLastModified } from './source-files'
+import { BuildError } from './errors'
 
 type RouteComposer = Pick<Composer, 'prepareRoute'>
+
+export type RouteKind = 'static' | 'legacy-static' | 'content' | 'generated'
+
+export type RouteOwner = {
+  slug: string
+  kind: RouteKind
+  source: string
+}
 
 export type RouteGraphOptions = {
   composer: RouteComposer
   instancesFor?: (slug: string) => ComposeInstance[]
-  distDir?: string
-  sourceRoot?: string
 }
 
 export type RouteComposeOptions = {
@@ -28,67 +29,52 @@ export type RouteComposeOptions = {
   index?: number
 }
 
-export type ComposedRoute = {
-  slug: string
-  outFile: string
-  html: string
-}
-
 export class RouteGraph {
-  #registry = new RouteRegistry()
+  #routes = new Map<string, RouteOwner>()
+  #composed = new Set<string>()
   #records: Array<RouteRecord | undefined> = []
-  #modifiedByPath = new Map<string, string | undefined>()
-  #composed: Array<ComposedRoute | undefined> = []
   #nextIndex = 0
   #composer: RouteComposer
   #instancesFor: (slug: string) => ComposeInstance[]
-  #distDir: string
-  #sourceRoot: string
 
   constructor(options: RouteGraphOptions) {
     this.#composer = options.composer
     this.#instancesFor = options.instancesFor ?? (() => [])
-    this.#distDir = options.distDir ?? dist
-    this.#sourceRoot = options.sourceRoot ?? root
   }
 
-  async #sourceLastModified(source: string) {
-    if (source.startsWith('generated:')) return undefined
-    return sourceLastModified(isAbsolute(source) ? source : join(this.#sourceRoot, source))
-  }
-
-  #linkedLastModified(links: string[]) {
-    return links
-      .map((link) => this.#modifiedByPath.get(link))
-      .filter((value): value is string => !!value)
-      .sort()
-      .at(-1)
+  #duplicate(owner: RouteOwner, existing: RouteOwner) {
+    return new BuildError(`Duplicate route slug "${owner.slug}"`, {
+      file: owner.source,
+      hint: `${owner.source} (${owner.kind}) conflicts with ${existing.source} (${existing.kind}) at /${owner.slug === 'index' ? '' : `${owner.slug}/`}`,
+    })
   }
 
   register(owner: RouteOwner) {
-    return this.#registry.register(owner)
+    const existing = this.#routes.get(owner.slug)
+    // Preferred src/pages static routes intentionally replace legacy src/routes routes.
+    if (!existing || (existing.kind === 'legacy-static' && owner.kind === 'static')) {
+      this.#routes.set(owner.slug, owner)
+      return owner
+    }
+    throw this.#duplicate(owner, existing)
   }
 
   async compose(owner: RouteOwner, body: string, options: RouteComposeOptions = {}) {
-    const route = this.#registry.get(owner.slug) ?? this.#registry.register(owner)
-    const input = {
+    const existing = this.#routes.get(owner.slug)
+    // A slug composes once, by its registered owner; anything else is a duplicate route.
+    if (existing && this.#composed.has(owner.slug)) throw this.#duplicate(owner, existing)
+    const route = existing && existing.kind === owner.kind && existing.source === owner.source ? existing : this.register(owner)
+    this.#composed.add(route.slug)
+    const { html, unlisted } = await this.#composer.prepareRoute(body, {
       slug: route.slug,
       fileHint: route.source,
       headLinks: options.headLinks,
       data: options.data,
-    }
-    const { html, unlisted } = await this.#composer.prepareRoute(body, input)
-    const outPath = join(this.#distDir, 'routes', route.outFile)
-    await mkdir(join(outPath, '..'), { recursive: true })
-    await writeFile(outPath, html)
+    })
 
     const { title, description, internalLinks, schemas } = extractRouteMetadata(html)
-    let lastModified = options.lastModified
-    if (!lastModified) lastModified = await this.#sourceLastModified(route.source)
-    if (!lastModified) lastModified = this.#linkedLastModified(internalLinks)
     const index = options.index ?? this.#nextIndex++
     if (index >= this.#nextIndex) this.#nextIndex = index + 1
-    this.#composed[index] = { slug: route.slug, outFile: route.outFile, html }
     this.#records[index] = {
       slug: route.slug,
       title,
@@ -98,30 +84,21 @@ export class RouteGraph {
       schemas: [...new Set([...(options.schemas ?? ['WebPage']), ...schemas])],
       unlisted,
       renderedHtml: html,
-      lastModified,
+      lastModified: options.lastModified,
     }
-    this.#modifiedByPath.set(publicPathFromSlug(route.slug), lastModified)
 
     return { route, html }
   }
 
-  has(slug: string) {
-    return this.#registry.has(slug)
+  get(slug: string) {
+    return this.#routes.get(slug)
   }
 
   slugs() {
-    return this.#registry.slugs()
-  }
-
-  routes() {
-    return this.#registry.routes()
+    return [...this.#routes.keys()].sort()
   }
 
   records() {
     return this.#records.filter((record): record is RouteRecord => !!record)
-  }
-
-  composedRoutes() {
-    return this.#composed.filter((route): route is ComposedRoute => !!route)
   }
 }
