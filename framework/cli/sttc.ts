@@ -17,11 +17,10 @@ const commands: Record<string, string[]> = {
   check: ['bun', join(frameworkRoot, 'build', 'check.ts')],
   new: ['bun', join(frameworkRoot, 'build', 'scaffold.ts')],
   skills: ['bun', join(frameworkRoot, 'build', 'skills.ts')],
-  migrate: ['bun', join(frameworkRoot, 'build', 'migrate.ts')],
 }
 
 function usage(): never {
-  console.error('Usage: sttc <create|dev|preview|build|check|doctor|new|skills|migrate> [...args]')
+  console.error('Usage: sttc <create|dev|preview|build|check|doctor|new|skills> [...args]')
   process.exit(1)
 }
 
@@ -52,7 +51,8 @@ async function copyTemplate(source: string, target: string, prefix = ''): Promis
     const top = normalized.split('/')[0]
     if (entry.name === '.DS_Store' || ['dist', 'node_modules', 'bun.lock', '.snz'].includes(top ?? '')) continue
     const from = join(source, entry.name)
-    const to = join(target, entry.name)
+    // Packed tarballs drop .gitignore, so the template ships `gitignore` and create restores the dot.
+    const to = join(target, !prefix && entry.name === 'gitignore' ? '.gitignore' : entry.name)
     if (entry.isDirectory()) await copyTemplate(from, to, relative)
     else if (entry.isFile()) await Bun.write(to, Bun.file(from))
   }

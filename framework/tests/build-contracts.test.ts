@@ -162,7 +162,8 @@ content:
         cleanUrls: true,
         trailingSlash: true,
         headers: [
-          { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+          { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }] },
+          { source: '/assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
           { source: '/(llms|llms-full|robots|sitemap).(txt|xml)', headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }] },
         ],
       }))
@@ -176,13 +177,23 @@ content:
     }
   })
 
-  test('keeps root and starter Vercel config in parity', async () => {
-    const rootConfig = JSON.parse(await readFile('vercel.json', 'utf8'))
-    const starterConfig = JSON.parse(await readFile('templates/default/vercel.json', 'utf8'))
-    const keys = ['framework', 'installCommand', 'buildCommand', 'devCommand', 'outputDirectory', 'bunVersion', 'cleanUrls', 'trailingSlash', 'headers']
+  test('warns when an immutable Cache-Control rule is not limited to hashed assets', async () => {
+    const dir = await tempProject()
+    const immutable = (source: string) => ({ source, headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] })
+    const warning = (source: string) => `vercel.json: immutable Cache-Control on "${source}" is not limited to hashed assets; replaced media would stay cached. Match the hash group, e.g. /assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)`
+    try {
+      const shipped = JSON.parse(await readFile('vercel.json', 'utf8'))
+      await writeFile(join(dir, 'vercel.json'), JSON.stringify({
+        ...shipped,
+        headers: [...shipped.headers, immutable('/assets/(.*)'), immutable('/assets/js/vendor/(.*)'), immutable('/assets/:path+')],
+      }))
+      const warnings: string[] = []
 
-    for (const key of keys) {
-      expect(starterConfig[key]).toEqual(rootConfig[key])
+      await checkVercelConfig(dir, (warning) => warnings.push(warning))
+
+      expect(warnings).toEqual([warning('/assets/(.*)'), warning('/assets/js/vendor/(.*)'), warning('/assets/:path+')])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
     }
   })
 
@@ -207,7 +218,6 @@ content:
       expect(warnings).toContain('vercel.json: bunVersion should be "1.x" for sttc Bun static deploys')
       expect(warnings).toContain('vercel.json: cleanUrls should be true for sttc Bun static deploys')
       expect(warnings).toContain('vercel.json: trailingSlash should be true for sttc Bun static deploys')
-      expect(warnings).toContain('vercel.json: /assets/(.*) should use immutable Cache-Control headers')
       expect(warnings).toContain('vercel.json: discovery files should use short Cache-Control headers')
     } finally {
       await rm(dir, { recursive: true, force: true })
