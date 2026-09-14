@@ -38,6 +38,10 @@
       gap: .5rem;
 
       a {
+        text-decoration: none;
+        transition-property: font-weight, font-variation-settings;
+        transition-duration: var(--m-td-ss);
+
         &:not(:hover, [aria-current="page"]) {
           color: var(--c-mu);
         }

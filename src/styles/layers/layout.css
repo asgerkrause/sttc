@@ -17,7 +17,6 @@
 
     >main {
       width: 100%;
-      max-width: 100vw;
       min-height: 100svh;
       overflow-x: clip;
       view-transition-name: main;
@@ -89,6 +88,21 @@
 
     &[s~="xl"] {
       gap: var(--g-xl);
+    }
+  }
+
+  @supports (top: calc(1rem * sibling-index())) {
+    [s~="sc"] > * {
+      position: sticky;
+      top: calc(var(--l-hh) + ((sibling-index() - 1) * var(--p-sm)));
+    }
+  }
+
+  @supports (transition-delay: calc(1ms * sibling-index())) {
+    @media (prefers-reduced-motion: no-preference) {
+      [s~="st"] > * {
+        transition-delay: calc((sibling-index() - 1) * var(--m-td-f));
+      }
     }
   }
 

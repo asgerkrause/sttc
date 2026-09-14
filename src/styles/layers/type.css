@@ -1,6 +1,10 @@
 /* Type: roles, line clamp, and type flags. Optional faces live in fonts.css. */
 @layer type {
-  :where(body, h1, h2, h3, h4, h5, h6, [t]) {
+  :where(
+    body, h1, h2, h3, h4, h5, h6,
+    [t~="h0"], [t~="h1"], [t~="h2"], [t~="h3"], [t~="h4"], [t~="h5"], [t~="h6"],
+    [t~="lg"], [t~="bd"], [t~="sm"]
+  ) {
     --t-st: 0;
     --t-fs-lo: calc(var(--t-fs-min) * pow(var(--t-rt-min), var(--t-st)));
     --t-fs-hi: calc(var(--t-fs-max) * pow(var(--t-rt-max), var(--t-st)));
@@ -9,14 +13,26 @@
     font-size: clamp(var(--t-fs-lo) * 0.0625rem, var(--t-fs-lo) * 0.0625rem - var(--t-fs-sl) * var(--l-vp-min) * 0.0625rem + var(--t-fs-sl) * 100vi, var(--t-fs-hi) * 0.0625rem);
   }
 
+  /* Roles trim to cap height and alphabetic baseline where supported, so stack and
+     grid gaps measure optical text edges instead of line-box leading. */
+  @supports (text-box: trim-both cap alphabetic) {
+    :where(
+      h1, h2, h3, h4, h5, h6,
+      [t~="h0"], [t~="h1"], [t~="h2"], [t~="h3"], [t~="h4"], [t~="h5"], [t~="h6"],
+      [t~="lg"], [t~="bd"], [t~="sm"]
+    ) {
+      text-box: trim-both cap alphabetic;
+    }
+  }
+
   body,
   [t~="bd"] {
     font-family: var(--t-ff-bd);
     line-height: var(--t-bd-lh);
     letter-spacing: var(--t-bd-ls);
     font-weight: var(--t-bd-fw);
+    font-variation-settings: "wght" var(--t-bd-fw);
     text-transform: var(--t-bd-tt);
-    text-wrap: pretty;
   }
 
   p,
@@ -32,8 +48,8 @@
     line-height: var(--t-lg-lh);
     letter-spacing: var(--t-lg-ls);
     font-weight: var(--t-lg-fw);
+    font-variation-settings: "wght" var(--t-lg-fw);
     text-transform: var(--t-lg-tt);
-    text-wrap: pretty;
   }
 
   [t~="sm"] {
@@ -44,8 +60,8 @@
     line-height: var(--t-sm-lh);
     letter-spacing: var(--t-sm-ls);
     font-weight: var(--t-sm-fw);
+    font-variation-settings: "wght" var(--t-sm-fw);
     text-transform: var(--t-sm-tt);
-    text-wrap: pretty;
   }
 
   [t~="h0"] {
@@ -56,6 +72,7 @@
     line-height: var(--t-h0-lh);
     letter-spacing: var(--t-h0-ls);
     font-weight: var(--t-h0-fw);
+    font-variation-settings: "wght" var(--t-h0-fw);
     text-transform: var(--t-h0-tt);
     text-wrap: balance;
   }
@@ -69,6 +86,7 @@
     line-height: var(--t-h1-lh);
     letter-spacing: var(--t-h1-ls);
     font-weight: var(--t-h1-fw);
+    font-variation-settings: "wght" var(--t-h1-fw);
     text-transform: var(--t-h1-tt);
     text-wrap: balance;
   }
@@ -82,6 +100,7 @@
     line-height: var(--t-h2-lh);
     letter-spacing: var(--t-h2-ls);
     font-weight: var(--t-h2-fw);
+    font-variation-settings: "wght" var(--t-h2-fw);
     text-transform: var(--t-h2-tt);
     text-wrap: balance;
   }
@@ -95,6 +114,7 @@
     line-height: var(--t-h3-lh);
     letter-spacing: var(--t-h3-ls);
     font-weight: var(--t-h3-fw);
+    font-variation-settings: "wght" var(--t-h3-fw);
     text-transform: var(--t-h3-tt);
     text-wrap: balance;
   }
@@ -108,6 +128,7 @@
     line-height: var(--t-h4-lh);
     letter-spacing: var(--t-h4-ls);
     font-weight: var(--t-h4-fw);
+    font-variation-settings: "wght" var(--t-h4-fw);
     text-transform: var(--t-h4-tt);
     text-wrap: balance;
   }
@@ -121,6 +142,7 @@
     line-height: var(--t-h5-lh);
     letter-spacing: var(--t-h5-ls);
     font-weight: var(--t-h5-fw);
+    font-variation-settings: "wght" var(--t-h5-fw);
     text-transform: var(--t-h5-tt);
     text-wrap: balance;
   }
@@ -134,6 +156,7 @@
     line-height: var(--t-h6-lh);
     letter-spacing: var(--t-h6-ls);
     font-weight: var(--t-h6-fw);
+    font-variation-settings: "wght" var(--t-h6-fw);
     text-transform: var(--t-h6-tt);
     text-wrap: balance;
   }
@@ -172,14 +195,17 @@
 
   [t~="lt"] {
     font-weight: var(--t-fw-lt);
+    font-variation-settings: "wght" var(--t-fw-lt);
   }
 
   [t~="rg"] {
     font-weight: var(--t-fw-rg);
+    font-variation-settings: "wght" var(--t-fw-rg);
   }
 
   [t~="bo"] {
     font-weight: var(--t-fw-bd);
+    font-variation-settings: "wght" var(--t-fw-bd);
   }
 
   [t~="sa"] {
