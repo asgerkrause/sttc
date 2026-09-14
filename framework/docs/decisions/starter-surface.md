@@ -17,11 +17,11 @@ Created projects ship exactly seven replaceable HTML components:
 
 `Section` provides `section > [c]`. Optional `c` flags are `sm`, `lg`, and `ct`. `Grid` maps `cols`, `x`, `y`, and `order` to CRFT `g`, `x`, `y`, and `o` attributes. `SEO` is a renderer directive and has no component file.
 
-The starter copies pinned CRFT CSS (`16e70a4`) into project-owned `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. Optional SNZ faces live in `layers/fonts.css` plus `sans.woff` and `mono.woff`. The renderer does not own that presentation layer. Created sites keep their copy until they migrate.
+The starter copies pinned CRFT CSS (`7358c7e`) into project-owned `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. Optional SNZ faces live in `layers/fonts.css` plus `sans.woff` and `mono.woff`. The renderer does not own that presentation layer. Created sites keep their copy until they migrate.
 
 Dogfood `src/styles/` matches that pin except these brand overrides:
 
-| Observed | CRFT `16e70a4` | Dogfood | Action |
+| Observed | CRFT `7358c7e` | Dogfood | Action |
 | --- | --- | --- | --- |
 | `--l-bl-x` | `2rem` | `calc(2vw + 1em)` | keep brand bleed |
 | `--c-sw-li` | `#fbfbfa` | `#fff` | keep canvas |

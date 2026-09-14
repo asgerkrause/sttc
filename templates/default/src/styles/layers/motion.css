@@ -41,7 +41,7 @@
 
       [data-scrub] {
         animation-name: m-src-to, m-src-fr;
-        animation-duration: 1ms;
+        animation-duration: auto;
         animation-timing-function: linear;
         animation-fill-mode: both;
         animation-timeline: view();
@@ -95,8 +95,9 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      ::view-transition-old(main),
-      ::view-transition-new(main) {
+      ::view-transition-group(*),
+      ::view-transition-old(*),
+      ::view-transition-new(*) {
         animation: none;
       }
     }

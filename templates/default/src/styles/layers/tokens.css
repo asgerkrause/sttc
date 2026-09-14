@@ -3,6 +3,7 @@
   :root {
     /* Layout */
     --l-hh: 4rem;
+    --l-ch: 2.75rem;
     --l-vp-min: 400;
     --l-vp-max: 1600;
     --l-cw: calc(var(--l-vp-max) * 0.0625rem);
@@ -117,6 +118,14 @@
   [data-skin='tone'] {
     --c-bg: color-mix(in srgb, var(--c-bg-base), var(--c-fg-base) 5%);
     --c-sf: var(--c-bg-base);
+  }
+
+  @media (prefers-contrast: more) {
+    [data-skin],
+    :root {
+      --c-mu: color-mix(in srgb, var(--c-fg) 75%, transparent);
+      --c-bc: color-mix(in srgb, var(--c-fg) 50%, transparent);
+    }
   }
 
   [data-accent] {
@@ -248,6 +257,8 @@
     --m-td-s: 400ms;
     --m-td-ss: 800ms;
 
+    --m-lift: 0.75rem;
+
     --m-vt-blur: .5em;
     --m-vt-i-y: 1em;
     --m-vt-i-x: 0em;
@@ -273,6 +284,10 @@
       --m-td: 0.001ms;
       --m-td-s: 0.001ms;
       --m-td-ss: 0.001ms;
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      --m-vt-blur: 0;
     }
   }
 }
