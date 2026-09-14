@@ -13,8 +13,7 @@
     "typecheck": "tsc --noEmit",
     "doctor": "bun run typecheck && sttc doctor",
     "new": "sttc new",
-    "skills": "sttc skills",
-    "migrate": "sttc migrate"
+    "skills": "sttc skills"
   },
   "dependencies": {
     "@snz/sttc": "file:../.."

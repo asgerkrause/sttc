@@ -162,7 +162,8 @@ content:
         cleanUrls: true,
         trailingSlash: true,
         headers: [
-          { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+          { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }] },
+          { source: '/assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
           { source: '/(llms|llms-full|robots|sitemap).(txt|xml)', headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }] },
         ],
       }))
@@ -171,6 +172,22 @@ content:
       await checkVercelConfig(dir, (warning) => warnings.push(warning))
 
       expect(warnings).toEqual([])
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('warns when immutable Cache-Control covers unhashed assets', async () => {
+    const dir = await tempProject()
+    try {
+      const config = JSON.parse(await readFile('vercel.json', 'utf8'))
+      config.headers[0].headers[0].value = 'public, max-age=31536000, immutable'
+      await writeFile(join(dir, 'vercel.json'), JSON.stringify(config))
+      const warnings: string[] = []
+
+      await checkVercelConfig(dir, (warning) => warnings.push(warning))
+
+      expect(warnings).toEqual(['vercel.json: immutable Cache-Control on "/assets/(.*)" also matches unhashed /assets/og.webp; replaced media would stay cached'])
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -207,7 +224,6 @@ content:
       expect(warnings).toContain('vercel.json: bunVersion should be "1.x" for sttc Bun static deploys')
       expect(warnings).toContain('vercel.json: cleanUrls should be true for sttc Bun static deploys')
       expect(warnings).toContain('vercel.json: trailingSlash should be true for sttc Bun static deploys')
-      expect(warnings).toContain('vercel.json: /assets/(.*) should use immutable Cache-Control headers')
       expect(warnings).toContain('vercel.json: discovery files should use short Cache-Control headers')
     } finally {
       await rm(dir, { recursive: true, force: true })

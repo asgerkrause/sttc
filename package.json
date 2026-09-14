@@ -1,9 +1,6 @@
 {
   "name": "@snz/sttc",
   "version": "0.1.0",
-  "sttc": {
-    "projectFormatVersion": "2.0.0"
-  },
   "description": "HTML-first, Bun-native static site builder for STTC sites.",
   "private": true,
   "type": "module",
@@ -59,7 +56,6 @@
     "test": "bun test framework/tests",
     "new": "bun framework/cli/sttc.ts new",
     "skills": "bun framework/cli/sttc.ts skills",
-    "migrate": "bun framework/cli/sttc.ts migrate",
     "check:private": "bun framework/scripts/private-review-guard.ts",
     "smoke:create": "bun framework/scripts/smoke-create.ts"
   }

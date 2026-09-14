@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { mkdir, mkdtemp, readdir, rm } from 'fs/promises'
+import { mkdir, mkdtemp, readdir, rm, stat } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 
@@ -38,7 +38,7 @@ async function assertStarter(target: string) {
     'src/styles.css', 'src/styles/global.css', 'src/styles/sans.woff', 'src/styles/mono.woff',
     'src/styles/layers/base.css', 'src/styles/layers/tokens.css', 'src/styles/layers/type.css',
     'src/styles/layers/layout.css', 'src/styles/layers/grid.css', 'src/styles/layers/motion.css', 'src/styles/layers/utility.css',
-    'src/pages/index.html', 'src/pages/404.html', 'src/images/og.png', 'tsconfig.json', 'vercel.json',
+    'src/pages/index.html', 'src/pages/404.html', 'src/images/og.png', 'tsconfig.json', 'vercel.json', '.gitignore',
   ]) {
     if (!(await Bun.file(join(target, path)).exists())) throw new Error(`created starter missing ${path}`)
   }
@@ -52,7 +52,7 @@ async function assertStarter(target: string) {
   }
 
   for (const path of ['dist', 'node_modules', 'bun.lock', '.snz/components-catalog.md']) {
-    if (await Bun.file(join(target, path)).exists()) throw new Error(`created starter should not include ${path}`)
+    if (await stat(join(target, path)).catch(() => null)) throw new Error(`created starter should not include ${path}`)
   }
 }
 

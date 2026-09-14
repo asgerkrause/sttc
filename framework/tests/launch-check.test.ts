@@ -1,20 +1,24 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 
 const packageRoot = join(import.meta.dir, '..')
+const starterSrc = join(packageRoot, '..', 'templates', 'default', 'src')
 const tempDirs: string[] = []
 
 afterEach(async () => {
   for (const dir of tempDirs.splice(0)) await rm(dir, { recursive: true, force: true })
 })
 
-async function makeProject(body: string, site: Record<string, unknown> = {}) {
+async function makeProject(body: string, site: Record<string, unknown> = {}, head = '') {
   const dir = await mkdtemp(join(tmpdir(), 'snz-launch-'))
   tempDirs.push(dir)
   await mkdir(join(dir, 'src', 'components'), { recursive: true })
   await mkdir(join(dir, 'src', 'pages'), { recursive: true })
+  await mkdir(join(dir, 'src', 'images'), { recursive: true })
+  // The starter ships a 1×1 placeholder; upscale it so launch fixtures have a real-sized OG master.
+  await new Bun.Image(join(starterSrc, 'images', 'og.png')).resize(1200, 630, { fit: 'fill' }).png().write(join(dir, 'src', 'images', 'og.png'))
 
   await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
     name: 'Launch Site',
@@ -30,7 +34,7 @@ async function makeProject(body: string, site: Record<string, unknown> = {}) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/assets/css/styles.css">
-  <script src="/router.js" type="module"></script>
+  <script src="/router.js" type="module"></script>${head}
 </head>
 <body><main></main></body>
 </html>
@@ -131,6 +135,58 @@ describe('launch doctor gate', () => {
     expect(result.stderr).toContain('duplicate page title')
     expect(result.stderr).toContain('duplicate meta description')
     expect(result.stderr).toContain('link has no accessible name')
+  })
+
+  test('fails on placeholder OG master and starter copy', async () => {
+    const starterSite = JSON.parse(await readFile(join(starterSrc, 'site.json'), 'utf8'))
+    const dir = await makeProject(await readFile(join(starterSrc, 'pages', 'index.html'), 'utf8'), { name: starterSite.name, description: starterSite.description })
+    await cp(join(starterSrc, 'components'), join(dir, 'src', 'components'), { recursive: true })
+    await cp(join(starterSrc, 'images', 'og.png'), join(dir, 'src', 'images', 'og.png'))
+
+    const result = await runDoctorLaunch(dir)
+
+    expect(result.code).not.toBe(0)
+    expect(result.stderr).toContain('launch OG master is 1×1; needs at least 600×315')
+    expect(result.stderr).toContain(`launch name is the starter's placeholder "${starterSite.name}"`)
+    expect(result.stderr).toContain(`launch description is the starter's placeholder "${starterSite.description}"`)
+    expect(result.stderr).toContain("src/pages/index.html: launch title is the starter's placeholder")
+  })
+
+  test('fails on missing OG master', async () => {
+    const dir = await makeProject(`<head>
+  <SEO title="Home" description="Launch fixture home page with specific helpful description for visitors." />
+</head>
+<h1>Launch fixture</h1>
+`)
+    await rm(join(dir, 'src', 'images', 'og.png'))
+
+    const result = await runDoctorLaunch(dir)
+
+    expect(result.code).not.toBe(0)
+    expect(result.stderr).toContain('launch OG master missing')
+  })
+
+  test('head emit contracts pass check and warn under --launch', async () => {
+    const dir = await makeProject(`<head>
+  <SEO title="Home" description="Launch fixture home page with specific helpful description for visitors." />
+</head>
+<h1>Launch fixture</h1>
+`, {}, `
+  <link rel="stylesheet" href="/assets/files/a.css">
+  <link rel="stylesheet" href="/assets/files/b.css">
+  <script src="/assets/files/plain.js"></script>`)
+    await mkdir(join(dir, 'src', 'files'))
+    for (const file of ['a.css', 'b.css']) await writeFile(join(dir, 'src', 'files', file), '@import "x.css";\n')
+    await writeFile(join(dir, 'src', 'files', 'plain.js'), '')
+
+    const check = await runCli(dir, 'check')
+    expect(check.code).toBe(0)
+    expect(check.stderr).not.toContain('render-blocking')
+
+    const launch = await runDoctorLaunch(dir)
+    expect(launch.code).toBe(0)
+    expect(launch.stderr).toContain('render-blocking stylesheets')
+    expect(launch.stderr).toContain('render-blocking script /assets/files/plain.js')
   })
 
   test('check --launch runs launch checks without CSS audit', async () => {

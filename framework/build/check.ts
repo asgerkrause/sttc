@@ -7,7 +7,7 @@ import { packageRoot, projectPaths, root } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError, lineOf } from './errors'
 import { compileContentFrom, loadCustomContentCollections } from './content'
-import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs } from './images'
+import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, sourceOgImagePath } from './images'
 import { createBuildContext, type BuildContext } from './build-context'
 import { loadSiteConfig } from './site-config'
 import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
@@ -30,8 +30,7 @@ export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   await checkSourceLayout(paths, warn)
   await checkSeoFiles(context.distDir, fail)
   await checkBuiltOutput(context.distDir, fail, !!opts.allowBrokenLinks)
-  await checkEmitContracts(context.distDir, paths.src, fail, warn)
-  await checkComponentTags(paths, warn)
+  await checkEmitContracts(context.distDir, paths.src, fail, opts.launch ? warn : () => {})
   await checkDiscoveryArtifacts(context.distDir, fail)
   if (opts.launch) await checkLaunchReadiness(context, fail, warn)
 
@@ -342,15 +341,8 @@ export function checkPagesCmsConfig(pages: string, warn: (m: string) => void) {
   }
 }
 
-type VercelHeader = {
-  key?: unknown
-  value?: unknown
-}
-
-type VercelHeaderRule = {
-  source?: unknown
-  headers?: unknown
-}
+type VercelHeader = { key?: unknown; value?: unknown }
+type VercelHeaderRule = { source?: unknown; headers?: unknown }
 
 type VercelConfig = {
   framework?: unknown
@@ -364,13 +356,21 @@ type VercelConfig = {
   headers?: unknown
 }
 
-function hasCacheHeader(rule: VercelHeaderRule, source: string, valueIncludes: string) {
-  if (rule.source !== source || !Array.isArray(rule.headers)) return false
-  return rule.headers.some((header: VercelHeader) => (
-    header?.key === 'Cache-Control'
-    && typeof header.value === 'string'
-    && header.value.includes(valueIncludes)
-  ))
+// Unhashed public paths the build emits. An immutable rule must not match any of them.
+const UNHASHED_ASSET_PATHS = ['/assets/og.webp', '/assets/images/hero.webp', '/assets/videos/intro.mp4', '/assets/files/menu.pdf', '/assets/css/lenis.css', '/assets/js/scroll.js']
+
+// ponytail: approximates path-to-regexp; `:name` and `:name*` become wildcards, everything else is used as regex.
+function sourceMatches(source: string, path: string) {
+  try {
+    return new RegExp(`^${source.replace(/:\w+\*/g, '.*').replace(/:\w+/g, '[^/]+')}$`).test(path)
+  } catch {
+    return false
+  }
+}
+
+function hasCacheHeader(rule: VercelHeaderRule, valueIncludes: string) {
+  if (!Array.isArray(rule.headers)) return false
+  return rule.headers.some((header: VercelHeader) => header?.key === 'Cache-Control' && typeof header.value === 'string' && header.value.includes(valueIncludes))
 }
 
 const STYLESHEET_TAG_RE = /<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi
@@ -417,7 +417,7 @@ export async function checkEmitContracts(
       if (href) stylesheets.push(href)
     }
     if (stylesheets.length > 2) {
-      fail(`${file}: ${stylesheets.length} render-blocking stylesheets\n  hint: Keep project CSS and component CSS as the only head stylesheets. Route CSS may use data-snz-route-css.`)
+      warn(`${file}: ${stylesheets.length} render-blocking stylesheets\n  hint: Keep project CSS and component CSS as the only head stylesheets. Route CSS may use data-snz-route-css.`)
     }
 
     const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? html
@@ -430,7 +430,7 @@ export async function checkEmitContracts(
       }
       const deferred = /\btype=["']module["']/i.test(attrs) || /\bdefer\b/i.test(attrs) || /\basync\b/i.test(attrs)
       if (!deferred) {
-        fail(`${prettyFileLine(file, html, match.index ?? 0)}: render-blocking script ${src}\n  hint: Use type="module", defer, or async for head scripts.`)
+        warn(`${prettyFileLine(file, html, match.index ?? 0)}: render-blocking script ${src}\n  hint: Use type="module", defer, or async for head scripts.`)
       }
     }
   }
@@ -442,7 +442,7 @@ export async function checkEmitContracts(
     const css = await readFile(file, 'utf8').catch(() => '')
     if (!css) continue
     if (/@import\b/.test(css)) {
-      fail(`${file}: emitted CSS still contains @import\n  hint: The build flattens src/styles.css. Avoid remote @import in project CSS.`)
+      warn(`${file}: emitted CSS still contains @import\n  hint: The build flattens src/styles.css. Avoid remote @import in project CSS.`)
     }
     if (/url\([^)]*\.(ttf|otf)(\?|#|["')])/i.test(css)) {
       fail(`${file}: emitted CSS still references TTF/OTF\n  hint: Point @font-face at WOFF or WOFF2 files under src/styles.`)
@@ -479,15 +479,18 @@ export async function checkVercelConfig(projectRoot: string, warn: (m: string) =
   }
 
   const headers = Array.isArray(config.headers) ? config.headers as VercelHeaderRule[] : []
-  if (!hasCacheHeader(headers.find((rule) => rule.source === '/assets/(.*)') ?? {}, '/assets/(.*)', 'immutable')) {
-    warn(`${rel}: /assets/(.*) should use immutable Cache-Control headers`)
+  for (const rule of headers) {
+    const source = rule.source
+    if (typeof source !== 'string' || !hasCacheHeader(rule, 'immutable')) continue
+    const hit = UNHASHED_ASSET_PATHS.find((path) => sourceMatches(source, path))
+    if (hit) warn(`${rel}: immutable Cache-Control on "${rule.source}" also matches unhashed ${hit}; replaced media would stay cached`)
   }
   if (!headers.some((rule) => (
     typeof rule.source === 'string'
     && rule.source.includes('llms')
     && rule.source.includes('robots')
     && rule.source.includes('sitemap')
-    && hasCacheHeader(rule, rule.source, 'max-age=3600')
+    && hasCacheHeader(rule, 'max-age=3600')
   ))) {
     warn(`${rel}: discovery files should use short Cache-Control headers`)
   }
@@ -510,31 +513,6 @@ async function checkSourceLayout(paths: ReturnType<typeof projectPaths>, warn: (
       warn(`${label} is legacy; prefer src/pages, src/styles.css, src/app.ts, src/images, src/videos, src/files, or runtime instead`)
     } catch {
       /* canonical layout */
-    }
-  }
-}
-
-async function checkComponentTags(paths: ReturnType<typeof projectPaths>, warn: (m: string) => void) {
-  let names: string[]
-  try {
-    names = (await readdir(paths.componentsDir)).filter((n) => n.endsWith('.html')).map((n) => n.replace(/\.html$/, ''))
-  } catch { return }
-  const known = new Set(names)
-  const tagRe = /<([A-Z][A-Za-z0-9]*)(?:\s|\/|>)/g
-  async function scanFile(path: string) {
-    const html = await readFile(path, 'utf8').catch(() => null)
-    if (!html) return
-    for (const m of html.matchAll(tagRe)) {
-      if (known.has(m[1])) continue
-      warn(`${path}: unknown component <${m[1]} />`)
-    }
-  }
-  await scanFile(paths.shellFile)
-  const glob = new Bun.Glob('**/*.html')
-  for (const dir of [paths.routesDir, paths.pagesDir]) {
-    if (!(await Bun.file(dir).exists())) continue
-    for await (const rel of glob.scan({ cwd: dir, onlyFiles: true })) {
-      await scanFile(join(dir, rel))
     }
   }
 }
@@ -605,6 +583,22 @@ async function checkLaunchSiteConfig(context: BuildContext, fail: (m: string) =>
   }
   const image = typeof site.image === 'string' ? site.image : typeof site.ogImage === 'string' ? site.ogImage : ''
   if (!image) fail(`${rel}: launch image missing\n  hint: Set image to a real social preview image path.`)
+
+  const master = await sourceOgImagePath(context.rootDir)
+  const og = await readFile(master).then((bytes) => new Bun.Image(bytes).metadata()).catch(() => null)
+  if (!og) fail(`${master}: launch OG master missing or unreadable\n  hint: Add a 1200×630 og.png under src/images.`)
+  else if ((og.width ?? 0) < 600 || (og.height ?? 0) < 315) fail(`${master}: launch OG master is ${og.width}×${og.height}; needs at least 600×315\n  hint: Replace the placeholder with a real 1200×630 social image.`)
+
+  const starter = join(packageRoot, '..', 'templates', 'default', 'src')
+  const starterSite = JSON.parse(await readFile(join(starter, 'site.json'), 'utf8').catch(() => '{}'))
+  for (const key of ['name', 'description']) {
+    if (site[key] && site[key] === starterSite[key]) fail(`${rel}: launch ${key} is the starter's placeholder "${site[key]}"\n  hint: Set site.${key} for the real site.`)
+  }
+  const seoTitle = async (file: string) => (await readFile(file, 'utf8').catch(() => '')).match(/<SEO\b[^>]*\stitle=["']([^"']*)["']/)?.[1]
+  const indexTitle = await seoTitle(join(context.srcDir, 'pages', 'index.html'))
+  if (indexTitle && indexTitle === await seoTitle(join(starter, 'pages', 'index.html'))) {
+    fail(`src/pages/index.html: launch title is the starter's placeholder "${indexTitle}"\n  hint: Give the home page its own title.`)
+  }
 }
 
 async function checkPrivateOutputUrls(distDir: string, fail: (m: string) => void) {
@@ -721,7 +715,7 @@ export async function failOnReport(report: CheckReport, throwOnError = true) {
   if (report.errors.length && throwOnError) {
     throw new BuildError(
       `Strict checks failed (${report.errors.length}):\n  - ${report.errors.join('\n  - ')}`,
-      { hint: 'Fix the listed issues, or pass --allow-broken-links to bypass during dev.' },
+      { hint: 'Fix the listed issues. --allow-broken-links skips only the broken route and link checks.' },
     )
   }
 }
