@@ -43,6 +43,29 @@ describe('component tag parser', () => {
     expect(() => nextComponent('<Card>Missing close')).toThrow(BuildError)
   })
 
+  test('rejects single-quoted and unquoted attributes with file, line, and tag', () => {
+    for (const tag of ["<Card title='x' />", '<Card title=y />', "<Card title='x'>Body</Card>"]) {
+      let error: unknown
+      try {
+        nextComponent(`<p>Intro</p>\n${tag}`, 0, 'src/pages/page.html')
+      } catch (err) {
+        error = err
+      }
+      expect(error).toBeInstanceOf(BuildError)
+      const build = error as BuildError
+      expect(build.file).toBe('src/pages/page.html')
+      expect(build.line).toBe(2)
+      expect(build.message).toContain('<Card />')
+    }
+  })
+
+  test('accepts double-quoted values, bare flags, and values containing >', () => {
+    const match = nextComponent('<Card title="a > b" open data-id="x"/>')
+    expect(match?.attrs).toEqual({ title: 'a > b', open: '1', 'data-id': 'x' })
+    expect(match?.selfClosing).toBe(true)
+    expect(nextComponent('<Card>\n<Card title="in" />\n</Card>')?.children).toBe('\n<Card title="in" />\n')
+  })
+
   test('normalizes content tag labels separately from route slugs', () => {
     expect(slugifyTag('R&D <SEO>')).toBe('r-d-seo')
     expect(normalizeContentTags([' Case Study ', 'case-study', 'R&D <SEO>', '!!!'])).toEqual([

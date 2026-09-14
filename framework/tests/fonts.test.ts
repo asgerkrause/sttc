@@ -13,17 +13,17 @@ describe('font emit', () => {
     expect(fontFormat('sans.woff2')).toBe('woff2')
   })
 
-  test('preloads hashed files referenced by @font-face', () => {
+  test('preloads the first url() of each @font-face', () => {
     const css = `@font-face {
   font-family: "SNZ Sans";
-  src: url("./sans.abc123.woff") format("woff");
+  src: url("./sans.abc123.woff2") format("woff2"), url("./sans.abc123.woff") format("woff");
 }
 @font-face {
   font-family: "SNZ Mono";
   src: url("./mono.def456.woff") format("woff");
 }`
     expect(fontPreloadsFromCss(css)).toEqual([
-      '/assets/css/sans.abc123.woff',
+      '/assets/css/sans.abc123.woff2',
       '/assets/css/mono.def456.woff',
     ])
   })

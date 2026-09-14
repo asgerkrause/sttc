@@ -269,19 +269,26 @@ function warnHugeMaster(file: string, width: number, height: number) {
   )
 }
 
+/**
+ * Remove outputs no current master accounts for. Filenames are never parsed back into logical
+ * names (a master called photo-2024 must survive); the sidecars say which files belong to whom.
+ */
 export async function pruneStaleImages(distDir: string, currentNames: Iterable<string>) {
-  const keep = new Set(currentNames)
-  try {
-    for (const entry of await readdir(distDir, { withFileTypes: true })) {
-      if (!entry.isFile()) continue
-      const match = entry.name.match(/^(.+?)(?:-\d+)?\.webp$/i)
-      if (!match) continue
-      const name = match[1]
-      if (name === 'og' || keep.has(name)) continue
-      await unlink(join(distDir, entry.name))
-      await unlink(sidecarPath(distDir, name)).catch(() => {})
-    }
-  } catch { /* dist dir not present yet */ }
+  const names = new Set(currentNames)
+  const keep = new Set<string>()
+  for (const name of names) {
+    keep.add(`${name}.webp`)
+    for (const variant of (await readSidecar(sidecarPath(distDir, name)))?.variants ?? []) keep.add(variant.file)
+  }
+  const entries = await readdir(distDir, { withFileTypes: true }).catch(() => [])
+  for (const entry of entries) {
+    if (!entry.isFile() || !/\.webp$/i.test(entry.name) || keep.has(entry.name)) continue
+    await unlink(join(distDir, entry.name))
+  }
+  const sidecars = await readdir(join(distDir, '.meta')).catch(() => [])
+  for (const file of sidecars) {
+    if (file.endsWith('.json') && !names.has(basename(file, '.json'))) await unlink(join(distDir, '.meta', file))
+  }
 }
 
 async function rasterFiles(dir: string): Promise<string[]> {

@@ -60,6 +60,32 @@ describe('project CSS flatten', () => {
     expect((await readdir(distCss)).filter((name) => name.endsWith('.css'))).toEqual([result!.filename])
   })
 
+  test('flattens @import layer(), bare layer, supports(), and media conditions', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sttc-css-'))
+    tempDirs.push(dir)
+    const stylesDir = join(dir, 'src', 'styles')
+    const distCss = join(dir, 'dist', 'assets', 'css')
+    await mkdir(stylesDir, { recursive: true })
+    await mkdir(distCss, { recursive: true })
+    await writeFile(join(dir, 'src', 'styles.css'), '@import "/assets/css/global.css";\n')
+    await writeFile(join(stylesDir, 'global.css'), `@import "./x.css" layer(vendor);
+@import "./y.css" supports(display: grid) screen;
+@import "./z.css" layer supports((display: grid) or (display: flex)) print and (min-width: 1px);
+`)
+    await writeFile(join(stylesDir, 'x.css'), 'x { color: red; }\n')
+    await writeFile(join(stylesDir, 'y.css'), 'y { color: red; }\n')
+    await writeFile(join(stylesDir, 'z.css'), 'z { color: red; }\n')
+
+    const result = await bundleProjectCss(join(dir, 'src', 'styles.css'), stylesDir, distCss)
+    const css = await readFile(join(distCss, result!.filename), 'utf8')
+    expect(css).not.toContain('@import')
+    expect(css).toContain('@layer vendor {\nx { color: red; }\n}')
+    expect(css).toContain('@media screen {\n@supports (display: grid) {\ny { color: red; }\n}\n}')
+    expect(css).toContain(
+      '@media print and (min-width: 1px) {\n@supports ((display: grid) or (display: flex)) {\n@layer {\nz { color: red; }\n}\n}\n}',
+    )
+  })
+
   test('fails when @font-face points at a missing WOFF', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'sttc-css-'))
     tempDirs.push(dir)

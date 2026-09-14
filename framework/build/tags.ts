@@ -2,11 +2,13 @@
 // Replaces build/attrs.ts and the various COMPONENT_TAG_RE / IMAGE_TAG_RE / SEO regexes
 // that used to live scattered across compose.ts and scan-images.ts.
 
-import { BuildError, lineOf } from './errors'
+import { buildErrorAt, BuildError, lineOf } from './errors'
 
-// `<Component attr="value" flag />` — PascalCase only.
-const ATTRS_GROUP = '(?:\\s+(?:[\\w-]+(?:="[^"]*")?))*'
-export const COMPONENT_OPEN_RE = new RegExp(`<([A-Z][A-Za-z0-9]*)(${ATTRS_GROUP})\\s*(/?)>`, 'g')
+// `<Component attr="value" flag />` — PascalCase only. The tag is matched loosely (anything up to
+// `>`, quotes respected) so a malformed attribute list is an error, not silently passed through.
+const LOOSE_ATTRS = '((?:"[^"]*"|[^>"])*?)(/?)'
+export const COMPONENT_OPEN_RE = new RegExp(`<([A-Z][A-Za-z0-9]*)\\b${LOOSE_ATTRS}>`, 'g')
+const STRICT_ATTRS_RE = /^(?:\s+[\w-]+(?:="[^"]*")?)*\s*$/
 const ATTR_PAIR_RE = /([\w-]+)(?:="([^"]*)")?/g
 
 export type ComponentMatch = {
@@ -37,6 +39,12 @@ export function nextComponent(html: string, from = 0, fileHint?: string): Compon
   const m = COMPONENT_OPEN_RE.exec(html)
   if (!m) return null
   const [full, name, attrPart, slash] = m
+  if (!STRICT_ATTRS_RE.test(attrPart)) {
+    throw buildErrorAt(`<${name} /> has malformed attributes: ${full}`, html, m.index, {
+      file: fileHint,
+      hint: 'Write attributes as name="value" with double quotes, or as a bare flag.',
+    })
+  }
   const attrs = parseAttrs(attrPart)
   const openEnd = m.index + full.length
 
@@ -46,7 +54,7 @@ export function nextComponent(html: string, from = 0, fileHint?: string): Compon
 
   // Paired form: find matching `</Name>`, respecting nesting of same-name opens.
   const closeRe = new RegExp(`</${name}>`, 'g')
-  const openRe = new RegExp(`<${name}(?:${ATTRS_GROUP})\\s*>`, 'g')
+  const openRe = new RegExp(`<${name}\\b${LOOSE_ATTRS}>`, 'g')
   closeRe.lastIndex = openEnd
   openRe.lastIndex = openEnd
 
@@ -65,7 +73,7 @@ export function nextComponent(html: string, from = 0, fileHint?: string): Compon
     openRe.lastIndex = pos
     let open = openRe.exec(html)
     while (open && open.index < close.index) {
-      depth++
+      if (open[2] !== '/') depth++
       pos = open.index + open[0].length
       openRe.lastIndex = pos
       open = openRe.exec(html)

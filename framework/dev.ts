@@ -1,6 +1,6 @@
 import { watch } from 'fs'
 import { stat as fsStat } from 'fs/promises'
-import { basename, join } from 'path'
+import { basename, join, sep } from 'path'
 import { spawn } from 'bun'
 import { isAssetPath } from './runtime/lib/paths.js'
 
@@ -9,6 +9,7 @@ const root = process.cwd()
 const src = join(root, 'src')
 const dist = join(root, 'dist')
 const preferredPort = Number(process.env.PORT ?? 3000)
+const hostname = process.env.HOST ?? '127.0.0.1'
 
 let building = false
 let dirty = false           // event arrived while we were building or absorbing — needs a build after the window
@@ -35,7 +36,6 @@ async function runBuild() {
   }
   building = true
   dirty = false
-  broadcast('building')
   const proc = spawn(['bun', join(packageRoot, 'build', 'index.ts')], {
     cwd: root,
     stdout: 'inherit',
@@ -47,7 +47,7 @@ async function runBuild() {
   buildCooldownUntil = Date.now() + ECHO_ABSORB_MS
   if (code !== 0) {
     console.error('Build failed')
-    broadcast('error')
+    broadcast('build-error')
   } else {
     broadcast('reload')
   }
@@ -130,14 +130,15 @@ const HMR_CLIENT = `
 (() => {
   if (window.__snzHmr) return; window.__snzHmr = true
   let reloading = false
-  const es = new EventSource('/__snz/events')
-  es.addEventListener('reload', () => {
+  const reload = () => {
     if (reloading) return
     reloading = true
     location.reload()
-  })
-  es.addEventListener('building', () => { document.documentElement.dataset.snzBuilding = '1' })
-  es.addEventListener('error', () => { /* server restart, EventSource auto-reconnects */ })
+  }
+  const es = new EventSource('/__snz/events')
+  // A failed build reloads into the error page; the next good build reloads back to the site.
+  es.addEventListener('reload', reload)
+  es.addEventListener('build-error', reload)
 })()
 `
 
@@ -176,46 +177,45 @@ async function handleRequest(req: Request) {
     // If the most recent build failed, serve the error banner for all HTML requests.
     const errorPage = Bun.file(join(dist, '__build-error.html'))
     const wantsHtml = !isAssetPath(path) || path.endsWith('.html') || path === '/'
-    if (wantsHtml && (await errorPage.exists())) {
-      return new Response(errorPage, { status: 500, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
-    }
+    if (wantsHtml && (await errorPage.exists())) return htmlResponse(await errorPage.text(), 500)
 
     const filePath = path === '/' ? '/index.html' : path
 
-    const candidates = filePath.endsWith('.html') ? [filePath] : [filePath, `${filePath}.html`]
+    const candidates = filePath.endsWith('.html') ? [filePath] : [filePath, `${filePath}.html`, `${filePath}/index.html`]
     for (const p of candidates) {
-      const f = Bun.file(join(dist, p))
+      const abs = join(dist, p)
+      if (!abs.startsWith(dist + sep)) return new Response('Not found', { status: 404 })
+      const f = Bun.file(abs)
       if (await f.exists()) {
-        // Inject HMR client into HTML responses
-        if (p.endsWith('.html')) {
-          const text = await f.text()
-          const withHmr = text.replace('</body>', '<script src="/__snz/hmr.js" defer></script></body>')
-          return new Response(withHmr, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
-        }
+        if (p.endsWith('.html')) return htmlResponse(await f.text())
         return new Response(f)
       }
     }
 
     if (isAssetPath(path)) return new Response('Not found', { status: 404 })
 
-    // SPA fallback to the shell. If the shell hasn't been built yet, show a friendly waiting page
-    // (initial build still running, or a failure before __build-error.html was emitted).
-    const shell = Bun.file(join(dist, 'index.html'))
-    if (!(await shell.exists())) {
+    // Until the first build lands there is no site to serve; show a waiting page that polls.
+    if (!(await Bun.file(join(dist, 'index.html')).exists())) {
       return new Response(waitingPage(), {
         status: 503,
         headers: { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '1' },
       })
     }
-    const idx = await shell.text()
-    const withHmr = idx.replace('</body>', '<script src="/__snz/hmr.js" defer></script></body>')
-    return new Response(withHmr, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+    const notFound = Bun.file(join(dist, '404', 'index.html'))
+    if (await notFound.exists()) return htmlResponse(await notFound.text(), 404)
+    return new Response('Not found', { status: 404 })
+}
+
+/** Every HTML response carries the HMR client so a rebuild reloads the tab, error page included. */
+function htmlResponse(html: string, status = 200) {
+  const withHmr = html.replace('</body>', '<script src="/__snz/hmr.js" defer></script></body>')
+  return new Response(withHmr, { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
 }
 
 async function startServer() {
   for (let port = preferredPort; port < preferredPort + 20; port++) {
     try {
-      return Bun.serve({ port, fetch: handleRequest, idleTimeout: 255 })
+      return Bun.serve({ hostname, port, fetch: handleRequest, idleTimeout: 255 })
     } catch (err) {
       const code = typeof err === 'object' && err && 'code' in err ? String(err.code) : ''
       const message = err instanceof Error ? err.message : String(err)
@@ -264,7 +264,7 @@ poll()
 </body></html>`
 }
 
-console.log(`http://localhost:${server.port}`)
+console.log(`http://${server.hostname}:${server.port}`)
 
 const watchers = new Map<string, ReturnType<typeof watch>>()
 
