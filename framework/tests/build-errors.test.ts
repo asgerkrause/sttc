@@ -291,12 +291,13 @@ describe('build error source spans', () => {
 
   test('never rescans interpolated attribute text as a slot', async () => {
     const html = await composer().prepareRouteSource(
-      '<Titled title="{{slot}}">say "hello"</Titled>\n<Titled title="Caf&eacute;"><b>x</b></Titled>',
+      '<Titled title="{{slot}}">say "hello"</Titled>\n<Titled title="Caf&eacute;"><b>x</b></Titled>\n<Titled title="Price &#128;10 &constructor;">Caf&#233 &constructor;</Titled>',
       { slug: 'page', fileHint: 'src/pages/page.html' },
     )
     // The literal attribute value is text, not a slot; the prune then drops it as an unresolved placeholder.
     expect(html).toContain('<div>say "hello"</div>')
     expect(html).toContain('<div title="Café"><b>x</b></div>')
+    expect(html).toContain('<div title="Price €10 &amp;constructor;">Caf&#233 &constructor;</div>')
   })
 
   test('renders SEO titles once from escaped attribute text', async () => {

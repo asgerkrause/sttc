@@ -25,6 +25,8 @@ describe('HTML discovery helpers', () => {
     expect(decodeEntities('Caf&eacute; &copy; a &ndash; b&hellip;')).toBe('Café © a – b…')
     expect(decodeEntities('&#38;amp; &#x26; &amp;lt;')).toBe('&amp; & &lt;')
     expect(decodeEntities('&bogus; &copy=1 x &amp y')).toBe('&bogus; &copy=1 x & y')
+    expect(decodeEntities('Price &#128;10 &#x9F; Caf&#233 Caf&#xE9 x')).toBe('Price €10 Ÿ Café Café x')
+    expect(decodeEntities('&constructor; &toString; &valueOf; &__proto__;')).toBe('&constructor; &toString; &valueOf; &__proto__;')
   })
 
   test('extracts meta description content', () => {
