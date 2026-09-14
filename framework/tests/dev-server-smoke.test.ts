@@ -156,6 +156,14 @@ describe('dev server smoke', () => {
     expect(notFoundFragment.response.status).toBe(200)
     expect(notFoundFragment.body).toContain('Not found')
 
+    for (const url of [`${base}/docs/`, `${base}/docs`]) {
+      const docs = await text(url)
+      expect(docs.response.status).toBe(200)
+      expect(docs.body).toContain('<script src="/__snz/hmr.js" defer></script>')
+      expect(docs.body).toBe((await Bun.file(join(process.cwd(), 'dist', 'docs', 'index.html')).text())
+        .replace('</body>', '<script src="/__snz/hmr.js" defer></script></body>'))
+    }
+
     const notFound = await text(`${base}/not-real/`)
     expect(notFound.response.status).toBe(404)
     expect(notFound.body).toContain('Not found')

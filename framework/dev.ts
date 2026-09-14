@@ -181,7 +181,7 @@ async function handleRequest(req: Request) {
 
     const filePath = path === '/' ? '/index.html' : path
 
-    const candidates = filePath.endsWith('.html') ? [filePath] : [filePath, `${filePath}.html`]
+    const candidates = filePath.endsWith('.html') ? [filePath] : [filePath, `${filePath}.html`, `${filePath}/index.html`]
     for (const p of candidates) {
       const abs = join(dist, p)
       if (!abs.startsWith(dist + sep)) return new Response('Not found', { status: 404 })
