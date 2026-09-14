@@ -35,6 +35,7 @@ declare global {
     isVisible(el: Element, options?: Pick<SnzVisibilityOptions, 'threshold'>): boolean
     onActive(el: Element, handlers?: SnzVisibilityOptions): () => void
     isActive(el: Element, options?: Pick<SnzVisibilityOptions, 'threshold'>): boolean
+    registerComponent(name: string, fn: SnzComponentMount): () => void
     _registerComponent(name: string, fn: SnzComponentMount): () => void
   }
 

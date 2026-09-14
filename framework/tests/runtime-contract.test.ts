@@ -19,7 +19,7 @@ describe('runtime ownership contracts', () => {
     expect(rootTypes).not.toContain('window.va')
     expect(rootTypes).toContain("'snz:page': CustomEvent<SnzPageDetail>")
     expect(rootTypes).toContain("'snz:track': CustomEvent<{ event: string; data: Record<string, unknown> }>")
-    for (const method of ['page', 'onPage', 'track', 'onVisible', 'isVisible', 'onActive', 'isActive', '_registerComponent']) {
+    for (const method of ['page', 'onPage', 'track', 'onVisible', 'isVisible', 'onActive', 'isActive', 'registerComponent', '_registerComponent']) {
       expect(rootTypes).toContain(`${method}(`)
     }
     for (const removed of ['navigate', 'prefetch', 'beforeNavigate', 'afterNavigate', '_reload', '_mountComponents', '_unmountIn']) {
@@ -57,7 +57,7 @@ describe('runtime ownership contracts', () => {
     const api = router.slice(router.indexOf('window.snz = {'), router.indexOf('}', router.indexOf('window.snz = {')))
     const keys = api.split('\n').slice(1).map((line) => line.trim().replace(/[:,].*$/, '')).filter(Boolean).sort()
 
-    expect(keys).toEqual(['_registerComponent', 'isActive', 'isVisible', 'onActive', 'onPage', 'onVisible', 'page', 'track'])
+    expect(keys).toEqual(['_registerComponent', 'isActive', 'isVisible', 'onActive', 'onPage', 'onVisible', 'page', 'registerComponent', 'track'])
     expect(router).toContain('return document.documentElement.dataset.snzRoute')
     expect(router).toContain("window.addEventListener('DOMContentLoaded', activatePage")
     expect(router).toContain("document.dispatchEvent(new CustomEvent('snz:page', { detail }))")
@@ -70,7 +70,7 @@ describe('runtime ownership contracts', () => {
 
     expect(router).toContain("const main = document.querySelector('body > main')")
     expect(router).toContain('function registerComponent')
-    expect(router).toContain('_registerComponent: registerComponent')
+    expect(router).toContain('  registerComponent,\n  _registerComponent: registerComponent,')
     expect(router).toContain('mountComponents(main ?? document)')
     expect(router).toContain("componentRoots(root, '[data-snz-component]')")
     expect(router).toContain('if (componentCleanups.has(el)) continue')

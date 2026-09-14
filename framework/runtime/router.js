@@ -283,6 +283,7 @@ window.snz = {
   isVisible,
   onActive,
   isActive,
+  registerComponent,
   _registerComponent: registerComponent,
 }
 
