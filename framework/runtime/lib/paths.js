@@ -13,10 +13,6 @@ export function publicPath(pathname) {
   return pathname.endsWith('/') ? pathname : `${pathname}/`
 }
 
-export function fetchPath(pathname) {
-  return `/routes/${slugFromPath(pathname)}.html`
-}
-
 export function isAssetPath(path) {
   return (
     path.startsWith('/routes/') ||
