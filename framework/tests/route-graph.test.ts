@@ -101,6 +101,9 @@ describe('route graph', () => {
 
     await graph.compose({ slug: 'insights', kind: 'static', source: 'src/pages/insights.html' }, '<h1>Authored</h1>')
     expect(graph.records().map((record) => record.slug)).toEqual(['insights'])
+    await expect(graph.compose({ slug: 'insights', kind: 'static', source: 'src/pages/insights.html' }, '<h1>Again</h1>'))
+      .rejects.toThrow('Duplicate route slug "insights"')
+    expect(graph.records()).toHaveLength(1)
   })
 })
 
@@ -132,6 +135,13 @@ describe('generated post indexes', () => {
     await autoGenerateIndexes(graph, [{ ...post, slug: 'hello' }], { route: '{slug}' })
 
     expect(graph.slugs()).toEqual(['tags', 'tags/craft'])
+  })
+
+  test('fails when the posts index collides with the tags index', async () => {
+    const graph = new RouteGraph({ composer: testComposer() })
+
+    await expect(autoGenerateIndexes(graph, [{ ...post, slug: 'tags/hello' }], { route: 'tags/{slug}' })).rejects.toThrow('Duplicate route slug "tags"')
+    expect(graph.records().filter((record) => record.slug === 'tags')).toHaveLength(1)
   })
 
   test('fails when the index collides with an authored page', async () => {

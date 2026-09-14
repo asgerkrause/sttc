@@ -31,6 +31,7 @@ export type RouteComposeOptions = {
 
 export class RouteGraph {
   #routes = new Map<string, RouteOwner>()
+  #composed = new Set<string>()
   #records: Array<RouteRecord | undefined> = []
   #nextIndex = 0
   #composer: RouteComposer
@@ -41,6 +42,13 @@ export class RouteGraph {
     this.#instancesFor = options.instancesFor ?? (() => [])
   }
 
+  #duplicate(owner: RouteOwner, existing: RouteOwner) {
+    return new BuildError(`Duplicate route slug "${owner.slug}"`, {
+      file: owner.source,
+      hint: `${owner.source} (${owner.kind}) conflicts with ${existing.source} (${existing.kind}) at /${owner.slug === 'index' ? '' : `${owner.slug}/`}`,
+    })
+  }
+
   register(owner: RouteOwner) {
     const existing = this.#routes.get(owner.slug)
     // Preferred src/pages static routes intentionally replace legacy src/routes routes.
@@ -48,17 +56,15 @@ export class RouteGraph {
       this.#routes.set(owner.slug, owner)
       return owner
     }
-
-    throw new BuildError(`Duplicate route slug "${owner.slug}"`, {
-      file: owner.source,
-      hint: `${owner.source} (${owner.kind}) conflicts with ${existing.source} (${existing.kind}) at /${owner.slug === 'index' ? '' : `${owner.slug}/`}`,
-    })
+    throw this.#duplicate(owner, existing)
   }
 
   async compose(owner: RouteOwner, body: string, options: RouteComposeOptions = {}) {
     const existing = this.#routes.get(owner.slug)
-    // Only the registered owner may compose its slug; anyone else hits the duplicate check.
+    // A slug composes once, by its registered owner; anything else is a duplicate route.
+    if (existing && this.#composed.has(owner.slug)) throw this.#duplicate(owner, existing)
     const route = existing && existing.kind === owner.kind && existing.source === owner.source ? existing : this.register(owner)
+    this.#composed.add(route.slug)
     const { html, unlisted } = await this.#composer.prepareRoute(body, {
       slug: route.slug,
       fileHint: route.source,

@@ -70,7 +70,7 @@ export async function autoGenerateIndexes(
   ${postLinkList(posts)}
 </Section>`)
     await routeGraph.compose(
-      { slug: indexSlug, kind: 'generated', source: `generated:${indexSlug}` },
+      { slug: indexSlug, kind: 'generated', source: 'generated:posts-index' },
       body,
       { schemas: ['CollectionPage'] },
     )
@@ -105,7 +105,7 @@ export async function autoGenerateIndexes(
   <p><a href="/tags/">← All tags</a></p>
 </Section>`)
     await routeGraph.compose(
-      { slug, kind: 'generated', source: `generated:${slug}` },
+      { slug, kind: 'generated', source: `generated:tag:${tagSlug}` },
       body,
       { schemas: ['CollectionPage'] },
     )
@@ -125,7 +125,7 @@ export async function autoGenerateIndexes(
   </ul>
 </Section>`
   await routeGraph.compose(
-    { slug: 'tags', kind: 'generated', source: 'generated:tags' },
+    { slug: 'tags', kind: 'generated', source: 'generated:tags-index' },
     body,
     { schemas: ['CollectionPage'] },
   )
