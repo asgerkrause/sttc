@@ -1,10 +1,11 @@
 import { stat } from 'fs/promises'
-import { extname, join } from 'path'
+import { extname, join, sep } from 'path'
 import { isAssetPath } from './runtime/lib/paths.js'
 
 const root = process.cwd()
 const dist = join(root, 'dist')
 const preferredPort = Number(process.env.PORT ?? 4173)
+const hostname = process.env.HOST ?? '127.0.0.1'
 
 const COMPRESSED = /\.(woff2?|png|jpe?g|webp|gif|avif|mp4|zip|gz)$/i
 const ASSET_CACHE = 'public, max-age=31536000, immutable'
@@ -39,7 +40,9 @@ function wantsGzip(req: Request, path: string, type: string | undefined) {
 }
 
 async function fileResponse(req: Request, urlPath: string, status = 200) {
-  const file = Bun.file(join(dist, urlPath))
+  const abs = join(dist, urlPath)
+  if (!abs.startsWith(dist + sep)) return null
+  const file = Bun.file(abs)
   if (!(await file.exists())) return null
   const type = typeOf(urlPath) ?? file.type
   const headers: Record<string, string> = {
@@ -66,8 +69,8 @@ async function handleRequest(req: Request) {
     if (response) return response
   }
   if (isAssetPath(path)) return new Response('Not found', { status: 404 })
-  const fallback = await fileResponse(req, '/index.html')
-  if (fallback) return fallback
+  const notFound = await fileResponse(req, '/404/index.html', 404)
+  if (notFound) return notFound
   return new Response('Not found', { status: 404 })
 }
 
@@ -78,8 +81,8 @@ if (!(await stat(dist).then((entry) => entry.isDirectory()).catch(() => false)))
 
 for (let port = preferredPort; port < preferredPort + 20; port++) {
   try {
-    const server = Bun.serve({ port, fetch: handleRequest })
-    console.log(`preview http://localhost:${server.port}`)
+    const server = Bun.serve({ hostname, port, fetch: handleRequest })
+    console.log(`preview http://${server.hostname}:${server.port}`)
     break
   } catch (err) {
     const code = typeof err === 'object' && err && 'code' in err ? String(err.code) : ''

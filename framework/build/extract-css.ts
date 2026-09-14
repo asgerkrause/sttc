@@ -132,18 +132,48 @@ async function flattenCss(
     if (inCssComment(source, index)) continue
     parts.push(rewriteLocalUrls(source.slice(cursor, index), real, stylesDir, destBySource))
     const specifier = match[1] ?? match[2] ?? match[3] ?? ''
-    const media = (match[4] ?? '').trim()
     const resolved = resolveCssSpecifier(specifier, real, stylesDir)
     if (!resolved) {
       parts.push(match[0])
     } else {
       const nested = await flattenCss(resolved, stylesDir, destBySource, nextStack)
-      parts.push(media ? `@media ${media} {\n${nested}\n}` : nested)
+      parts.push(wrapImportConditions(nested, match[4] ?? ''))
     }
     cursor = index + match[0].length
   }
   parts.push(rewriteLocalUrls(source.slice(cursor), real, stylesDir, destBySource))
   return parts.join('\n')
+}
+
+/**
+ * `@import "x.css" layer(name) supports(cond) media;` inlines as
+ * `@media media { @supports cond { @layer name { … } } }`, the cascade the import rule would have
+ * produced. Each part is optional; a bare `layer` gives an anonymous layer.
+ */
+function wrapImportConditions(css: string, conditions: string) {
+  let rest = conditions.trim()
+  let out = css
+  const layer = rest.match(/^layer(?:\(([^)]*)\))?(?=\s|$)/)
+  if (layer) {
+    const name = layer[1]?.trim()
+    out = `@layer ${name ? `${name} ` : ''}{\n${out}\n}`
+    rest = rest.slice(layer[0].length).trim()
+  }
+  if (/^supports\(/.test(rest)) {
+    const end = matchingParen(rest, 'supports'.length)
+    out = `@supports ${rest.slice('supports'.length, end + 1)} {\n${out}\n}`
+    rest = rest.slice(end + 1).trim()
+  }
+  return rest ? `@media ${rest} {\n${out}\n}` : out
+}
+
+function matchingParen(text: string, open: number) {
+  let depth = 0
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '(') depth++
+    else if (text[i] === ')' && --depth === 0) return i
+  }
+  return text.length - 1
 }
 
 function inCssComment(source: string, index: number) {

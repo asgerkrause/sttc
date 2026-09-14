@@ -23,15 +23,13 @@ export function fontMime(filename: string) {
   return extname(filename).toLowerCase() === '.woff2' ? 'font/woff2' : 'font/woff'
 }
 
+/** One preload per @font-face: its first url(), the one the browser fetches when it matches. */
 export function fontPreloadsFromCss(css: string) {
   const hrefs: string[] = []
   const faces = css.match(/@font-face\s*\{[\s\S]*?\}/gi) ?? []
   for (const face of faces) {
-    const urls = face.matchAll(/url\(\s*["']?\.\/([^"')]+)["']?\s*\)/gi)
-    for (const match of urls) {
-      const file = match[1]
-      if (file && isFontFile(file)) hrefs.push(`/assets/css/${file}`)
-    }
+    const file = face.match(/url\(\s*["']?\.\/([^"')]+)["']?\s*\)/i)?.[1]
+    if (file && isFontFile(file)) hrefs.push(`/assets/css/${file}`)
   }
   return [...new Set(hrefs)]
 }

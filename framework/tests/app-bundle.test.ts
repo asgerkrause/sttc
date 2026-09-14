@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { BuildError } from '../build/errors'
 import { componentScriptBlocks, writeAppJs, type ScriptBlock } from '../build/extract-js'
 
 const tempDirs: string[] = []
@@ -51,6 +52,45 @@ describe('app bundle writer', () => {
     expect(bundled).toContain('window.snz?._registerComponent("Counter"')
     expect(bundled).toContain('window.__mountedComponent=')
     expect(bundled).toContain('.dataset.snzComponent')
+  })
+
+  test('names the component file when a lifecycle script does not parse', async () => {
+    const root = await makeTempDir()
+    const src = join(root, 'src')
+    const dist = join(root, 'dist', 'assets', 'js')
+    await mkdir(src, { recursive: true })
+    await writeFile(join(src, 'app.js'), 'window.__appLoaded = true\n')
+
+    const blocks = componentScriptBlocks(new Map([
+      ['Counter', ['window.__ok = 1']],
+      ['Hero', ['const = 1']],
+    ]))
+    let error: unknown
+    try {
+      await writeAppJs(join(src, 'app.js'), dist, blocks)
+    } catch (err) {
+      error = err
+    }
+    expect(error).toBeInstanceOf(BuildError)
+    expect((error as BuildError).file).toBe('src/components/Hero.html')
+    expect((error as BuildError).message).toContain('component:Hero')
+    expect((error as BuildError).message).not.toContain('.app-build')
+  })
+
+  test('names the app entry when it does not bundle', async () => {
+    const root = await makeTempDir()
+    const src = join(root, 'src')
+    const dist = join(root, 'dist', 'assets', 'js')
+    await mkdir(src, { recursive: true })
+    await writeFile(join(src, 'app.ts'), 'const = 1\n')
+    let error: unknown
+    try {
+      await writeAppJs(join(src, 'app.ts'), dist, [])
+    } catch (err) {
+      error = err
+    }
+    expect(error).toBeInstanceOf(BuildError)
+    expect((error as BuildError).file).toBe(join(src, 'app.ts'))
   })
 
   test('inlines PUBLIC env values without private env values', async () => {

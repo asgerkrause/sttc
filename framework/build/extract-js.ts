@@ -6,7 +6,7 @@ import { assetHash } from './hash'
 export const INLINE_SCRIPT_RE =
   /<script(?![^>]*\bsrc=)(?![^>]*type=["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>/gi
 
-export type ScriptBlock = { label: string; slug?: string; code: string }
+export type ScriptBlock = { label: string; slug?: string; code: string; file?: string }
 
 function indent(code: string, spaces = 2) {
   const pad = ' '.repeat(spaces)
@@ -67,12 +67,12 @@ export function extractShellHeadScripts(raw: string): { html: string; blocks: Sc
   const headInner = headMatch[1]
   const { html: cleanedHead, scripts } = extractInlineScripts(headInner)
   const html = raw.replace(headMatch[0], `<head>\n${cleanedHead}\n</head>`)
-  const blocks = scripts.map((code) => ({ label: 'shell', code }))
+  const blocks = scripts.map((code) => ({ label: 'shell', code, file: 'src/shell.html' }))
   return { html, blocks }
 }
 
-export function routeScriptBlocks(slug: string, scripts: string[]): ScriptBlock[] {
-  return scripts.map((code) => ({ label: `route:${slug}`, slug, code }))
+export function routeScriptBlocks(slug: string, scripts: string[], file = `src/pages/${slug}.html`): ScriptBlock[] {
+  return scripts.map((code) => ({ label: `route:${slug}`, slug, code, file }))
 }
 
 /**
@@ -87,7 +87,7 @@ export function componentScriptBlocks(byComponent: Map<string, string[]>): Scrip
       .map((b, i) => `// block ${i + 1}\n${b}`)
       .join('\n\n')
     const wrapped = `window.snz?._registerComponent('${name}', (el) => {\n${indent(body)}\n});`
-    out.push({ label: `component:${name}`, code: wrapped })
+    out.push({ label: `component:${name}`, code: wrapped, file: `src/components/${name}.html` })
   }
   return out
 }
@@ -148,6 +148,7 @@ export async function writeAppJs(
       splitting: false,
       sourcemap: 'none',
       define: publicEnvDefines(),
+      throw: false,
     })
     if (!result.success) {
       const message = result.logs.map((log) => log.message).filter(Boolean).join('\n') || `Could not bundle ${srcAppPath}`
@@ -164,7 +165,7 @@ export async function writeAppJs(
 
   let out = appCode.endsWith('\n') ? appCode : `${appCode}\n`
   out += generatedScriptCode(blocks)
-  out = await minifyBrowserJs(out, join(tempDir, 'app.combined.js'))
+  out = await minifyBrowserJs(out, join(tempDir, 'app.combined.js'), blocks, srcAppPath)
 
   const hash = assetHash(out)
   const filename = `app.${hash}.js`
@@ -188,6 +189,7 @@ export async function writeRouterJs(srcRouterPath: string, distJsDir: string): P
     minify: true,
     splitting: false,
     sourcemap: 'none',
+    throw: false,
   })
   if (!result.success) {
     const message = result.logs.map((log) => log.message).filter(Boolean).join('\n') || `Could not bundle ${srcRouterPath}`
@@ -210,7 +212,7 @@ export async function writeRouterJs(srcRouterPath: string, distJsDir: string): P
   return filename
 }
 
-async function minifyBrowserJs(code: string, tempFile: string) {
+async function minifyBrowserJs(code: string, tempFile: string, blocks: ScriptBlock[], appFile: string) {
   await writeFile(tempFile, code)
   const result = await Bun.build({
     entrypoints: [tempFile],
@@ -221,8 +223,23 @@ async function minifyBrowserJs(code: string, tempFile: string) {
     splitting: false,
     sourcemap: 'none',
     naming: 'app.min.js',
+    throw: false,
   })
-  if (!result.success) return code
+  if (!result.success) {
+    // Blame the authored block, never the temp file: the nearest `// build:` marker above the
+    // failing line names it. Lines before the first marker are the bundled app entry.
+    const failure = result.logs.find((log) => log.level === 'error') ?? result.logs[0]
+    const line = failure?.position?.line ?? 0
+    const marker = code.split('\n', line).reverse().find((text) => text.startsWith('// build: '))
+    const block = marker ? blocks.find((candidate) => candidate.label === marker.slice('// build: '.length)) : undefined
+    const where = failure?.position?.lineText ? `\n  ${failure.position.lineText.trim()}` : ''
+    throw new BuildError(`${failure?.message ?? 'Could not bundle scripts'} in ${block?.label ?? 'app'}${where}`, {
+      file: block?.file ?? appFile,
+      hint: block
+        ? `Fix the <script> in ${block.file ?? block.label}.`
+        : 'Check the bundled output of src/app.ts.',
+    })
+  }
   const output = result.outputs.find((file) => file.path.endsWith('.js'))
   return output ? await output.text() : code
 }
