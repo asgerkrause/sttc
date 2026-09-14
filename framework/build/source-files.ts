@@ -1,6 +1,6 @@
 import { stat } from 'fs/promises'
 import { join } from 'path'
-import { routesDir } from './paths'
+import { src } from './paths'
 import { BuildError } from './errors'
 
 export type SourceRoute = {
@@ -8,7 +8,6 @@ export type SourceRoute = {
   sourcePath: string
   sourceRel: string
   outFile: string
-  legacy: boolean
 }
 
 async function exists(path: string) {
@@ -54,32 +53,15 @@ async function scanHtml(dir: string) {
 }
 
 export async function discoverSourceRoutes(options: { srcDir?: string } = {}): Promise<SourceRoute[]> {
-  const sourceRoot = options.srcDir ?? join(routesDir, '..')
-  const sourceRoutesDir = join(sourceRoot, 'routes')
-  const sourcePagesDir = join(sourceRoot, 'pages')
-  const routes = new Map<string, SourceRoute>()
-
-  for (const rel of await scanHtml(sourceRoutesDir)) {
+  const sourcePagesDir = join(options.srcDir ?? src, 'pages')
+  const routes = (await scanHtml(sourcePagesDir)).map((rel) => {
     const slug = slugFromPageRel(rel)
-    routes.set(slug, {
-      slug,
-      sourcePath: join(sourceRoutesDir, rel),
-      sourceRel: `src/routes/${rel}`,
-      outFile: outFileFromSlug(slug),
-      legacy: true,
-    })
-  }
-
-  for (const rel of await scanHtml(sourcePagesDir)) {
-    const slug = slugFromPageRel(rel)
-    routes.set(slug, {
+    return {
       slug,
       sourcePath: join(sourcePagesDir, rel),
       sourceRel: `src/pages/${rel}`,
       outFile: outFileFromSlug(slug),
-      legacy: false,
-    })
-  }
-
-  return [...routes.values()].sort((a, b) => a.slug.localeCompare(b.slug))
+    }
+  })
+  return routes.sort((a, b) => a.slug.localeCompare(b.slug))
 }

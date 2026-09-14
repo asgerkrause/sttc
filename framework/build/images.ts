@@ -121,7 +121,6 @@ export async function imageSourceRoots(projectRoot = process.cwd()): Promise<Ima
   )
   const roots = uniqueRoots([
     sourceRoot(projectRoot, 'src/images'),
-    sourceRoot(projectRoot, 'src/assets/images', 'src/assets/images (legacy)'),
     ...mediaRoots,
   ])
   const projectReal = await realpath(projectRoot)
@@ -146,11 +145,7 @@ export async function imageSourceRoots(projectRoot = process.cwd()): Promise<Ima
   return roots
 }
 
-export async function sourceOgImagePath(projectRoot = process.cwd()) {
-  for (const rel of ['src/images/og.png', 'src/assets/images/og.png']) {
-    const path = resolve(projectRoot, rel)
-    if (await Bun.file(path).exists()) return path
-  }
+export function sourceOgImagePath(projectRoot = process.cwd()) {
   return resolve(projectRoot, 'src/images/og.png')
 }
 

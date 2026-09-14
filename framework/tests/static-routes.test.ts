@@ -131,14 +131,13 @@ async function runBuild(dir: string) {
 }
 
 describe('static public routes', () => {
-  test('emits full public pages while preserving router body routes', async () => {
+  test('emits full public pages without route fragments', async () => {
     const dir = await makeProject()
 
     await runBuild(dir)
 
     const home = await readFile(join(dir, 'dist', 'index.html'), 'utf8')
     const deep = await readFile(join(dir, 'dist', 'work', 'case', 'index.html'), 'utf8')
-    const routerBody = await readFile(join(dir, 'dist', 'routes', 'work', 'case.html'), 'utf8')
 
     expect(home).toContain('<html data-snz-route="index" lang="en">')
     expect(home).toContain('<main>\n<h1 id="home-body">Home body</h1>')
@@ -158,12 +157,7 @@ describe('static public routes', () => {
     expect(deep).toMatch(/href="\/assets\/css\/routes\/work-case\.[^"]+" data-snz-route-css data-snz-head>/)
     expect(deep.indexOf('/assets/css/components.')).toBeLessThan(deep.indexOf('/assets/css/routes/work-case.'))
     expect(deep).not.toContain('<style>')
-    expect(routerBody).toContain('<head>')
-    expect(routerBody).not.toContain('<html data-snz-route=')
-    expect(routerBody).toContain('href="/assets/css/routes/work-case.')
-    expect(routerBody).toContain('<h1 id="case-body">Case body</h1>')
-    expect(routerBody).not.toContain('<style>')
-    expect(routerBody).not.toContain('<main>')
+    await expect(stat(join(dir, 'dist', 'routes', 'work', 'case.html'))).rejects.toThrow()
     expect(await readFile(join(dir, 'dist', 'work', 'case', 'index.md'), 'utf8')).toContain('# Case body')
     expect(await readFile(join(dir, 'dist', 'index.md'), 'utf8')).toContain('# Home body')
     expect(await readFile(join(dir, 'dist', '404.html'), 'utf8')).toBe(await readFile(join(dir, 'dist', '404', 'index.html'), 'utf8'))

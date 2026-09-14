@@ -99,6 +99,7 @@ async function makeDevProject() {
 <meta charset="UTF-8"><script src="/router.js" type="module"></script><script src="/assets/js/app.js" type="module"></script>
 </head><body><main></main></body></html>`)
   await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>Before rebuild</h1>')
+  await writeFile(join(dir, 'src', 'pages', '404.html'), '<h1>Not found</h1>')
   await writeFile(join(dir, 'src', 'styles.css'), 'body{margin:0}')
   await writeFile(join(dir, 'src', 'app.ts'), 'export {}\n')
   return dir
@@ -108,7 +109,7 @@ describe('dev server smoke', () => {
   test('rebuilds changed and deleted source files without stale cooldown drops', async () => {
     const dir = await makeDevProject()
     const base = await startServer('dev.ts', dir)
-    expect((await text(`${base}/routes/index.html`)).body).toContain('Before rebuild')
+    expect((await text(`${base}/`)).body).toContain('Before rebuild')
 
     const publicFile = join(dir, 'src', 'files', 'watch.txt')
     await mkdir(join(publicFile, '..'), { recursive: true })
@@ -116,7 +117,7 @@ describe('dev server smoke', () => {
     await waitFor(async () => (await text(`${base}/assets/files/watch.txt`)).response.status === 200)
 
     await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>After rebuild</h1>')
-    await waitFor(async () => (await text(`${base}/routes/index.html`)).body.includes('After rebuild'))
+    await waitFor(async () => (await text(`${base}/`)).body.includes('After rebuild'))
 
     await rm(publicFile)
     await waitFor(async () => (await text(`${base}/assets/files/watch.txt`)).response.status === 404)
@@ -136,7 +137,7 @@ describe('dev server smoke', () => {
     await waitFor(async () => (await text(`${base}/`)).response.status === 200)
   }, 40_000)
 
-  test('serves built pages and route fragments, refuses traversal, and 404s unknown routes', async () => {
+  test('serves built pages, refuses traversal, and 404s unknown routes', async () => {
     const base = await startServer('dev.ts')
 
     const home = await text(`${base}/`)
@@ -149,12 +150,7 @@ describe('dev server smoke', () => {
     expect(notFoundPage.body).toContain('Not found')
     expect(notFoundPage.body).toContain('<script src="/__snz/hmr.js" defer></script>')
 
-    const missingFragment = await text(`${base}/routes/not-real.html`)
-    expect(missingFragment.response.status).toBe(404)
-
-    const notFoundFragment = await text(`${base}/routes/404.html`)
-    expect(notFoundFragment.response.status).toBe(200)
-    expect(notFoundFragment.body).toContain('Not found')
+    expect((await text(`${base}/routes/not-real.html`)).response.status).toBe(404)
 
     for (const url of [`${base}/docs/`, `${base}/docs`]) {
       const docs = await text(url)

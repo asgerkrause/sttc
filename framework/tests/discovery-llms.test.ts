@@ -88,7 +88,7 @@ describe('discovery markdown aliases and llms.txt', () => {
 
       const about = JSON.parse(await readFile(join(distDir, 'routes', 'about.json'), 'utf8'))
       expect(about.representations).toEqual({
-        html: '/routes/about.html',
+        html: '/about/',
         markdown: '/about/index.md',
         metadata: '/routes/about.json',
       })
@@ -98,7 +98,7 @@ describe('discovery markdown aliases and llms.txt', () => {
 
       const nested = JSON.parse(await readFile(join(distDir, 'routes', 'insights', 'hello.json'), 'utf8'))
       expect(nested.representations.markdown).toBe('/insights/hello/index.md')
-      expect(nested.representations.html).toBe('/routes/insights/hello.html')
+      expect(nested.representations.html).toBe('/insights/hello/')
       expect(nested.representations.metadata).toBe('/routes/insights/hello.json')
 
       const llms = await readFile(join(distDir, 'llms.txt'), 'utf8')

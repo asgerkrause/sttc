@@ -9,11 +9,8 @@ export const dist = join(root, 'dist')
 
 export const componentsDir = join(src, 'components')
 export const pagesDir = join(src, 'pages')
-export const routesDir = join(src, 'routes')
 
 const packageRuntimeDir = join(packageRoot, 'runtime')
-const legacyPackageRuntimeRouter = join(packageRoot, 'router.js')
-const legacyPackageRuntimeLib = join(packageRoot, 'lib')
 
 export function projectPaths(projectRoot = root) {
   const sourceRoot = join(projectRoot, 'src')
@@ -25,7 +22,6 @@ export function projectPaths(projectRoot = root) {
     siteFile: join(sourceRoot, 'site.json'),
     componentsDir: join(sourceRoot, 'components'),
     pagesDir: join(sourceRoot, 'pages'),
-    routesDir: join(sourceRoot, 'routes'),
     templatesDir: join(sourceRoot, 'templates'),
     appFile: join(sourceRoot, 'app.js'),
     appTsFile: join(sourceRoot, 'app.ts'),
@@ -35,13 +31,6 @@ export function projectPaths(projectRoot = root) {
     imagesDir: join(sourceRoot, 'images'),
     videosDir: join(sourceRoot, 'videos'),
     filesDir: join(sourceRoot, 'files'),
-    legacyAssetsDir: join(sourceRoot, 'assets'),
-    legacyAppDir: join(sourceRoot, 'assets', 'js'),
-    legacyStylesDir: join(sourceRoot, 'assets', 'css'),
-    legacyImagesDir: join(sourceRoot, 'assets', 'images'),
-    runtimeDir: join(projectRoot, 'runtime'),
-    legacyRuntimeRouter: join(projectRoot, 'router.js'),
-    legacyRuntimeLib: join(projectRoot, 'lib'),
   }
 }
 
@@ -49,42 +38,31 @@ async function exists(path: string) {
   return stat(path).then(() => true).catch(() => false)
 }
 
-async function firstExisting(...paths: string[]) {
-  for (const path of paths) {
-    if (await exists(path)) return path
-  }
-  return paths[0]
+export function sourceAppDir(projectRoot = root) {
+  return projectPaths(projectRoot).appDir
 }
 
-export async function sourceAppDir(projectRoot = root) {
-  const paths = projectPaths(projectRoot)
-  return firstExisting(paths.appDir, paths.legacyAppDir)
+export function sourceStylesDir(projectRoot = root) {
+  return projectPaths(projectRoot).stylesDir
 }
 
-export async function sourceStylesDir(projectRoot = root) {
-  const paths = projectPaths(projectRoot)
-  return firstExisting(paths.stylesDir, paths.legacyStylesDir)
+export function sourceStylesFile(projectRoot = root) {
+  return projectPaths(projectRoot).stylesFile
 }
 
-export async function sourceStylesFile(projectRoot = root) {
-  const paths = projectPaths(projectRoot)
-  return firstExisting(paths.stylesFile, join(paths.stylesDir, 'styles.css'), join(paths.legacyStylesDir, 'styles.css'))
+export function sourceImagesDir(projectRoot = root) {
+  return projectPaths(projectRoot).imagesDir
 }
 
-export async function sourceImagesDir(projectRoot = root) {
-  const paths = projectPaths(projectRoot)
-  return firstExisting(paths.imagesDir, paths.legacyImagesDir)
-}
-
-export async function sourceVideosDir(projectRoot = root) {
+export function sourceVideosDir(projectRoot = root) {
   return projectPaths(projectRoot).videosDir
 }
 
-export async function sourceFilesDir(projectRoot = root) {
+export function sourceFilesDir(projectRoot = root) {
   return projectPaths(projectRoot).filesDir
 }
 
-export function selectAppEntry(paths: { appTs: string; appJs: string; legacyAppJs: string }, found: Set<string>) {
+export function selectAppEntry(paths: { appTs: string; appJs: string }, found: Set<string>) {
   const hasTs = found.has(paths.appTs)
   const hasJs = found.has(paths.appJs)
   if (hasTs && hasJs) {
@@ -93,17 +71,12 @@ export function selectAppEntry(paths: { appTs: string; appJs: string; legacyAppJ
       hint: 'Prefer src/app.ts. Delete src/app.js or merge its code into src/app.ts.',
     })
   }
-  if (hasTs) return paths.appTs
-  if (hasJs) return paths.appJs
-  return paths.legacyAppJs
+  return hasJs ? paths.appJs : paths.appTs
 }
 
-export async function sourceAppFile(name = 'app.ts', projectRoot = root) {
+export async function sourceAppFile(projectRoot = root) {
   const paths = projectPaths(projectRoot)
-  if (name !== 'app.ts' && name !== 'app.js') return firstExisting(join(paths.appDir, name), join(paths.legacyAppDir, name))
-
-  const legacyAppJs = await firstExisting(join(paths.appDir, 'app.js'), join(paths.legacyAppDir, 'app.js'))
-  const candidates = { appTs: paths.appTsFile, appJs: paths.appFile, legacyAppJs }
+  const candidates = { appTs: paths.appTsFile, appJs: paths.appFile }
   const found = new Set<string>()
   for (const path of Object.values(candidates)) {
     if (await exists(path)) found.add(path)
@@ -111,22 +84,6 @@ export async function sourceAppFile(name = 'app.ts', projectRoot = root) {
   return selectAppEntry(candidates, found)
 }
 
-export async function sourceRouterFile(projectRoot = root) {
-  const paths = projectPaths(projectRoot)
-  return firstExisting(
-    join(paths.runtimeDir, 'router.js'),
-    paths.legacyRuntimeRouter,
-    join(packageRuntimeDir, 'router.js'),
-    legacyPackageRuntimeRouter,
-  )
-}
-
-export async function sourceRuntimeLibDir(projectRoot = root) {
-  const paths = projectPaths(projectRoot)
-  return firstExisting(
-    join(paths.runtimeDir, 'lib'),
-    paths.legacyRuntimeLib,
-    join(packageRuntimeDir, 'lib'),
-    legacyPackageRuntimeLib,
-  )
+export function sourceRouterFile() {
+  return join(packageRuntimeDir, 'router.js')
 }

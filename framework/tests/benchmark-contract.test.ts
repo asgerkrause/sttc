@@ -27,9 +27,12 @@ describe('benchmark fixture contracts', () => {
     await mkdir(join(dir, 'dist', 'routes'), { recursive: true })
     await writeFile(join(dir, 'dist', 'site.manifest.json'), JSON.stringify({ routes: [{ slug: 'index' }, { slug: 'page-0001' }] }))
     await writeFile(join(dir, 'dist', 'index.html'), '<h1>Page 0</h1>')
-    await writeFile(join(dir, 'dist', 'routes', 'index.html'), '<h1>Page 0</h1>')
+    for (const slug of ['index', 'page-0001']) {
+      await writeFile(join(dir, 'dist', 'routes', `${slug}.json`), '{}')
+      await writeFile(join(dir, 'dist', 'routes', `${slug}.md`), '# Page\n')
+    }
 
-    await expect(validateFixture(dir, 'routes', 2)).rejects.toThrow('route HTML inventory mismatch')
+    await expect(validateFixture(dir, 'routes', 2)).rejects.toThrow('public route inventory mismatch')
   })
 
   test('rejects same-sized media output with the wrong bytes', async () => {
@@ -40,7 +43,6 @@ describe('benchmark fixture contracts', () => {
     await mkdir(join(dir, 'dist', 'assets', 'files'), { recursive: true })
     await writeFile(join(dir, 'dist', 'site.manifest.json'), JSON.stringify({ routes: [{ slug: 'index' }] }))
     await writeFile(join(dir, 'dist', 'index.html'), '<h1>Page 0</h1>')
-    await writeFile(join(dir, 'dist', 'routes', 'index.html'), '<h1>Page 0</h1>')
     await writeFile(join(dir, 'dist', 'routes', 'index.json'), '{}')
     await writeFile(join(dir, 'dist', 'routes', 'index.md'), '# Page 0\n')
     await writeFile(join(dir, 'dist', 'assets', 'files', 'asset-0000.bin'), new Uint8Array(32 * 1024))

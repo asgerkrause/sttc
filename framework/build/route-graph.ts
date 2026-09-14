@@ -8,7 +8,7 @@ import { BuildError } from './errors'
 
 type RouteComposer = Pick<Composer, 'prepareRoute'>
 
-export type RouteKind = 'static' | 'legacy-static' | 'content' | 'generated'
+export type RouteKind = 'static' | 'content' | 'generated'
 
 export type RouteOwner = {
   slug: string
@@ -51,12 +51,9 @@ export class RouteGraph {
 
   register(owner: RouteOwner) {
     const existing = this.#routes.get(owner.slug)
-    // Preferred src/pages static routes intentionally replace legacy src/routes routes.
-    if (!existing || (existing.kind === 'legacy-static' && owner.kind === 'static')) {
-      this.#routes.set(owner.slug, owner)
-      return owner
-    }
-    throw this.#duplicate(owner, existing)
+    if (existing) throw this.#duplicate(owner, existing)
+    this.#routes.set(owner.slug, owner)
+    return owner
   }
 
   async compose(owner: RouteOwner, body: string, options: RouteComposeOptions = {}) {

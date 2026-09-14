@@ -3,7 +3,7 @@
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { basename, join, sep } from 'path'
-import { packageRoot, projectPaths, root } from './paths'
+import { packageRoot, root } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError, lineOf } from './errors'
 import { compileContentFrom, loadCustomContentCollections } from './content'
@@ -19,18 +19,16 @@ type CheckOptions = { allowBrokenLinks?: boolean; launch?: boolean; context?: Bu
 
 export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   const context = opts.context ?? createBuildContext()
-  const paths = projectPaths(context.rootDir)
   const errors: string[] = []
   const warnings: string[] = []
   const fail = (m: string) => errors.push(m)
   const warn = (m: string) => warnings.push(m)
 
-  await checkSiteJson(paths.src, fail)
+  await checkSiteJson(context.srcDir, fail)
   await checkSourceContracts(context, fail, warn, !!opts.validatedBuildInputs)
-  await checkSourceLayout(paths, warn)
   await checkSeoFiles(context.distDir, fail)
   await checkBuiltOutput(context.distDir, fail, !!opts.allowBrokenLinks)
-  await checkEmitContracts(context.distDir, paths.src, fail, opts.launch ? warn : () => {})
+  await checkEmitContracts(context.distDir, context.srcDir, fail, opts.launch ? warn : () => {})
   await checkDiscoveryArtifacts(context.distDir, fail)
   if (opts.launch) await checkLaunchReadiness(context, fail, warn)
 
@@ -57,8 +55,14 @@ async function collectHtmlFiles(dir: string): Promise<string[]> {
 
 function isComposedPublicPage(distDir: string, file: string) {
   const rel = file.slice(distDir.length).replace(/\\/g, '/').replace(/^\//, '')
-  if (rel === 'index.html' || rel.startsWith('routes/') || rel.startsWith('assets/')) return false
+  if (rel === 'index.html' || rel.startsWith('assets/')) return false
   return rel.endsWith('/index.html')
+}
+
+/** dist/index.html plus every composed `{slug}/index.html`; raw public HTML under assets/ is excluded. */
+async function collectPublicPages(distDir: string) {
+  const index = join(distDir, 'index.html')
+  return (await collectHtmlFiles(distDir)).filter((file) => file === index || isComposedPublicPage(distDir, file)).sort()
 }
 
 function extractLdJson(html: string) {
@@ -79,14 +83,11 @@ async function checkSeoFiles(distDir: string, fail: (m: string) => void) {
 }
 
 async function routeExists(distDir: string, href: string) {
-  const path = href.replace(/\/$/, '') || '/'
-  if (path === '/') return stat(join(distDir, 'index.html')).then(() => true).catch(() => false)
-  const slug = path.slice(1)
-  return stat(join(distDir, 'routes', `${slug}.html`)).then(() => true).catch(() => false)
+  return assetExists(distDir, `${href.replace(/\/$/, '')}/index.html`)
 }
 
 async function assetExists(distDir: string, href: string) {
-  const rel = href.startsWith('/') ? href.slice(1) : href
+  const rel = (href.endsWith('/') ? `${href}index.html` : href).replace(/^\//, '')
   return stat(join(distDir, rel)).then(() => true).catch(() => false)
 }
 
@@ -97,9 +98,11 @@ function cleanAssetRef(ref: string) {
 }
 
 export async function checkBuiltOutput(distDir: string, fail: (m: string) => void, allowBrokenLinks: boolean) {
-  const indexFile = join(distDir, 'index.html')
-  const routeHtmlFiles = [indexFile, ...(await collectHtmlFiles(join(distDir, 'routes')))].sort()
+  const routeHtmlFiles = await collectPublicPages(distDir)
   const routeHtmlSet = new Set(routeHtmlFiles)
+  if (!(await assetExists(distDir, '/404.html'))) {
+    fail('missing dist/404.html\n  hint: Add src/pages/404.html. Hosts serve dist/404.html for unmatched paths.')
+  }
 
   const assetOwners = new Map<string, string>()
   const linkOwners = new Map<string, string>()
@@ -146,11 +149,8 @@ export async function checkBuiltOutput(distDir: string, fail: (m: string) => voi
     }
   }
 
-  // Public `{slug}/index.html` pages are shell + already-checked fragments.
-  // Still scan other HTML (raw public files) for unresolved placeholders.
-  const extraHtml = (await collectHtmlFiles(distDir))
-    .filter((file) => !routeHtmlSet.has(file) && !isComposedPublicPage(distDir, file))
-    .sort()
+  // Other HTML (raw public files, the root 404.html copy) is scanned for unresolved placeholders only.
+  const extraHtml = (await collectHtmlFiles(distDir)).filter((file) => !routeHtmlSet.has(file)).sort()
   const extraResults = await mapConcurrent(extraHtml, IO_CONCURRENCY, async (file) => {
     const html = await readFile(file, 'utf8').catch(() => null)
     return html ? placeholderErrors(file, html) : []
@@ -388,11 +388,7 @@ export async function checkEmitContracts(
     fail(`${file}: TTF and OTF fonts are not emitted\n  hint: Commit WOFF or WOFF2 under src/styles and point @font-face at those files.`)
   }
 
-  const publicPages = (await collectHtmlFiles(distDir)).filter((file) => (
-    file === join(distDir, 'index.html') || isComposedPublicPage(distDir, file)
-  )).sort()
-
-  for (const file of publicPages) {
+  for (const file of await collectPublicPages(distDir)) {
     const html = await readFile(file, 'utf8').catch(() => '')
     if (!html) continue
     if (html.includes('/__snz/hmr')) {
@@ -485,27 +481,6 @@ export async function checkVercelConfig(projectRoot: string, warn: (m: string) =
   }
 }
 
-async function checkSourceLayout(paths: ReturnType<typeof projectPaths>, warn: (m: string) => void) {
-  const legacy = [
-    ['src/routes', paths.routesDir],
-    ['src/styles/styles.css', join(paths.src, 'styles', 'styles.css')],
-    ['src/app/app.js', join(paths.src, 'app', 'app.js')],
-    ['src/assets/js', paths.legacyAppDir],
-    ['src/assets/css', paths.legacyStylesDir],
-    ['src/assets/images', paths.legacyImagesDir],
-    ['router.js', paths.legacyRuntimeRouter],
-    ['lib', paths.legacyRuntimeLib],
-  ] as const
-  for (const [label, path] of legacy) {
-    try {
-      await stat(path)
-      warn(`${label} is legacy; prefer src/pages, src/styles.css, src/app.ts, src/images, src/videos, src/files, or runtime instead`)
-    } catch {
-      /* canonical layout */
-    }
-  }
-}
-
 function htmlText(value: string) {
   return value.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }
@@ -573,7 +548,7 @@ async function checkLaunchSiteConfig(context: BuildContext, fail: (m: string) =>
   const image = typeof site.image === 'string' ? site.image : typeof site.ogImage === 'string' ? site.ogImage : ''
   if (!image) fail(`${rel}: launch image missing\n  hint: Set image to a real social preview image path.`)
 
-  const master = await sourceOgImagePath(context.rootDir)
+  const master = sourceOgImagePath(context.rootDir)
   const og = await readFile(master).then((bytes) => new Bun.Image(bytes).metadata()).catch(() => null)
   if (!og) fail(`${master}: launch OG master missing or unreadable\n  hint: Add a 1200×630 og.png under src/images.`)
   else if ((og.width ?? 0) < 600 || (og.height ?? 0) < 315) fail(`${master}: launch OG master is ${og.width}×${og.height}; needs at least 600×315\n  hint: Replace the placeholder with a real 1200×630 social image.`)
@@ -591,7 +566,7 @@ async function checkLaunchSiteConfig(context: BuildContext, fail: (m: string) =>
 }
 
 async function checkPrivateOutputUrls(distDir: string, fail: (m: string) => void) {
-  const files = [join(distDir, 'index.html'), ...(await collectHtmlFiles(join(distDir, 'routes'))), ...(await collectFilesByExtension(distDir, '.json'))]
+  const files = [...(await collectPublicPages(distDir)), ...(await collectFilesByExtension(distDir, '.json'))]
   const privateUrl = /https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|[^\s"'<>]+\.local\b)/i
   for (const file of files) {
     const text = await readFile(file, 'utf8').catch(() => '')
@@ -609,8 +584,7 @@ async function checkDraftLeakage(context: BuildContext, fail: (m: string) => voi
 
 async function checkLaunchReadiness(context: BuildContext, fail: (m: string) => void, warn: (m: string) => void) {
   await checkLaunchSiteConfig(context, fail)
-  const routeFiles = (await collectHtmlFiles(join(context.distDir, 'routes'))).filter((file) => file !== join(context.distDir, 'routes', 'index.html'))
-  const files = [join(context.distDir, 'index.html'), ...routeFiles]
+  const files = await collectPublicPages(context.distDir)
   const titleOwners = new Map<string, string>()
   const descOwners = new Map<string, string>()
   for (const file of files) {

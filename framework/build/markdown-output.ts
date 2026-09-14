@@ -1,19 +1,9 @@
+import { decodeEntities } from './html'
+
 const BLOCK_TAGS = new Set([
   'address', 'article', 'aside', 'details', 'div', 'fieldset', 'figcaption', 'figure', 'footer',
   'form', 'header', 'main', 'nav', 'p', 'section', 'ul',
 ])
-
-function decodeEntities(value: string) {
-  return value
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
-}
 
 /** Strips remaining tags; entities decode once, on the whole document. */
 function text(value: string) {
@@ -71,6 +61,7 @@ export function htmlToMarkdown(html: string) {
 
   out = out.replace(/<\/?([a-z][\w-]*)\b[^>]*>/gi, (_, tag) => BLOCK_TAGS.has(String(tag).toLowerCase()) ? '\n' : '')
   return decodeEntities(out)
+    .replace(/\u00a0/g, ' ')
     .replace(/\r/g, '')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n[ \t]+/g, '\n')

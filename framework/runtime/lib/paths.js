@@ -15,7 +15,6 @@ export function publicPath(pathname) {
 
 export function isAssetPath(path) {
   return (
-    path.startsWith('/routes/') ||
     path.startsWith('/assets/') ||
     path.startsWith('/lib/') ||
     path === '/router.js' ||
