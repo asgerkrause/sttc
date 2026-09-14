@@ -56,7 +56,9 @@ export class RouteGraph {
   }
 
   async compose(owner: RouteOwner, body: string, options: RouteComposeOptions = {}) {
-    const route = this.#routes.get(owner.slug) ?? this.register(owner)
+    const existing = this.#routes.get(owner.slug)
+    // Only the registered owner may compose its slug; anyone else hits the duplicate check.
+    const route = existing && existing.kind === owner.kind && existing.source === owner.source ? existing : this.register(owner)
     const { html, unlisted } = await this.#composer.prepareRoute(body, {
       slug: route.slug,
       fileHint: route.source,

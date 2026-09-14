@@ -28,4 +28,12 @@ describe('agent-readable Markdown output', () => {
     expect(markdown).toContain('| ![A](/assets/images/a.webp) | [Site](https://example.com/) |')
     expect(markdown).toContain('## Use `<Image>`')
   })
+
+  test('keeps a linked image alone and inside a list item', () => {
+    const markdown = htmlToMarkdown(`<p><a href="/full/"><img src="/thumb.webp" alt="Preview"></a></p>
+<ul><li><a href="/full/"><img src="/thumb.webp" alt="Preview"></a> caption</li></ul>`)
+
+    expect(markdown).toContain('[![Preview](/thumb.webp)](/full/)')
+    expect(markdown).toContain('- [![Preview](/thumb.webp)](/full/) caption')
+  })
 })

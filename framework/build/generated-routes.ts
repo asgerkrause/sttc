@@ -52,7 +52,8 @@ export async function autoGenerateIndexes(
 ) {
   if (!posts.length) return
   const srcDir = options.srcDir ?? src
-  const indexSlug = (options.route ?? 'insights/{slug}').replace(/\/?\{slug\}\/?$/, '')
+  // The index lives at the literal prefix before {slug}: blog/{slug}/entry indexes at /blog/.
+  const indexSlug = (options.route ?? 'insights/{slug}').split('{slug}')[0]!.replace(/^\/+|\/+$/g, '')
   // ponytail: a posts route of "{slug}" has no index prefix; the home page stays authored.
   if (indexSlug) {
     const path = `/${indexSlug}/`

@@ -49,12 +49,13 @@ export function htmlToMarkdown(html: string) {
     .replace(/<pre\b[^>]*>([\s\S]*?)<\/pre>/gi, (_, body) => `\n\`\`\`\n${body.replace(/^<code\b[^>]*>|<\/code>$/gi, '').trim()}\n\`\`\`\n`)
     // Inline marks first so list items, table cells, and headings keep links, code, images, and emphasis.
     .replace(/<code\b[^>]*>([\s\S]*?)<\/code>/gi, (_, body) => `\`${text(body)}\``)
+    .replace(/<img\b([^>]*)>/gi, (_, attrs) => attr(attrs, 'src') ? `![${attr(attrs, 'alt')}](${attr(attrs, 'src')})` : '')
+    // Images before anchors so a linked image keeps both: [![alt](src)](href).
     .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs, body) => {
       const label = text(body)
       const url = attr(attrs, 'href')
       return label && url ? `[${label}](${url})` : label
     })
-    .replace(/<img\b([^>]*)>/gi, (_, attrs) => attr(attrs, 'src') ? `![${attr(attrs, 'alt')}](${attr(attrs, 'src')})` : '')
     .replace(/<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, body) => `**${text(body)}**`)
     .replace(/<(em|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, body) => `*${text(body)}*`)
     .replace(/<table\b[^>]*>([\s\S]*?)<\/table>/gi, (_, body) => tableToMarkdown(body))

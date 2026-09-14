@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import type { Composer, ComposeInstance, RouteComposeInput } from '../build/compose'
+import { BuildError } from '../build/errors'
 import { RouteGraph } from '../build/route-graph'
+import { autoGenerateIndexes } from '../build/generated-routes'
+import type { ContentRoute } from '../build/content'
 
 function testComposer(): Composer {
   return {
@@ -79,5 +82,62 @@ describe('route graph', () => {
     await graph.compose({ slug: 'tags', kind: 'generated', source: 'generated:tags' }, '<h1>Tags</h1>')
 
     expect(graph.records().map((record) => record.slug)).toEqual(['a', 'b', 'tags'])
+  })
+
+  test('refuses to compose a generated route over an authored slug', async () => {
+    const graph = new RouteGraph({ composer: testComposer() })
+    graph.register({ slug: 'insights', kind: 'static', source: 'src/pages/insights.html' })
+
+    await expect(graph.compose(
+      { slug: 'insights', kind: 'generated', source: 'generated:insights' },
+      '<h1>Index</h1>',
+      { schemas: ['CollectionPage'] },
+    )).rejects.toThrow(BuildError)
+    await expect(graph.compose(
+      { slug: 'insights', kind: 'generated', source: 'generated:insights' },
+      '<h1>Index</h1>',
+    )).rejects.toThrow('Duplicate route slug "insights"')
+    expect(graph.records()).toEqual([])
+
+    await graph.compose({ slug: 'insights', kind: 'static', source: 'src/pages/insights.html' }, '<h1>Authored</h1>')
+    expect(graph.records().map((record) => record.slug)).toEqual(['insights'])
+  })
+})
+
+describe('generated post indexes', () => {
+  const post: ContentRoute = {
+    slug: 'blog/hello/entry',
+    routeFile: 'blog/hello/entry.html',
+    body: '',
+    source: 'content/posts/hello.md',
+    data: { title: 'Hello', date: '2026-05-26', description: 'Post' },
+    collection: 'posts',
+    markdown: '',
+    tags: ['Craft'],
+    draft: false,
+  }
+
+  test('indexes at the literal prefix before {slug}, even with a suffix', async () => {
+    const graph = new RouteGraph({ composer: testComposer() })
+
+    await autoGenerateIndexes(graph, [post], { route: 'blog/{slug}/entry' })
+
+    expect(graph.slugs()).toEqual(['blog', 'tags', 'tags/craft'])
+    expect(graph.records().find((record) => record.slug === 'blog')?.internalLinks).toEqual(['/blog/hello/entry/'])
+  })
+
+  test('skips the index when the route has no prefix', async () => {
+    const graph = new RouteGraph({ composer: testComposer() })
+
+    await autoGenerateIndexes(graph, [{ ...post, slug: 'hello' }], { route: '{slug}' })
+
+    expect(graph.slugs()).toEqual(['tags', 'tags/craft'])
+  })
+
+  test('fails when the index collides with an authored page', async () => {
+    const graph = new RouteGraph({ composer: testComposer() })
+    graph.register({ slug: 'blog', kind: 'static', source: 'src/pages/blog.html' })
+
+    await expect(autoGenerateIndexes(graph, [post], { route: 'blog/{slug}/entry' })).rejects.toThrow('Duplicate route slug "blog"')
   })
 })
