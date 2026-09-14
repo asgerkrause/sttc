@@ -1,30 +1,15 @@
 # STTC
 
-`@snz/sttc` is an HTML-first, Bun-native static site renderer. Authors write routes, atomic components, TypeScript, images, and optional markdown content. The build emits a static `dist/` site with routing, responsive images, SEO/AEO/GEO metadata, feeds, manifests, discovery files, and strict launch checks.
+`@snz/sttc` is an HTML-first, Bun-native static site renderer. Authors write routes, atomic components, TypeScript, images, and optional markdown content. The build emits a static `dist/` site with one full document per route, responsive images, SEO/AEO/GEO metadata, feeds, manifests, discovery files, and strict launch checks.
 
-It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM or hydration layer. Presentation is project-owned. The starter copies pinned CRFT CSS into `src/styles/` and you may replace or delete that copy.
+It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM, hydration layer, or client router: navigation is native, with cross-document view transitions and speculation-rules prefetch from project source. Presentation is project-owned. The starter copies pinned CRFT CSS into `src/styles/` and you may replace or delete that copy.
 
 ## Requirements
 
 - Bun >= 1.4.0
 - Bun only; no npm commands
 
-## Commands
-
-```bash
-bun run dev
-bun run preview
-bun run build
-bun run check
-bun run doctor
-bun run doctor -- --launch
-bun run new route pricing
-bun run new component Hero
-bun run new cms
-bun run skills sync
-```
-
-`doctor` runs strict checks; the package script also typechecks. Launch mode adds public URL, metadata, heading, alt-text, link-label, and production-readiness gates. Builds print one concise result by default; pass `--profile` for phase timings.
+Commands, the source tree, and the verification loop are in [`AGENTS.md`](./AGENTS.md). The package is unpublished; a created site resolves `@snz/sttc` from this checkout with a `file:` dependency until a human publishes it.
 
 ## Starter surface
 
@@ -36,24 +21,17 @@ src/
   snz.d.ts
   styles.css
   styles/
-    sans.woff
-    mono.woff
+    global.css
+    layers/
   pages/
     index.html
     404.html
   components/
-    Header.html
-    Footer.html
-    Section.html
-    Logo.html
-    Image.html
-    Video.html
-    Grid.html
   images/
     og.png
 ```
 
-The starter ships exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. They are replaceable HTML examples, not a UI library. `SEO` remains a renderer directive.
+The starter ships seven replaceable HTML components (named in `AGENTS.md`), not a UI library, and no font files: a created site renders in `system-ui` until the project adds its own faces.
 
 The starter copies pinned CRFT CSS into project-owned `src/styles/`. Replace or delete it freely. Composition uses attributes (`c`, `s`, `t`, `g`, `x`, `y`, `o`, `l`), not a class matrix. The build flattens that import tree into one hashed stylesheet. Component-specific `<style>` blocks compile into one pruned hashed stylesheet. Route `<style>` blocks compile into route-owned assets.
 
@@ -78,7 +56,7 @@ src/pages/work/case.html   /work/case/
 </Section>
 ```
 
-`<SEO />` is a renderer directive, not a component file. Set `title`, `description`, and optional page-specific `image`; canonical URLs derive from route filenames. It merges route values with `src/site.json` and emits title, description, canonical, Open Graph, Twitter metadata, and JSON-LD. Existing `ogImage` values remain a compatibility alias for `image`.
+`<SEO />` is handled by the renderer inside the route's leading `<head>` wrapper. Set `title`, `description`, and optional page-specific `image`; canonical URLs derive from route filenames. It merges route values with `src/site.json` and emits title, description, canonical, Open Graph, Twitter metadata, and JSON-LD. Existing `ogImage` values remain a compatibility alias for `image`.
 
 ## Components
 
@@ -102,7 +80,7 @@ Use it in a route:
 <Hero title="A faster starting point">Project-owned content.</Hero>
 ```
 
-Components support declared attrs, default and named slots, `{#if}` / `{:else}`, build-time `{#each}` data, optional lifecycle `<script>`, optional colocated `<style>`, and `@schema` JSON-LD declarations. See [`framework/docs/framework/05-components.md`](./framework/docs/framework/05-components.md).
+Components support declared attrs, default and named slots, nested `{#if}` / `{:else if}` / `{:else}`, build-time `{#each}` data, optional lifecycle `<script>`, optional colocated `<style>`, and `@schema` JSON-LD declarations. See [`framework/docs/framework/components.md`](./framework/docs/framework/components.md).
 
 ## Images and public media
 
@@ -116,28 +94,24 @@ Bun emits WebP output, responsive variants, intrinsic dimensions, and native `sr
 
 ## Content
 
-CMS support is opt-in:
-
-```bash
-bun run new cms
-bun run new post hello-world
-bun run new collection projects --route work/{slug} --template project
-```
-
-Posts, tags, feeds, collection routes, drafts, PagesCMS configuration, and collision checks remain renderer-owned. Authored pages always live in `src/pages/`.
+CMS support is opt-in through `bun run new cms`, `bun run new post`, and `bun run new collection`. Posts, tags, feeds, collection routes, drafts, PagesCMS configuration, and collision checks remain renderer-owned. `posts` is an ordinary collection whose route and templates a project may override. Authored pages always live in `src/pages/`. See [`framework/docs/framework/content-and-cms.md`](./framework/docs/framework/content-and-cms.md).
 
 ## Smart output
 
 Every build emits:
 
-- static public pages and router fragments;
+- one full HTML document per route, plus `dist/404.html`;
 - sitemap and robots;
-- RSS and JSON Feed;
+- RSS and JSON Feed when a public post exists;
 - `llms.txt` and `llms-full.txt`;
 - `site.manifest.json` and per-route JSON;
 - `site.jsonld`, baseline JSON-LD, and component-declared JSON-LD;
 - Markdown and JSON representations for each public route, plus same-path markdown aliases such as `/about/index.md`;
 - hashed TypeScript, component-style, and route-style assets when present.
+
+## Runtime
+
+The page runtime on `window.snz` mounts component lifecycle scripts, reports the page (`snz:page`), tracks events (`snz:track`), and manages visibility, active media, and native disclosures. It injects no analytics; providers subscribe to `snz:track` in `src/app.ts`. See [`framework/docs/framework/runtime.md`](./framework/docs/framework/runtime.md).
 
 ## Optional smooth scrolling
 
@@ -149,13 +123,7 @@ The starter includes self-hosted Lenis. Set `"scroll": "lenis"` in `src/site.jso
 - Edit `framework/` for renderer behavior.
 - `templates/default/` is the created-project template shipped by `@snz/sttc`.
 - `sttc create <project-dir>` copies that template without mirror or sync machinery.
-- `.snz/` is cache/state only, including `.snz/components-catalog.md` and `.snz/migrations.json`.
+- `.snz/` is cache/state only, including `.snz/components-catalog.md`.
 - Never edit `dist/`.
 
-## Verification
-
-```bash
-bun run framework:verify
-```
-
-This runs strict checks, typechecking, framework tests, and one-package creator smoke coverage. Publishing, deploying, and removing private package guards require explicit human approval.
+`bun run framework:verify` runs strict checks, typechecking, framework tests, and one-package creator smoke coverage. Publishing, deploying, and removing private package guards require explicit human approval.

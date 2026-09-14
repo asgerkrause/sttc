@@ -2,7 +2,7 @@
 name: snz-component
 description: Use when adding or changing an STTC build-time component or composing the seven starter components.
 ---
-<!-- @snz-skill snz-component 999a226538e97e6f5a25a242f77947babd55093b662081c3dc2915fcda181b92 -->
+<!-- @snz-skill snz-component 410535938932487a5c1e30b1ef6d770fa7e7f53d9530716c3e8e4d69321fbc93 -->
 
 # SANITIZE Component
 
@@ -12,7 +12,7 @@ Keep components atomic, semantic, source-owned, and replaceable. The renderer su
 
 ## Workflow
 
-1. Read `AGENTS.md`, then the installed framework `framework/docs/framework/05-components.md` and generated catalog when available.
+1. Read `AGENTS.md`, then the installed framework `framework/docs/framework/components.md` and generated catalog when available.
 2. Search `src/components/` and route usage. Reuse `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, or `Grid` when the contract matches.
 3. Otherwise scaffold one component with `bun run new component <PascalName>`.
 4. Keep the leading schema, semantic markup, slots, optional lifecycle script, and optional component style in one file.

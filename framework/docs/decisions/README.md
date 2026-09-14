@@ -8,6 +8,4 @@ Add a file when a choice is:
 2. Surprising without context  
 3. A real trade-off (alternatives existed)
 
-Use `~/.pi/agent/templates/decision.md`. Plain filenames (e.g. `event-sourcing-orders.md`).
-
-Ephemeral agent notes belong in `.pi/scratch/` (gitignored).
+Plain filenames (e.g. `event-sourcing-orders.md`). Mark a superseded record with a `Superseded by` line under its title instead of deleting it.

@@ -18,26 +18,36 @@ bun run doctor -- --launch
 bun run new route pricing
 bun run new component Hero
 bun run new cms
+bun run new post hello-world
+bun run new collection projects --route work/{slug} --template project
 bun run skills sync
+bun run smoke:create
 bun run framework:verify
 ```
+
+`build` runs `check` at the end. `doctor` typechecks, then runs `check`; `--launch` adds the production gate. `framework:verify` runs `doctor`, the framework tests, and the create smoke. Builds print one concise result; pass `--profile` for phase timings.
 
 ## Mental model
 
 ```text
-src/shell.html          persistent document shell
+src/shell.html          document shell
 src/pages/**/*.html     authored routes
 src/components/*.html   build-time components
 src/site.json           site and discovery defaults
 src/app.ts              project-owned TypeScript entry
+src/styles.css          project CSS entry
+src/styles/             pinned CRFT copy
 src/images/             image masters
 src/videos/             public video files
 src/files/              public raw files
-content/                 optional markdown records
-dist/                    generated output
+src/templates/          optional content templates
+content/                optional markdown records
+dist/                   generated output
 ```
 
-The starter ships exactly seven components: `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. They are replaceable HTML examples, not a design system. This repo's dogfood site may add extra components under `src/components/`; created projects get only the seven from `templates/default`. Component behavior stays in that component's lifecycle script. `SEO` remains a renderer directive, not a component file.
+The starter ships exactly seven components: `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. They are replaceable HTML examples, not a design system. This repo's dogfood site carries only the components its pages use. Component behavior stays in that component's lifecycle script. `SEO` is a renderer directive, not a component file.
+
+Docs live in `framework/docs/framework/`: [components](./framework/docs/framework/components.md), [runtime](./framework/docs/framework/runtime.md), [SEO, AEO, GEO](./framework/docs/framework/seo-aeo-geo.md), [content and CMS](./framework/docs/framework/content-and-cms.md), [images](./framework/docs/framework/images.md), and [deploy and launch](./framework/docs/framework/deploy-and-launch.md). Decisions live in `framework/docs/decisions/`.
 
 ## Routes and SEO
 
@@ -53,7 +63,7 @@ A page may begin with a head wrapper:
 </Section>
 ```
 
-`SEO` is a renderer directive, not a component file. Defaults come from `src/site.json`; page-specific inputs are `title`, `description`, and optional `image`. The renderer emits canonical, Open Graph, Twitter, connected JSON-LD, sitemap, feeds, manifests, route Markdown/JSON, same-path markdown aliases, `llms.txt`, and `llms-full.txt`.
+Defaults come from `src/site.json`; page-specific inputs are `title`, `description`, and optional `image`. `<SEO />` is accepted only inside that wrapper. The renderer emits canonical, Open Graph, Twitter, connected JSON-LD, sitemap, feeds, manifests, route Markdown/JSON, same-path markdown aliases, `llms.txt`, `llms-full.txt`, and `dist/404.html`.
 
 ## Components
 
@@ -73,25 +83,25 @@ One component is one `src/components/PascalCase.html` file. A leading comment de
 Supported component features:
 
 - `{{attr}}`, `{{slot}}`, and named slots;
-- `{#if}` / `{:else}`;
+- `{#if}` / `{:else if}` / `{:else}`, nested inside `{#each}` and each other;
 - build-time `{#each}` with component or route JSON data;
 - optional lifecycle `<script>` with `el` bound to the root and cleanup return; behavior required by a component belongs here, not in `src/app.ts`;
 - optional colocated `<style>` compiled to a hashed stylesheet;
 - optional `@schema Type field=attr` structured data.
 
-Read `framework/docs/framework/05-components.md` before component engine work. Each build generates the project-local contract catalog at `.snz/components-catalog.md`.
+Attribute values decode once at parse and every placeholder escapes once on render; slots stay raw. An unknown `@tag`, a malformed `@attr`, or a single-quoted attribute fails the build with the component file and the page named. Read `framework/docs/framework/components.md` before component engine work. Each build generates the project-local contract catalog at `.snz/components-catalog.md`.
 
 ## CSS boundary
 
-The renderer does not impose framework CSS. The root dogfood and starter import a pinned, project-owned CRFT copy from `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. Optional SNZ faces live in `layers/fonts.css`. The build copies and hashes WOFF/WOFF2 files from `src/styles/` and rewrites `@font-face` URLs. It does not convert TTF or OTF.
+The renderer does not impose framework CSS. The root dogfood and starter import a pinned, project-owned CRFT copy from `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. The dogfood keeps SNZ faces in `layers/fonts.css`; the template ships no font files, so a created site renders in `system-ui` until the project adds its own faces. The build copies and hashes WOFF/WOFF2 files from `src/styles/` and rewrites `@font-face` URLs. It does not convert TTF or OTF.
 
 Attributes are the composition API: `c` measure, `s` stack, `t` type, `g` / `x` / `y` / `o` grid, `l` clamp. `data-skin`, `data-accent`, and `data-scrub` own canvas and opt-in behavior. Classes own override and product use. `.btn`, `.crd`, and `.lnk` stay project conventions.
 
 - Replace `src/styles.css` with project-wide CSS as needed.
 - Put reusable component-specific CSS in that component's `<style>`.
-- Route `<style>` is allowed for authored route-only CSS and compiles separately.
+- Route `<style>` is allowed in authored routes and compiles to a route-owned hashed asset. Content templates may not carry one.
 - Use ordinary platform CSS or the project's chosen external system. Do not invent framework tokens or utility conventions.
-- The router may apply internal visually-hidden styles to its live region for accessibility; that is runtime infrastructure, not project presentation.
+- Cross-document view transitions are CRFT `motion.css`, project-owned. The runtime adds no CSS.
 
 ## Images and media
 
@@ -105,23 +115,28 @@ Attributes are the composition API: `c` measure, `s` stack, `t` type, `g` / `x` 
 
 ## TypeScript and runtime
 
-`src/app.ts` is canonical. `src/app.js` is an escape hatch; never keep both. The renderer bundles project code with Bun, then appends shell scripts, route scripts, and component lifecycle registrations.
+`src/app.ts` is canonical. `src/app.js` is an escape hatch; never keep both. The renderer bundles project code with Bun, then appends shell scripts, component lifecycle registrations, and route scripts. A syntax error names the shell or component file, not a temp path.
 
-`window.snz` owns navigation, prefetching, page hooks, lifecycle mounting, focus, live-region announcements, visibility/activity helpers, and analytics events. Preserve native navigation and accessibility behavior.
+Navigation is MPA: the build emits a full document per route, `src/shell.html` carries a `<script type="speculationrules">` prefetch block, and the browser owns scroll restoration and anchors. `window.snz` owns `page`, `onPage`, `registerComponent`, `track`, `onVisible`, `onActive`, `isVisible`, `isActive`, and native disclosure handling. It dispatches `snz:page` once per document and `snz:track` for every `snz.track()` call. There is no programmatic navigation call, prefetch call, navigation hook, announcer, or focus management.
+
+`snz.track()` knows no analytics provider. Providers subscribe to `snz:track` in `src/app.ts`; `framework/docs/framework/runtime.md` carries the PostHog and Vercel recipes. `src/site.json` has no analytics flags.
 
 Lenis smooth scrolling is optional and self-hosted. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to exclude its bootstrap, CSS, vendor code, and shell configuration from `dist/`. Reduced-motion users always keep native scrolling.
 
+## Dev and preview
+
+`framework/dev.ts` and `framework/preview.ts` serve `dist/` only: paths that resolve above it return 404, unknown paths return the site's 404 page with status 404, and both bind `127.0.0.1` unless `HOST` is set. Dev reloads the tab over server-sent events and swaps in a build-error page when a build fails.
+
+A change to `framework/dev.ts` or `framework/preview.ts` is verified against a directory route (`/docs/`), not only `/`.
+
 ## Errors and verification
 
-Build errors should include file, line, and hint. Fix source, not output.
+Build errors include file, line, and hint. Fix source, not output.
 
-After structural changes run:
+`check` fails only on renderer contracts: missing discovery output, broken internal links, unresolved placeholders, TTF/OTF fonts, unhashed `/router.js`, HMR leakage. Stylesheet count, non-deferred head scripts, and `@import` in emitted CSS are project choices and warn only under `--launch`. `--launch` rejects the starter's 1×1 OG placeholder, the starter's `site.json` name and description, the starter's home title, and placeholder URLs. Never fabricate production values.
 
-```bash
-bun run build
-bun test framework/tests
-bun run smoke:create
-bun run framework:verify
-```
+Immutable `Cache-Control` in `vercel.json` applies only to hashed `css|js|woff` paths. `check` warns when an immutable rule's `source` lacks a hash group; that is a source-pattern heuristic, not proof that a custom rule matches hashed assets only, so the project verifies custom rules itself.
 
-Launch mode intentionally rejects placeholder URLs and incomplete production metadata. Never fabricate production values.
+After structural changes run `bun run framework:verify`; for a narrower loop use `bun run build` or `bun test framework/tests`.
+
+`@snz/sttc` is unpublished. `sttc create` from this checkout writes `"@snz/sttc": "file:<checkout>"` into the created site; a packaged create writes `^<version>` and cannot install until a human publishes the package.

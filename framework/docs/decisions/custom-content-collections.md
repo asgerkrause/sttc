@@ -7,7 +7,7 @@
 
 Current content compile is intentionally small:
 
-- `content/posts/*.md` → `/insights/{slug}/` through `src/templates/post.html`
+- `content/posts/*.md` → `/insights/{slug}/` through `src/templates/post.html` by default; `collections.json` may override its route, template, path, and required fields
 - optional custom collections compile through configured templates/routes
 - posts also feed `/insights/`, `/tags/`, RSS, JSON Feed, and `BlogPosting` schema
 
@@ -43,7 +43,7 @@ Recommended config file:
 
 Suggested path: `content/collections.json`.
 
-Built-in posts remain implicit and require no config:
+`posts` has defaults and requires no config:
 
 | Collection | Path | Template | Route | Extra behavior |
 | --- | --- | --- | --- | --- |
@@ -58,7 +58,7 @@ Collection definition:
 
 | Key | Required | Rule |
 | --- | --- | --- |
-| `name` | yes | lowercase id: `[a-z][a-z0-9-]*`; `posts` and `pages` reserved |
+| `name` | yes | lowercase id: `[a-z][a-z0-9-]*`; `pages` reserved; `posts` overrides the default posts collection |
 | `label` | no | CMS/editor label only |
 | `path` | yes | repo-relative folder, normally `content/{name}` |
 | `template` | yes | file in `src/templates/`; no path traversal |
@@ -89,7 +89,7 @@ Template contract:
 - custom templates live beside built-ins: `src/templates/project.html`
 - template must include `{{body}}`
 - template should include `{{title}}`
-- no per-entry route files under `src/pages` or `src/routes`
+- no per-entry route files under `src/pages`
 
 ## PagesCMS relation
 
@@ -143,7 +143,6 @@ Command creates:
 
 All public routes share the existing route registry.
 
-- `src/pages` may replace legacy `src/routes` for same slug; no other replacement allowed.
 - built-in content and custom content fail on duplicate public slug.
 - generated posts indexes (`insights`, `tags`, `tags/{tag}`) also fail on duplicate public slug.
 - custom collection indexes are not generated in v1, so `src/pages/work/index.html` can coexist with custom entries under `work/{slug}`.
@@ -172,7 +171,7 @@ hint: content/projects/acme.md (content) conflicts with src/pages/work/acme.html
 - template loading and placeholder substitution
 - returning `ContentRoute` records
 
-`build/routes.ts` / `RouteGraph` owns:
+`build/route-graph.ts` (`RouteGraph`) owns:
 
 - slug normalization already produced by content compiler
 - duplicate route detection
@@ -207,13 +206,13 @@ hint: content/projects/acme.md (content) conflicts with src/pages/work/acme.html
 
 ## Migration path
 
-1. Keep built-in `posts` as implicit collection definition.
+1. Keep `posts` as a collection with defaults.
 2. Remove implicit generic `content/pages`; authored pages stay in `src/pages`.
 3. Add optional `content/collections.json`; if absent, only posts compile.
 4. Keep fixture collection (`projects`) in tests only; no starter bloat by default.
 5. `bun run new collection` updates both build config and `.pages.yml` together.
 
-Existing sites using `content/pages` must migrate those markdown files to authored pages or a named custom collection.
+`content/pages` is not compiled; such markdown belongs in authored pages or a named custom collection.
 
 ## Implementation notes
 
@@ -221,7 +220,7 @@ Primary files:
 
 - `build/content.ts` — introduce `ContentCollectionConfig`, `loadContentCollections()`, generic `compileFile(collectionConfig, filename)`
 - `build/check.ts` — validate custom templates include `{{body}}`; validate route pattern and required fields
-- `build/generated-routes.ts` — keep posts-only behavior by filtering `collection === 'posts'`
+- `build/generated-routes.ts` — keep posts-only behavior by filtering `collection === 'posts'`; `src/templates/posts-index.html` and `tags.html` override the generated markup
 - `build/feeds.ts` — keep posts-only input
 - `build/discovery.ts` — avoid treating every custom content route as `BlogPosting`
 - `build/scaffold.ts` — generates collection config, folder, template, and PagesCMS surface
@@ -239,7 +238,6 @@ type ContentCollectionConfig = {
   route: string
   required: string[]
   fields?: ContentFieldConfig[]
-  builtin?: 'posts'
 }
 ```
 
@@ -250,10 +248,10 @@ Add fixtures/tests before feature claim:
 - default no-config compile emits posts only; `content/pages` is ignored/rejected at scaffold surface
 - `projects` config compiles `content/projects/acme.md` through `src/templates/project.html` to `work/acme`
 - route pattern missing `{slug}` fails with file/hint
-- custom name `posts` or `pages` fails as reserved
+- custom name `pages` fails as reserved
 - missing template fails with existing `Missing template` style
 - missing required front-matter fails with `content/{collection}/{file} missing "{field}"`
-- custom route colliding with `src/pages` fails through `RouteRegistry`
+- custom route colliding with `src/pages` fails through `RouteGraph`
 - draft custom content excluded in prod and included in dev with banner
 - unsafe markdown still fails for custom collections
 - media refs normalize in custom body and front-matter

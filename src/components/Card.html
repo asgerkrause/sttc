@@ -1,9 +1,0 @@
-<!--
-  @desc Independent content summary with an optional linked heading.
-  @attr title! Visible card heading.
-  @attr href Optional heading destination.
--->
-<article class="crd">
-  <h2>{#if href}<a href="{{href}}">{{title}}</a>{:else}{{title}}{/if}</h2>
-  {{slot}}
-</article>

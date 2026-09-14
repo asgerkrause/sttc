@@ -34,4 +34,3 @@ Matches north star: ship speed (one `site.json` + build) + SEO/AEO depth without
 ## Links
 
 - `framework/docs/decisions/src-layout-and-seo.md`
-- `.pi/domain.md` — **SEO kit** terms

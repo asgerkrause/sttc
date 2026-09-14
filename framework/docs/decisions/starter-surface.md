@@ -15,9 +15,19 @@ Created projects ship exactly seven replaceable HTML components:
 - `Video`
 - `Grid`
 
-`Section` provides `section > [c]`. Optional `c` flags are `sm`, `lg`, and `ct`. `Grid` maps `cols`, `x`, `y`, and `order` to CRFT `g`, `x`, `y`, and `o` attributes. `SEO` is a renderer directive and has no component file.
+`Section` provides `section > [c]`. Optional `c` flags are `sm`, `lg`, and `ct`. `Grid` maps `cols`, `x`, `y`, and `order` to CRFT `g`, `x`, `y`, and `o` attributes. `SEO` has no component file.
 
-The starter copies pinned CRFT CSS (`7358c7e`) into project-owned `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. Optional SNZ faces live in `layers/fonts.css` plus `sans.woff` and `mono.woff`. The renderer does not own that presentation layer. Created sites keep their copy until they migrate.
+The starter copies pinned CRFT CSS (`7358c7e`) into project-owned `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. The renderer does not own that presentation layer. Created sites keep their copy until they replace it.
+
+## Fonts (2026-09, #14 and #20)
+
+The template ships no font files: `layers/fonts.css`, `sans.woff`, and `mono.woff` are deleted from `templates/default/` and `global.css` does not import a fonts layer. `tokens.css` stays at the CRFT pin, so `--t-ff-sa` still names `"SNZ Sans"` first and a created site falls through to `system-ui`. A client site adds its own `@font-face` rules and WOFF/WOFF2 files under `src/styles/`. The studio faces are brand material, and shipping 550 KB of them to every client site was the wrong default.
+
+The dogfood site keeps `layers/fonts.css` with the SNZ faces; it is the studio's own site.
+
+## Dogfood site (2026-09, #20)
+
+This repo's `src/` carries only the components its pages use: the seven starter components, with the dogfood `Header` adding navigation data and a sticky-header `<style>`. The extra components that lived there (`Accordion`, `Badge`, `Button`, `Card`, `FAQ`, `Link`, `Split`, `Statement`) were unused by any page and did not ship to created sites; they were deleted rather than maintained. A component library, if one comes, is #13.
 
 Dogfood `src/styles/` matches that pin except these brand overrides:
 

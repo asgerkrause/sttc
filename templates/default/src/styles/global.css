@@ -2,7 +2,6 @@
 
 @import "./layers/base.css";
 @import "./layers/tokens.css";
-@import "./layers/fonts.css";
 @import "./layers/type.css";
 @import "./layers/layout.css";
 @import "./layers/grid.css";
