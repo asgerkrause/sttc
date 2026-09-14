@@ -16,15 +16,13 @@ if (!reduceMotion) {
       autoRaf: true,
       lerp: 0.25,
       syncTouch: true,
+      // Navigation is native. Lenis still resets wheel inertia on an internal link click so the
+      // coast does not run on while the next document loads.
       stopInertiaOnNavigate: true,
       anchors: { offset: -100 },
       touchMultiplier: 0.75,
     })
     window.lenis = lenis
-    window.addEventListener('snz:scroll-reset', (event) => {
-      event.preventDefault()
-      lenis.scrollTo(0, { immediate: true, force: true })
-    })
   }
   document.head.appendChild(lenisJs)
 }
