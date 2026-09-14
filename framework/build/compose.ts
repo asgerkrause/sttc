@@ -11,7 +11,6 @@ import { html as safeHtml, renderPlaceholders, renderTemplate, type TemplateCont
 import { ensureHeadingIds } from './heading-ids'
 
 const HEAD_WRAPPER_RE = /^<head[^>]*>([\s\S]*?)<\/head>\s*/i
-const SLOT_DEFAULT_RE = /\{\{slot\}\}/g
 const SLOT_NAMED_RE = /\{\{slot:([\w-]+)\}\}/g
 const NAMED_SLOT_TAG_RE = /<slot\s+name=["']([\w-]+)["']\s*>([\s\S]*?)<\/slot>/gi
 const SEO_RE = /<SEO((?:\s+(?:[\w-]+(?:="[^"]*")?))*)\s*\/>/i
@@ -229,27 +228,20 @@ export function createComposer(
     return { defaultChildren, named }
   }
 
-  /** One pass: blocks and placeholders render together; slot placeholders survive for expandSlots. */
+  /** One pass: blocks, attrs, and slots render together. Slots are raw HTML; interpolated values are never rescanned. */
   function renderTemplateOnce(name: string, template: string, attrs: TemplateContext, slots: ReturnType<typeof readSlots>) {
     const componentData = dataByComponent.get(name)
     const context: TemplateContext = {
       ...(componentData ?? {}),
       ...attrs,
-      slot: slots.defaultChildren,
-      ...Object.fromEntries(Object.entries(slots.named).map(([name, value]) => [`slot:${name}`, value])),
+      slot: safeHtml(slots.defaultChildren),
+      ...Object.fromEntries([...templateSlotNames(template)].map((slot) => [`slot:${slot}`, safeHtml(slots.named[slot] ?? '')])),
     }
     return renderTemplate(template, context, {
       allowEach: !!componentData,
       placeholders: true,
       preserveUnknownPlaceholders: true,
-      preservePlaceholders: (path) => path === 'slot' || path.startsWith('slot:'),
     })
-  }
-
-  function expandSlots(template: string, slots: ReturnType<typeof readSlots>): string {
-    return template
-      .replace(SLOT_NAMED_RE, (_, name) => slots.named[name] ?? '')
-      .replace(SLOT_DEFAULT_RE, slots.defaultChildren)
   }
 
   function componentFileHint(name: string) {
@@ -276,7 +268,7 @@ export function createComposer(
     const frame = { file: fileHint, line: lineOf(source, m.index), label: `<${m.name} />` }
     let fragment: string
     try {
-      fragment = pruneOptionalPlaceholders(expandSlots(renderTemplateOnce(m.name, template, attrs, slots), slots))
+      fragment = pruneOptionalPlaceholders(renderTemplateOnce(m.name, template, attrs, slots))
     } catch (err) {
       if (!(err instanceof BuildError)) throw err
       err.file ??= componentFileHint(m.name)

@@ -18,14 +18,13 @@ type DirectiveToken =
 type RenderOptions = {
   placeholders?: boolean
   preserveUnknownPlaceholders?: boolean
-  preservePlaceholders?: (path: string) => boolean
   allowEach?: boolean
   file?: string
 }
 
 const TOKEN_RE = /\{#if\s+([^}]+)\}|\{#each\s+([^}]+)\}|\{:else\s+if\s+([^}]+)\}|\{:else\}|\{\/(if|each)\}/g
 const PLACEHOLDER_RE = /\{\{\s*([^}]+?)\s*\}\}/g
-const PATH_RE = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/
+const PATH_RE = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$|^slot:[\w-]+$/
 const EACH_EXPR_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)(?:\s+sort\s+(.+?))?\s+as\s+([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?$/
 const SORT_ITEM_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s+(asc|desc)$/
 const FILTER_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\|\s*([A-Za-z_$][\w$]*)$/
@@ -57,8 +56,9 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
+/** Filters run on plain text; the interpolation escapes the result once. */
 function applyFilter(value: TemplateValue, filter: string): TemplateValue {
-  const text = valueToString(value, false)
+  const text = value == null ? '' : isSafeHtml(value) ? value.value : typeof value === 'object' ? JSON.stringify(value) : String(value)
   if (filter === 'lower') return text.toLowerCase()
   if (filter === 'slug') return slugify(text)
   throw new BuildError(`Unknown component placeholder filter "${filter}"`, {
@@ -185,7 +185,6 @@ export function renderPlaceholders(segment: string, context: TemplateContext, op
     const raw = String(expr).trim()
     const filterMatch = raw.match(FILTER_RE)
     const path = filterMatch ? filterMatch[1]! : raw
-    if (options.preservePlaceholders?.(path)) return full
     if (!PATH_RE.test(path)) {
       throw new BuildError(`Invalid component placeholder "${raw}"`, {
         hint: 'Use {{name}}, {{item.name}}, {{name | lower}}, or {{name | slug}}. No expressions yet.',

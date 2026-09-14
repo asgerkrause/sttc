@@ -175,12 +175,15 @@ describe('build-time JSON template data', () => {
       new Map(),
       () => ({}),
     )
-    const html = await composer.prepareRouteSource('<Card name="Brand Strategy" />', {
+    const html = await composer.prepareRouteSource('<Card name="Brand Strategy" />\n<Card name="Tom &amp; Jerry &quot;live&quot;" />', {
       slug: 'page',
       fileHint: 'src/pages/page.html',
     })
 
     expect(html).toContain('<p>In need of brand strategy?</p>')
     expect(html).toContain('<a href="#brand-strategy">Brand Strategy</a>')
+    expect(html).toContain('<p>In need of tom &amp; jerry &quot;live&quot;?</p>')
+    expect(html).toContain('<a href="#tom-jerry-live">Tom &amp; Jerry &quot;live&quot;</a>')
+    expect(html).not.toContain('&amp;amp;')
   })
 })

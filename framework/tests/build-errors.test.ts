@@ -32,6 +32,7 @@ function composer(schemas = new Map<string, ComponentSchema>(), data = new Map<s
       ['BadElse', '<div>{#if title}<b>{{title}}</b>{:else}<i>Missing</i>{/if}</div>'],
       ['ElseIf', '<div>{#if title}<b>{{title}}</b>{:else if eyebrow}<i>{{eyebrow}}</i>{:else}<em>None</em>{/if}</div>'],
       ['Hero', '<p>{{title}}</p><aside>{{slot:aside}}</aside>'],
+      ['Titled', '<div title="{{title}}">{{slot}}</div>'],
       ['Gallery', '<ul>{#each items as item}<li>{#if item.image}<img src="{{item.image}}">{:else}<span>{{item.name}}</span>{/if}</li>{/each}</ul>'],
       ['BadDoubleElse', '<div>{#if title}<b>{{title}}</b>{:else}<i>Missing</i>{:else}<em>Bad</em>{/if}</div>'],
       ['BadEach', '<div>{#each items as item}<b>{{item}}</b>{/each}</div>'],
@@ -288,6 +289,16 @@ describe('build error source spans', () => {
     }
   })
 
+  test('never rescans interpolated attribute text as a slot', async () => {
+    const html = await composer().prepareRouteSource(
+      '<Titled title="{{slot}}">say "hello"</Titled>\n<Titled title="Caf&eacute;"><b>x</b></Titled>',
+      { slug: 'page', fileHint: 'src/pages/page.html' },
+    )
+    // The literal attribute value is text, not a slot; the prune then drops it as an unresolved placeholder.
+    expect(html).toContain('<div>say "hello"</div>')
+    expect(html).toContain('<div title="Café"><b>x</b></div>')
+  })
+
   test('renders SEO titles once from escaped attribute text', async () => {
     const html = await composer().prepareRouteSource(
       '<head><SEO title="Hello &amp; welcome" /></head><h1>Hi</h1>',
@@ -342,9 +353,10 @@ describe('build error source spans', () => {
     } catch (err) {
       expect((err as BuildError).hint).toBe('Supported: @desc, @attr, @schema')
     }
-    const { schema } = parseInlineSchema('<!--\n  @attr variant=[a|b] :class Visual style.\n  @attr title! Heading.\n-->', file)
+    const { schema } = parseInlineSchema('<!--\n  @attr variant=[a|b] :class Visual style.\n  @attr tone =[c|d] Spaced enum.\n  @attr title! Heading.\n-->', file)
     expect(schema.attrs).toEqual({
       variant: { enum: ['a', 'b'], asClass: true, description: 'Visual style.' },
+      tone: { enum: ['c', 'd'], description: 'Spaced enum.' },
       title: { required: true, description: 'Heading.' },
     })
   })

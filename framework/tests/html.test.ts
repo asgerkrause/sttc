@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { extractHtmlDescription, extractHtmlMetadata, extractHtmlTitle, scanHtmlInternalLinks } from '../build/html'
+import { decodeEntities, extractHtmlDescription, extractHtmlMetadata, extractHtmlTitle, scanHtmlInternalLinks } from '../build/html'
 
 describe('HTML discovery helpers', () => {
   test('extracts route metadata in one parser pass', () => {
@@ -19,6 +19,12 @@ describe('HTML discovery helpers', () => {
     const html = '<title>Terms &amp; Conditions</title><meta name="description" content="Fish &amp; chips &lt;3">'
 
     expect(extractHtmlMetadata(html)).toMatchObject({ title: 'Terms & Conditions', description: 'Fish & chips <3' })
+  })
+
+  test('decodes named and numeric character references in one pass', () => {
+    expect(decodeEntities('Caf&eacute; &copy; a &ndash; b&hellip;')).toBe('Café © a – b…')
+    expect(decodeEntities('&#38;amp; &#x26; &amp;lt;')).toBe('&amp; & &lt;')
+    expect(decodeEntities('&bogus; &copy=1 x &amp y')).toBe('&bogus; &copy=1 x & y')
   })
 
   test('extracts meta description content', () => {
