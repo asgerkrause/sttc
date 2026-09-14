@@ -31,7 +31,7 @@ Vercel is the deployment default. The framework should own deploy contracts the 
 - Static sites remain static; no Vercel Functions or Routing Middleware by default.
 - Analytics and Speed Insights require explicit Vercel setup before client sites load their scripts. `site.json` carries no Vercel flags.
 - Custom events may require Vercel Pro/Enterprise; the runtime never calls `window.va` itself.
-- `check` warns when an immutable rule matches unhashed media.
+- `check` warns when an immutable rule's `source` lacks a hash group. This is a source-pattern heuristic; it does not evaluate what a custom rule matches, so the project verifies custom immutable rules itself.
 - Deployment concerns stay in adapter config/docs, not scattered through renderer internals.
 
 ## Verification

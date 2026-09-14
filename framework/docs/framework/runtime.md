@@ -103,7 +103,7 @@ document.addEventListener('snz:track', (event) => {
 })
 ```
 
-Set `cookieless_mode: 'always'` in the `init` options for an EU site that must not set cookies without consent; PostHog then tracks without cookies or local storage.
+For an EU site that must not set cookies without consent, set `cookieless_mode: 'always'` in the `init` options and also enable cookieless mode in the PostHog project settings. Both are required: with only the client option set, PostHog discards the events it receives. PostHog then tracks without cookies or local storage. See [PostHog JavaScript configuration](https://posthog.com/docs/libraries/js/config).
 
 Vercel Analytics, after the site loads the Vercel script (declare `va` on `Window` in `src/snz.d.ts`):
 

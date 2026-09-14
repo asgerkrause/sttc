@@ -29,7 +29,7 @@ Deploy settings:
 
 ## Dev and preview
 
-`bun run dev` builds on change, serves `dist/` on `http://127.0.0.1:3000`, and reloads the tab over server-sent events. A failed build swaps the tab to a build-error page that reloads back to the site when the next build passes. `bun run preview` serves `dist/` on `http://127.0.0.1:4173` with no HMR, gzip, or cache; it is the Lighthouse target. Both servers bind `127.0.0.1` unless `HOST` is set, refuse paths that resolve above `dist/` (`/..%2Fpackage.json` is 404), and serve the site's 404 page with status 404 for unknown paths. `PORT` overrides the port.
+`bun run dev` builds on change, serves `dist/` on `http://127.0.0.1:3000`, and reloads the tab over server-sent events. A failed build swaps the tab to a build-error page that reloads back to the site when the next build passes. `bun run preview` serves `dist/` on `http://127.0.0.1:4173` without HMR, gzips text, JavaScript, JSON, and SVG responses when the client accepts gzip, and sets `Cache-Control`; it is the Lighthouse target. Its cache policy is a local approximation, not the Vercel rules below: every `/assets/*` response gets `public, max-age=31536000, immutable`, HTML gets `public, max-age=0, must-revalidate`, and everything else gets `public, max-age=3600`. A replaced image under `/assets/images/` can therefore stay stale in the browser between preview runs; reload with the cache disabled or open a fresh profile. Dev sets no cache headers and does not gzip. Both servers bind `127.0.0.1` unless `HOST` is set, refuse paths that resolve above `dist/` (`/..%2Fpackage.json` is 404), and serve the site's 404 page with status 404 for unknown paths. `PORT` overrides the port.
 
 ## Vercel
 
@@ -54,7 +54,7 @@ Header defaults:
 - hashed assets under `/assets/css/` and `/assets/js/` (`*.[hash].css|js|woff|woff2`) get `public, max-age=31536000, immutable`; the hashed rule sits after the general rule because Vercel applies later matching rules over earlier ones for the same header key;
 - discovery files such as `llms.txt`, `robots.txt`, and `sitemap.xml` get `public, max-age=3600`.
 
-Immutable applies only to hashed paths, so a replaced image or video is picked up on the next revalidation. `bun run check` warns when an immutable rule matches unhashed media.
+Immutable applies only to hashed paths, so a replaced image or video is picked up on the next revalidation. `bun run check` applies a source-pattern heuristic to `vercel.json`: it warns when an immutable rule's `source` does not contain a hash group such as `\.([a-f0-9]{8,})\.`. It does not evaluate what a custom rule matches, so a rule that contains the hash group as an optional part still passes the check while matching unhashed files. The project remains responsible for confirming that any custom immutable rule matches hashed assets only.
 
 Static sites remain static by default. No Vercel Functions or Middleware are enabled by framework defaults. A hard load of `/does-not-exist/` serves `dist/404.html` with status 404.
 

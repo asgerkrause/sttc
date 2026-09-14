@@ -135,7 +135,7 @@ Build errors include file, line, and hint. Fix source, not output.
 
 `check` fails only on renderer contracts: missing discovery output, broken internal links, unresolved placeholders, TTF/OTF fonts, unhashed `/router.js`, HMR leakage. Stylesheet count, non-deferred head scripts, and `@import` in emitted CSS are project choices and warn only under `--launch`. `--launch` rejects the starter's 1×1 OG placeholder, the starter's `site.json` name and description, the starter's home title, and placeholder URLs. Never fabricate production values.
 
-Immutable `Cache-Control` in `vercel.json` applies only to hashed `css|js|woff` paths; `check` warns when an immutable rule matches unhashed media.
+Immutable `Cache-Control` in `vercel.json` applies only to hashed `css|js|woff` paths. `check` warns when an immutable rule's `source` lacks a hash group; that is a source-pattern heuristic, not proof that a custom rule matches hashed assets only, so the project verifies custom rules itself.
 
 After structural changes run `bun run framework:verify`; for a narrower loop use `bun run build` or `bun test framework/tests`.
 
