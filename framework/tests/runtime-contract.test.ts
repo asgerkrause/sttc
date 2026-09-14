@@ -151,6 +151,6 @@ describe('dev server runtime contracts', () => {
     expect(dev).toContain("...['content', 'media']")
     expect(dev).not.toContain('/\\.webp$/i.test(base)')
     expect(dev).toContain("base === 'dist' || base.startsWith('dist.__')")
-    expect(dev).toContain('legacy top-level runtime files')
+    expect(dev).not.toContain("join(root, 'lib')")
   })
 })

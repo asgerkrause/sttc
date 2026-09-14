@@ -18,14 +18,12 @@ describe('route ownership', () => {
     expect(routes.get('work/case')?.source).toBe('src/pages/work/case.html')
   })
 
-  test('lets preferred src/pages replace legacy src/routes for same slug', () => {
+  test('fails when two authored pages map to the same slug', () => {
     const routes = graph()
 
-    routes.register({ slug: 'about', kind: 'legacy-static', source: 'src/routes/about.html' })
     routes.register({ slug: 'about', kind: 'static', source: 'src/pages/about.html' })
 
-    expect(routes.get('about')?.source).toBe('src/pages/about.html')
-    expect(routes.get('about')?.kind).toBe('static')
+    expect(() => routes.register({ slug: 'about', kind: 'static', source: 'src/pages/about/index.html' })).toThrow(BuildError)
   })
 
   test('fails when content collides with authored static route', () => {

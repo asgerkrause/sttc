@@ -41,6 +41,11 @@ async function makeProject(body: string, site: Record<string, unknown> = {}, hea
 `)
   await writeFile(join(dir, 'src', 'styles.css'), 'body{font-family:system-ui}\n')
   await writeFile(join(dir, 'src', 'pages', 'index.html'), body)
+  await writeFile(join(dir, 'src', 'pages', '404.html'), `<head>
+  <SEO title="Not found" description="The page you requested does not exist on this launch fixture site." />
+</head>
+<h1>Not found</h1>
+`)
   return dir
 }
 

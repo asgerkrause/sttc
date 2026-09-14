@@ -6,12 +6,11 @@ import { createComposer } from '../build/compose'
 import { buildYear, outFileFromSlug, slugFromPageRel, sourceDateEpoch } from '../build/source-files'
 import { slugifyTag } from '../build/content'
 import { BuildError } from '../build/errors'
-import { mediaInputCopyExclusions, shouldSkipMediaCopy } from '../build/assets'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, processImages, resolveImageAttrs } from '../build/images'
 import { imageNameFromSrc, parsePositiveImageInteger } from '../build/scan-images'
 import { publicMarkdownPathFromSlug, publicPathFromSlug, routeJsonPathFromSlug, routeMarkdownPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
 import { checkBuiltOutput, checkPagesCmsConfig, checkVercelConfig, extractBuiltPublicAssetRefs } from '../build/check'
-import { selectAppEntry, sourceRuntimeLibDir } from '../build/paths'
+import { selectAppEntry } from '../build/paths'
 
 async function composeRoute(slug: string, fileHint: string) {
   const composer = createComposer(new Map(), new Map(), () => ({}))
@@ -117,10 +116,10 @@ describe('build path contracts', () => {
   })
 
   test('prefers TypeScript app entry and rejects ambiguous root entries', () => {
-    const paths = { appTs: '/site/src/app.ts', appJs: '/site/src/app.js', legacyAppJs: '/site/src/app/app.js' }
+    const paths = { appTs: '/site/src/app.ts', appJs: '/site/src/app.js' }
     expect(selectAppEntry(paths, new Set([paths.appTs]))).toBe(paths.appTs)
     expect(selectAppEntry(paths, new Set([paths.appJs]))).toBe(paths.appJs)
-    expect(selectAppEntry(paths, new Set([paths.legacyAppJs]))).toBe(paths.legacyAppJs)
+    expect(selectAppEntry(paths, new Set())).toBe(paths.appTs)
     expect(() => selectAppEntry(paths, new Set([paths.appTs, paths.appJs]))).toThrow(BuildError)
   })
 
@@ -140,13 +139,6 @@ content:
 
     expect(parsePagesCmsMediaInputs(yaml)).toEqual(['src/images', 'uploads/portraits'])
     expect(parsePagesCmsMediaOutputs(yaml)).toEqual(['/assets/images', '/assets/portraits'])
-  })
-
-  test('resolves framework runtime lib directory after internals move', async () => {
-    const libDir = await sourceRuntimeLibDir()
-
-    expect(libDir).toContain('framework/runtime/lib')
-    expect(await Bun.file(`${libDir}/paths.js`).exists()).toBe(true)
   })
 
   test('accepts canonical Vercel static deploy config', async () => {
@@ -269,12 +261,14 @@ content:
     try {
       await mkdir(join(dir, 'assets', 'images'), { recursive: true })
       await mkdir(join(dir, 'routes'), { recursive: true })
+      await mkdir(join(dir, 'media'), { recursive: true })
       const ld = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage"}</script>'
       await writeFile(join(dir, 'index.html'), `${ld}<meta property="og:image" content="/assets/images/og.webp"><img src="/assets/images/hero.webp">`)
       await writeFile(join(dir, 'assets', 'images', 'og.webp'), 'ok')
       await writeFile(join(dir, 'assets', 'images', 'hero.webp'), 'ok')
       await writeFile(join(dir, 'routes', 'team.json'), JSON.stringify({ image: '/assets/images/team.webp' }))
-      await writeFile(join(dir, 'routes', 'media.html'), `${ld}<video src="/assets/videos/intro.mp4"></video><a href="/assets/files/menu.pdf">Menu</a>`)
+      await writeFile(join(dir, 'media', 'index.html'), `${ld}<video src="/assets/videos/intro.mp4"></video><a href="/assets/files/menu.pdf">Menu</a>`)
+      await writeFile(join(dir, '404.html'), ld)
       const errors: string[] = []
 
       await checkBuiltOutput(dir, (error) => errors.push(error), false)
@@ -329,21 +323,6 @@ content:
     } finally {
       await rm(dir, { recursive: true, force: true })
       await rm(outside, { recursive: true, force: true })
-    }
-  })
-
-  test('excludes media.input roots under media from raw media copy', async () => {
-    const dir = await tempProject()
-    try {
-      await writeFile(join(dir, '.pages.yml'), `media:\n  - name: images\n    input: media/photos\n    output: /assets/images\n  - name: portraits\n    input: uploads/portraits\n    output: /assets/images\n`)
-      const exclusions = await mediaInputCopyExclusions(dir)
-
-      expect(exclusions).toEqual(['photos'])
-      expect(shouldSkipMediaCopy('photos/team.png', exclusions)).toBe(true)
-      expect(shouldSkipMediaCopy('photos/nested/team.png', exclusions)).toBe(true)
-      expect(shouldSkipMediaCopy('downloads/file.pdf', exclusions)).toBe(false)
-    } finally {
-      await rm(dir, { recursive: true, force: true })
     }
   })
 
@@ -456,10 +435,10 @@ content:
     const composer = createComposer(new Map(), new Map(), () => ({}))
     const html = await composer.prepareRouteSource(`<head>
   <SEO title="About" description="About this organization." />
-  <meta name="snz:transition" content="fade">
+  <meta name="theme-color" content="#000">
 </head>
 <h1>About</h1>`, { slug: 'about', fileHint: 'src/pages/about.html' })
-    expect(html).toContain('<meta name="snz:transition" content="fade">')
+    expect(html).toContain('<meta name="theme-color" content="#000">')
     expect(html).toContain('<title>About</title>')
   })
 

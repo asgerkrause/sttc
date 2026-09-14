@@ -449,10 +449,10 @@ export async function compileContentFrom(options: {
   const includeDrafts = options.includeDrafts ?? !!process.env.SNZ_DEV
   const out: ContentRoute[] = []
   const seenSlugs = new Map<string, string>()
-  const legacyPages = await markdownFiles(join(projectRoot, 'content', 'pages'))
-  if (legacyPages.length) {
+  const cmsPages = await markdownFiles(join(projectRoot, 'content', 'pages'))
+  if (cmsPages.length) {
     throw new BuildError('Generic CMS pages are not supported', {
-      file: `content/pages/${legacyPages[0]}`,
+      file: `content/pages/${cmsPages[0]}`,
       hint: 'Move authored pages to src/pages, or create a named custom collection with `bun run new collection <name>`.',
     })
   }

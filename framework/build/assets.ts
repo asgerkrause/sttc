@@ -1,6 +1,5 @@
 import { mkdir, readdir, rm, stat } from 'fs/promises'
-import { isAbsolute, join, relative, resolve, sep } from 'path'
-import { pagesCmsMediaInputs } from './images'
+import { join, sep } from 'path'
 import { dist, root, sourceAppDir, sourceFilesDir, sourceImagesDir, sourceStylesDir, sourceStylesFile, sourceVideosDir } from './paths'
 
 // Recursive copy implemented with sequential per-file writes. fs.cp(recursive: true) was
@@ -50,11 +49,11 @@ export async function copyAssetsTo(
   const jsDist = join(assetsDist, 'js')
   await mkdir(cssDist, { recursive: true })
   await mkdir(jsDist, { recursive: true })
-  const stylesFile = await sourceStylesFile(projectRoot)
+  const stylesFile = sourceStylesFile(projectRoot)
   const hasGlobalStyles = await Bun.file(stylesFile).exists()
   const nativeScroll = options.scroll === 'native'
   if (hasGlobalStyles) {
-    await copyTree(await sourceStylesDir(projectRoot), cssDist, (name) => {
+    await copyTree(sourceStylesDir(projectRoot), cssDist, (name) => {
       const path = slashPath(name)
       if (name === 'styles.css') return true
       if (/\.(ttf|otf|woff2?)$/i.test(path)) return true
@@ -63,7 +62,7 @@ export async function copyAssetsTo(
     })
     await pruneEmptyDirs(cssDist)
   }
-  await copyTree(await sourceAppDir(projectRoot), jsDist, (name) => {
+  await copyTree(sourceAppDir(projectRoot), jsDist, (name) => {
     const path = slashPath(name)
     return name === 'app.js'
       || name === 'app.ts'
@@ -71,9 +70,9 @@ export async function copyAssetsTo(
   })
   const imagesDist = join(assetsDist, 'images')
   await mkdir(imagesDist, { recursive: true })
-  await copyTree(await sourceImagesDir(projectRoot), imagesDist, (name) => !name.endsWith('.svg'))
-  await copyTree(await sourceVideosDir(projectRoot), join(assetsDist, 'videos'))
-  await copyTree(await sourceFilesDir(projectRoot), join(assetsDist, 'files'))
+  await copyTree(sourceImagesDir(projectRoot), imagesDist, (name) => !name.endsWith('.svg'))
+  await copyTree(sourceVideosDir(projectRoot), join(assetsDist, 'videos'))
+  await copyTree(sourceFilesDir(projectRoot), join(assetsDist, 'files'))
   return hasGlobalStyles
 }
 
@@ -90,44 +89,3 @@ async function pruneEmptyDirs(dir: string) {
     if ((await readdir(child)).length === 0) await rm(child, { recursive: true, force: true })
   }
 }
-
-export async function mediaInputCopyExclusions(projectRoot = root) {
-  const mediaSrc = resolve(projectRoot, 'media')
-  const exclusions: string[] = []
-  for (const input of await pagesCmsMediaInputs(projectRoot)) {
-    const rel = relative(mediaSrc, resolve(projectRoot, input))
-    if (rel === '') {
-      exclusions.push('')
-      continue
-    }
-    if (rel.startsWith('..') || isAbsolute(rel)) continue
-    exclusions.push(slashPath(rel))
-  }
-  return [...new Set(exclusions)]
-}
-
-export function shouldSkipMediaCopy(relPath: string, exclusions: string[]) {
-  const rel = slashPath(relPath)
-  return exclusions.some((exclusion) =>
-    exclusion === '' || rel === exclusion || rel.startsWith(`${exclusion}/`),
-  )
-}
-
-export async function copyMediaFolderTo(projectRoot = root, outputDir = dist) {
-  // Configured media.input roots are source input for the optimizer, not public raw asset trees.
-  // Other media folders can still be copied for non-image CMS files if added later.
-  const mediaSrc = join(projectRoot, 'media')
-  const exclusions = await mediaInputCopyExclusions(projectRoot)
-  for (const exclusion of exclusions) {
-    await rm(join(outputDir, 'media', exclusion), { recursive: true, force: true })
-  }
-  try {
-    if ((await stat(mediaSrc)).isDirectory()) {
-      await copyTree(mediaSrc, join(outputDir, 'media'), (relPath) => shouldSkipMediaCopy(relPath, exclusions))
-    }
-  } catch {
-    /* no media folder */
-  }
-}
-
-

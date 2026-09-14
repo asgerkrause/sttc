@@ -80,6 +80,7 @@ export async function createFixture(rootDir: string, scenario: Scenario, scale: 
   await write(join(rootDir, 'src/styles.css'), ':root{font-family:system-ui}\n')
   await write(join(rootDir, 'src/app.ts'), 'export {}\n')
   await write(join(rootDir, 'src/pages/index.html'), routeBody(0))
+  await write(join(rootDir, 'src/pages/404.html'), '<head><SEO title="Not found" description="Deterministic benchmark 404 route." /></head>\n<h1>Not found</h1>\n')
 
   if (scenario === 'routes') {
     for (let index = 1; index < scale; index++) {
@@ -130,15 +131,7 @@ export async function validateFixture(rootDir: string, scenario: Scenario, scale
   }
 
   const html = await Bun.file(join(rootDir, 'dist/index.html')).text()
-  if (!html.includes('<h1>Page 0</h1>') || html.includes('{{')) throw new Error('invalid rendered index')
-
-  const routeHtmlSlugs: string[] = []
-  const routeGlob = new Bun.Glob('**/*.html')
-  for await (const rel of routeGlob.scan({ cwd: join(rootDir, 'dist', 'routes'), onlyFiles: true })) {
-    routeHtmlSlugs.push(rel.replace(/\\/g, '/').replace(/\.html$/, ''))
-  }
-  routeHtmlSlugs.sort()
-  if (JSON.stringify(routeHtmlSlugs) !== JSON.stringify(expected)) throw new Error('route HTML inventory mismatch')
+  if (!/<h1[^>]*>Page 0<\/h1>/.test(html) || html.includes('{{')) throw new Error('invalid rendered index')
 
   for (const extension of ['json', 'md']) {
     const routeSlugs: string[] = []
@@ -154,21 +147,21 @@ export async function validateFixture(rootDir: string, scenario: Scenario, scale
   const publicGlob = new Bun.Glob('**/index.html')
   for await (const rel of publicGlob.scan({ cwd: join(rootDir, 'dist'), onlyFiles: true })) {
     const normalized = rel.replace(/\\/g, '/')
-    if (normalized !== 'index.html' && !normalized.startsWith('routes/')) {
+    // The 404 page is public output but not a manifest route.
+    if (normalized !== 'index.html' && normalized !== '404/index.html') {
       publicSlugs.push(normalized.replace(/\/index\.html$/, ''))
     }
   }
   publicSlugs.sort()
   if (JSON.stringify(publicSlugs) !== JSON.stringify(expected)) throw new Error('public route inventory mismatch')
 
+  const publicPath = (slug: string) => slug === 'index'
+    ? join(rootDir, 'dist', 'index.html')
+    : join(rootDir, 'dist', slug, 'index.html')
   for (const slug of expected) {
-    const fragmentPath = join(rootDir, 'dist', 'routes', `${slug}.html`)
     const jsonPath = join(rootDir, 'dist', 'routes', `${slug}.json`)
     const markdownPath = join(rootDir, 'dist', 'routes', `${slug}.md`)
-    const publicPath = slug === 'index'
-      ? join(rootDir, 'dist', 'index.html')
-      : join(rootDir, 'dist', slug, 'index.html')
-    for (const path of [fragmentPath, jsonPath, markdownPath, publicPath]) {
+    for (const path of [jsonPath, markdownPath, publicPath(slug)]) {
       if (!(await Bun.file(path).exists())) throw new Error(`missing route output ${path}`)
     }
   }
@@ -176,15 +169,15 @@ export async function validateFixture(rootDir: string, scenario: Scenario, scale
   if (scenario === 'routes') {
     for (let index = 0; index < scale; index++) {
       const slug = index === 0 ? 'index' : `page-${String(index).padStart(4, '0')}`
-      const fragment = await Bun.file(join(rootDir, 'dist', 'routes', `${slug}.html`)).text()
-      if (!fragment.includes(`<h1>Page ${index}</h1>`) || fragment.includes('{{')) throw new Error(`invalid route output ${slug}`)
+      const page = await Bun.file(publicPath(slug)).text()
+      if (!new RegExp(`<h1[^>]*>Page ${index}</h1>`).test(page) || page.includes('{{')) throw new Error(`invalid route output ${slug}`)
     }
   }
   if (scenario === 'content') {
     for (let index = 0; index < scale; index++) {
       const id = String(index).padStart(4, '0')
-      const fragment = await Bun.file(join(rootDir, 'dist', 'routes', 'insights', `post-${id}.html`)).text()
-      if (!fragment.includes(`<h1>Post ${id}</h1>`) || fragment.includes('{{')) throw new Error(`invalid content output post-${id}`)
+      const page = await Bun.file(publicPath(`insights/post-${id}`)).text()
+      if (!new RegExp(`<h1[^>]*>Post ${id}</h1>`).test(page) || page.includes('{{')) throw new Error(`invalid content output post-${id}`)
     }
     const feed = await Bun.file(join(rootDir, 'dist', 'feed.xml')).text()
     const last = String(scale - 1).padStart(4, '0')

@@ -182,7 +182,7 @@ function routeRepresentation(site: SiteConfig, slug: string) {
     path,
     canonical,
     representations: {
-      html: `/routes/${slug}.html`,
+      html: path,
       markdown: publicMarkdownPathFromSlug(slug),
       metadata: routeJsonPathFromSlug(slug),
     },
