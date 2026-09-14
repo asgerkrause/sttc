@@ -54,7 +54,7 @@ export async function prepareComponents(componentsDir: string, projectRoot = roo
     if (Object.keys(componentData).length) data.set(name, componentData)
     const { html: noScript, scripts: blocks } = extractInlineScripts(noData)
     if (blocks.length) scripts.set(name, blocks)
-    const { html: noComment, schema } = parseInlineSchema(noScript)
+    const { html: noComment, schema } = parseInlineSchema(noScript, `src/components/${file}`)
     if (schema.description || (schema.attrs && Object.keys(schema.attrs).length) || schema.schema) {
       schemas.set(name, schema)
     }
@@ -67,17 +67,6 @@ export async function prepareComponents(componentsDir: string, projectRoot = roo
     }
     templates.set(name, html)
     for (const chunk of css) cssBlocks.push({ source: file, css: chunk })
-  }
-
-  const stragglers = entries.filter((file) => file.endsWith('.schema.json'))
-  if (stragglers.length) {
-    throw new BuildError(
-      `Found legacy .schema.json sidecars: ${stragglers.join(', ')}`,
-      {
-        file: `src/components/`,
-        hint: 'Move the schema into a <!-- @desc / @attr --> comment at the top of the matching .html file, then delete the .schema.json.',
-      },
-    )
   }
 
   return { cssBlocks, templates, schemas, scripts, data }

@@ -6,14 +6,11 @@ import { loadSiteConfig as readSiteConfig } from './site-config'
 import { buildYear } from './source-files'
 import { publicMarkdownPathFromSlug, routeJsonPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
 import { nextComponent, parseAttrs, type ComponentMatch } from './tags'
-import { escapeHtml } from './html'
-import { renderPlaceholders, renderTemplate, type TemplateContext } from './template-directives'
+import { decodeEntities, escapeHtml } from './html'
+import { html as safeHtml, renderPlaceholders, renderTemplate, type TemplateContext } from './template-directives'
 import { ensureHeadingIds } from './heading-ids'
 
-const LEGACY_COMPONENT_RE = /<component\s+/i
-const LEGACY_COMMENT_RE = /<!--\s*@(component|seo)\b/
 const HEAD_WRAPPER_RE = /^<head[^>]*>([\s\S]*?)<\/head>\s*/i
-const SLOT_DEFAULT_RE = /\{\{slot\}\}/g
 const SLOT_NAMED_RE = /\{\{slot:([\w-]+)\}\}/g
 const NAMED_SLOT_TAG_RE = /<slot\s+name=["']([\w-]+)["']\s*>([\s\S]*?)<\/slot>/gi
 const SEO_RE = /<SEO((?:\s+(?:[\w-]+(?:="[^"]*")?))*)\s*\/>/i
@@ -22,8 +19,6 @@ const SEO_ATTRS = new Set(['title', 'description', 'image', 'ogImage', 'path', '
 export type SchemaAttr = {
   required?: boolean
   enum?: string[]
-  type?: 'string' | 'number' | 'boolean'
-  default?: string
   description?: string
   /** When true, the attribute's value is appended as a class on the template's root element. */
   asClass?: boolean
@@ -32,12 +27,8 @@ export type SchemaAttr = {
 export type ComponentSchema = {
   description?: string
   attrs?: Record<string, SchemaAttr>
-  slots?: string[]
-  allowUnknownAttrs?: boolean
   /** Optional structured-data emitter — see build/discovery.ts. */
   schema?: { type: string; map?: Record<string, string> }
-  /** Optional render examples used by the preview sandbox + auto-docs. */
-  examples?: { attrs?: Record<string, string>; slot?: string }[]
 }
 
 export type ComposeInstance = {
@@ -78,15 +69,6 @@ export function createComposer(
     siteConfig = null
   }
 
-  function rejectLegacySyntax(html: string, fileHint: string) {
-    if (LEGACY_COMMENT_RE.test(html) || LEGACY_COMPONENT_RE.test(html)) {
-      throw new BuildError(
-        `Legacy syntax in ${fileHint}: use PascalCase components (<Hero … />) and the <SEO … /> route directive`,
-        { file: fileHint, hint: 'Replace <component> tags and <!-- @component --> comments with PascalCase tags' },
-      )
-    }
-  }
-
   function escapeAttr(value: string) {
     return escapeHtml(value)
   }
@@ -121,14 +103,9 @@ export function createComposer(
       .replace(/\s[\w:-]+="\{\{[\w.-]+(?::[\w.-]+)?\}\}"/g, '')
   }
 
-  function substitute(template: string, attrs: Record<string, string>) {
-    const rendered = renderPlaceholders(template, attrs, {
-      placeholders: true,
-      preserveUnknownPlaceholders: true,
-      preservePlaceholders: (path) => path === 'slot' || path.startsWith('slot:'),
-      escapeStrings: false,
-    })
-    return pruneOptionalPlaceholders(rendered)
+  /** Attribute values are HTML attribute text: entities decode here and every placeholder escapes on render. */
+  function decodeAttrs(attrs: Record<string, string>) {
+    return Object.fromEntries(Object.entries(attrs).map(([key, value]) => [key, decodeEntities(value)]))
   }
 
   function titleCase(slug: string) {
@@ -180,8 +157,11 @@ export function createComposer(
     }
   }
 
-  async function enrichComponentAttrs(name: string, attrs: Record<string, string>) {
-    if (name === 'Image') return resolveImageAttrs(getImageMeta(), attrs)
+  async function enrichComponentAttrs(name: string, attrs: Record<string, string>): Promise<TemplateContext> {
+    if (name === 'Image') {
+      const resolved = resolveImageAttrs(getImageMeta(), attrs)
+      return { ...resolved, imgMain: safeHtml(resolved.imgMain) }
+    }
 
     const site = await loadSiteConfig()
     return { siteName: site.name, currentYear: buildYear(), ...attrs }
@@ -223,15 +203,13 @@ export function createComposer(
         )
       }
     }
-    if (!schema.allowUnknownAttrs) {
-      for (const key of Object.keys(attrs)) {
-        if (declared[key] !== undefined) continue
-        if (key === 'track') continue
-        throw buildErrorAt(`<${name} /> has unknown attribute "${key}"`, source, index, {
-          file: fileHint,
-          hint: `Declared attrs: ${Object.keys(declared).join(', ') || '(none)'} — add it to the inline schema comment if intended.`,
-        })
-      }
+    for (const key of Object.keys(attrs)) {
+      if (declared[key] !== undefined) continue
+      if (key === 'track') continue
+      throw buildErrorAt(`<${name} /> has unknown attribute "${key}"`, source, index, {
+        file: fileHint,
+        hint: `Declared attrs: ${Object.keys(declared).join(', ') || '(none)'} — add it to the inline schema comment if intended.`,
+      })
     }
   }
 
@@ -250,26 +228,20 @@ export function createComposer(
     return { defaultChildren, named }
   }
 
-  function renderConditionals(name: string, template: string, attrs: Record<string, string>, slots: ReturnType<typeof readSlots>) {
+  /** One pass: blocks, attrs, and slots render together. Slots are raw HTML; interpolated values are never rescanned. */
+  function renderTemplateOnce(name: string, template: string, attrs: TemplateContext, slots: ReturnType<typeof readSlots>) {
     const componentData = dataByComponent.get(name)
     const context: TemplateContext = {
       ...(componentData ?? {}),
       ...attrs,
-      slot: slots.defaultChildren,
-      ...Object.fromEntries(Object.entries(slots.named).map(([name, value]) => [`slot:${name}`, value])),
+      slot: safeHtml(slots.defaultChildren),
+      ...Object.fromEntries([...templateSlotNames(template)].map((slot) => [`slot:${slot}`, safeHtml(slots.named[slot] ?? '')])),
     }
     return renderTemplate(template, context, {
       allowEach: !!componentData,
-      placeholders: !!componentData,
+      placeholders: true,
       preserveUnknownPlaceholders: true,
-      preservePlaceholders: (path) => path === 'slot' || path.startsWith('slot:'),
     })
-  }
-
-  function expandSlots(template: string, slots: ReturnType<typeof readSlots>): string {
-    return template
-      .replace(SLOT_NAMED_RE, (_, name) => slots.named[name] ?? '')
-      .replace(SLOT_DEFAULT_RE, slots.defaultChildren)
   }
 
   function componentFileHint(name: string) {
@@ -277,14 +249,11 @@ export function createComposer(
   }
 
   async function expandOne(m: ComponentMatch, fileHint: string, source: string): Promise<string> {
-    if (m.name === 'SEO' && m.selfClosing === false) {
-      throw new BuildError('<SEO> must be self-closing', { file: fileHint })
-    }
-    let attrs: Record<string, string>
+    const rawAttrs = decodeAttrs(m.attrs)
+    let attrs: TemplateContext
     try {
-      attrs = { ...m.attrs }
-      validateAttrs(m.name, attrs, fileHint, source, m.index)
-      attrs = await enrichComponentAttrs(m.name, attrs)
+      validateAttrs(m.name, rawAttrs, fileHint, source, m.index)
+      attrs = await enrichComponentAttrs(m.name, rawAttrs)
     } catch (err) {
       if (err instanceof BuildError && err.line) throw err
       throw buildErrorAt(err instanceof Error ? err.message : String(err), source, m.index, {
@@ -292,20 +261,24 @@ export function createComposer(
         hint: err instanceof BuildError ? err.hint : 'Check the component attributes and referenced source files.',
       })
     }
-    if (onInstance) onInstance({ name: m.name, attrs: { ...m.attrs }, route: currentRoute })
+    if (onInstance) onInstance({ name: m.name, attrs: rawAttrs, route: currentRoute })
 
     const template = loadComponent(m.name, fileHint, source, m.index)
     const slots = readSlots(m.children, template)
-    let fragment = renderConditionals(m.name, template, attrs, slots)
-    fragment = expandSlots(fragment, slots)
-    fragment = substitute(fragment, attrs)
-    fragment = augmentRoot(m.name, fragment, m.attrs)
+    const frame = { file: fileHint, line: lineOf(source, m.index), label: `<${m.name} />` }
+    let fragment: string
+    try {
+      fragment = pruneOptionalPlaceholders(renderTemplateOnce(m.name, template, attrs, slots))
+    } catch (err) {
+      if (!(err instanceof BuildError)) throw err
+      err.file ??= componentFileHint(m.name)
+      throw err.addFrame(frame)
+    }
+    fragment = augmentRoot(m.name, fragment, rawAttrs)
     try {
       return await compose(fragment, componentFileHint(m.name))
     } catch (err) {
-      if (err instanceof BuildError) {
-        throw err.addFrame({ file: fileHint, line: lineOf(source, m.index), label: `<${m.name} />` })
-      }
+      if (err instanceof BuildError) throw err.addFrame(frame)
       throw err
     }
   }
@@ -387,23 +360,10 @@ export function createComposer(
     if (!seoMatch && /<SEO\b/i.test(match[1])) {
       throw new BuildError('<SEO> must be self-closing', { file: fileHint, hint: 'Use <SEO ... /> inside <head>.' })
     }
-    const seoAttrs = seoMatch ? parseAttrs(seoMatch[1] ?? '') : {}
+    const seoAttrs = seoMatch ? decodeAttrs(parseAttrs(seoMatch[1] ?? '')) : {}
     const extraHead = seoMatch ? match[1].replace(seoMatch[0], '').trim() : match[1].trim()
     const body = html.slice(match[0].length).trim()
     return { seoAttrs, extraHead, body }
-  }
-
-  function extractInlineSeo(html: string, fileHint: string) {
-    const m = html.match(SEO_RE)
-    if (!m) {
-      if (/<SEO\b/i.test(html)) {
-        throw new BuildError('<SEO> must be self-closing', { file: fileHint, hint: 'Use <SEO ... />.' })
-      }
-      return { attrs: {} as Record<string, string>, rest: html }
-    }
-    const attrs = parseAttrs(m[1] ?? '')
-    const rest = html.replace(m[0], '').trim()
-    return { attrs, rest }
   }
 
   function validateSeoAttrs(attrs: Record<string, string>, fileHint: string) {
@@ -482,26 +442,24 @@ export function createComposer(
             file: fileHint,
           })
         : raw
-      rejectLegacySyntax(routedRaw, fileHint)
       rejectStyleInRoute(routedRaw, fileHint)
 
-      const stripped = stripHeadWrapper(routedRaw.trim(), fileHint)
-      const inline = extractInlineSeo(stripped.body, fileHint)
-      if (Object.keys(stripped.seoAttrs).length && Object.keys(inline.attrs).length) {
-        throw new BuildError('Route contains more than one <SEO /> directive', {
+      const { seoAttrs, extraHead: seoHead, body } = stripHeadWrapper(routedRaw.trim(), fileHint)
+      const inlineSeo = body.search(/<SEO\b/i)
+      if (inlineSeo !== -1) {
+        throw buildErrorAt('<SEO /> is only accepted inside the route <head>', routedRaw, routedRaw.lastIndexOf(body) + inlineSeo, {
           file: fileHint,
           hint: 'Keep exactly one self-closing <SEO ... /> inside the route <head>.',
         })
       }
-      const seoOverrides = { ...stripped.seoAttrs, ...inline.attrs }
+      const seoOverrides = { ...seoAttrs }
       validateSeoAttrs(seoOverrides, fileHint)
       const unlisted = seoBooleanAttr(seoOverrides, 'unlisted', fileHint)
       delete seoOverrides.unlisted
-      const body = inline.rest
 
       const seoMarkup = await expandSeoMarkup(await mergeSeoAttrs(slug, seoOverrides, fileHint), unlisted || slug === '404')
       const composedBody = ensureHeadingIds(await compose(body, fileHint), fileHint)
-      const headExtras = [stripped.extraHead, ...headLinks].filter(Boolean)
+      const headExtras = [seoHead, ...headLinks].filter(Boolean)
       const extraHead = headExtras.length ? `\n${headExtras.join('\n')}` : ''
       return { html: `<head>\n${seoMarkup}${extraHead}\n</head>\n${composedBody}`, unlisted }
     } finally {
@@ -515,7 +473,6 @@ export function createComposer(
 
   async function prepareShellSource(raw: string) {
     const fileHint = 'src/shell.html'
-    rejectLegacySyntax(raw, fileHint)
     if (/<SEO\b/i.test(raw)) {
       throw new BuildError('<SEO /> is route-only and cannot appear in src/shell.html', {
         file: fileHint,
@@ -531,7 +488,7 @@ export function createComposer(
       locale: site.locale ?? 'en',
       scroll,
     }
-    let substituted = raw.replace(/\{\{(\w+)\}\}/g, (m, key) => shellVars[key] ?? m)
+    let substituted = renderPlaceholders(raw, shellVars, { placeholders: true, preserveUnknownPlaceholders: true })
     if (scroll === 'native') {
       substituted = substituted
         .replace(/\s+data-scroll=(['"])[^'"]*\1/i, '')

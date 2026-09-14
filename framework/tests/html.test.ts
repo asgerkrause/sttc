@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { extractHtmlDescription, extractHtmlMetadata, extractHtmlTitle, scanHtmlInternalLinks } from '../build/html'
+import { decodeEntities, extractHtmlDescription, extractHtmlMetadata, extractHtmlTitle, scanHtmlInternalLinks } from '../build/html'
 
 describe('HTML discovery helpers', () => {
   test('extracts route metadata in one parser pass', () => {
@@ -13,6 +13,20 @@ describe('HTML discovery helpers', () => {
 
   test('extracts title text', () => {
     expect(extractHtmlTitle('<html><head><title> Hello world </title></head></html>')).toBe('Hello world')
+  })
+
+  test('decodes entities in title and description', () => {
+    const html = '<title>Terms &amp; Conditions</title><meta name="description" content="Fish &amp; chips &lt;3">'
+
+    expect(extractHtmlMetadata(html)).toMatchObject({ title: 'Terms & Conditions', description: 'Fish & chips <3' })
+  })
+
+  test('decodes named and numeric character references in one pass', () => {
+    expect(decodeEntities('Caf&eacute; &copy; a &ndash; b&hellip;')).toBe('Café © a – b…')
+    expect(decodeEntities('&#38;amp; &#x26; &amp;lt;')).toBe('&amp; & &lt;')
+    expect(decodeEntities('&bogus; &copy=1 x &amp y')).toBe('&bogus; &copy=1 x & y')
+    expect(decodeEntities('Price &#128;10 &#x9F; Caf&#233 Caf&#xE9 x')).toBe('Price €10 Ÿ Café Café x')
+    expect(decodeEntities('&constructor; &toString; &valueOf; &__proto__;')).toBe('&constructor; &toString; &valueOf; &__proto__;')
   })
 
   test('extracts meta description content', () => {

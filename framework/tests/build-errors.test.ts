@@ -5,6 +5,7 @@ import { BuildError } from '../build/errors'
 import { extractRouteTopScripts } from '../build/extract-js'
 import { extractRouteStyleBlocks } from '../build/extract-css'
 import { nextComponent } from '../build/tags'
+import { parseInlineSchema } from '../build/component-meta'
 
 const seo = '<title>{{title}}</title>'
 
@@ -29,7 +30,10 @@ function composer(schemas = new Map<string, ComponentSchema>(), data = new Map<s
       ['MaybeAttr', '<div>{#if eyebrow}<p>{{eyebrow}}</p>{/if}<b>{{title}}</b></div>'],
       ['BadIf', '<div>{#if slot:vis}<span>{{slot:vis}}</span></div>'],
       ['BadElse', '<div>{#if title}<b>{{title}}</b>{:else}<i>Missing</i>{/if}</div>'],
-      ['BadElseIf', '<div>{#if title}<b>{{title}}</b>{:else if eyebrow}<i>{{eyebrow}}</i>{/if}</div>'],
+      ['ElseIf', '<div>{#if title}<b>{{title}}</b>{:else if eyebrow}<i>{{eyebrow}}</i>{:else}<em>None</em>{/if}</div>'],
+      ['Hero', '<p>{{title}}</p><aside>{{slot:aside}}</aside>'],
+      ['Titled', '<div title="{{title}}">{{slot}}</div>'],
+      ['Gallery', '<ul>{#each items as item}<li>{#if item.image}<img src="{{item.image}}">{:else}<span>{{item.name}}</span>{/if}</li>{/each}</ul>'],
       ['BadDoubleElse', '<div>{#if title}<b>{{title}}</b>{:else}<i>Missing</i>{:else}<em>Bad</em>{/if}</div>'],
       ['BadEach', '<div>{#each items as item}<b>{{item}}</b>{/each}</div>'],
       ['Logo', '<a class="logo">{#if slot}<span aria-hidden="true">{{slot}}</span>{/if}<span>{{siteName}}</span></a>'],
@@ -255,14 +259,107 @@ describe('build error source spans', () => {
     expect(html).toContain('<summary>Two</summary><div>Second</div>')
   })
 
-  test('rejects unsupported component conditional branches', async () => {
+  test('renders else-if chains and binds else to the innermost block', async () => {
+    const html = await composer().prepareRouteSource(
+      '<ElseIf title="Card" eyebrow="New" />\n<ElseIf eyebrow="New" />\n<ElseIf />',
+      { slug: 'page', fileHint: 'src/pages/page.html' },
+    )
+    expect(html).toContain('<div><b>Card</b></div>')
+    expect(html).toContain('<div><i>New</i></div>')
+    expect(html).toContain('<div><em>None</em></div>')
+  })
+
+  test('renders nested each and if blocks per item', async () => {
+    const html = await composer(new Map(), new Map([['Gallery', {
+      items: [{ name: 'One', image: '/one.webp' }, { name: 'Two' }],
+    }]])).prepareRouteSource('<Gallery />', { slug: 'page', fileHint: 'src/pages/page.html' })
+    expect(html).toContain('<ul><li><img src="/one.webp"></li><li><span>Two</span></li></ul>')
+  })
+
+  test('escapes attribute text once with and without component data', async () => {
+    const withData = new Map<string, TemplateContext>([['Hero', { extra: 'x' }]])
+    for (const data of [new Map<string, TemplateContext>(), withData]) {
+      const html = await composer(new Map(), data).prepareRouteSource(
+        '<Hero title="Tom & Jerry"><slot name="aside">Raw <b>html</b></slot></Hero>\n<Hero title="Tom &amp; Jerry" />',
+        { slug: 'page', fileHint: 'src/pages/page.html' },
+      )
+      expect(html).toContain('<p>Tom &amp; Jerry</p><aside>Raw <b>html</b></aside>')
+      expect(html).toContain('<p>Tom &amp; Jerry</p><aside></aside>')
+      expect(html).not.toContain('&amp;amp;')
+    }
+  })
+
+  test('never rescans interpolated attribute text as a slot', async () => {
+    const html = await composer().prepareRouteSource(
+      '<Titled title="{{slot}}">say "hello"</Titled>\n<Titled title="Caf&eacute;"><b>x</b></Titled>\n<Titled title="Price &#128;10 &constructor;">Caf&#233 &constructor;</Titled>',
+      { slug: 'page', fileHint: 'src/pages/page.html' },
+    )
+    // The literal attribute value is text, not a slot; the prune then drops it as an unresolved placeholder.
+    expect(html).toContain('<div>say "hello"</div>')
+    expect(html).toContain('<div title="Café"><b>x</b></div>')
+    expect(html).toContain('<div title="Price €10 &amp;constructor;">Caf&#233 &constructor;</div>')
+  })
+
+  test('renders SEO titles once from escaped attribute text', async () => {
+    const html = await composer().prepareRouteSource(
+      '<head><SEO title="Hello &amp; welcome" /></head><h1>Hi</h1>',
+      { slug: 'page', fileHint: 'src/pages/page.html' },
+    )
+    expect(html).toContain('<title>Hello &amp; welcome</title>')
+    expect(html).not.toContain('&amp;amp;')
+  })
+
+  test('rejects SEO outside the route head with its line', async () => {
     try {
-      await composer().prepareRouteSource('<BadElseIf title="Card" eyebrow="New" />', { slug: 'page', fileHint: 'src/pages/page.html' })
+      await composer().prepareRouteSource('<head><SEO title="Head" /></head>\n<h1>Page</h1>\n<SEO title="Body" />', {
+        slug: 'page',
+        fileHint: 'src/pages/page.html',
+      })
+      throw new Error('expected BuildError')
+    } catch (err) {
+      expectBuildError(err, 3, 'src/pages/page.html')
+      expect((err as BuildError).hint).toBe('Keep exactly one self-closing <SEO ... /> inside the route <head>.')
+    }
+  })
+
+  test('names the component file and the page line for a malformed template', async () => {
+    try {
+      await composer().prepareRouteSource('<p>Intro</p>\n<BadIf />', { slug: 'page', fileHint: 'src/pages/page.html' })
       throw new Error('expected BuildError')
     } catch (err) {
       expect(err).toBeInstanceOf(BuildError)
-      expect((err as BuildError).message).toContain('Unsupported component conditional branch')
+      const build = err as BuildError
+      expect(build.file).toBe('src/components/BadIf.html')
+      expect(build.frames).toEqual([{ file: 'src/pages/page.html', line: 2, label: '<BadIf />' }])
     }
+  })
+
+  test('rejects unknown contract tags and malformed attr lines with file and line', () => {
+    const file = 'src/components/Hero.html'
+    for (const [comment, message] of [
+      ['<!--\n  @desc Hero.\n  @atr title!\n-->', 'Unknown contract tag "@atr"'],
+      ['<!--\n  @desc Hero.\n  @attr size ! big\n-->', 'Malformed @attr "size ! big"'],
+    ]) {
+      try {
+        parseInlineSchema(`${comment}<section></section>`, file)
+        throw new Error('expected BuildError')
+      } catch (err) {
+        expectBuildError(err, 3, file)
+        expect((err as BuildError).message).toBe(message)
+      }
+    }
+    try {
+      parseInlineSchema('<!--\n  @atr title!\n-->', file)
+      throw new Error('expected BuildError')
+    } catch (err) {
+      expect((err as BuildError).hint).toBe('Supported: @desc, @attr, @schema')
+    }
+    const { schema } = parseInlineSchema('<!--\n  @attr variant=[a|b] :class Visual style.\n  @attr tone =[c|d] Spaced enum.\n  @attr title! Heading.\n-->', file)
+    expect(schema.attrs).toEqual({
+      variant: { enum: ['a', 'b'], asClass: true, description: 'Visual style.' },
+      tone: { enum: ['c', 'd'], description: 'Spaced enum.' },
+      title: { required: true, description: 'Heading.' },
+    })
   })
 
   test('rejects duplicate component else branches', async () => {

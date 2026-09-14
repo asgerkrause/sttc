@@ -18,15 +18,13 @@ type DirectiveToken =
 type RenderOptions = {
   placeholders?: boolean
   preserveUnknownPlaceholders?: boolean
-  preservePlaceholders?: (path: string) => boolean
-  escapeStrings?: boolean
   allowEach?: boolean
   file?: string
 }
 
 const TOKEN_RE = /\{#if\s+([^}]+)\}|\{#each\s+([^}]+)\}|\{:else\s+if\s+([^}]+)\}|\{:else\}|\{\/(if|each)\}/g
 const PLACEHOLDER_RE = /\{\{\s*([^}]+?)\s*\}\}/g
-const PATH_RE = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/
+const PATH_RE = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$|^slot:[\w-]+$/
 const EACH_EXPR_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)(?:\s+sort\s+(.+?))?\s+as\s+([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?$/
 const SORT_ITEM_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s+(asc|desc)$/
 const FILTER_RE = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\|\s*([A-Za-z_$][\w$]*)$/
@@ -50,13 +48,6 @@ function valueToString(value: TemplateValue, rawHtml: boolean) {
   return escapeHtml(String(value))
 }
 
-function valueToRawString(value: TemplateValue) {
-  if (value == null) return ''
-  if (isSafeHtml(value)) return value.value
-  if (Array.isArray(value) || typeof value === 'object') return JSON.stringify(value)
-  return String(value)
-}
-
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -65,8 +56,9 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
+/** Filters run on plain text; the interpolation escapes the result once. */
 function applyFilter(value: TemplateValue, filter: string): TemplateValue {
-  const text = valueToString(value, false)
+  const text = value == null ? '' : isSafeHtml(value) ? value.value : typeof value === 'object' ? JSON.stringify(value) : String(value)
   if (filter === 'lower') return text.toLowerCase()
   if (filter === 'slug') return slugify(text)
   throw new BuildError(`Unknown component placeholder filter "${filter}"`, {
@@ -148,27 +140,42 @@ function validatePath(expr: string) {
   return key
 }
 
+type BranchToken = Extract<DirectiveToken, { kind: 'else' | 'elseIf' }>
+
+function blockName(token: DirectiveToken) {
+  return token.kind === 'eachOpen' || (token.kind === 'close' && token.name === 'each') ? 'each' : 'if'
+}
+
+/** Finds the close of `open`, skipping nested blocks; returns the depth-0 branch tokens in order. */
 function findClose(tokens: DirectiveToken[], open: DirectiveToken, start: number) {
+  const stack: DirectiveToken[] = [open]
+  const branches: BranchToken[] = []
   for (let i = start; i < tokens.length; i++) {
     const token = tokens[i]!
     switch (token.kind) {
       case 'ifOpen':
       case 'eachOpen':
-        throw new BuildError('Nested component conditionals are not supported yet')
-      case 'close':
-        if (token.name !== (open.kind === 'ifOpen' ? 'if' : 'each')) {
-          throw new BuildError(`Unexpected component ${token.name} close`, { hint: `Close the current {#${open.kind === 'ifOpen' ? 'if' : 'each'} ...} block first.` })
+        stack.push(token)
+        break
+      case 'close': {
+        const current = stack.pop()!
+        if (token.name !== blockName(current)) {
+          throw new BuildError(`Unexpected component ${token.name} close`, { hint: `Close the current {#${blockName(current)} ...} block first.` })
         }
-        return { token, tokenIndex: i }
+        if (!stack.length) return { token, tokenIndex: i, branches }
+        break
+      }
       case 'else':
       case 'elseIf':
-        continue
+        if (stack.length === 1) branches.push(token)
+        break
       default:
         assertNever(token)
     }
   }
-  throw new BuildError(`Unclosed component ${open.kind === 'ifOpen' ? 'conditional' : 'each'} block`, {
-    hint: `Every {#${open.kind === 'ifOpen' ? 'if' : 'each'} ...} needs a matching {/${open.kind === 'ifOpen' ? 'if' : 'each'}}.`,
+  const name = blockName(open)
+  throw new BuildError(`Unclosed component ${name === 'if' ? 'conditional' : 'each'} block`, {
+    hint: `Every {#${name} ...} needs a matching {/${name}}.`,
   })
 }
 
@@ -183,11 +190,10 @@ export function renderPlaceholders(segment: string, context: TemplateContext, op
         hint: 'Use {{name}}, {{item.name}}, {{name | lower}}, or {{name | slug}}. No expressions yet.',
       })
     }
-    if (options.preservePlaceholders?.(path)) return full
     const value = getPath(context, path)
     if (value === undefined && options.preserveUnknownPlaceholders) return full
     const rendered = filterMatch ? applyFilter(value, filterMatch[2]!) : value
-    return options.escapeStrings === false ? valueToRawString(rendered) : valueToString(rendered, true)
+    return valueToString(rendered, true)
   })
 }
 
@@ -239,16 +245,19 @@ export function renderTemplate(template: string, context: TemplateContext, optio
       case 'ifOpen': {
         out += renderPlaceholders(template.slice(cursor, token.index), context, options)
         const close = findClose(tokens, token, i + 1)
-        const branchTokens = tokens.slice(i + 1, close.tokenIndex)
-        const elseIf = branchTokens.find((item) => item.kind === 'elseIf')
-        if (elseIf) throw new BuildError('Unsupported component conditional branch', { hint: '{:else if ...} is not supported yet.' })
-        const elseTokens = branchTokens.filter((item) => item.kind === 'else')
-        if (elseTokens.length > 1) throw new BuildError('Duplicate component conditional else', { hint: 'Use at most one {:else} per {#if ...} block.' })
-        const elseToken = elseTokens[0]
-        const truthyBody = template.slice(token.end, elseToken?.index ?? close.token.index)
-        const falsyBody = elseToken ? template.slice(elseToken.end, close.token.index) : ''
-        const key = validatePath(token.expr)
-        const picked = isTruthy(getPath(context, key)) ? truthyBody : falsyBody
+        const elseAt = close.branches.findIndex((item) => item.kind === 'else')
+        if (elseAt !== -1 && elseAt !== close.branches.length - 1) {
+          throw new BuildError('Duplicate component conditional else', { hint: 'Use at most one {:else} per {#if ...} block, after any {:else if ...}.' })
+        }
+        // Each branch owns the body up to the next branch token; every condition is validated, the first truthy one renders.
+        const heads = [token, ...close.branches]
+        const ends = [...close.branches, close.token]
+        let pickedAt = -1
+        heads.forEach((head, b) => {
+          const taken = head.kind === 'else' || isTruthy(getPath(context, validatePath(head.expr)))
+          if (taken && pickedAt === -1) pickedAt = b
+        })
+        const picked = pickedAt === -1 ? '' : template.slice(heads[pickedAt]!.end, ends[pickedAt]!.index)
         out += renderTemplate(picked, context, options)
         cursor = close.token.end
         i = close.tokenIndex
@@ -258,9 +267,7 @@ export function renderTemplate(template: string, context: TemplateContext, optio
         if (!options.allowEach) throw new BuildError('Unsupported component each block', { hint: '{#each ...} is only supported in CMS templates for now.' })
         out += renderPlaceholders(template.slice(cursor, token.index), context, options)
         const close = findClose(tokens, token, i + 1)
-        const branchTokens = tokens.slice(i + 1, close.tokenIndex)
-        const branch = branchTokens.find((item) => item.kind === 'else' || item.kind === 'elseIf')
-        if (branch) throw new BuildError('Unsupported component each branch', { hint: '{#each ...} does not support {:else} yet.' })
+        if (close.branches.length) throw new BuildError('Unsupported component each branch', { hint: '{#each ...} does not support {:else} yet.' })
         const source = getPath(context, token.source)
         if (!Array.isArray(source)) {
           throw new BuildError(`Component each source "${token.source}" is not an array`, {
