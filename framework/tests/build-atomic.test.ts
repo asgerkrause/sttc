@@ -46,6 +46,7 @@ async function makeProject(options: { siteJson?: string, body?: string } = {}) {
 </head>
 ${options.body ?? '<h1>Home body</h1>'}
 `)
+  await writeFile(join(dir, 'src', 'pages', '404.html'), '<h1>Not found</h1>\n')
   await writeFile(join(dir, 'dist', 'keep.txt'), 'old dist')
   await writeFile(join(dir, 'dist', 'stale.txt'), 'stale output')
 

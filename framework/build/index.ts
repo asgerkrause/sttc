@@ -46,7 +46,7 @@ import {
   sourceStylesFile,
 } from './paths'
 import { absoluteUrl, buildSchemaGraph, isPublicRoute, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
-import { compileContentFrom, type ContentRoute } from './content'
+import { compileContentFrom, isoDate, loadContentCollections, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
 import { copyAssetsTo, copyMediaFolderTo, copyTree } from './assets'
@@ -56,8 +56,8 @@ import { runChecks, failOnReport } from './check'
 import { routeSchemaExtras, writeDiscovery, type RouteRecord } from './discovery'
 import type { ComposeInstance } from './compose'
 import { writeComponentsReadme } from './docs'
-import { discoverSourceRoutes, sourceLastModified } from './source-files'
-import { RouteGraph, type ComposedRoute } from './route-graph'
+import { discoverSourceRoutes } from './source-files'
+import { RouteGraph } from './route-graph'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
 import { createBuildContext, type BuildContext, type BuildContextOptions, type BuildResult } from './build-context'
 import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
@@ -199,27 +199,28 @@ function markStaticRoute(html: string, slug: string) {
 async function writeStaticRoutes(
   distDir: string,
   shellHtml: string,
-  routes: ComposedRoute[],
   records: RouteRecord[],
   extrasBySlug: Map<string, JsonLdNode[]>,
   site: SiteConfig,
 ) {
-  const recordsBySlug = new Map(records.map((record) => [record.slug, record]))
   const titlesBySlug = Object.fromEntries(
     records.filter((record) => isPublicRoute(record) && record.slug !== '404').map((record) => [record.slug, record.title]),
   )
-  await mapConcurrent(routes, 4, async (route) => {
-    const { head, body } = splitRouteHtml(route.html)
-    const record = recordsBySlug.get(route.slug)
-    const routeHead = record ? enrichRouteHead(head, site, record, extrasBySlug.get(route.slug) ?? [], titlesBySlug) : head
+  await mapConcurrent(records, 4, async (record) => {
+    const { head, body } = splitRouteHtml(record.renderedHtml ?? '')
+    const routeHead = enrichRouteHead(head, site, record, extrasBySlug.get(record.slug) ?? [], titlesBySlug)
     const html = markStaticRoute(
       moveRouteCssLinksLast(injectRouteBody(applyRouteHead(shellHtml, routeHead), body)),
-      route.slug,
+      record.slug,
     )
-    const path = publicRoutePath(distDir, route.slug)
+    const path = publicRoutePath(distDir, record.slug)
     await mkdir(join(path, '..'), { recursive: true })
     await writeFile(path, html)
-    await writeFile(join(distDir, 'routes', route.outFile), `<head>\n${routeHead}\n</head>\n${body}`)
+    // Hosts serve a root 404.html for unmatched paths (Vercel, Netlify, static file servers).
+    if (record.slug === '404') await writeFile(join(distDir, '404.html'), html)
+    const fragment = join(distDir, 'routes', `${record.slug}.html`)
+    await mkdir(join(fragment, '..'), { recursive: true })
+    await writeFile(fragment, `<head>\n${routeHead}\n</head>\n${body}`)
   })
 }
 
@@ -435,13 +436,11 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const componentsCssDir = join(context.distDir, 'assets', 'css')
   const scriptBlocks: ScriptBlock[] = []
 
-  const shellRaw = await readFile(context.shellFile, 'utf8')
-  const { blocks: shellScripts } = extractShellHeadScripts(shellRaw)
+  const { html: strippedShell, blocks: shellScripts } = extractShellHeadScripts(await readFile(context.shellFile, 'utf8'))
   scriptBlocks.push(...shellScripts)
 
   // Compose the shell before routes so shell component use contributes to site-wide pruning.
   // Inject assets only after every static, content, and generated route has composed.
-  const { html: strippedShell } = extractShellHeadScripts(shellRaw)
   const composedShellWithoutStyles = await composer.prepareShellSource(strippedShell)
   tick('shell-css', t)
 
@@ -449,8 +448,6 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const routeGraph = new RouteGraph({
     composer,
     instancesFor: (slug) => instancesByRoute.get(slug) ?? [],
-    distDir: context.distDir,
-    sourceRoot: context.rootDir,
   })
 
   const sourceRoutes = await discoverSourceRoutes({ srcDir: context.srcDir })
@@ -458,14 +455,8 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     slug: route.slug,
     kind: route.legacy ? 'legacy-static' as const : 'static' as const,
     source: route.sourceRel,
-    outFile: route.outFile,
   }))
   for (const owner of staticOwners) routeGraph.register(owner)
-
-  const lastModifiedBySource = new Map<string, string | undefined>()
-  await mapConcurrent(sourceRoutes, IO_CONCURRENCY, async (route) => {
-    lastModifiedBySource.set(route.sourceRel, await sourceLastModified(route.sourcePath))
-  })
 
   const routeScripts = await mapConcurrent(sourceRoutes, IO_CONCURRENCY, async (route, index) => {
     const routeRaw = await readFile(route.sourcePath, 'utf8')
@@ -479,7 +470,6 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
     await routeGraph.compose(staticOwners[index]!, body, {
       headLinks: cssAsset ? [routeCssLink(cssAsset)] : undefined,
       data: { site: site as unknown as TemplateValue, ...routeData },
-      lastModified: lastModifiedBySource.get(route.sourceRel),
       index,
     })
     return routeScriptBlocks(route.slug, scripts)
@@ -491,14 +481,15 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const contentStart = sourceRoutes.length
   for (const route of contentRoutes) {
     contentByslug.set(route.slug, route)
-    routeGraph.register({ slug: route.slug, kind: 'content', source: route.source, outFile: route.routeFile })
+    routeGraph.register({ slug: route.slug, kind: 'content', source: route.source })
   }
   await mapConcurrent(contentRoutes, IO_CONCURRENCY, async (route, index) => {
     await routeGraph.compose(
-      { slug: route.slug, kind: 'content', source: route.source, outFile: route.routeFile },
+      { slug: route.slug, kind: 'content', source: route.source },
       route.body,
       {
-        lastModified: await sourceLastModified(join(context.rootDir, route.source)),
+        // Sitemap lastmod is honest only for content: front-matter dates, never file mtimes.
+        lastModified: isoDate(route.data.dateModified) ?? isoDate(route.data.date),
         index: contentStart + index,
       },
     )
@@ -510,9 +501,10 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const routeRecordsBeforeIndexes = routeGraph.records()
   const publicContentSlugs = new Set(routeRecordsBeforeIndexes.filter(isPublicRoute).map((record) => record.slug))
 
-  // Auto-generate /insights/ index + /tags/{tag}/ + /tags/ index from public posts only.
+  // Auto-generate the posts index + /tags/{tag}/ + /tags/ index from public posts only.
   const posts = contentRoutes.filter((c) => c.collection === 'posts' && !c.draft && publicContentSlugs.has(c.slug))
-  await autoGenerateIndexes(routeGraph, posts)
+  const postsRoute = (await loadContentCollections(context.rootDir)).find((c) => c.name === 'posts')!.route
+  await autoGenerateIndexes(routeGraph, posts, { srcDir: context.srcDir, route: postsRoute })
   assertImageEncodePlan(instancesByRoute, imageEncode)
 
   const usedComponents = new Set(componentUseCounts.keys())
@@ -572,7 +564,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
 
   t = performance.now()
   const shellWithApp = withHashedScripts(composedShell, appJsFile, routerJsFile)
-  await writeStaticRoutes(context.distDir, shellWithApp, routeGraph.composedRoutes(), routeRecords, schemaExtrasBySlug, site)
+  await writeStaticRoutes(context.distDir, shellWithApp, routeRecords, schemaExtrasBySlug, site)
   tick('static-output', t)
 
   const total = Math.round(performance.now() - t0)

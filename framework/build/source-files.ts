@@ -31,16 +31,6 @@ export function buildYear(value = process.env.SOURCE_DATE_EPOCH) {
   return String((sourceDateEpoch(value) ?? new Date()).getUTCFullYear())
 }
 
-export async function sourceLastModified(path: string) {
-  const reproducible = sourceDateEpoch()
-  if (reproducible) return reproducible.toISOString()
-  try {
-    return (await stat(path)).mtime.toISOString()
-  } catch {
-    return undefined
-  }
-}
-
 function normalizeRel(path: string) {
   return path.replace(/\\/g, '/')
 }

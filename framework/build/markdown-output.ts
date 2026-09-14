@@ -15,8 +15,9 @@ function decodeEntities(value: string) {
     .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
 }
 
+/** Strips remaining tags; entities decode once, on the whole document. */
 function text(value: string) {
-  return decodeEntities(value.replace(/<[^>]+>/g, '')).replace(/[ \t]+/g, ' ').trim()
+  return value.replace(/<[^>]+>/g, '').replace(/[ \t]+/g, ' ').trim()
 }
 
 function attr(attrs: string, name: string) {
@@ -45,26 +46,27 @@ export function htmlToMarkdown(html: string) {
     .replace(/<head\b[\s\S]*?<\/head>/gi, '')
     .replace(/<(script|style|template|svg)\b[\s\S]*?<\/\1>/gi, '')
     .replace(/<!--([\s\S]*?)-->/g, '')
-    .replace(/<pre\b[^>]*>([\s\S]*?)<\/pre>/gi, (_, body) => `\n\`\`\`\n${decodeEntities(body.replace(/^<code\b[^>]*>|<\/code>$/gi, '').trim())}\n\`\`\`\n`)
+    .replace(/<pre\b[^>]*>([\s\S]*?)<\/pre>/gi, (_, body) => `\n\`\`\`\n${body.replace(/^<code\b[^>]*>|<\/code>$/gi, '').trim()}\n\`\`\`\n`)
+    // Inline marks first so list items, table cells, and headings keep links, code, images, and emphasis.
+    .replace(/<code\b[^>]*>([\s\S]*?)<\/code>/gi, (_, body) => `\`${text(body)}\``)
+    .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs, body) => {
+      const label = text(body)
+      const url = attr(attrs, 'href')
+      return label && url ? `[${label}](${url})` : label
+    })
+    .replace(/<img\b([^>]*)>/gi, (_, attrs) => attr(attrs, 'src') ? `![${attr(attrs, 'alt')}](${attr(attrs, 'src')})` : '')
+    .replace(/<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, body) => `**${text(body)}**`)
+    .replace(/<(em|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, body) => `*${text(body)}*`)
     .replace(/<table\b[^>]*>([\s\S]*?)<\/table>/gi, (_, body) => tableToMarkdown(body))
     .replace(/<ol\b[^>]*>([\s\S]*?)<\/ol>/gi, (_, body) => listToMarkdown(body, true))
     .replace(/<ul\b[^>]*>([\s\S]*?)<\/ul>/gi, (_, body) => listToMarkdown(body, false))
     .replace(/<dl\b[^>]*>([\s\S]*?)<\/dl>/gi, (_, body) => body
       .replace(/<dt\b[^>]*>([\s\S]*?)<\/dt>/gi, (_match: string, term: string) => `\n**${text(term)}**\n`)
       .replace(/<dd\b[^>]*>([\s\S]*?)<\/dd>/gi, (_match: string, description: string) => `${text(description)}\n`))
-    .replace(/<img\b([^>]*)>/gi, (_, attrs) => attr(attrs, 'src') ? `![${attr(attrs, 'alt')}](${attr(attrs, 'src')})` : '')
-    .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs, body) => {
-      const label = text(body)
-      const url = attr(attrs, 'href')
-      return label && url ? `[${label}](${url})` : label
-    })
     .replace(/<summary\b[^>]*>([\s\S]*?)<\/summary>/gi, (_, body) => `\n### ${text(body)}\n`)
     .replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi, (_, level, body) => `\n${'#'.repeat(Number(level))} ${text(body)}\n`)
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<hr\s*\/?>/gi, '\n---\n')
-    .replace(/<code\b[^>]*>([\s\S]*?)<\/code>/gi, (_, body) => `\`${text(body)}\``)
-    .replace(/<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, body) => `**${text(body)}**`)
-    .replace(/<(em|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, body) => `*${text(body)}*`)
 
   out = out.replace(/<\/?([a-z][\w-]*)\b[^>]*>/gi, (_, tag) => BLOCK_TAGS.has(String(tag).toLowerCase()) ? '\n' : '')
   return decodeEntities(out)

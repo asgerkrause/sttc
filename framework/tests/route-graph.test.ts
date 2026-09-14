@@ -1,7 +1,4 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdir, mkdtemp, readFile, rm, utimes, writeFile } from 'fs/promises'
-import { join } from 'path'
-import { tmpdir } from 'os'
 import type { Composer, ComposeInstance, RouteComposeInput } from '../build/compose'
 import { RouteGraph } from '../build/route-graph'
 
@@ -22,104 +19,65 @@ ${raw}`,
   }
 }
 
-async function withTempDir(fn: (dir: string) => Promise<void>) {
-  const dir = await mkdtemp(join(tmpdir(), 'snz-route-graph-'))
-  try {
-    await fn(dir)
-  } finally {
-    await rm(dir, { recursive: true, force: true })
-  }
-}
-
 describe('route graph', () => {
-  test('composes, writes, and records route metadata in one operation', async () => {
-    await withTempDir(async (distDir) => {
-      const instances: ComposeInstance[] = [{ name: 'Section', attrs: {}, route: 'insights' }]
-      const graph = new RouteGraph({
-        composer: testComposer(),
-        instancesFor: (slug) => slug === 'insights' ? instances : [],
-        distDir,
-      })
-
-      await graph.compose(
-        { slug: 'insights', kind: 'generated', source: 'generated:insights' },
-        '<Section><a href="/insights/one/">One</a></Section>',
-        { schemas: ['CollectionPage'] },
-      )
-
-      expect(await readFile(join(distDir, 'routes', 'insights.html'), 'utf8')).toContain('<Section>')
-      expect(graph.slugs()).toEqual(['insights'])
-      expect(graph.records()).toMatchObject([{
-        slug: 'insights',
-        title: 'insights',
-        description: 'generated:insights',
-        components: instances,
-        internalLinks: ['/insights/one/'],
-        schemas: ['CollectionPage'],
-        renderedHtml: expect.stringContaining('<Section>'),
-      }])
+  test('composes and records route metadata with the rendered HTML in one record', async () => {
+    const instances: ComposeInstance[] = [{ name: 'Section', attrs: {}, route: 'insights' }]
+    const graph = new RouteGraph({
+      composer: testComposer(),
+      instancesFor: (slug) => slug === 'insights' ? instances : [],
     })
+
+    const { html } = await graph.compose(
+      { slug: 'insights', kind: 'generated', source: 'generated:insights' },
+      '<Section><a href="/insights/one/">One</a></Section>',
+      { schemas: ['CollectionPage'] },
+    )
+
+    expect(html).toContain('<Section>')
+    expect(graph.slugs()).toEqual(['insights'])
+    expect(graph.records()).toMatchObject([{
+      slug: 'insights',
+      title: 'insights',
+      description: 'generated:insights',
+      components: instances,
+      internalLinks: ['/insights/one/'],
+      schemas: ['CollectionPage'],
+      renderedHtml: html,
+    }])
   })
 
   test('records visible Schema.org microdata types', async () => {
-    await withTempDir(async (distDir) => {
-      const graph = new RouteGraph({ composer: testComposer(), distDir })
-      await graph.compose(
-        { slug: 'faq', kind: 'static', source: 'src/pages/faq.html' },
-        '<section itemscope itemtype="https://schema.org/FAQPage"></section>',
-      )
+    const graph = new RouteGraph({ composer: testComposer() })
+    await graph.compose(
+      { slug: 'faq', kind: 'static', source: 'src/pages/faq.html' },
+      '<section itemscope itemtype="https://schema.org/FAQPage"></section>',
+    )
 
-      expect(graph.records()[0]?.schemas).toEqual(['WebPage', 'FAQPage'])
-    })
+    expect(graph.records()[0]?.schemas).toEqual(['WebPage', 'FAQPage'])
   })
 
-  test('uses source file mtime as route lastModified when available', async () => {
-    await withTempDir(async (rootDir) => {
-      const source = join(rootDir, 'src', 'pages', 'about.html')
-      await mkdir(join(source, '..'), { recursive: true })
-      await writeFile(source, '<h1>About</h1>')
-      const modified = new Date('2026-05-26T10:30:00.000Z')
-      await utimes(source, modified, modified)
+  test('keeps lastModified only when the caller supplies one', async () => {
+    const graph = new RouteGraph({ composer: testComposer() })
+    await graph.compose({ slug: 'about', kind: 'static', source: 'src/pages/about.html' }, '<h1>About</h1>')
+    await graph.compose(
+      { slug: 'insights/hello', kind: 'content', source: 'content/posts/hello.md' },
+      '<h1>Hello</h1>',
+      { lastModified: '2026-05-27T08:00:00.000Z' },
+    )
+    await graph.compose({ slug: 'insights', kind: 'generated', source: 'generated:insights' }, '<a href="/insights/hello/">Hello</a>')
 
-      const graph = new RouteGraph({
-        composer: testComposer(),
-        distDir: join(rootDir, 'dist'),
-        sourceRoot: rootDir,
-      })
-
-      await graph.compose(
-        { slug: 'about', kind: 'static', source: 'src/pages/about.html' },
-        '<h1>About</h1>',
-      )
-
-      expect(graph.records()[0]?.lastModified).toBe(modified.toISOString())
-    })
+    const bySlug = new Map(graph.records().map((record) => [record.slug, record.lastModified]))
+    expect(bySlug.get('about')).toBeUndefined()
+    expect(bySlug.get('insights/hello')).toBe('2026-05-27T08:00:00.000Z')
+    expect(bySlug.get('insights')).toBeUndefined()
   })
 
-  test('derives generated route lastModified from linked route records', async () => {
-    await withTempDir(async (rootDir) => {
-      const source = join(rootDir, 'content', 'posts', 'hello.md')
-      await mkdir(join(source, '..'), { recursive: true })
-      await writeFile(source, 'hello')
-      const modified = new Date('2026-05-27T08:00:00.000Z')
-      await utimes(source, modified, modified)
+  test('keeps records in caller index order', async () => {
+    const graph = new RouteGraph({ composer: testComposer() })
+    await graph.compose({ slug: 'b', kind: 'static', source: 'src/pages/b.html' }, '<h1>B</h1>', { index: 1 })
+    await graph.compose({ slug: 'a', kind: 'static', source: 'src/pages/a.html' }, '<h1>A</h1>', { index: 0 })
+    await graph.compose({ slug: 'tags', kind: 'generated', source: 'generated:tags' }, '<h1>Tags</h1>')
 
-      const graph = new RouteGraph({
-        composer: testComposer(),
-        distDir: join(rootDir, 'dist'),
-        sourceRoot: rootDir,
-      })
-
-      await graph.compose(
-        { slug: 'insights/hello', kind: 'content', source: 'content/posts/hello.md' },
-        '<h1>Hello</h1>',
-      )
-      await graph.compose(
-        { slug: 'insights', kind: 'generated', source: 'generated:insights' },
-        '<a href="/insights/hello/">Hello</a>',
-      )
-
-      expect(graph.records().find((record) => record.slug === 'insights')?.lastModified).toBe(modified.toISOString())
-    })
+    expect(graph.records().map((record) => record.slug)).toEqual(['a', 'b', 'tags'])
   })
 })

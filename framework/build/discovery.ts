@@ -10,7 +10,7 @@ import {
   routeMarkdownPathFromSlug,
 } from '../runtime/lib/paths.js'
 import type { ComponentSchema, ComposeInstance } from './compose'
-import type { ContentRoute } from './content'
+import { isoDate, type ContentRoute } from './content'
 import { extractHtmlMetadata } from './html'
 import { GENERATOR_NAME, GENERATOR_VERSION } from './version'
 import { mapConcurrent } from './concurrency'
@@ -28,7 +28,7 @@ export type RouteRecord = {
   unlisted?: boolean
   /** Composed route HTML used to derive the public Markdown representation. */
   renderedHtml?: string
-  /** Date / lastModified ISO string. */
+  /** Content front-matter dateModified ?? date as ISO; authored routes have none. */
   lastModified?: string
 }
 
@@ -61,12 +61,6 @@ function componentSchemaExtras(record: RouteRecord, schemas: Map<string, Compone
   }
 
   return { schemas: uniqueStrings([...record.schemas, ...schemaTypes]), extraJsonLd }
-}
-
-function isoDate(value: string | undefined) {
-  if (!value) return undefined
-  const parsed = new Date(value)
-  return Number.isFinite(parsed.valueOf()) ? parsed.toISOString() : undefined
 }
 
 function contentDateModified(content: ContentRoute) {

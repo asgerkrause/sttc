@@ -1,7 +1,6 @@
-// Compiles built-in posts and optional custom markdown collections into in-memory routes.
-// Built-in stays implicit:
-// - content/posts/*.md → /insights/{slug}/ through src/templates/post.html
-// Custom collections come from content/collections.json.
+// Compiles markdown collections into in-memory routes.
+// `posts` is an ordinary collection with defaults (content/posts, src/templates/post.html,
+// /insights/{slug}/); content/collections.json may override its route and template or add more.
 
 import { readdir, readFile, stat } from 'fs/promises'
 import { join } from 'path'
@@ -27,7 +26,6 @@ export type ContentCollectionConfig = {
   route: string
   required: string[]
   fields?: ContentFieldConfig[]
-  builtin?: 'posts'
 }
 
 export type ContentRoute = {
@@ -52,16 +50,19 @@ export type ContentRoute = {
   draft: boolean
 }
 
-const BUILTIN_COLLECTIONS: ContentCollectionConfig[] = [
-  {
-    name: 'posts',
-    path: 'content/posts',
-    template: 'post.html',
-    route: 'insights/{slug}',
-    required: ['title', 'description'],
-    builtin: 'posts',
-  },
-]
+const POSTS_COLLECTION: ContentCollectionConfig = {
+  name: 'posts',
+  path: 'content/posts',
+  template: 'post.html',
+  route: 'insights/{slug}',
+  required: ['title', 'description'],
+}
+
+export function isoDate(value: string | undefined) {
+  if (!value) return undefined
+  const parsed = new Date(value)
+  return Number.isFinite(parsed.valueOf()) ? parsed.toISOString() : undefined
+}
 
 async function exists(p: string) {
   try { await stat(p); return true } catch { return false }
@@ -223,7 +224,7 @@ function configError(message: string, hint?: string): never {
   })
 }
 
-function normalizeContentPath(value: unknown) {
+function normalizeContentPath(value: unknown, name: string) {
   if (typeof value !== 'string' || !value.trim()) configError('Custom collection path must be a non-empty string')
   const rel = value.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/g, '')
   const parts = rel.split('/').filter(Boolean)
@@ -231,7 +232,7 @@ function normalizeContentPath(value: unknown) {
     configError('Custom collection path must be a safe repo-relative path', 'Use paths like content/projects. Path traversal and absolute paths are not allowed.')
   }
   const normalized = parts.join('/')
-  if (!normalized.startsWith('content/') || normalized === 'content/posts' || normalized === 'content/pages') {
+  if (!normalized.startsWith('content/') || (normalized === 'content/posts' && name !== 'posts') || normalized === 'content/pages') {
     configError('Custom collection path must be a non-built-in content subfolder', 'Use paths like content/projects. content/pages is reserved; authored pages belong in src/pages.')
   }
   return normalized
@@ -261,14 +262,14 @@ function normalizeRoutePattern(value: unknown) {
   return route
 }
 
-function normalizeRequired(value: unknown) {
-  if (value == null) return ['title']
+function normalizeRequired(value: unknown, fallback = ['title']) {
+  if (value == null) return fallback
   if (!Array.isArray(value)) configError('Custom collection required must be an array of front-matter keys')
   const required = value.map((item) => {
     if (typeof item !== 'string' || !item.trim()) configError('Custom collection required keys must be non-empty strings')
     return item.trim()
   })
-  return required.length ? required : ['title']
+  return required.length ? required : fallback
 }
 
 function normalizeFields(value: unknown): ContentFieldConfig[] | undefined {
@@ -289,17 +290,18 @@ function validateCustomCollection(raw: unknown): ContentCollectionConfig {
   if (!/^[a-z][a-z0-9-]*$/.test(name)) {
     configError('Custom collection name must be a lowercase id', 'Use [a-z][a-z0-9-]*, e.g. projects or team-members.')
   }
-  if (name === 'posts' || name === 'pages') {
-    configError(`Custom collection name "${name}" is reserved`, 'Built-in posts stay implicit; authored pages belong in src/pages. Use another collection name.')
+  if (name === 'pages') {
+    configError('Custom collection name "pages" is reserved', 'Authored pages belong in src/pages. Use another collection name.')
   }
 
+  const defaults = name === 'posts' ? POSTS_COLLECTION : undefined
   return {
     name,
     label: typeof record.label === 'string' ? record.label : undefined,
-    path: normalizeContentPath(record.path),
-    template: normalizeTemplate(record.template),
-    route: normalizeRoutePattern(record.route),
-    required: normalizeRequired(record.required),
+    path: defaults && record.path == null ? defaults.path : normalizeContentPath(record.path, name),
+    template: defaults && record.template == null ? defaults.template : normalizeTemplate(record.template),
+    route: defaults && record.route == null ? defaults.route : normalizeRoutePattern(record.route),
+    required: normalizeRequired(record.required, defaults?.required),
     fields: normalizeFields(record.fields),
   }
 }
@@ -339,7 +341,8 @@ export async function loadCustomContentCollections(projectRoot = root): Promise<
 }
 
 export async function loadContentCollections(projectRoot = root): Promise<ContentCollectionConfig[]> {
-  return [...BUILTIN_COLLECTIONS, ...(await loadCustomContentCollections(projectRoot))]
+  const custom = await loadCustomContentCollections(projectRoot)
+  return custom.some((collection) => collection.name === 'posts') ? custom : [POSTS_COLLECTION, ...custom]
 }
 
 function assertSafeBasename(basename: string, sourceRel: string) {
@@ -379,7 +382,7 @@ async function compileFile(
       hint: `Add ${field}: ... to the front matter, or remove it from the collection required fields.`,
     })
   }
-  const date = collection.builtin === 'posts' ? assertPostDate(data, sourceRel, raw) : undefined
+  const date = collection.name === 'posts' ? assertPostDate(data, sourceRel, raw) : undefined
 
   assertSafeContentMarkdown(raw, sourceRel)
   assertValidContentMediaRefs(body, sourceRel, raw, markdownBodyStart(raw))
@@ -402,7 +405,7 @@ async function compileFile(
     basename,
     collection: collection.name,
     body: safeHtml(html),
-    tagsHtml: safeHtml(tags.map((t) => `<Tag href="/tags/${slugifyTag(t)}/" label="${escapeHtml(t)}" />`).join(' ')),
+    tagsHtml: safeHtml(tags.map((t) => `<a href="/tags/${slugifyTag(t)}/">${escapeHtml(t)}</a>`).join(' ')),
   }
   let composed = renderTemplate(template, vars, {
     allowEach: true,

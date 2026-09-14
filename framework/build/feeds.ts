@@ -11,6 +11,7 @@ function esc(s: string) {
 }
 
 export async function writeFeeds(distDir: string, site: SiteConfig, posts: ContentRoute[]) {
+  if (!posts.length) return
   const sorted = [...posts].sort((a, b) => (b.date ?? b.data.date).localeCompare(a.date ?? a.data.date))
 
   // RSS 2.0
