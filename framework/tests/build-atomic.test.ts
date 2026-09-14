@@ -135,7 +135,7 @@ describe('atomic dist build', () => {
     expect(result.code).toBe(0)
     expect(await Bun.file(join(dir, 'dist', 'stale.txt')).exists()).toBe(false)
     expect(await readFile(join(dir, 'dist', 'index.html'), 'utf8')).toContain('<h1 id="home-body">Home body</h1>')
-    expect(await Bun.file(join(dir, 'dist', 'routes', 'index.html')).exists()).toBe(true)
+    expect(await Bun.file(join(dir, 'dist', '404.html')).exists()).toBe(true)
     expect(await distSwapTemps(dir)).toEqual([])
   })
 })

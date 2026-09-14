@@ -282,7 +282,7 @@ function watchTree(rootPath: string, recursive: boolean) {
 }
 
 const managedWatchRoots = [
-  ...['pages', 'routes', 'components', 'assets', 'templates', 'styles', 'app', 'data', 'images', 'videos', 'files']
+  ...['pages', 'components', 'templates', 'styles', 'app', 'data', 'images', 'videos', 'files']
     .map((rel) => join(src, rel)),
   ...['content', 'media'].map((rel) => join(root, rel)),
 ]
@@ -301,7 +301,5 @@ async function ensureManagedWatchTrees() {
 watchTree(src, false) // root files plus creation/removal of managed source subdirectories
 watchTree(join(packageRoot, 'build'), true)
 watchTree(join(packageRoot, 'runtime'), true)
-watchTree(root, false) // .pages.yml, optional content/media roots, and legacy top-level runtime files
-watchTree(join(root, 'runtime'), true)
-watchTree(join(root, 'lib'), true)
+watchTree(root, false) // .pages.yml plus creation/removal of content/ and media/
 await ensureManagedWatchTrees()

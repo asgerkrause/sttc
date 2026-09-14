@@ -49,7 +49,7 @@ import { absoluteUrl, buildSchemaGraph, isPublicRoute, writeRobots, writeSitemap
 import { compileContentFrom, isoDate, loadContentCollections, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { BuildError } from './errors'
-import { copyAssetsTo, copyMediaFolderTo, copyTree } from './assets'
+import { copyAssetsTo, copyTree } from './assets'
 import { autoGenerateIndexes } from './generated-routes'
 import { extractTemplateData } from './template-data'
 import { runChecks, failOnReport } from './check'
@@ -218,9 +218,6 @@ async function writeStaticRoutes(
     await writeFile(path, html)
     // Hosts serve a root 404.html for unmatched paths (Vercel, Netlify, static file servers).
     if (record.slug === '404') await writeFile(join(distDir, '404.html'), html)
-    const fragment = join(distDir, 'routes', `${record.slug}.html`)
-    await mkdir(join(fragment, '..'), { recursive: true })
-    await writeFile(fragment, `<head>\n${routeHead}\n</head>\n${body}`)
   })
 }
 
@@ -308,7 +305,7 @@ async function seedBuildCache(previousDist: string, stageDir: string, projectRoo
     return !rel.endsWith('.webp') && rel !== '.meta' && !rel.startsWith('.meta/')
   })
 
-  if (await Bun.file(await sourceOgImagePath(projectRoot)).exists()) {
+  if (await Bun.file(sourceOgImagePath(projectRoot)).exists()) {
     for (const rel of ['og.webp', 'og.png', '.meta/og.json']) {
       const source = join(previousDist, 'assets', rel)
       if (!(await Bun.file(source).exists())) continue
@@ -400,7 +397,6 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
 
   // The stage is unique. It may contain only validated image-cache artifacts seeded by build().
   await mkdir(context.distDir, { recursive: true })
-  await mkdir(join(context.distDir, 'routes'), { recursive: true })
 
   // Images first — fs.cp(recursive: true) on sibling dirs has been observed to race with
   // subsequent writes (variants get truncated). Encoding before any cp call avoids it.
@@ -415,18 +411,17 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   // Stale variants are harmless: srcset only references widths the current sidecar reports.)
   imageMeta = await processImageSources(imageRoots, imagesDist, imageEncode)
   await pruneStaleImages(imagesDist, Object.keys(imageMeta))
-  await processOgImage(await sourceOgImagePath(context.rootDir), assetsDist)
+  await processOgImage(sourceOgImagePath(context.rootDir), assetsDist)
   tick('images', t)
 
   t = performance.now()
   const hasGlobalStyles = await copyAssetsTo(context.rootDir, context.distDir, {
     scroll: site.scroll ?? 'lenis',
   })
-  await copyMediaFolderTo(context.rootDir, context.distDir)
   const projectCss = hasGlobalStyles
     ? await bundleProjectCss(
-      await sourceStylesFile(context.rootDir),
-      await sourceStylesDir(context.rootDir),
+      sourceStylesFile(context.rootDir),
+      sourceStylesDir(context.rootDir),
       join(context.distDir, 'assets', 'css'),
     )
     : null
@@ -453,7 +448,7 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const sourceRoutes = await discoverSourceRoutes({ srcDir: context.srcDir })
   const staticOwners = sourceRoutes.map((route) => ({
     slug: route.slug,
-    kind: route.legacy ? 'legacy-static' as const : 'static' as const,
+    kind: 'static' as const,
     source: route.sourceRel,
   }))
   for (const owner of staticOwners) routeGraph.register(owner)
@@ -552,12 +547,12 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
 
   t = performance.now()
   const appJsFile = await writeAppJs(
-    await sourceAppFile('app.ts', context.rootDir),
+    await sourceAppFile(context.rootDir),
     join(context.distDir, 'assets', 'js'),
     scriptBlocks,
   )
   const routerJsFile = await writeRouterJs(
-    await sourceRouterFile(context.rootDir),
+    sourceRouterFile(),
     join(context.distDir, 'assets', 'js'),
   )
   tick('app', t)

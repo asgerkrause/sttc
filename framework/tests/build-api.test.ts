@@ -36,6 +36,7 @@ async function writeMinimalProject(dir: string) {
 </html>
 `)
   await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>Context fixture</h1>')
+  await writeFile(join(dir, 'src', 'pages', '404.html'), '<h1>Not found</h1>')
   await writeFile(join(dir, 'src', 'styles.css'), ':root{color-scheme:light}body{margin:0;font-family:sans-serif}')
   await writeFile(join(dir, 'src', 'app.ts'), 'export {}\n')
   await writeFile(join(dir, 'src', 'files', 'manual.html'), '<!doctype html><title>Raw manual</title><p>Public raw file</p>\n')
@@ -166,7 +167,8 @@ describe('build API spine', () => {
       expect(result.routes).toContain('index')
       expect(report.errors).toEqual([])
       expect(await Bun.file(join(dir, 'dist', 'index.html')).exists()).toBe(true)
-      expect(await Bun.file(join(dir, 'dist', 'routes', 'index.html')).exists()).toBe(true)
+      expect(await Bun.file(join(dir, 'dist', '404.html')).exists()).toBe(true)
+      expect(await Bun.file(join(dir, 'dist', 'routes', 'index.html')).exists()).toBe(false)
       const html = await Bun.file(join(dir, 'dist', 'index.html')).text()
       const styles = html.match(/\/assets\/css\/styles\.[a-f0-9]+\.css/)
       expect(styles?.[0]).toBeTruthy()
