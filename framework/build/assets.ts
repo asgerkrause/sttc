@@ -56,7 +56,7 @@ export async function copyAssetsTo(
     await copyTree(sourceStylesDir(projectRoot), cssDist, (name) => {
       const path = slashPath(name)
       if (name === 'styles.css') return true
-      if (/\.(ttf|otf|woff2?)$/i.test(path)) return true
+      if (/\.(ttf|otf|woff2?|json)$/i.test(path)) return true
       if (path.endsWith('.css') && path !== 'lenis.css') return true
       return nativeScroll && path === 'lenis.css'
     })
