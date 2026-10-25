@@ -1,0 +1,413 @@
+/* Craft semantic contract: 3. */
+/* Brand: editable foundations, role metadata, recipes, schemes, and motion preferences. */
+@layer tokens {
+  :root {
+    /* Brand foundations: layout and independent spacing scales. */
+    /* Layout */
+    --header: 4rem;
+    --control: 2.75rem;
+    --fluid-min: 25;
+    --fluid-max: 100;
+    --content-max: 100rem;
+    --bleed-x: 2rem;
+    --bleed-y: 12rem;
+    --query-md: 30rem;
+    --query-lg: 60rem;
+
+    /* Unified Sizing / Spacing Scale */
+    --space-ratio: 2;
+    --space: 5rem;
+
+    /* Gap Scale */
+    --gap-ratio: 2;
+    --gap: 1.25rem;
+
+    /* Padding Scale */
+    --padding-ratio: 2;
+    --padding: 1.25rem;
+
+    /* Radius */
+    --radius-ratio: 1.5;
+    --radius: .75rem;
+
+    /* Border */
+    --border-width: 1px;
+
+    /* Color Swatches (Palette) */
+    --palette-red: #f44;
+    --palette-orange: #f60;
+    --palette-yellow: #fc3;
+    --palette-green: #0c8;
+    --palette-blue: #06e;
+    --palette-purple: #84f;
+
+    /* Fixed Light / Dark Swatches */
+    --palette-light: #fbfbfa;
+    --palette-dark: #121416;
+
+
+  }
+
+  /* Derived spacing: resolve once at the document root. */
+  :root {
+    --space-xs: calc(var(--space) / var(--space-ratio) / var(--space-ratio));
+    --space-sm: calc(var(--space) / var(--space-ratio));
+    --space-lg: calc(var(--space) * var(--space-ratio));
+    --space-xl: calc(var(--space) * var(--space-ratio) * var(--space-ratio));
+    --gap-xs: calc(var(--gap) / var(--gap-ratio) / var(--gap-ratio));
+    --gap-sm: calc(var(--gap) / var(--gap-ratio));
+    --gap-lg: calc(var(--gap) * var(--gap-ratio));
+    --gap-xl: calc(var(--gap) * var(--gap-ratio) * var(--gap-ratio));
+    --padding-xs: calc(var(--padding) / var(--padding-ratio) / var(--padding-ratio));
+    --padding-sm: calc(var(--padding) / var(--padding-ratio));
+    --padding-lg: calc(var(--padding) * var(--padding-ratio));
+    --padding-xl: calc(var(--padding) * var(--padding-ratio) * var(--padding-ratio));
+    --radius-xs: calc(var(--radius) / var(--radius-ratio) / var(--radius-ratio));
+    --radius-sm: calc(var(--radius) / var(--radius-ratio));
+    --radius-lg: calc(var(--radius) * var(--radius-ratio));
+    --radius-xl: calc(var(--radius) * var(--radius-ratio) * var(--radius-ratio));
+  }
+
+  :root {
+    /* Semantic Colors; these --on-* values remain only without contrast-color() and relative color. */
+    --accent: var(--palette-blue);
+    --secondary: var(--palette-purple);
+    --tertiary: var(--palette-orange);
+    --on-accent: var(--palette-light);
+    --on-secondary: var(--palette-light);
+    --on-tertiary: var(--palette-dark);
+
+    --success: var(--palette-green);
+    --warning: var(--palette-yellow);
+    --danger: var(--palette-red);
+    --on-success: var(--palette-dark);
+    --on-warning: var(--palette-dark);
+    --on-danger: var(--palette-dark);
+  }
+
+  /* Companions follow their :root source: xyz-d65 y is WCAG luminance, and 0.1791 is where black and white tie. Clamps cap at D65 white. */
+  @supports (color: color(from red xyz-d65 clamp(0, (0.1791 - y) * 1e6, 1) y z)) {
+    :root {
+      --on-accent: color(from var(--accent) xyz-d65 clamp(0, (0.1791 - y) * 1e6, 0.9505) clamp(0, (0.1791 - y) * 1e6, 1) clamp(0, (0.1791 - y) * 1e6, 1.089));
+      --on-secondary: color(from var(--secondary) xyz-d65 clamp(0, (0.1791 - y) * 1e6, 0.9505) clamp(0, (0.1791 - y) * 1e6, 1) clamp(0, (0.1791 - y) * 1e6, 1.089));
+      --on-tertiary: color(from var(--tertiary) xyz-d65 clamp(0, (0.1791 - y) * 1e6, 0.9505) clamp(0, (0.1791 - y) * 1e6, 1) clamp(0, (0.1791 - y) * 1e6, 1.089));
+      --on-success: color(from var(--success) xyz-d65 clamp(0, (0.1791 - y) * 1e6, 0.9505) clamp(0, (0.1791 - y) * 1e6, 1) clamp(0, (0.1791 - y) * 1e6, 1.089));
+      --on-warning: color(from var(--warning) xyz-d65 clamp(0, (0.1791 - y) * 1e6, 0.9505) clamp(0, (0.1791 - y) * 1e6, 1) clamp(0, (0.1791 - y) * 1e6, 1.089));
+      --on-danger: color(from var(--danger) xyz-d65 clamp(0, (0.1791 - y) * 1e6, 0.9505) clamp(0, (0.1791 - y) * 1e6, 1) clamp(0, (0.1791 - y) * 1e6, 1.089));
+    }
+  }
+
+  /* Native pick where supported; the algorithm is UA-defined with a 3:1 floor. */
+  @supports (color: contrast-color(red)) {
+    :root {
+      --on-accent: contrast-color(var(--accent));
+      --on-secondary: contrast-color(var(--secondary));
+      --on-tertiary: contrast-color(var(--tertiary));
+      --on-success: contrast-color(var(--success));
+      --on-warning: contrast-color(var(--warning));
+      --on-danger: contrast-color(var(--danger));
+    }
+  }
+
+  /* Project canvas and semantic color roles. */
+  :root,
+  [data-theme] {
+    --canvas-base: light-dark(var(--palette-light), var(--palette-dark));
+    --text-base: light-dark(var(--palette-dark), var(--palette-light));
+
+    --canvas: var(--canvas-base);
+    --text: var(--text-base);
+    --surface: color-mix(in srgb, var(--text) 5%, var(--canvas));
+    --border: color-mix(in srgb, var(--text) 25%, transparent);
+    --muted: color-mix(in srgb, var(--text) 78%, var(--canvas));
+
+    --accent-surface: color-mix(in srgb, var(--accent) 15%, var(--canvas));
+    --accent-text: color-mix(in srgb, var(--accent) 25%, var(--text));
+    --accent-border: color-mix(in srgb, var(--accent) 25%, transparent);
+
+    --secondary-surface: color-mix(in srgb, var(--secondary) 15%, var(--canvas));
+    --secondary-text: color-mix(in srgb, var(--secondary) 25%, var(--text));
+    --secondary-border: color-mix(in srgb, var(--secondary) 25%, transparent);
+
+    --tertiary-surface: color-mix(in srgb, var(--tertiary) 15%, var(--canvas));
+    --tertiary-text: color-mix(in srgb, var(--tertiary) 25%, var(--text));
+    --tertiary-border: color-mix(in srgb, var(--tertiary) 25%, transparent);
+  }
+
+  [data-theme='invert'] {
+    --canvas: var(--text-base);
+    --text: var(--canvas-base);
+  }
+
+  [data-theme='accent'] {
+    --canvas: color-mix(in srgb, var(--accent) 10%, var(--canvas-base));
+    --text: color-mix(in srgb, var(--accent) 20%, var(--text-base));
+  }
+
+  [data-theme='tone'] {
+    --canvas: color-mix(in srgb, var(--canvas-base), var(--text-base) 5%);
+    --surface: var(--canvas-base);
+  }
+
+  @media (prefers-contrast: more) {
+    [data-theme],
+    :root {
+      --muted: color-mix(in srgb, var(--text) 90%, var(--canvas));
+      --border: color-mix(in srgb, var(--text) 50%, transparent);
+    }
+  }
+
+  [data-accent] {
+    --accent-surface: color-mix(in srgb, var(--accent) 15%, var(--canvas));
+    --accent-text: color-mix(in srgb, var(--accent) 25%, var(--text));
+    --accent-border: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  [data-accent='secondary'] {
+    --accent: var(--secondary);
+    --on-accent: var(--on-secondary);
+  }
+
+  [data-accent='tertiary'] {
+    --accent: var(--tertiary);
+    --on-accent: var(--on-tertiary);
+  }
+
+  [data-accent='success'] {
+    --accent: var(--success);
+    --on-accent: var(--on-success);
+  }
+
+  [data-accent='warning'] {
+    --accent: var(--warning);
+    --on-accent: var(--on-warning);
+  }
+
+  [data-accent='danger'] {
+    --accent: var(--danger);
+    --on-accent: var(--on-danger);
+  }
+
+  /* Recipe inputs are unitless rem magnitudes; outputs are lengths. */
+  :root {
+    --font-sans: system-ui, sans-serif;
+    --font-serif: serif;
+    --font-mono: ui-monospace, monospace;
+    --font: var(--font-sans);
+    --font-display: var(--font-sans);
+    --weight-light: 300;
+    --weight: 400;
+    --weight-bold: 600;
+    --type-min: 0.875;
+    --type-max: 1.25;
+    --type-ratio-min: 1.15;
+    --type-ratio-max: 1.4;
+    --display-step: 5;
+    --h1-step: 4;
+    --h2-step: 3;
+    --h3-step: 2;
+    --lead-step: 1;
+    --body-step: 0;
+    --small-step: -1;
+    --label-step: -1;
+    --caption-step: -1;
+  }
+
+  /* Editable role metadata and readable static fallbacks. */
+  :root {
+    --display-leading: 1;
+    --display-tracking: -0.01em;
+    --display-measure: 70ch;
+    --display-case: none;
+    --display-features: normal;
+    --display-axes: normal;
+    --display-optical-sizing: auto;
+    --display-min: 1.759937539;
+    --display-max: 6.7228;
+    --display-size: 1.759937539rem;
+    --h1-leading: 1;
+    --h1-tracking: -0.01em;
+    --h1-measure: 70ch;
+    --h1-case: none;
+    --h1-features: normal;
+    --h1-axes: normal;
+    --h1-optical-sizing: auto;
+    --h1-min: 1.530380469;
+    --h1-max: 4.802;
+    --h1-size: 1.530380469rem;
+    --h2-leading: 1.05;
+    --h2-tracking: -0.01em;
+    --h2-measure: 70ch;
+    --h2-case: none;
+    --h2-features: normal;
+    --h2-axes: normal;
+    --h2-optical-sizing: auto;
+    --h2-min: 1.330765625;
+    --h2-max: 3.43;
+    --h2-size: 1.330765625rem;
+    --h3-leading: 1.1;
+    --h3-tracking: -0.01em;
+    --h3-measure: 70ch;
+    --h3-case: none;
+    --h3-features: normal;
+    --h3-axes: normal;
+    --h3-optical-sizing: auto;
+    --h3-min: 1.1571875;
+    --h3-max: 2.45;
+    --h3-size: 1.1571875rem;
+    --lead-leading: 1.2;
+    --lead-tracking: -0.02em;
+    --lead-measure: 70ch;
+    --lead-case: none;
+    --lead-features: normal;
+    --lead-axes: normal;
+    --lead-optical-sizing: auto;
+    --lead-min: 1.00625;
+    --lead-max: 1.75;
+    --lead-size: 1.00625rem;
+    --body-leading: 1.4;
+    --body-tracking: -0.02em;
+    --body-measure: 70ch;
+    --body-case: none;
+    --body-features: normal;
+    --body-axes: normal;
+    --body-optical-sizing: auto;
+    --body-min: 0.875;
+    --body-max: 1.25;
+    --body-size: 0.875rem;
+    --small-leading: 1.2;
+    --small-tracking: -0.01em;
+    --small-measure: 70ch;
+    --small-case: none;
+    --small-features: normal;
+    --small-axes: normal;
+    --small-optical-sizing: auto;
+    --small-min: 0.7608695652;
+    --small-max: 0.8928571429;
+    --small-size: 0.7608695652rem;
+    --label-leading: 1.5;
+    --label-tracking: 0em;
+    --label-measure: 70ch;
+    --label-case: none;
+    --label-features: normal;
+    --label-axes: normal;
+    --label-optical-sizing: auto;
+    --label-min: 0.7608695652;
+    --label-max: 0.8928571429;
+    --label-size: 0.7608695652rem;
+    --caption-leading: 1.5;
+    --caption-tracking: 0em;
+    --caption-measure: 70ch;
+    --caption-case: none;
+    --caption-features: normal;
+    --caption-axes: normal;
+    --caption-optical-sizing: auto;
+    --caption-min: 0.7608695652;
+    --caption-max: 0.8928571429;
+    --caption-size: 0.7608695652rem;
+  }
+
+  :root {
+    --display-font: var(--font-display);
+    --display-weight: var(--weight);
+    --h1-font: var(--font-display);
+    --h1-weight: var(--weight);
+    --h2-font: var(--font-display);
+    --h2-weight: var(--weight);
+    --h3-font: var(--font-display);
+    --h3-weight: var(--weight);
+    --lead-font: var(--font);
+    --lead-weight: var(--weight);
+    --body-font: var(--font);
+    --body-weight: var(--weight);
+    --small-font: var(--font);
+    --small-weight: var(--weight);
+    --label-font: var(--font);
+    --label-weight: var(--weight);
+    --caption-font: var(--font);
+    --caption-weight: var(--weight);
+  }
+
+  /* Derived type recipes; final role overrides may replace these outputs. */
+  @supports (font-size: calc(1rem * pow(2, 1))) {
+    :root {
+      --_fluid: clamp(0rem, (100vi - var(--fluid-min) * 1rem) / (var(--fluid-max) - var(--fluid-min)), 1rem);
+      --display-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--display-step)));
+      --display-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--display-step)));
+      --display-size: calc(var(--display-min) * 1rem + (var(--display-max) - var(--display-min)) * var(--_fluid));
+      --h1-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--h1-step)));
+      --h1-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--h1-step)));
+      --h1-size: calc(var(--h1-min) * 1rem + (var(--h1-max) - var(--h1-min)) * var(--_fluid));
+      --h2-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--h2-step)));
+      --h2-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--h2-step)));
+      --h2-size: calc(var(--h2-min) * 1rem + (var(--h2-max) - var(--h2-min)) * var(--_fluid));
+      --h3-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--h3-step)));
+      --h3-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--h3-step)));
+      --h3-size: calc(var(--h3-min) * 1rem + (var(--h3-max) - var(--h3-min)) * var(--_fluid));
+      --lead-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--lead-step)));
+      --lead-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--lead-step)));
+      --lead-size: calc(var(--lead-min) * 1rem + (var(--lead-max) - var(--lead-min)) * var(--_fluid));
+      --body-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--body-step)));
+      --body-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--body-step)));
+      --body-size: calc(var(--body-min) * 1rem + (var(--body-max) - var(--body-min)) * var(--_fluid));
+      --small-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--small-step)));
+      --small-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--small-step)));
+      --small-size: calc(var(--small-min) * 1rem + (var(--small-max) - var(--small-min)) * var(--_fluid));
+      --label-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--label-step)));
+      --label-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--label-step)));
+      --label-size: calc(var(--label-min) * 1rem + (var(--label-max) - var(--label-min)) * var(--_fluid));
+      --caption-min: calc(var(--type-min) * pow(var(--type-ratio-min), var(--caption-step)));
+      --caption-max: calc(var(--type-max) * pow(var(--type-ratio-max), var(--caption-step)));
+      --caption-size: calc(var(--caption-min) * 1rem + (var(--caption-max) - var(--caption-min)) * var(--_fluid));
+    }
+  }
+
+  /* Motion */
+  :root {
+    --ease-in: cubic-bezier(0.6, 0, 0.9, 0);
+    --ease-out: cubic-bezier(0.1, 1, 0.4, 1);
+    --ease-in-out: cubic-bezier(0.9, 0, 0.1, 1);
+
+    --ease-glide: linear(0, 0.012 0.9%, 0.05 2%, 0.411 9.2%, 0.517 11.8%, 0.611 14.6%, 0.694 17.7%, 0.765 21.1%, 0.824 24.8%, 0.872 28.9%, 0.91 33.4%, 0.939 38.4%, 0.977 50.9%, 0.994 68.4%, 1);
+    --ease-spring: linear(0, 0.007 1.4%, 0.028 2.8%, 0.115 6.1%, 0.228 9.2%, 0.596 18.3%, 0.702 21.3%, 0.79 24.2%, 0.862 27%, 0.92 29.8%, 0.968 32.7%, 1.004 35.7%, 1.043 41.4%, 1.055 48.2%, 1.005 76.7%, 1);
+
+    --duration-xs: 50ms;
+    --duration-sm: 100ms;
+    --duration: 200ms;
+    --duration-lg: 400ms;
+    --duration-xl: 800ms;
+
+    --lift: 0.75rem;
+
+    --transition-blur: .5em;
+    --transition-in-y: 1em;
+    --transition-in-x: 0em;
+    --transition-out-y: -1em;
+    --transition-out-x: 0em;
+    --transition-duration: var(--duration);
+
+    @media (orientation: portrait) {
+      --transition-in-y: 0em;
+      --transition-in-x: -1em;
+      --transition-out-y: 0em;
+      --transition-out-x: 1em;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      --ease-in: linear;
+      --ease-out: linear;
+      --ease-in-out: linear;
+      --ease-glide: linear;
+      --ease-spring: linear;
+      --duration-xs: 0.001ms;
+      --duration-sm: 0.001ms;
+      --duration: 0.001ms;
+      --duration-lg: 0.001ms;
+      --duration-xl: 0.001ms;
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      --transition-blur: 0;
+    }
+  }
+}

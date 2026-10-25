@@ -113,19 +113,18 @@ describe('runtime ownership contracts', () => {
   })
 
   test('project CSS drives cross-document view transitions', async () => {
-    const rootMotion = await readFile('src/styles/layers/motion.css', 'utf8')
-    const starterMotion = await readFile('templates/default/src/styles/layers/motion.css', 'utf8')
-    const rootLayout = await readFile('src/styles/layers/layout.css', 'utf8')
-    const starterLayout = await readFile('templates/default/src/styles/layers/layout.css', 'utf8')
+    const rootCss = await readFile('src/styles/crft.css', 'utf8')
+    const starterCss = await readFile('templates/default/src/styles/crft.css', 'utf8')
 
-    for (const css of [rootMotion, starterMotion]) {
+    for (const css of [rootCss, starterCss]) {
       expect(css).toContain('@view-transition')
       expect(css).toContain('navigation: auto')
       expect(css).toContain('::view-transition-old(main)')
       expect(css).toContain('::view-transition-new(main)')
       expect(css).toContain('@media (prefers-reduced-motion: reduce)')
-    }
-    for (const css of [rootLayout, starterLayout]) {
+      expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*\{\s*::view-transition-group\(\*\),\s*::view-transition-old\(\*\),\s*::view-transition-new\(\*\)\s*\{\s*animation: none;/)
+      expect(css).toContain('@supports (animation-timeline: view())')
+      expect(css).toContain('@media (prefers-reduced-motion: no-preference)')
       expect(css).toContain('view-transition-name: main')
     }
   })

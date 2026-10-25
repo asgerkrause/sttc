@@ -5,7 +5,7 @@ A component is one `src/components/PascalName.html` file compiled at build time.
 Invoke a component with a PascalCase tag. Attributes use double quotes or are bare flags; a single-quoted or otherwise malformed attribute list fails the build and names the tag, the component file, and the page:
 
 ```html
-<Hero title="A faster starting point" featured>Project-owned content.</Hero>
+<Hero id="intro" title="A faster starting point">Project-owned content.</Hero>
 ```
 
 ## Contract comment
@@ -16,8 +16,7 @@ Declare the component contract in its leading comment:
 <!--
   @desc Introductory content block.
   @attr title! Visible heading.
-  @attr id Optional section id.
-  @attr variant=[default|featured] :class Optional root class.
+  @attr id! Meaningful section id.
   @schema WebPageElement name=title
 -->
 <section id="{{id}}">
@@ -123,7 +122,17 @@ A component can own normal CSS:
 
 STTC strips component styles from markup. It emits each used component's CSS once in one content-hashed shared stylesheet. It registers each used lifecycle script once in the shared app bundle. Components unused by the shell or any built route contribute neither asset. Selectors remain global and project-owned.
 
-An authored route may also carry a `<style>` block; it compiles into a route-owned hashed asset linked with `data-snz-route-css`. Content templates under `src/templates/` may not. Created projects import an editable CRFT copy from `src/styles/`; this is starter source, not framework CSS.
+An authored route may also carry a `<style>` block; it compiles into a route-owned hashed asset linked with `data-snz-route-css`. Content templates under `src/templates/` may not. Created projects import editable Craft v3 CSS from `src/styles/`; this is optional project source. The renderer remains CSS-agnostic.
+
+## Starter presentation contracts
+
+The starter contains exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. Their markup and CSS remain project-owned.
+
+`Section` renders `section > .c`. Its `c` input accepts `sm` and `lg` to select container classes. Give every direct `main > section` a meaningful, nonempty, unique ID, including the 404 route. Keep classes off `section`. Numbered responsive grids belong inside the `section > .c` container boundary.
+
+`Grid` keeps its public inputs: `cols` emits `g` tracks, `x` emits a `c` column span, `y` emits an `r` row span, and `order` emits `o`. A span applies when the component is a direct grid child. Visual order does not change reading or keyboard order.
+
+Craft `.s` handles vertical flow only. Header rows, wrapping, and alignment use bounded component CSS. Type roles use classes such as `.lead` and `.small`; native `h4`–`h6` keep their semantics with `h3` styling. The flat CSS package and migration scope are documented in [Craft v3 adoption](../decisions/craft-v3-adoption.md).
 
 ## Image and SEO boundaries
 

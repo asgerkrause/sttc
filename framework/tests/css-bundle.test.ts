@@ -12,6 +12,41 @@ afterEach(async () => {
 })
 
 describe('project CSS flatten', () => {
+  test('bundles both Craft copies while keeping SNZ fonts exclusive to dogfood', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sttc-craft-css-'))
+    tempDirs.push(dir)
+    const repoRoot = join(import.meta.dir, '..', '..')
+    for (const [name, root] of [['dogfood', repoRoot], ['starter', join(repoRoot, 'templates', 'default')]]) {
+      const distCss = join(dir, name)
+      await mkdir(distCss)
+      const stylesDir = join(root, 'src', 'styles')
+      const result = await bundleProjectCss(join(root, 'src', 'styles.css'), stylesDir, distCss)
+      if (!result) throw new Error(`${name} did not emit project CSS`)
+      const css = await readFile(join(distCss, result.filename), 'utf8')
+      expect(result.filename).toMatch(/^styles\.[a-f0-9]+\.css$/)
+      expect(css).not.toContain('@import')
+      expect(css).toContain('@layer reset, base, tokens, type, layout, grid, motion, utility, project;')
+      expect(css).toContain('section > .c { container: container / inline-size; }')
+      if (name === 'dogfood') {
+        expect(css).toContain('font-family: "SNZ Sans";')
+        expect(css).toContain('font-family: "SNZ Mono";')
+        expect(result.fontPreloads).toHaveLength(2)
+        for (const font of result.fontPreloads) {
+          expect(font).toMatch(/^\/assets\/css\/(sans|mono)\.[a-f0-9]+\.woff2?$/)
+          expect(await Bun.file(join(distCss, font.replace('/assets/css/', ''))).exists()).toBe(true)
+        }
+      } else {
+        expect(css).toContain('color-scheme: light dark;')
+        expect(css).not.toContain('color-scheme: light;')
+        expect(css).toContain('system-ui')
+        expect(css).not.toContain('@font-face')
+        expect(result.fontPreloads).toEqual([])
+        expect((await readdir(stylesDir, { recursive: true })).filter((file) => /\.(woff2?|ttf|otf)$/i.test(file))).toEqual([])
+        expect(await readdir(distCss)).toEqual([result.filename])
+      }
+    }
+  })
+
   test('inlines /assets/css imports, hashes WOFF urls, and emits one hashed file', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'sttc-css-'))
     tempDirs.push(dir)

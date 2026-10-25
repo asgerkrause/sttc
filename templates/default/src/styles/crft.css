@@ -1,0 +1,1137 @@
+/* Craft semantic contract: 3. */
+/* Reset: neutralize the user agent. No brand. No layout. No tokens. */
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  :where(html) {
+    text-size-adjust: none;
+  }
+
+  :where(button, input, select, textarea) {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    border-radius: 0;
+  }
+
+  :where(button, select) {
+    text-transform: none;
+  }
+
+  :where(input, textarea) {
+    user-select: auto;
+  }
+
+  :where(textarea) {
+    resize: vertical;
+  }
+
+  :where(img, picture, video, canvas, svg) {
+    display: block;
+    max-width: 100%;
+  }
+
+  :where(img, video) {
+    height: auto;
+  }
+
+  :where(svg) {
+    overflow: visible;
+  }
+
+  :where(table) {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  :where(sub, sup) {
+    position: relative;
+    font-size: 75%;
+    line-height: 0;
+    vertical-align: baseline;
+  }
+
+  :where(sub) {
+    bottom: -0.25em;
+  }
+
+  :where(sup) {
+    top: -0.5em;
+  }
+
+  :where(progress) {
+    vertical-align: baseline;
+  }
+
+  :where(fieldset, iframe) {
+    border: 0;
+  }
+
+  :where(dialog) {
+    max-width: none;
+    max-height: none;
+  }
+
+  :where(button, a, input, select, textarea, summary) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where([hidden]:not([hidden="until-found"])) {
+    display: none !important;
+  }
+}
+
+/* Base: native HTML and document defaults, including gated native enhancement. */
+@layer base {
+  :root {
+    color-scheme: light dark;
+    interpolate-size: allow-keywords;
+    scrollbar-gutter: stable;
+    tab-size: 2;
+    text-wrap: pretty;
+  }
+
+  :where(html) {
+    min-height: 100%;
+    background: var(--canvas);
+    color: var(--text);
+    accent-color: var(--accent);
+    caret-color: var(--accent);
+    hanging-punctuation: first last;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  :where(body) {
+    min-height: 100svh;
+    background: var(--canvas);
+    color: var(--text);
+    font-family: var(--font);
+  }
+
+  :where(button, input, select, textarea) {
+    text-align: start;
+    hanging-punctuation: none;
+  }
+
+  :where(button) {
+    user-select: none;
+  }
+
+  :where(button, [type="button"], [type="reset"], [type="submit"]) {
+    appearance: button;
+    min-height: var(--control);
+    padding: var(--padding-sm) var(--padding);
+    color: inherit;
+    background: var(--canvas);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  :where(
+    input:not(
+      [type="button"],
+      [type="submit"],
+      [type="reset"],
+      [type="checkbox"],
+      [type="radio"],
+      [type="range"],
+      [type="file"],
+      [type="hidden"],
+      [type="image"],
+      [type="color"]
+    ),
+    select,
+    textarea
+  ) {
+    min-height: var(--control);
+    padding: var(--padding-sm) var(--padding);
+    color: inherit;
+    background: var(--canvas);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  :where(
+    input:not(
+      [type="button"],
+      [type="submit"],
+      [type="reset"],
+      [type="checkbox"],
+      [type="radio"],
+      [type="range"],
+      [type="file"],
+      [type="hidden"],
+      [type="image"],
+      [type="color"]
+    ),
+    select,
+    textarea
+  )[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+
+  :where(button, input, select, textarea):disabled {
+    color: var(--muted);
+  }
+
+  :where(textarea) {
+    field-sizing: content;
+    min-height: 6lh;
+  }
+
+  :where(ul, ol) {
+    list-style-position: outside;
+    padding-left: 1.25em;
+  }
+
+  :where(nav ul, nav ol) {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  :where(a) {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :where(p, li, dd, td, figcaption) :where(a) {
+    text-decoration: underline;
+    text-decoration-thickness: from-font;
+    text-underline-offset: 0.15em;
+  }
+
+  :where(a, button, label) {
+    transition-property: color, background, border, transform, opacity, font-weight;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--ease-out);
+  }
+
+  :where([aria-current="page"]) {
+    text-decoration: underline;
+    font-weight: var(--weight-bold);
+
+  }
+
+  :where(button, label, select, summary, [role="button"]) {
+    cursor: pointer;
+  }
+
+  :where(button:disabled, input:disabled, select:disabled, textarea:disabled, [aria-disabled="true"]) {
+    cursor: not-allowed;
+  }
+
+  :where(dialog, [popover]) {
+    color: inherit;
+    transition:
+      opacity var(--duration) var(--ease-out),
+      translate var(--duration) var(--ease-out),
+      display var(--duration) allow-discrete,
+      overlay var(--duration) allow-discrete;
+    opacity: 0;
+    translate: 0 var(--lift);
+
+    &::backdrop {
+      background: color-mix(in srgb, var(--palette-dark) 80%, transparent);
+      transition:
+        opacity var(--duration) var(--ease-out),
+        display var(--duration) allow-discrete,
+        overlay var(--duration) allow-discrete;
+      opacity: 0;
+    }
+  }
+
+  :where(dialog[open], [popover]:popover-open) {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  @starting-style {
+    :where(dialog[open], [popover]:popover-open) {
+      opacity: 0;
+      translate: 0 var(--lift);
+    }
+  }
+
+  :where(dialog:modal)::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    :where(dialog:modal)::backdrop {
+      opacity: 0;
+    }
+  }
+
+  @media (forced-colors: active) {
+    :where(button, input, select, textarea, [role="button"]) {
+      border: var(--border-width) solid ButtonText;
+      outline-color: Highlight;
+    }
+  }
+
+  ::selection {
+    color: var(--on-accent);
+    background: var(--accent);
+  }
+
+  :focus-visible {
+    outline: max(2px, var(--border-width)) solid currentColor;
+    outline-offset: 0.2em;
+  }
+
+  :target {
+    scroll-margin-block: var(--bleed-y);
+  }
+
+  :where(strong, b) {
+    font-weight: var(--weight-bold);
+
+  }
+
+  :where(small) {
+    font-size: 80%;
+  }
+
+  :where(code, pre, kbd, samp) {
+    font-family: var(--font-mono);
+  }
+
+  :where(code) {
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+    padding: 0 0.3em;
+    border-radius: var(--radius-xs);
+    font-size: 80%;
+  }
+
+  :where(abbr[title]) {
+    text-decoration-thickness: from-font;
+    text-underline-offset: 0.15em;
+  }
+
+  ::placeholder {
+    color: var(--muted);
+    opacity: 1;
+  }
+
+  :where(button, input, select, textarea) {
+    touch-action: manipulation;
+  }
+
+  [data-theme] {
+    background: var(--canvas);
+    color: var(--text);
+  }
+
+  :where(mark) {
+    color: var(--on-accent);
+    background: var(--accent);
+  }
+
+  @supports selector(details::details-content) {
+    details {
+      overflow: clip;
+
+      &::details-content {
+        height: 0;
+        overflow: clip;
+        content-visibility: hidden;
+        transition:
+          height var(--duration) var(--ease-out),
+          content-visibility var(--duration) allow-discrete;
+      }
+
+      &[open]::details-content {
+        height: auto;
+        content-visibility: visible;
+      }
+    }
+
+    summary {
+      cursor: pointer;
+      user-select: none;
+    }
+  }
+}
+
+/* Type: native defaults and intentional visual roles. */
+@layer type {
+  body {
+    font-family: var(--body-font);
+    font-size: var(--body-size);
+    font-weight: var(--body-weight);
+    line-height: var(--body-leading);
+    letter-spacing: var(--body-tracking);
+    text-transform: var(--body-case);
+    font-feature-settings: var(--body-features);
+    font-variation-settings: var(--body-axes);
+    font-optical-sizing: var(--body-optical-sizing);
+  }
+
+  p { max-width: var(--body-measure); }
+
+  .display {
+    font-family: var(--display-font);
+    font-size: var(--display-size);
+    font-weight: var(--display-weight);
+    line-height: var(--display-leading);
+    letter-spacing: var(--display-tracking);
+    text-transform: var(--display-case);
+    font-feature-settings: var(--display-features);
+    font-variation-settings: var(--display-axes);
+    font-optical-sizing: var(--display-optical-sizing);
+    max-width: var(--display-measure);
+  }
+
+  :where(h1),
+  .h1 {
+    font-family: var(--h1-font);
+    font-size: var(--h1-size);
+    font-weight: var(--h1-weight);
+    line-height: var(--h1-leading);
+    letter-spacing: var(--h1-tracking);
+    text-transform: var(--h1-case);
+    font-feature-settings: var(--h1-features);
+    font-variation-settings: var(--h1-axes);
+    font-optical-sizing: var(--h1-optical-sizing);
+    max-width: var(--h1-measure);
+  }
+
+  :where(h2),
+  .h2 {
+    font-family: var(--h2-font);
+    font-size: var(--h2-size);
+    font-weight: var(--h2-weight);
+    line-height: var(--h2-leading);
+    letter-spacing: var(--h2-tracking);
+    text-transform: var(--h2-case);
+    font-feature-settings: var(--h2-features);
+    font-variation-settings: var(--h2-axes);
+    font-optical-sizing: var(--h2-optical-sizing);
+    max-width: var(--h2-measure);
+  }
+
+  :where(h3, h4, h5, h6),
+  .h3 {
+    font-family: var(--h3-font);
+    font-size: var(--h3-size);
+    font-weight: var(--h3-weight);
+    line-height: var(--h3-leading);
+    letter-spacing: var(--h3-tracking);
+    text-transform: var(--h3-case);
+    font-feature-settings: var(--h3-features);
+    font-variation-settings: var(--h3-axes);
+    font-optical-sizing: var(--h3-optical-sizing);
+    max-width: var(--h3-measure);
+  }
+
+  .lead {
+    font-family: var(--lead-font);
+    font-size: var(--lead-size);
+    font-weight: var(--lead-weight);
+    line-height: var(--lead-leading);
+    letter-spacing: var(--lead-tracking);
+    text-transform: var(--lead-case);
+    font-feature-settings: var(--lead-features);
+    font-variation-settings: var(--lead-axes);
+    font-optical-sizing: var(--lead-optical-sizing);
+    max-width: var(--lead-measure);
+  }
+
+  .body {
+    font-family: var(--body-font);
+    font-size: var(--body-size);
+    font-weight: var(--body-weight);
+    line-height: var(--body-leading);
+    letter-spacing: var(--body-tracking);
+    text-transform: var(--body-case);
+    font-feature-settings: var(--body-features);
+    font-variation-settings: var(--body-axes);
+    font-optical-sizing: var(--body-optical-sizing);
+    max-width: var(--body-measure);
+  }
+
+  :where(small),
+  .small {
+    font-family: var(--small-font);
+    font-size: var(--small-size);
+    font-weight: var(--small-weight);
+    line-height: var(--small-leading);
+    letter-spacing: var(--small-tracking);
+    text-transform: var(--small-case);
+    font-feature-settings: var(--small-features);
+    font-variation-settings: var(--small-axes);
+    font-optical-sizing: var(--small-optical-sizing);
+    max-width: var(--small-measure);
+  }
+
+  :where(label),
+  .label {
+    font-family: var(--label-font);
+    font-size: var(--label-size);
+    font-weight: var(--label-weight);
+    line-height: var(--label-leading);
+    letter-spacing: var(--label-tracking);
+    text-transform: var(--label-case);
+    font-feature-settings: var(--label-features);
+    font-variation-settings: var(--label-axes);
+    font-optical-sizing: var(--label-optical-sizing);
+    max-width: var(--label-measure);
+  }
+
+  :where(figcaption),
+  .caption {
+    font-family: var(--caption-font);
+    font-size: var(--caption-size);
+    font-weight: var(--caption-weight);
+    line-height: var(--caption-leading);
+    letter-spacing: var(--caption-tracking);
+    text-transform: var(--caption-case);
+    font-feature-settings: var(--caption-features);
+    font-variation-settings: var(--caption-axes);
+    font-optical-sizing: var(--caption-optical-sizing);
+    max-width: var(--caption-measure);
+  }
+
+  :where(h1, h2, h3, h4, h5, h6, .display, .h1, .h2, .h3) { text-wrap: balance; }
+
+  @supports (text-box: trim-both cap alphabetic) {
+    :where(h1, h2, h3, h4, h5, h6, .display, .h1, .h2, .h3, .lead, .body, .small, .label, .caption) { text-box: trim-both cap alphabetic; }
+  }
+
+  [l] {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  [l="1"] {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  [l="2"] {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  [l="3"] {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  [l="4"] {
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+}
+
+/* Layout: page chrome, containers, stacks, and the image frame. */
+@layer layout {
+  body {
+    display: flex;
+    flex-direction: column;
+
+    >header,
+    >main>section,
+    >footer {
+      padding: var(--bleed-y) var(--bleed-x);
+    }
+
+    >header {
+      padding-block: var(--padding);
+      view-transition-name: header;
+    }
+
+    >main {
+      width: 100%;
+      min-height: 100svh;
+      overflow-x: clip;
+      view-transition-name: main;
+    }
+
+    >footer {
+      padding-bottom: var(--padding);
+      view-transition-name: footer;
+    }
+  }
+
+  .c {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+    gap: var(--space);
+
+    &.sm { max-width: calc(var(--content-max) / 3 * 2); }
+    &.lg { max-width: calc(var(--content-max) / 3 * 4); }
+  }
+
+  section > .c { container: container / inline-size; }
+
+  .s {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+
+  .img-w {
+    display: block;
+    overflow: clip;
+
+    >img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+}
+
+/* Grid: attribute tracks, spans, and order from the named container. */
+@property --l-gc {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 3;
+}
+
+@property --l-cs {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --l-rs {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@layer grid {
+  [g] {
+    --l-gc: 3;
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    column-gap: var(--gap);
+    row-gap: var(--gap);
+
+    &[g="sg"] {
+      --l-gc: var(--l-cs);
+    }
+
+    >* {
+      --or: 0;
+      --l-cs: 1;
+      --l-rs: 1;
+
+      width: 100%;
+      order: var(--or);
+      grid-column: auto / span var(--l-cs);
+      grid-row: auto / span var(--l-rs);
+    }
+  }
+
+  [g]>[o$="-f"] {
+    --or: -2;
+  }
+
+  [g]>[o$="-a"] {
+    --or: 0;
+  }
+
+  [g]>[o$="-l"] {
+    --or: 2;
+  }
+
+  @container container (width >=30rem) {
+    [g] {
+      display: grid;
+      grid-template-columns: repeat(var(--l-gc), minmax(0, 1fr));
+
+      &[g="sg"] {
+        display: grid;
+        grid-template-columns: subgrid;
+      }
+
+
+    }
+
+    [g$="1"] {
+      --l-gc: 1;
+    }
+
+    [g$="2"] {
+      --l-gc: 2;
+    }
+
+    [g$="3"] {
+      --l-gc: 3;
+    }
+
+    [g$="4"] {
+      --l-gc: 4;
+    }
+
+    [g$="5"] {
+      --l-gc: 5;
+    }
+
+    [g$="6"] {
+      --l-gc: 6;
+    }
+
+    [g$="7"] {
+      --l-gc: 7;
+    }
+
+    [g$="8"] {
+      --l-gc: 8;
+    }
+
+    [g$="9"] {
+      --l-gc: 9;
+    }
+
+    [g$="10"] {
+      --l-gc: 10;
+    }
+
+    [g$="11"] {
+      --l-gc: 11;
+    }
+
+    [g$="12"] {
+      --l-gc: 12;
+    }
+
+    [g]>[c$="0"] {
+      --l-cs: var(--l-gc);
+    }
+
+    [g]>[c$="1"] {
+      --l-cs: 1;
+    }
+
+    [g]>[c$="2"] {
+      --l-cs: 2;
+    }
+
+    [g]>[c$="3"] {
+      --l-cs: 3;
+    }
+
+    [g]>[c$="4"] {
+      --l-cs: 4;
+    }
+
+    [g]>[c$="5"] {
+      --l-cs: 5;
+    }
+
+    [g]>[c$="6"] {
+      --l-cs: 6;
+    }
+
+    [g]>[c$="7"] {
+      --l-cs: 7;
+    }
+
+    [g]>[c$="8"] {
+      --l-cs: 8;
+    }
+
+    [g]>[c$="9"] {
+      --l-cs: 9;
+    }
+
+    [g]>[c$="10"] {
+      --l-cs: 10;
+    }
+
+    [g]>[c$="11"] {
+      --l-cs: 11;
+    }
+
+    [g]>[c$="12"] {
+      --l-cs: 12;
+    }
+
+    [g]> :is([c="0"], [c$="-0"]) {
+      grid-column: 1 / -1;
+    }
+
+    [g="sg"]:is([c="0"], [c$="-0"]) {
+      --l-gc: inherit;
+    }
+
+    [g]>[r$="1"] {
+      --l-rs: 1;
+    }
+
+    [g]>[r$="2"] {
+      --l-rs: 2;
+    }
+
+    [g]>[r$="3"] {
+      --l-rs: 3;
+    }
+
+    [g]>[r$="4"] {
+      --l-rs: 4;
+    }
+
+    [g]>[o] {
+      --or: 0;
+    }
+
+    [g]>[o*="-f-"] {
+      --or: -2;
+    }
+
+    [g]>[o*="-a-"] {
+      --or: 0;
+    }
+
+    [g]>[o*="-l-"] {
+      --or: 2;
+    }
+  }
+
+  @container container (width >=60rem) {
+    [g] {
+      --l-gc: 3;
+
+      &[g="sg"] {
+        --l-gc: var(--l-cs);
+      }
+    }
+
+    [g]>[c] {
+      --l-cs: 1;
+      grid-column: auto / span var(--l-cs);
+    }
+
+    [g]>[r] {
+      --l-rs: 1;
+      grid-row: auto / span var(--l-rs);
+    }
+
+    [g]>[o] {
+      --or: 0;
+    }
+
+    [g^="1"] {
+      --l-gc: 1;
+    }
+
+    [g^="2"] {
+      --l-gc: 2;
+    }
+
+    [g^="3"] {
+      --l-gc: 3;
+    }
+
+    [g^="4"] {
+      --l-gc: 4;
+    }
+
+    [g^="5"] {
+      --l-gc: 5;
+    }
+
+    [g^="6"] {
+      --l-gc: 6;
+    }
+
+    [g^="7"] {
+      --l-gc: 7;
+    }
+
+    [g^="8"] {
+      --l-gc: 8;
+    }
+
+    [g^="9"] {
+      --l-gc: 9;
+    }
+
+    [g^="10"] {
+      --l-gc: 10;
+    }
+
+    [g^="11"] {
+      --l-gc: 11;
+    }
+
+    [g^="12"] {
+      --l-gc: 12;
+    }
+
+    [g]>[c^="0"] {
+      --l-cs: var(--l-gc);
+    }
+
+    [g]>[c^="1"] {
+      --l-cs: 1;
+    }
+
+    [g]>[c^="2"] {
+      --l-cs: 2;
+    }
+
+    [g]>[c^="3"] {
+      --l-cs: 3;
+    }
+
+    [g]>[c^="4"] {
+      --l-cs: 4;
+    }
+
+    [g]>[c^="5"] {
+      --l-cs: 5;
+    }
+
+    [g]>[c^="6"] {
+      --l-cs: 6;
+    }
+
+    [g]>[c^="7"] {
+      --l-cs: 7;
+    }
+
+    [g]>[c^="8"] {
+      --l-cs: 8;
+    }
+
+    [g]>[c^="9"] {
+      --l-cs: 9;
+    }
+
+    [g]>[c^="10"] {
+      --l-cs: 10;
+    }
+
+    [g]>[c^="11"] {
+      --l-cs: 11;
+    }
+
+    [g]>[c^="12"] {
+      --l-cs: 12;
+    }
+
+    [g]> :is([c="0"], [c^="0-"]) {
+      grid-column: 1 / -1;
+    }
+
+    [g="sg"]:is([c="0"], [c^="0-"]) {
+      --l-gc: inherit;
+    }
+
+    [g]>[r^="1"] {
+      --l-rs: 1;
+    }
+
+    [g]>[r^="2"] {
+      --l-rs: 2;
+    }
+
+    [g]>[r^="3"] {
+      --l-rs: 3;
+    }
+
+    [g]>[r^="4"] {
+      --l-rs: 4;
+    }
+
+    [g]>[o^="f"] {
+      --or: -2;
+    }
+
+    [g]>[o^="a"] {
+      --or: 0;
+    }
+
+    [g]>[o^="l"] {
+      --or: 2;
+    }
+  }
+
+  [g="fit"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  }
+  [g="fit-sm"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  }
+  [g="fit-lg"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(25rem, 100%), 1fr));
+  }
+  [g="fill"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+  }
+  [g="fill-sm"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  }
+  [g="fill-lg"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(25rem, 100%), 1fr));
+  }
+
+  [g] > [c="0"] { grid-column: 1 / -1; }
+}
+
+/* Motion: opt-in scrub and view transitions. */
+@property --m-src-to {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --m-src-fr {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+:root {
+  --m-src-to: 0;
+  --m-src-fr: 1;
+}
+
+@layer motion {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      @keyframes m-src-to {
+        from {
+          --m-src-to: 0;
+        }
+
+        to {
+          --m-src-to: 1;
+        }
+      }
+
+      @keyframes m-src-fr {
+        from {
+          --m-src-fr: 1;
+        }
+
+        to {
+          --m-src-fr: 0;
+        }
+      }
+
+      [data-scrub] {
+        animation-name: m-src-to, m-src-fr;
+        animation-duration: auto;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% exit 100%;
+      }
+
+      .img-w[data-scrub] {
+        --m-plx: 8vh;
+        overflow: clip;
+
+        >img {
+          height: calc(100% + var(--m-plx));
+          translate: 0 calc(var(--m-plx) * var(--m-src-fr) * -1);
+        }
+
+        &[data-scrub='reverse']>img {
+          translate: 0 calc(var(--m-plx) * var(--m-src-to) * -1);
+        }
+      }
+    }
+  }
+
+  @supports (view-transition-name: none) {
+    @view-transition {
+      navigation: auto;
+    }
+
+    ::view-transition-old(main) {
+      animation: var(--transition-duration) var(--ease-in) both m-vt-out;
+    }
+
+    ::view-transition-new(main) {
+      animation: var(--transition-duration) var(--ease-out) both m-vt-in;
+      animation-delay: var(--transition-duration);
+    }
+
+    @keyframes m-vt-out {
+      to {
+        opacity: 0;
+        transform: translate(var(--transition-out-x), var(--transition-out-y));
+        filter: blur(var(--transition-blur));
+      }
+    }
+
+    @keyframes m-vt-in {
+      from {
+        opacity: 0;
+        transform: translate(var(--transition-in-x), var(--transition-in-y));
+        filter: blur(var(--transition-blur));
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      ::view-transition-group(*),
+      ::view-transition-old(*),
+      ::view-transition-new(*) {
+        animation: none;
+      }
+    }
+  }
+}
+
+/* Utility: the finite public class catalog. */
+@layer utility {
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+
+    &.focusable:focus-visible {
+      position: static;
+      width: auto;
+      height: auto;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
+  }
+
+  .squircle { corner-shape: squircle; }
+}

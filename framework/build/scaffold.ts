@@ -384,10 +384,13 @@ if (kind === 'cms') {
       ? join(root, 'src', 'pages', 'styles.html')
       : join(root, 'src', 'routes', 'styles.html')
     if (await exists(stylesPath)) {
-      const append = `\n<section><${requiredName} title="${requiredName} demo">Demo content.</${requiredName}></section>\n`
       const cur = await Bun.file(stylesPath).text()
-      await writeFile(stylesPath, cur + append)
-      console.log(`appended demo to ${stylesPath}`)
+      const id = `${requiredName.toLowerCase()}-demo-section`
+      if (!cur.includes(`id="${id}"`)) {
+        const append = `\n<section id="${id}"><${requiredName} title="${requiredName} demo">Demo content.</${requiredName}></section>\n`
+        await writeFile(stylesPath, cur + append)
+        console.log(`appended demo to ${stylesPath}`)
+      }
     }
   }
 } else if (kind === 'route') {

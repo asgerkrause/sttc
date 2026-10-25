@@ -119,7 +119,7 @@ Only add FAQs where questions genuinely help: a dedicated FAQ page, pricing, pro
 FAQ pages should use native HTML with Schema.org microdata. The starter does not ship a FAQ component. Component names never imply structured data. Visible answers are the source of truth:
 
 ```html
-<section itemscope itemtype="https://schema.org/FAQPage">
+<section id="faq" itemscope itemtype="https://schema.org/FAQPage">
   <details itemprop="mainEntity" itemscope itemtype="https://schema.org/Question">
     <summary itemprop="name">Can I cancel?</summary>
     <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">

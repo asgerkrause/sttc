@@ -1,10 +1,10 @@
-@layer reset, base, tokens, type, layout, grid, motion, utility;
+@layer reset, base, tokens, type, layout, grid, motion, utility, project;
 
-@import "./layers/base.css";
-@import "./layers/tokens.css";
-@import "./layers/fonts.css";
-@import "./layers/type.css";
-@import "./layers/layout.css";
-@import "./layers/grid.css";
-@import "./layers/motion.css";
-@import "./layers/utility.css";
+@import "./tokens.css";
+@import "./crft.css";
+
+@layer project {
+  :root {
+    color-scheme: light;
+  }
+}

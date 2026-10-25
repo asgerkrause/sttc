@@ -4,7 +4,7 @@ Navigation is native. The build emits one full HTML document per route, so every
 
 Two pieces of the shell make that feel fast:
 
-- cross-document view transitions come from CRFT `motion.css` in the project's own `src/styles/`;
+- cross-document view transitions come from the motion layer in project-owned `src/styles/crft.css`;
 - a `<script type="speculationrules">` block in `src/shell.html` prefetches same-origin documents with `eagerness: "moderate"`.
 
 Both are project source. Edit or delete them without touching the renderer.
@@ -56,7 +56,7 @@ A `<script>` at the top of an authored route is extracted and wrapped with `snz.
   console.log('runs on this route')
 </script>
 
-<Section>
+<Section id="route-section">
   <h1>Route</h1>
 </Section>
 ```
@@ -119,4 +119,4 @@ Both recipes are illustrative: install the provider package or script yourself, 
 
 Scroll position is the browser's. Lenis smooth scrolling is optional and self-hosted: `"scroll": "lenis"` in `src/site.json` emits its bootstrap, stylesheet, and vendor script; `"scroll": "native"` omits them. Reduced-motion users always keep native scrolling. Lenis stops wheel inertia when an internal link is clicked so the coast does not run on while the next document loads.
 
-Transition presentation is ordinary project-owned CSS in `src/styles/layers/motion.css`. The runtime adds no transition CSS and no transition attribute.
+Transition presentation is ordinary project-owned CSS in the motion layer of `src/styles/crft.css`. Craft v3 keeps reduced-motion and unsupported-feature fallbacks in that project copy. The runtime adds no transition CSS and no transition attribute.
