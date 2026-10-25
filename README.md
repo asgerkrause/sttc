@@ -2,7 +2,7 @@
 
 `@snz/sttc` is an HTML-first, Bun-native static site renderer. Authors write routes, atomic components, TypeScript, images, and optional markdown content. The build emits a static `dist/` site with one full document per route, responsive images, SEO/AEO/GEO metadata, feeds, manifests, discovery files, and strict launch checks.
 
-It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM, hydration layer, or client router: navigation is native, with cross-document view transitions and speculation-rules prefetch from project source. Presentation is project-owned. The starter copies pinned CRFT CSS into `src/styles/` and you may replace or delete that copy.
+It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM, hydration layer, or client router: navigation is native, with cross-document view transitions and speculation-rules prefetch from project source. Presentation is project-owned. The starter includes Craft v3 CSS in `src/styles/`; you may replace or delete that copy. The renderer has no Craft dependency.
 
 ## Requirements
 
@@ -22,7 +22,9 @@ src/
   styles.css
   styles/
     global.css
-    layers/
+    tokens.css
+    crft.css
+    crft-manifest.json
   pages/
     index.html
     404.html
@@ -33,7 +35,13 @@ src/
 
 The starter ships seven replaceable HTML components (named in `AGENTS.md`), not a UI library, and no font files: a created site renders in `system-ui` until the project adds its own faces.
 
-The starter copies pinned CRFT CSS into project-owned `src/styles/`. Replace or delete it freely. Composition uses attributes (`c`, `s`, `t`, `g`, `x`, `y`, `o`, `l`), not a class matrix. The build flattens that import tree into one hashed stylesheet. Component-specific `<style>` blocks compile into one pruned hashed stylesheet. Route `<style>` blocks compile into route-owned assets.
+Craft is the system name; `crft.css` and `crft-manifest.json` retain their physical names. Project-owned `src/styles/global.css` imports flat `tokens.css` and `crft.css`; `src/styles.css` imports that entry. The eight logical layers remain unchanged. Existing consumer copies receive no automatic upgrade, and the migration adds no compatibility aliases. See [Craft v3 adoption](./framework/docs/decisions/craft-v3-adoption.md).
+
+Containers use `.c` with optional `sm` or `lg` classes. `.s` owns vertical stacks; type roles use classes such as `.lead` and `.small`. Grids use `g` tracks, `c` column spans, `r` row spans, and `o` visual order; `l` clamps lines. Native headings retain their semantics, with `h4`–`h6` using `h3` styling. `Section` keeps its `c` input for `sm` and `lg`. `Grid` keeps `cols`, `x`, `y`, and `order`, emitting `g`, `c`, `r`, and `o`.
+
+`data-theme` accepts `invert`, `tone`, or `accent`; it and `data-accent` affect color only. Set light or dark preference through document CSS `color-scheme`. Shared type, spacing, and radius recipes resolve at `:root`. Bounded project CSS owns horizontal flow, wrapping, and alignment. Direct `main > section` elements need meaningful, unique IDs; sections have no classes.
+
+The build flattens the CSS import tree into one hashed stylesheet. Component-specific `<style>` blocks compile into one pruned hashed stylesheet. Route `<style>` blocks compile into route-owned assets.
 
 ## Pages
 
@@ -66,9 +74,10 @@ One component is one PascalCase HTML file:
 <!-- src/components/Hero.html -->
 <!--
   @desc Introductory content block.
+  @attr id! Meaningful section id.
   @attr title! Visible heading.
 -->
-<section>
+<section id="{{id}}">
   <h1>{{title}}</h1>
   <div>{{slot}}</div>
 </section>
@@ -77,7 +86,7 @@ One component is one PascalCase HTML file:
 Use it in a route:
 
 ```html
-<Hero title="A faster starting point">Project-owned content.</Hero>
+<Hero id="intro" title="A faster starting point">Project-owned content.</Hero>
 ```
 
 Components support declared attrs, default and named slots, nested `{#if}` / `{:else if}` / `{:else}`, build-time `{#each}` data, optional lifecycle `<script>`, optional colocated `<style>`, and `@schema` JSON-LD declarations. See [`framework/docs/framework/components.md`](./framework/docs/framework/components.md).

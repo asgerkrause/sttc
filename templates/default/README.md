@@ -15,10 +15,16 @@ Edit `src/`; never edit `dist/`. `AGENTS.md` lists every command.
 - exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`
 - `src/app.ts` for project TypeScript
 - `src/site.json` for site and discovery defaults
-- pinned CRFT CSS copied into project-owned `src/styles/` and imported by `src/styles.css`. Composition uses attributes (`c`, `s`, `t`, `g`, `x`, `y`, `o`, `l`). No font files ship; text renders in `system-ui` until you add your own faces
+- project-owned Craft v3 CSS under `src/styles/`, imported by `src/styles.css`. No font files ship; text renders in `system-ui` until you add your own faces
 - no CMS files until `bun run new cms`
 
 Replace or extend `src/styles.css` and the copied `src/styles/` files for project CSS; the renderer links them automatically. Component `<style>` and route `<style>` blocks are optional.
+
+Craft is optional project source; the renderer stays CSS-agnostic. `src/styles/global.css` imports flat `tokens.css` and `crft.css`, with adoption metadata in `crft-manifest.json`. The physical `crft` names remain. Existing sites receive no automatic CSS upgrade or compatibility aliases.
+
+Use `.c` containers, optional `sm` or `lg` classes, `.s` vertical stacks, and type role classes such as `.lead`. Grids use `g`, `c`, `r`, and `o`; `l` clamps lines. `Section` keeps its `c` input for `sm` and `lg`, selecting container classes. `Grid` keeps `cols`, `x`, `y`, and `order`, emitting `g`, `c`, `r`, and `o`. Native `h4`–`h6` keep their semantics with `h3` styling.
+
+`data-theme` accepts `invert`, `tone`, or `accent`; it and `data-accent` affect color only. Document CSS `color-scheme` chooses light or dark. Type, spacing, and radius recipes resolve at `:root`. Local CSS owns horizontal flow, wrapping, and alignment. Direct `main > section` elements need meaningful, unique IDs; sections have no classes.
 
 Create source with `bun run new route about`, `bun run new component Hero`, and `bun run new cms`.
 
@@ -29,7 +35,7 @@ A route can declare metadata with the renderer-owned `<SEO />` directive:
   <SEO title="About" description="What this organization does." image="/assets/images/about.webp" />
 </head>
 
-<Section>
+<Section id="about-section">
   <h1>About</h1>
 </Section>
 ```

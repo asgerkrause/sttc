@@ -1,8 +1,8 @@
 <!--
-  @desc Responsive CRFT grid that preserves source order.
-  @attr cols Optional column count mapped to the CRFT g attribute. Omit for CRFT's default grid.
-  @attr x Item column span mapped to the CRFT x attribute when Grid is nested.
-  @attr y Item row span mapped to the CRFT y attribute when Grid is nested.
-  @attr order Responsive order mapped to the CRFT o attribute when Grid is nested.
+  @desc Responsive Craft grid that preserves source order.
+  @attr cols Optional column count mapped to the Craft g attribute. Omit for Craft's default grid.
+  @attr x Item column span mapped to the Craft c attribute when Grid is nested.
+  @attr y Item row span mapped to the Craft r attribute when Grid is nested.
+  @attr order Responsive order mapped to the Craft o attribute when Grid is nested.
 -->
-{#if cols}<div g="{{cols}}" x="{{x}}" y="{{y}}" o="{{order}}">{{slot}}</div>{:else}<div g x="{{x}}" y="{{y}}" o="{{order}}">{{slot}}</div>{/if}
+{#if cols}<div g="{{cols}}" c="{{x}}" r="{{y}}" o="{{order}}">{{slot}}</div>{:else}<div g c="{{x}}" r="{{y}}" o="{{order}}">{{slot}}</div>{/if}

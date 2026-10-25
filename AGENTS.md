@@ -36,7 +36,7 @@ src/components/*.html   build-time components
 src/site.json           site and discovery defaults
 src/app.ts              project-owned TypeScript entry
 src/styles.css          project CSS entry
-src/styles/             pinned CRFT copy
+src/styles/             project-owned Craft v3 CSS and manifest
 src/images/             image masters
 src/videos/             public video files
 src/files/              public raw files
@@ -58,7 +58,7 @@ A page may begin with a head wrapper:
   <SEO title="About" description="What this organization does." />
 </head>
 
-<Section>
+<Section id="about-section">
   <h1>About</h1>
 </Section>
 ```
@@ -72,9 +72,10 @@ One component is one `src/components/PascalCase.html` file. A leading comment de
 ```html
 <!--
   @desc Introductory content block.
+  @attr id! Meaningful section id.
   @attr title! Visible heading.
 -->
-<section>
+<section id="{{id}}">
   <h1>{{title}}</h1>
   <div>{{slot}}</div>
 </section>
@@ -93,15 +94,20 @@ Attribute values decode once at parse and every placeholder escapes once on rend
 
 ## CSS boundary
 
-The renderer does not impose framework CSS. The root dogfood and starter import a pinned, project-owned CRFT copy from `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. The dogfood keeps SNZ faces in `layers/fonts.css`; the template ships no font files, so a created site renders in `system-ui` until the project adds its own faces. The build copies and hashes WOFF/WOFF2 files from `src/styles/` and rewrites `@font-face` URLs. It does not convert TTF or OTF.
+The renderer is CSS-agnostic. The dogfood and starter explicitly adopt a project-owned Craft v3 copy under `src/styles/`. Craft is the system name; the physical files retain `crft.css` and `crft-manifest.json`. The project-owned `global.css` imports flat `tokens.css` and `crft.css`; `src/styles.css` imports that entry. The eight logical layers remain `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. See [Craft v3 adoption](./framework/docs/decisions/craft-v3-adoption.md) for provenance and migration scope.
 
-Attributes are the composition API: `c` measure, `s` stack, `t` type, `g` / `x` / `y` / `o` grid, `l` clamp. `data-skin`, `data-accent`, and `data-scrub` own canvas and opt-in behavior. Classes own override and product use. `.btn`, `.crd`, and `.lnk` stay project conventions.
+Use `.c` for containers, with optional `sm` or `lg` classes. Use `.s` for vertical stacks only. Type roles use `.display`, `.h1`, `.h2`, `.h3`, `.lead`, `.body`, `.small`, `.label`, and `.caption`; native `h4`–`h6` retain their semantics with `h3` styling. Grids use `g` tracks, `c` column spans, `r` row spans, and `o` visual order. `l` clamps lines. `Section` keeps its `c` input for `sm` and `lg`, selecting container classes. `Grid` keeps `cols`, `x`, `y`, and `order` inputs and emits `g`, `c`, `r`, and `o` respectively.
+
+`data-theme` accepts `invert`, `tone`, or `accent` and changes color only; `data-accent` routes semantic accents. Set the document's `color-scheme` on `:root`, rather than using a scheme attribute. Type, spacing, and radius recipes resolve at `:root` only. Use semantic owners for local final-role overrides. Horizontal flow, wrapping, and alignment belong in bounded project or component CSS. Never put classes on `section`; direct `main > section` elements need meaningful, nonempty, unique IDs. `.btn`, `.crd`, and `.lnk` stay project conventions.
+
+The dogfood retains SNZ font faces. The starter ships no font files and uses `system-ui` until the project adds its own faces. The build copies and hashes WOFF/WOFF2 files from `src/styles/` and rewrites `@font-face` URLs. It does not convert TTF or OTF.
 
 - Replace `src/styles.css` with project-wide CSS as needed.
 - Put reusable component-specific CSS in that component's `<style>`.
 - Route `<style>` is allowed in authored routes and compiles to a route-owned hashed asset. Content templates may not carry one.
 - Use ordinary platform CSS or the project's chosen external system. Do not invent framework tokens or utility conventions.
-- Cross-document view transitions are CRFT `motion.css`, project-owned. The runtime adds no CSS.
+- Cross-document view transitions belong to the motion layer in project-owned `crft.css`. `data-scrub` remains opt-in, with a static fallback and reduced-motion support. The runtime adds no CSS.
+- Existing consumer projects keep their owned CSS. STTC does not upgrade them automatically or supply Craft compatibility aliases.
 
 ## Images and media
 

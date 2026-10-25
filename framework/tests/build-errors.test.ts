@@ -25,7 +25,7 @@ function composer(schemas = new Map<string, ComponentSchema>(), data = new Map<s
       ['Image', '<figure>{{imgMain}}</figure>'],
       ['Wrapper', '<section>\n<Image src="missing" alt="Missing" />\n</section>'],
       ['Section', '<section>{{slot}}</section>'],
-      ['Grid', '{#if cols}<div g="{{cols}}" x="{{x}}">{{slot}}</div>{:else}<div g x="{{x}}">{{slot}}</div>{/if}'],
+      ['Grid', '{#if cols}<div g="{{cols}}" c="{{x}}">{{slot}}</div>{:else}<div g c="{{x}}">{{slot}}</div>{/if}'],
       ['MaybeSlot', '<div>{#if slot:vis}<span>{{slot:vis}}</span>{/if}<b>{{label}}</b></div>'],
       ['MaybeAttr', '<div>{#if eyebrow}<p>{{eyebrow}}</p>{/if}<b>{{title}}</b></div>'],
       ['BadIf', '<div>{#if slot:vis}<span>{{slot:vis}}</span></div>'],
@@ -215,7 +215,7 @@ describe('build error source spans', () => {
       { slug: 'page', fileHint: 'src/pages/page.html' },
     )
     expect(html).toContain('<div g>Default</div>')
-    expect(html).toContain('<div g="12-6" x="5-3">Responsive</div>')
+    expect(html).toContain('<div g="12-6" c="5-3">Responsive</div>')
   })
 
   test('reports malformed component conditional blocks', async () => {

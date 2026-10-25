@@ -9,11 +9,11 @@
 }
 </script>
 <header>
-  <div c>
-    <div s="h sb ct">
+  <div class="c">
+    <div>
       <Logo />
       <nav aria-label="Primary">
-        <ul s="h w">
+        <ul>
           {#each items as item}
           <li><a href="{{item.href}}">{{item.label}}</a></li>
           {/each}
@@ -22,3 +22,21 @@
     </div>
   </div>
 </header>
+
+<style>
+  body > header {
+    > .c > div {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--gap);
+    }
+
+    nav ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--gap);
+    }
+  }
+</style>

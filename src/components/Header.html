@@ -12,11 +12,11 @@
 }
 </script>
 <header>
-  <div c>
-    <div s="h sb ct">
+  <div class="c">
+    <div>
       <Logo />
       <nav aria-label="Primary">
-        <ul s="h w">
+        <ul>
           {#each items as item}
           <li><a href="{{item.href}}">{{item.label}}</a></li>
           {/each}
@@ -29,21 +29,35 @@
 <style>
   body>header {
     position: sticky;
-    inset-block-start: 0;
-    background: var(--c-bg, Canvas);
-    color: var(--c-fg, CanvasText);
+    top: 0;
+    background: var(--canvas, Canvas);
+    color: var(--text, CanvasText);
     z-index: 100;
 
+    > .c > div {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--gap);
+    }
+
     nav ul {
+      display: flex;
+      flex-wrap: wrap;
       gap: .5rem;
 
       a {
         text-decoration: none;
-        transition-property: font-weight, font-variation-settings;
-        transition-duration: var(--m-td-ss);
+        transition-property: font-weight, color;
+        transition-duration: var(--duration-xl);
+
+        &[aria-current="page"] {
+          text-decoration: underline;
+        }
 
         &:not(:hover, [aria-current="page"]) {
-          color: var(--c-mu);
+          color: var(--muted);
         }
       }
     }

@@ -25,6 +25,8 @@ bun run new cms
 - `src/components/*.html`: one PascalCase component per file.
 - `src/site.json`: site, SEO, AEO, GEO, and discovery defaults.
 - `src/app.ts`: project browser code.
+- `src/styles.css`: project CSS entry, importing `src/styles/global.css`.
+- `src/styles/`: project-owned Craft v3 CSS and adoption manifest.
 - `src/images/`, `src/videos/`, `src/files/`: public media sources.
 
 The starter contains exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`. Replace them freely.
@@ -39,13 +41,21 @@ Declare attrs in the leading comment. Use `{{attr}}`, `{{slot}}`, named slots, `
 
 ## Runtime
 
-Navigation is native: every link is a full document load, the browser restores scroll on back, and anchors scroll on arrival. Cross-document view transitions come from `src/styles/layers/motion.css`. `window.snz` provides `page`, `onPage`, `registerComponent`, `track`, `onVisible`, `onActive`, `isVisible`, and `isActive`, dispatches `snz:page` once per document, and handles buttons with `aria-controls` and `aria-expanded`. There is no `navigate`, `prefetch`, or navigation hook.
+Navigation is native: every link is a full document load, the browser restores scroll on back, and anchors scroll on arrival. Cross-document view transitions come from the motion layer in project-owned `src/styles/crft.css`. `window.snz` provides `page`, `onPage`, `registerComponent`, `track`, `onVisible`, `onActive`, `isVisible`, and `isActive`, dispatches `snz:page` once per document, and handles buttons with `aria-controls` and `aria-expanded`. There is no `navigate`, `prefetch`, or navigation hook.
 
 `track="Event name"` on a component compiles to `data-snz-track`; a click calls `snz.track()`, which dispatches `snz:track` on `document`. The runtime injects no analytics script. Subscribe in `src/app.ts` and forward to the project's provider (PostHog, Vercel Analytics, or another).
 
 ## CSS
 
-The starter imports a pinned, project-owned CRFT copy from `src/styles/`. Layers are `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. No font files ship: text renders in `system-ui` until the project adds `@font-face` rules and WOFF/WOFF2 files under `src/styles/`; the build hashes those files and rewrites their URLs. Attributes are the composition API: `c`, `s`, `t`, `g`, `x`, `y`, `o`, `l`. Weight flags on `t` are `lt`, `rg`, and `bo`. Family flags are `sa`, `se`, `mo`, `fb`, and `dp`. `data-skin`, `data-accent`, and `data-scrub` own canvas and opt-in behavior. Classes own override and product use. Replace or delete that import and copy when the project adopts another system. Component and route styles remain optional. Use at most one stable root class per component; style descendants with nested semantic or data-attribute selectors instead of inner classes. Do not invent framework tokens or utility classes.
+The renderer is CSS-agnostic. The starter explicitly adopts project-owned Craft v3 CSS under `src/styles/`. Craft is the system name; physical names remain `crft.css` and `crft-manifest.json`. Project-owned `global.css` imports flat `tokens.css` and `crft.css`. The eight logical layers remain `reset`, `base`, `tokens`, `type`, `layout`, `grid`, `motion`, and `utility`. Replace or delete this copy when adopting another system. Existing sites receive no automatic CSS upgrade or compatibility aliases.
+
+No font files ship. Text renders in `system-ui` until the project adds `@font-face` rules and WOFF/WOFF2 files under `src/styles/`. The build hashes those files and rewrites their URLs.
+
+Use `.c` containers with optional `sm` or `lg` classes, and `.s` for vertical stacks only. Type roles are `.display`, `.h1`, `.h2`, `.h3`, `.lead`, `.body`, `.small`, `.label`, and `.caption`. Native `h4`–`h6` retain their semantics with `h3` styling. Use ordinary `font-weight`; do not add type modifier flags. Grids use `g` tracks, `c` column spans, `r` row spans, and `o` visual order; `l` clamps lines. `Section` keeps its `c` input for `sm` and `lg`. `Grid` keeps `cols`, `x`, `y`, and `order`, emitting `g`, `c`, `r`, and `o`.
+
+`data-theme` accepts `invert`, `tone`, or `accent` and changes color only. `data-accent` routes semantic accents. Choose the document scheme with `color-scheme` on `:root`. Type, spacing, and radius recipes resolve at `:root` only; local final-role overrides belong on semantic owners. Horizontal flow, wrapping, and alignment belong in bounded project or component CSS. `data-scrub` remains opt-in with a static fallback and reduced-motion support.
+
+Never put a class on `section`. Direct `main > section` elements need meaningful, nonempty, unique IDs. Other IDs need a fragment, relationship, or behavior purpose. Component and route styles remain optional. Use semantic descendants and bounded structure before adding classes. `.btn`, `.crd`, and `.lnk` remain project conventions. Do not invent framework tokens or utility classes.
 
 Lenis smooth scrolling is optional and self-hosted. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to exclude its bootstrap, CSS, vendor code, and shell configuration from `dist/`. Reduced-motion users always keep native scrolling.
 

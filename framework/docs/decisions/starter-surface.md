@@ -1,5 +1,7 @@
 # Starter component scaffold
 
+CSS packaging, hooks, token names, and font paths below record the historical pre-v3 state. Superseded by [Craft v3 adoption](./craft-v3-adoption.md) for those topics. The seven-component scaffold and creator boundary remain current.
+
 **Status:** active  
 **Date:** 2026-08-20
 

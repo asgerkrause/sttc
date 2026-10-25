@@ -36,11 +36,21 @@ async function assertStarter(target: string) {
   for (const path of [
     'AGENTS.md', 'README.md', 'src/shell.html', 'src/site.json', 'src/app.ts', 'src/snz.d.ts',
     'src/styles.css', 'src/styles/global.css',
-    'src/styles/layers/base.css', 'src/styles/layers/tokens.css', 'src/styles/layers/type.css',
-    'src/styles/layers/layout.css', 'src/styles/layers/grid.css', 'src/styles/layers/motion.css', 'src/styles/layers/utility.css',
+    'src/styles/tokens.css', 'src/styles/crft.css', 'src/styles/crft-manifest.json',
     'src/pages/index.html', 'src/pages/404.html', 'src/images/og.png', 'tsconfig.json', 'vercel.json', '.gitignore',
   ]) {
     if (!(await Bun.file(join(target, path)).exists())) throw new Error(`created starter missing ${path}`)
+  }
+
+  const stylesDir = join(target, 'src', 'styles')
+  const styles = await readdir(stylesDir, { recursive: true })
+  if (styles.includes('layers')) throw new Error('created starter includes legacy CSS layers')
+  if (styles.some((path) => /\.(woff2?|ttf|otf)$/i.test(path))) throw new Error('created starter includes font assets')
+  const manifest: unknown = JSON.parse(await Bun.file(join(stylesDir, 'crft-manifest.json')).text())
+  if (!manifest || typeof manifest !== 'object'
+    || !('contractVersion' in manifest) || manifest.contractVersion !== 3
+    || !('packagingVersion' in manifest) || manifest.packagingVersion !== 1) {
+    throw new Error('created starter has an invalid Craft v3 package manifest')
   }
 
   const components = (await readdir(join(target, 'src', 'components')))
