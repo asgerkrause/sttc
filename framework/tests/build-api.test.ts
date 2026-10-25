@@ -159,6 +159,8 @@ describe('build API spine', () => {
     const dir = await mkdtemp(join(tmpdir(), 'sttc-context-'))
     try {
       await writeMinimalProject(dir)
+      await writeFile(join(dir, 'src', 'styles', 'adoption-manifest.json'), '{"source":"project metadata"}')
+      await writeFile(join(dir, 'src', 'files', 'download.json'), '{"public":true}')
       const context = createBuildContext({ rootDir: dir })
 
       const result = await build({ context })
@@ -168,6 +170,8 @@ describe('build API spine', () => {
       expect(report.errors).toEqual([])
       expect(await Bun.file(join(dir, 'dist', 'index.html')).exists()).toBe(true)
       expect(await Bun.file(join(dir, 'dist', '404.html')).exists()).toBe(true)
+      expect(await Bun.file(join(dir, 'dist', 'assets', 'css', 'adoption-manifest.json')).exists()).toBe(false)
+      expect(await Bun.file(join(dir, 'dist', 'assets', 'files', 'download.json')).text()).toBe('{"public":true}')
       expect(await Bun.file(join(dir, 'dist', 'routes', 'index.html')).exists()).toBe(false)
       const html = await Bun.file(join(dir, 'dist', 'index.html')).text()
       const styles = html.match(/\/assets\/css\/styles\.[a-f0-9]+\.css/)
