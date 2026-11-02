@@ -51,21 +51,22 @@ describe('asset hashing', () => {
   test('prunes image output by sidecar, never by parsing a numeric name suffix', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'snz-image-prune-'))
     try {
-      await mkdir(join(dir, '.meta'), { recursive: true })
+      const cache = join(dir, 'cache')
+      await mkdir(cache, { recursive: true })
       for (const file of ['photo-2024.webp', 'photo-2024-320.webp', 'photo-2024-640.webp', 'old.webp', 'old-320.webp']) {
         await writeFile(join(dir, file), 'webp')
       }
-      await writeFile(join(dir, '.meta', 'photo-2024.json'), JSON.stringify({
+      await writeFile(join(cache, 'photo-2024.json'), JSON.stringify({
         srcMtime: 1, max: 1600, quality: 80, width: 640, height: 480, sizes: [320],
         variants: [{ file: 'photo-2024-320.webp', width: 320 }],
       }))
-      await writeFile(join(dir, '.meta', 'old.json'), '{}')
+      await writeFile(join(cache, 'old.json'), '{}')
 
-      await pruneStaleImages(dir, ['photo-2024'])
-      await pruneStaleImages(dir, ['photo-2024'])
+      await pruneStaleImages(dir, cache, ['photo-2024'])
+      await pruneStaleImages(dir, cache, ['photo-2024'])
 
-      expect((await readdir(dir)).sort()).toEqual(['.meta', 'photo-2024-320.webp', 'photo-2024.webp'])
-      expect(await readdir(join(dir, '.meta'))).toEqual(['photo-2024.json'])
+      expect((await readdir(dir)).sort()).toEqual(['cache', 'photo-2024-320.webp', 'photo-2024.webp'])
+      expect(await readdir(cache)).toEqual(['photo-2024.json'])
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

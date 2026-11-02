@@ -117,6 +117,9 @@ export async function checkBuiltOutput(distDir: string, fail: (m: string) => voi
     for (const match of html.matchAll(/\{\{[\w.-]+(?::[\w.-]+)?\}\}/g)) {
       errors.push(`${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`)
     }
+    for (const match of html.matchAll(/<slot\b[^>]*>/gi)) {
+      errors.push(`${file}:${lineOf(html, match.index ?? 0)}: stray <slot> tag "${match[0]}" in output\n  hint: Named slots resolve only inside a component whose template declares {{slot:name}}; check the enclosing component and its children.`)
+    }
     return errors
   }
 
