@@ -145,4 +145,4 @@ Immutable `Cache-Control` in `vercel.json` applies only to hashed `css|js|woff` 
 
 After structural changes run `bun run framework:verify`; for a narrower loop use `bun run build` or `bun test framework/tests`.
 
-`@snz/sttc` is unpublished. `sttc create` from this checkout writes `"@snz/sttc": "file:<checkout>"` into the created site; a packaged create writes `^<version>` and cannot install until a human publishes the package.
+`@snz/sttc` is a public npm package. `sttc create` from this checkout writes `"@snz/sttc": "file:<checkout>"` into the created site; a packaged create writes `^<version>`. Publishing requires explicit human approval.

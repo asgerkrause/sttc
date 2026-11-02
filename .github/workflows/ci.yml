@@ -25,9 +25,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Private review guard
-        run: bun run check:private
-
       - name: Regression tests
         run: bun test framework/tests
 

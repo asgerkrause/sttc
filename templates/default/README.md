@@ -46,4 +46,4 @@ Every route builds to a full HTML document, so navigation is native. The starter
 
 Build emits static pages, `404.html`, responsive images, sitemap, feeds, connected JSON-LD, manifests, route Markdown/JSON, same-path markdown aliases, and `llms.txt`. Replace `https://example.com`, the starter metadata in `src/site.json`, and the 1×1 `src/images/og.png` before launch; `bun run doctor -- --launch` fails on each of them.
 
-`@snz/sttc` is unpublished. A site created from the renderer checkout depends on it through a `file:` path; a site created from a packed tarball depends on `^<version>` and cannot install until a human publishes the package.
+A site created from the renderer checkout depends on `@snz/sttc` through a `file:` path; a site created from the npm package depends on `^<version>`.
