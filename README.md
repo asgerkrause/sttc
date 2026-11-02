@@ -9,7 +9,7 @@ It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM, hydrat
 - Bun >= 1.4.0
 - Bun only; no npm commands
 
-Commands, the source tree, and the verification loop are in [`AGENTS.md`](./AGENTS.md). The package is unpublished; a created site resolves `@snz/sttc` from this checkout with a `file:` dependency until a human publishes it.
+Commands, the source tree, and the verification loop are in [`AGENTS.md`](./AGENTS.md). A site created from this checkout resolves `@snz/sttc` with a `file:` dependency; a site created from the npm package depends on `^<version>`.
 
 ## Starter surface
 
@@ -135,4 +135,4 @@ The starter includes self-hosted Lenis. Set `"scroll": "lenis"` in `src/site.jso
 - `.snz/` is cache/state only, including `.snz/components-catalog.md`.
 - Never edit `dist/`.
 
-`bun run framework:verify` runs strict checks, typechecking, framework tests, and one-package creator smoke coverage. Publishing, deploying, and removing private package guards require explicit human approval.
+`bun run framework:verify` runs strict checks, typechecking, framework tests, and one-package creator smoke coverage. Publishing and deploying require explicit human approval.

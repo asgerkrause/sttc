@@ -25,7 +25,7 @@ Deploy settings:
 
 ## Package resolution
 
-`@snz/sttc` is unpublished. A site created from this repository's checkout depends on `"@snz/sttc": "file:<path to the checkout>"`, so `bun install` links the renderer from disk and the site follows that checkout. A site created from a packed tarball (`bun pm pack`, then `STTC_CREATE_MODE=packaged`) depends on `^<version>` and installs nothing until the package is published; publishing requires explicit human approval and is not part of any build or verify script. Until then, deploy from a repository that carries the renderer checkout, or vendor the package into the site.
+`@snz/sttc` is published to npm. A site created from this repository's checkout depends on `"@snz/sttc": "file:<path to the checkout>"`, so `bun install` links the renderer from disk and the site follows that checkout. A site created from a packed tarball (`bun pm pack`, then `STTC_CREATE_MODE=packaged`) depends on `^<version>` from npm, which installs anywhere, including Vercel. Publishing requires explicit human approval and is not part of any build or verify script.
 
 ## Dev and preview
 
