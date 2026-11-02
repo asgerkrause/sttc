@@ -1,4 +1,4 @@
-# AGENTS.md — SANITIZE site
+# AGENTS.md — STTC site
 
 This project uses `@snz/sttc`, an HTML-first Bun renderer. Edit `src/` and optional `content/`. Never edit generated `dist/` or put source in `.snz/`.
 

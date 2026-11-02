@@ -1,74 +1,69 @@
 # STTC
 
-`@snz/sttc` is an HTML-first, Bun-native static site renderer. Authors write routes, atomic components, TypeScript, images, and optional markdown content. The build emits a static `dist/` site with one full document per route, responsive images, SEO/AEO/GEO metadata, feeds, manifests, discovery files, and strict launch checks.
+STTC (`@snz/sttc`) is an HTML-first static site renderer for Bun. You write routes and components as plain HTML files. The build turns them into a static `dist/` folder with one full HTML document per route, responsive images, and SEO and discovery files.
 
-It is not a React, Vue, Svelte, or Vite wrapper. There is no virtual DOM, hydration layer, or client router: navigation is native, with cross-document view transitions and speculation-rules prefetch from project source. Presentation is project-owned. The starter includes Craft v3 CSS in `src/styles/`; you may replace or delete that copy. The renderer has no Craft dependency.
+STTC fits small brochure, marketing, and studio sites that should ship as static files. It is not a wrapper around React, Vue, Svelte, or Vite. It has no virtual DOM, no hydration, and no client router. Navigation is native page loads, with speculation-rules prefetch and optional cross-document view transitions.
 
 ## Requirements
 
-- Bun >= 1.4.0
-- Bun only; no npm commands
+- [Bun](https://bun.sh) 1.4.0 or later. STTC runs on Bun only; it does not support Node or npm scripts.
 
-Commands, the source tree, and the verification loop are in [`AGENTS.md`](./AGENTS.md). A site created from this checkout resolves `@snz/sttc` with a `file:` dependency; a site created from the npm package depends on `^<version>`.
+## Quick start
 
-## Starter surface
+```bash
+bunx @snz/sttc create my-site
+cd my-site
+bun install
+bun run dev
+```
+
+`create` copies the starter into a new or empty directory and refuses to write into a non-empty one. `bun run dev` builds the site, serves `dist/` on `http://127.0.0.1:3000` by default, and reloads the tab after each rebuild.
+
+## Features
+
+- **HTML routes.** Each file under `src/pages/` becomes a route: `src/pages/about.html` builds to `/about/`.
+- **Build-time components.** One `src/components/PascalCase.html` file per component, with declared attributes, slots, `{#if}` and `{#each}` blocks, an optional lifecycle `<script>`, and an optional colocated `<style>`. A malformed component fails the build and names the file and page.
+- **SEO and discovery output.** A route sets `title`, `description`, and an optional `image` through `<SEO />`. Site defaults come from `src/site.json`. The build emits canonical and Open Graph tags, JSON-LD, a sitemap, `llms.txt`, `llms-full.txt`, Markdown and JSON versions of each route, and RSS and JSON feeds once a public post exists.
+- **Images.** `<Image src="hero" alt="…" />` turns a master in `src/images/` into WebP files with responsive variants and intrinsic dimensions.
+- **Optional content.** `bun run new cms` adds Markdown posts, tags, feeds, and a PagesCMS configuration. `bun run new collection <name>` adds a custom collection.
+- **Checks.** `bun run build` ends with `check`, which fails on broken internal links, unresolved placeholders, and missing discovery output. `bun run doctor -- --launch` also rejects the starter's placeholder URL, metadata, and share image.
+- **Small runtime.** `window.snz` mounts component scripts and dispatches `snz:page` and `snz:track` events. It loads no analytics provider.
+- **Project-owned CSS.** The renderer adds no CSS. The starter includes a copy of the Craft v3 CSS system in `src/styles/`, which you can change or delete.
+
+## Project layout
+
+A site created with `create` has this source layout:
 
 ```text
 src/
-  shell.html
-  site.json
-  app.ts
-  snz.d.ts
-  styles.css
-  styles/
-    global.css
-    tokens.css
-    crft.css
-    crft-manifest.json
-  pages/
-    index.html
-    404.html
-  components/
-  images/
-    og.png
+  shell.html        document shell
+  site.json         site name, URL, and SEO defaults
+  app.ts            project TypeScript entry
+  styles.css        project CSS entry
+  styles/           project-owned Craft v3 CSS
+  pages/            routes (index.html, 404.html)
+  components/       Header, Footer, Section, Logo, Image, Video, Grid
+  images/           image masters
+  videos/           public video files
+  files/            public raw files
+content/            optional Markdown records, added by `bun run new cms`
+dist/               build output; do not edit
 ```
 
-The starter ships seven replaceable HTML components (named in `AGENTS.md`), not a UI library, and no font files: a created site renders in `system-ui` until the project adds its own faces.
-
-Craft is the system name; `crft.css` and `crft-manifest.json` retain their physical names. Project-owned `src/styles/global.css` imports flat `tokens.css` and `crft.css`; `src/styles.css` imports that entry. The eight logical layers remain unchanged. Existing consumer copies receive no automatic upgrade, and the migration adds no compatibility aliases. See [Craft v3 adoption](./framework/docs/decisions/craft-v3-adoption.md).
-
-Containers use `.c` with optional `sm` or `lg` classes. `.s` owns vertical stacks; type roles use classes such as `.lead` and `.small`. Grids use `g` tracks, `c` column spans, `r` row spans, and `o` visual order; `l` clamps lines. Native headings retain their semantics, with `h4`–`h6` using `h3` styling. `Section` keeps its `c` input for `sm` and `lg`. `Grid` keeps `cols`, `x`, `y`, and `order`, emitting `g`, `c`, `r`, and `o`.
-
-`data-theme` accepts `invert`, `tone`, or `accent`; it and `data-accent` affect color only. Set light or dark preference through document CSS `color-scheme`. Shared type, spacing, and radius recipes resolve at `:root`. Bounded project CSS owns horizontal flow, wrapping, and alignment. Direct `main > section` elements need meaningful, unique IDs; sections have no classes.
-
-The build flattens the CSS import tree into one hashed stylesheet. Component-specific `<style>` blocks compile into one pruned hashed stylesheet. Route `<style>` blocks compile into route-owned assets.
-
-## Pages
-
-Files under `src/pages/` become routes:
-
-```text
-src/pages/index.html       /
-src/pages/about.html       /about/
-src/pages/work/case.html   /work/case/
-```
+A route can start with a `<head>` wrapper that holds its `<SEO />` directive:
 
 ```html
 <head>
-  <SEO title="About" description="What this organization does." image="/assets/images/about.webp" />
+  <SEO title="About" description="What this organization does." />
 </head>
 
-<Section id="intro">
+<Section id="about">
   <h1>About</h1>
   <p>Page content.</p>
 </Section>
 ```
 
-`<SEO />` is handled by the renderer inside the route's leading `<head>` wrapper. Set `title`, `description`, and optional page-specific `image`; canonical URLs derive from route filenames. It merges route values with `src/site.json` and emits title, description, canonical, Open Graph, Twitter metadata, and JSON-LD. Existing `ogImage` values remain a compatibility alias for `image`.
-
-## Components
-
-One component is one PascalCase HTML file:
+A component declares its contract in a leading comment:
 
 ```html
 <!-- src/components/Hero.html -->
@@ -83,56 +78,44 @@ One component is one PascalCase HTML file:
 </section>
 ```
 
-Use it in a route:
+## Commands
 
-```html
-<Hero id="intro" title="A faster starting point">Project-owned content.</Hero>
+Run these inside a created site:
+
+| Command | Effect |
+|---|---|
+| `bun run dev` | Build on change and serve `dist/` with live reload on port 3000. |
+| `bun run build` | Build `dist/`, then run `check`. |
+| `bun run preview` | Serve the built `dist/` on port 4173 with gzip and cache headers. |
+| `bun run check` | Check renderer contracts in `dist/`. |
+| `bun run doctor` | Typecheck, then run `check`. Add `-- --launch` for the production gate. |
+| `bun run new route pricing` | Add `src/pages/pricing.html`. |
+| `bun run new component Hero` | Add `src/components/Hero.html`. |
+| `bun run new cms` | Add the content and PagesCMS files. |
+
+## Documentation
+
+- [Components](./framework/docs/framework/components.md)
+- [Runtime](./framework/docs/framework/runtime.md)
+- [SEO, AEO, and GEO](./framework/docs/framework/seo-aeo-geo.md)
+- [Content and CMS](./framework/docs/framework/content-and-cms.md)
+- [Images](./framework/docs/framework/images.md)
+- [Deploy and launch](./framework/docs/framework/deploy-and-launch.md)
+- [Design decisions](./framework/docs/decisions/README.md)
+
+## Working on STTC
+
+This repository is both the renderer and a site built with it. `framework/` holds the renderer, `templates/default/` is the starter that `create` copies, and `src/` is the project's own site. [`AGENTS.md`](./AGENTS.md) lists the full command set and source contracts.
+
+```bash
+bun install
+bun run framework:verify
 ```
 
-Components support declared attrs, default and named slots, nested `{#if}` / `{:else if}` / `{:else}`, build-time `{#each}` data, optional lifecycle `<script>`, optional colocated `<style>`, and `@schema` JSON-LD declarations. See [`framework/docs/framework/components.md`](./framework/docs/framework/components.md).
+`framework:verify` typechecks, runs `check`, runs the framework tests, and creates a site from the starter as a smoke test.
 
-## Images and public media
+## License
 
-Place image masters in `src/images/`:
+STTC is released under the [MIT License](./LICENSE).
 
-```html
-<Image src="hero" alt="Product interface" max="1600" quality="82" />
-```
-
-Bun emits WebP output, responsive variants, intrinsic dimensions, and native `srcset`, `sizes`, loading, and decoding attributes. `Video` renders native video; public video files copy from `src/videos/` to `/assets/videos/`. Raw downloads copy from `src/files/` to `/assets/files/`.
-
-## Content
-
-CMS support is opt-in through `bun run new cms`, `bun run new post`, and `bun run new collection`. Posts, tags, feeds, collection routes, drafts, PagesCMS configuration, and collision checks remain renderer-owned. `posts` is an ordinary collection whose route and templates a project may override. Authored pages always live in `src/pages/`. See [`framework/docs/framework/content-and-cms.md`](./framework/docs/framework/content-and-cms.md).
-
-## Smart output
-
-Every build emits:
-
-- one full HTML document per route, plus `dist/404.html`;
-- sitemap and robots;
-- RSS and JSON Feed when a public post exists;
-- `llms.txt` and `llms-full.txt`;
-- `site.manifest.json` and per-route JSON;
-- `site.jsonld`, baseline JSON-LD, and component-declared JSON-LD;
-- Markdown and JSON representations for each public route, plus same-path markdown aliases such as `/about/index.md`;
-- hashed TypeScript, component-style, and route-style assets when present.
-
-## Runtime
-
-The page runtime on `window.snz` mounts component lifecycle scripts, reports the page (`snz:page`), tracks events (`snz:track`), and manages visibility, active media, and native disclosures. It injects no analytics; providers subscribe to `snz:track` in `src/app.ts`. See [`framework/docs/framework/runtime.md`](./framework/docs/framework/runtime.md).
-
-## Optional smooth scrolling
-
-The starter includes self-hosted Lenis. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to remove the Lenis bootstrap, stylesheet, and vendor script from `dist/`. Reduced-motion users always keep native scrolling.
-
-## Source ownership
-
-- Edit `src/` and optional `content/` for sites.
-- Edit `framework/` for renderer behavior.
-- `templates/default/` is the created-project template shipped by `@snz/sttc`.
-- `sttc create <project-dir>` copies that template without mirror or sync machinery.
-- `.snz/` is cache/state only, including `.snz/components-catalog.md`.
-- Never edit `dist/`.
-
-`bun run framework:verify` runs strict checks, typechecking, framework tests, and one-package creator smoke coverage. Publishing and deploying require explicit human approval.
+The site in this repository uses two fonts under the SIL Open Font License 1.1: Inter (`src/styles/sans.woff`) and Geist Mono (`src/styles/mono.woff`). Their notices and license are in [`src/styles/OFL.txt`](./src/styles/OFL.txt). The starter ships no font files.
