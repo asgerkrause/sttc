@@ -4,7 +4,7 @@ Date: 2026-06-18
 
 ## Status
 
-Explored. Defer implementation until after private release surface is stable.
+Explored. Implementation deferred.
 
 ## Context
 
@@ -46,7 +46,7 @@ Owner boundary:
 
 - no credential storage;
 - no real uploads in CI;
-- no deploy before private release gates are decided;
+- no deploy command until its release gates are decided;
 - no dependency on AWS SDK.
 
 ## Evidence

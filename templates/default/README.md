@@ -1,34 +1,29 @@
 # STTC site
 
-Minimal site starter powered by `@snz/sttc`.
+This site is built with [`@snz/sttc`](https://github.com/sanitizestudio/sttc), an HTML-first static renderer for Bun. It requires Bun 1.4.0 or later.
 
 ```bash
 bun install
 bun run dev
 ```
 
-Edit `src/`; never edit `dist/`. `AGENTS.md` lists every command.
+`bun run dev` serves the site on `http://127.0.0.1:3000` and reloads the tab after each rebuild. Edit `src/`; never edit `dist/`. `AGENTS.md` lists every command and source contract.
 
-## Starting surface
+## Starter contents
 
-- `src/pages/index.html` and `src/pages/404.html`
-- exactly `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`
-- `src/app.ts` for project TypeScript
-- `src/site.json` for site and discovery defaults
-- project-owned Craft v3 CSS under `src/styles/`, imported by `src/styles.css`. No font files ship; text renders in `system-ui` until you add your own faces
-- no CMS files until `bun run new cms`
+- `src/pages/index.html` and `src/pages/404.html`.
+- Seven replaceable components: `Header`, `Footer`, `Section`, `Logo`, `Image`, `Video`, and `Grid`.
+- `src/app.ts` for project TypeScript.
+- `src/site.json` for the site name, URL, and SEO defaults.
+- A project-owned copy of the Craft v3 CSS system under `src/styles/`, imported by `src/styles.css`.
+- No font files. Text renders in `system-ui` until you add your own `@font-face` rules and WOFF or WOFF2 files under `src/styles/`.
+- No CMS files. Run `bun run new cms` to add them.
 
-Replace or extend `src/styles.css` and the copied `src/styles/` files for project CSS; the renderer links them automatically. Component `<style>` and route `<style>` blocks are optional.
+Add source with `bun run new route about` and `bun run new component Hero`.
 
-Craft is optional project source; the renderer stays CSS-agnostic. `src/styles/global.css` imports flat `tokens.css` and `crft.css`, with adoption metadata in `crft-manifest.json`. The physical `crft` names remain. Existing sites receive no automatic CSS upgrade or compatibility aliases.
+## Pages and SEO
 
-Use `.c` containers, optional `sm` or `lg` classes, `.s` vertical stacks, and type role classes such as `.lead`. Grids use `g`, `c`, `r`, and `o`; `l` clamps lines. `Section` keeps its `c` input for `sm` and `lg`, selecting container classes. `Grid` keeps `cols`, `x`, `y`, and `order`, emitting `g`, `c`, `r`, and `o`. Native `h4`–`h6` keep their semantics with `h3` styling.
-
-`data-theme` accepts `invert`, `tone`, or `accent`; it and `data-accent` affect color only. Document CSS `color-scheme` chooses light or dark. Type, spacing, and radius recipes resolve at `:root`. Local CSS owns horizontal flow, wrapping, and alignment. Direct `main > section` elements need meaningful, unique IDs; sections have no classes.
-
-Create source with `bun run new route about`, `bun run new component Hero`, and `bun run new cms`.
-
-A route can declare metadata with the renderer-owned `<SEO />` directive:
+Each file in `src/pages/` becomes a full HTML document, so navigation uses native page loads. A route can set its metadata in a leading `<head>` wrapper:
 
 ```html
 <head>
@@ -40,10 +35,27 @@ A route can declare metadata with the renderer-owned `<SEO />` directive:
 </Section>
 ```
 
-`SEO` has no component file. Canonical URLs derive from route filenames; `image` overrides the site-wide share image for one page.
+`SEO` is a renderer directive, not a component file. Canonical URLs derive from route filenames. `image` overrides the site-wide share image for one page.
 
-Every route builds to a full HTML document, so navigation is native. The starter includes self-hosted Lenis. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to exclude all Lenis files and markup from `dist/`. Reduced-motion users always keep native scrolling.
+The build emits static pages, `404.html`, responsive images, a sitemap, connected JSON-LD, manifests, Markdown and JSON versions of each route, `llms.txt`, and `llms-full.txt`. It adds RSS and JSON feeds once a public post exists.
 
-Build emits static pages, `404.html`, responsive images, sitemap, feeds, connected JSON-LD, manifests, route Markdown/JSON, same-path markdown aliases, and `llms.txt`. Replace `https://example.com`, the starter metadata in `src/site.json`, and the 1×1 `src/images/og.png` before launch; `bun run doctor -- --launch` fails on each of them.
+## CSS
 
-A site created from the renderer checkout depends on `@snz/sttc` through a `file:` path; a site created from the npm package depends on `^<version>`.
+The renderer adds no CSS and links `src/styles.css` automatically. Change or replace the files under `src/styles/` as needed. Component and route `<style>` blocks are optional.
+
+Craft conventions in the starter:
+
+- `.c` containers, with optional `sm` or `lg` classes, and `.s` vertical stacks.
+- Type role classes such as `.lead` and `.small`. Native `h4` to `h6` keep their semantics with `h3` styling.
+- Grids use `g` tracks, `c` column spans, `r` row spans, and `o` visual order. `l` clamps lines.
+- `Section` takes a `c` input (`sm` or `lg`) that selects the container class. `Grid` takes `cols`, `x`, `y`, and `order` and emits `g`, `c`, `r`, and `o`.
+- `data-theme` accepts `invert`, `tone`, or `accent`. It and `data-accent` change color only. CSS `color-scheme` on `:root` chooses light or dark.
+- Direct `main > section` elements need meaningful, unique IDs. Sections take no classes.
+
+## Smooth scrolling
+
+The starter includes self-hosted Lenis. Set `"scroll": "lenis"` in `src/site.json` to include it. Set `"scroll": "native"` to remove every Lenis file and its markup from `dist/`. Reduced-motion users always keep native scrolling.
+
+## Before launch
+
+Replace `https://example.com`, the starter name and description in `src/site.json`, the starter title in `src/pages/index.html`, and the 1×1 placeholder `src/images/og.png`. `bun run doctor -- --launch` fails until each one is replaced.
