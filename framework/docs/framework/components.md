@@ -67,6 +67,8 @@ Conditions test an attribute, a slot, or a dotted data path for a non-empty valu
 {/if}
 ```
 
+A named slot's body may contain other components and their slots; the close tag matches by depth, so `<slot name="title"><Badge><slot name="label">LBL</slot></Badge></slot>` nests correctly. A `<slot>` tag left in the output fails the build.
+
 Blocks nest: `{#if}` inside `{#each}` and `{#each}` inside `{#if}` both render per item. Expressions are unsupported.
 
 ## Build-time JSON

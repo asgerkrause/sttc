@@ -388,7 +388,7 @@ content:
       await mkdir(srcDir, { recursive: true })
       const png = 'iVBORw0KGgoAAAANSUhEUgAAADwAAABaCAIAAABrM6JiAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAPKADAAQAAAABAAAAWgAAAACdrWuxAAAA4klEQVRoBe3SwQkAIRDF0NH+e97tIKcgDMRr4CNPzzf7zt135Zku/erVkk4aBPoegKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04alop/QME/wGzn3VIjwAAAABJRU5ErkJggg=='
       await writeFile(join(srcDir, 'portrait.png'), Buffer.from(png, 'base64'))
-      const meta = await processImages(srcDir, distDir, { portrait: { max: 1200, quality: 82 } })
+      const meta = await processImages(srcDir, distDir, join(dir, 'cache'), { portrait: { max: 1200, quality: 82 } })
       expect(meta.portrait.width).toBe(60)
       expect(meta.portrait.height).toBe(90)
       expect(meta.portrait.variants).toEqual([{ file: 'portrait-90.webp', width: 60 }])

@@ -20,7 +20,7 @@ Logical names are basenames without extension and must be unique across image so
 
 `src/images/og.png` emits `/assets/og.webp` and a PNG fallback. Set `image` in `site.json` or override it per route with `<SEO image="/assets/images/page.webp" />`. `ogImage` remains a compatibility alias.
 
-Build validates authored public image references and fails missing or duplicate assets with source hints. The build prunes stale output under `dist/assets/images/` by what the encode sidecars account for, so a master such as `photo-2024.jpg` keeps its output on every build.
+Build validates authored public image references and fails missing or duplicate assets with source hints. The build prunes stale output under `dist/assets/images/` by what the encode sidecars account for, so a master such as `photo-2024.jpg` keeps its output on every build. Encode sidecars live in `node_modules/.cache/sttc/` (`images/` for masters, `og.json` for the OG image), never in `dist/`. Vercel keeps `node_modules` in its build cache, so sidecars survive deploys there; `dist/` ships no `.meta` directory.
 
 ## Public media
 
