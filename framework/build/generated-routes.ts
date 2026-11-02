@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { slugifyTag, type ContentRoute } from './content'
+import type { ContentRoute } from './content'
+import { slugify } from './markdown'
 import type { RouteGraph } from './route-graph'
 import { escapeHtml } from './html'
 import { src } from './paths'
@@ -79,7 +80,7 @@ export async function autoGenerateIndexes(
   const byTag = new Map<string, { label: string; posts: ContentRoute[] }>()
   for (const p of posts) {
     for (const t of p.tags) {
-      const slug = slugifyTag(t)
+      const slug = slugify(t)
       if (!slug) continue
       if (!byTag.has(slug)) byTag.set(slug, { label: t, posts: [] })
       byTag.get(slug)!.posts.push(p)

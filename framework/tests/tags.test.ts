@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { BuildError } from '../build/errors'
 import { autoGenerateIndexes } from '../build/generated-routes'
-import { normalizeContentTags, slugifyTag, type ContentRoute } from '../build/content'
+import { normalizeContentTags, type ContentRoute } from '../build/content'
+import { slugify } from '../build/markdown'
 import type { RouteGraph } from '../build/route-graph'
 import { nextComponent, parseAttrs } from '../build/tags'
 
@@ -67,7 +68,7 @@ describe('component tag parser', () => {
   })
 
   test('normalizes content tag labels separately from route slugs', () => {
-    expect(slugifyTag('R&D <SEO>')).toBe('r-d-seo')
+    expect(slugify('R&D <SEO>')).toBe('r-d-seo')
     expect(normalizeContentTags([' Case Study ', 'case-study', 'R&D <SEO>', '!!!'])).toEqual([
       'Case Study',
       'R&D <SEO>',

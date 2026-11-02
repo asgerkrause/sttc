@@ -86,8 +86,17 @@ async function routeExists(distDir: string, href: string) {
   return assetExists(distDir, `${href.replace(/\/$/, '')}/index.html`)
 }
 
+// Refs are percent-encoded (my%20doc.pdf); files on disk keep their spaces.
+function decodeRef(ref: string) {
+  try {
+    const decoded = decodeURIComponent(ref)
+    // Encoded dot segments must not step outside dist.
+    return decoded.split('/').includes('..') ? ref : decoded
+  } catch { return ref }
+}
+
 async function assetExists(distDir: string, href: string) {
-  const rel = (href.endsWith('/') ? `${href}index.html` : href).replace(/^\//, '')
+  const rel = decodeRef(href.endsWith('/') ? `${href}index.html` : href).replace(/^\//, '')
   return stat(join(distDir, rel)).then(() => true).catch(() => false)
 }
 
@@ -205,7 +214,7 @@ export function extractBuiltPublicAssetRefs(text: string) {
 }
 
 async function builtAssetExists(distRoot: string, ref: string) {
-  const rel = ref.startsWith('/') ? ref.slice(1) : ref
+  const rel = decodeRef(ref.startsWith('/') ? ref.slice(1) : ref)
   return stat(join(distRoot, rel)).then(() => true).catch(() => false)
 }
 

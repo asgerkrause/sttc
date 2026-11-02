@@ -16,16 +16,20 @@ export type MarkdownOptions = {
 
 function esc(s: string) { return s.replace(/[&<>\"]/g, (c) => ESC[c] ?? c) }
 
+// Letters with no Unicode decomposition; NFKD leaves them out, so map them first. \u00e5 and \u00e9 fold through NFKD (\u00e5 \u2192 a).
+const SLUG_TRANSLITERATIONS: Record<string, string> = { \u00e6: 'ae', \u00f8: 'o', \u0153: 'oe', \u00df: 'ss', \u00f0: 'd', \u0111: 'd', \u0142: 'l', \u00fe: 'th', \u0131: 'i' }
+
 export function slugify(s: string) {
-  return stripTags(s)
+  return s
     .toLowerCase()
+    .replace(/[\u00e6\u00f8\u0153\u00df\u00f0\u0111\u0142\u00fe\u0131]/g, (c) => SLUG_TRANSLITERATIONS[c] ?? c)
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
 
-function stripTags(s: string) {
+export function stripTags(s: string) {
   return s.replace(/<[^>]+>/g, '').replace(/&[a-z0-9#]+;/gi, '').trim()
 }
 
@@ -132,7 +136,7 @@ function tokenize(src: string, opts: MarkdownOptions): Block[] {
     if (heading) {
       const depth = heading[1].length
       const content = inline(heading[2].trim(), opts, src)
-      const id = opts.headingIds === false ? '' : ` id="${slugify(content)}"`
+      const id = opts.headingIds === false ? '' : ` id="${slugify(stripTags(content))}"`
       blocks.push({ kind: 'heading', depth, content: `<h${depth}${id}>${content}</h${depth}>` })
       i++; continue
     }
@@ -209,33 +213,41 @@ export function render(src: string, opts: MarkdownOptions = {}): string {
   }).join('\n')
 }
 
-function parseFrontMatterLines(block: string): Record<string, string> {
-  const data: Record<string, string> = {}
-  for (const line of block.split('\n')) {
-    const kv = line.match(/^(\w+):\s*(.*)$/)
-    if (!kv) continue
-    const key = kv[1]
-    if (!key) continue
-    let value = kv[2]?.trim() ?? ''
-    if (/^["'].*["']$/.test(value)) value = value.slice(1, -1)
-    data[key] = value
-  }
-  return data
-}
-
-/** YAML front-matter when possible; line fallback for minimal posts. */
-export function parseFrontMatter(src: string): { data: Record<string, unknown>; body: string } {
+/** Front matter is YAML. Malformed YAML throws with the file line that breaks the block (line 1 is the opening fence). */
+export function parseFrontMatter(src: string, file?: string): { data: Record<string, unknown>; body: string } {
   const m = src.match(FRONT_MATTER_RE)
   if (!m) return { data: {}, body: src }
-  try {
-    const block = m[1] ?? ''
-    const parsed = Bun.YAML.parse(block)
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return { data: parsed as Record<string, unknown>, body: src.slice(m[0].length) }
-    }
-  } catch { /* fall through */ }
   const block = m[1] ?? ''
-  return { data: parseFrontMatterLines(block), body: src.slice(m[0].length) }
+  const body = src.slice(m[0].length)
+  let parsed: unknown
+  try {
+    parsed = Bun.YAML.parse(block)
+  } catch (err) {
+    throw new BuildError(`Invalid front-matter YAML: ${err instanceof Error ? err.message : String(err)}`, {
+      file,
+      line: yamlErrorLine(block),
+      hint: 'Close quoted strings and brackets, quote values containing ": " or "#", and indent nested keys consistently.',
+    })
+  }
+  if (parsed == null) return { data: {}, body }
+  if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new BuildError('Front matter must be key: value pairs', {
+      file,
+      line: 2,
+      hint: 'Write one key: value per line between the --- fences.',
+    })
+  }
+  return { data: Object.fromEntries(Object.entries(parsed)), body }
+}
+
+// Bun's YAML error line is not reliable. The line after the longest prefix that still parses is the error;
+// a valid multi-line value before the typo then does not pull the line back. Error path only, so O(lines²) is fine.
+function yamlErrorLine(block: string) {
+  const lines = block.split('\n')
+  for (let n = lines.length - 1; n > 0; n--) {
+    try { Bun.YAML.parse(lines.slice(0, n).join('\n')); return n + 2 } catch {}
+  }
+  return 2
 }
 
 export function fmString(data: Record<string, unknown>, key: string): string {

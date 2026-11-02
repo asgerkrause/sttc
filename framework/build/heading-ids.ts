@@ -1,7 +1,7 @@
 // Assign stable heading ids on composed route HTML.
 
 import { BuildError } from './errors'
-import { slugify } from './markdown'
+import { slugify, stripTags } from './markdown'
 
 const SKIP_OPEN_RE = /<(script|style|svg)\b/gi
 const HEADING_OPEN_RE = /<h([1-6])(\s[^>]*)?>/gi
@@ -23,7 +23,7 @@ export function ensureHeadingIds(html: string, fileHint: string): string {
     const after = html.slice(offset + open.length)
     const close = after.match(new RegExp(`</h${level}>`, 'i'))
     const inner = close?.index != null ? after.slice(0, close.index) : ''
-    const id = slugify(inner)
+    const id = slugify(stripTags(inner))
     if (!id) return open
 
     claimId(id, used, fileHint)

@@ -4,7 +4,7 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import { createComposer } from '../build/compose'
 import { buildYear, outFileFromSlug, slugFromPageRel, sourceDateEpoch } from '../build/source-files'
-import { slugifyTag } from '../build/content'
+import { slugify } from '../build/markdown'
 import { BuildError } from '../build/errors'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, processImages, resolveImageAttrs } from '../build/images'
 import { imageNameFromSrc, parsePositiveImageInteger } from '../build/scan-images'
@@ -111,8 +111,8 @@ describe('build path contracts', () => {
   })
 
   test('slugifies generated tag routes predictably', () => {
-    expect(slugifyTag('Bun Native')).toBe('bun-native')
-    expect(slugifyTag('Ångström & SEO')).toBe('angstrom-seo')
+    expect(slugify('Bun Native')).toBe('bun-native')
+    expect(slugify('Ångström & SEO')).toBe('angstrom-seo')
   })
 
   test('prefers TypeScript app entry and rejects ambiguous root entries', () => {
