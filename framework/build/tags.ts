@@ -52,24 +52,32 @@ export function nextComponent(html: string, from = 0, fileHint?: string): Compon
     return { full, name, attrs, selfClosing: true, index: m.index, children: '' }
   }
 
-  // Paired form: find matching `</Name>`, respecting nesting of same-name opens.
+  const close = pairedClose(html, name, openEnd)
+  if (!close) {
+    throw new BuildError(`Unclosed <${name}> tag`, {
+      file: fileHint,
+      line: lineOf(html, m.index),
+      hint: `Either close with </${name}> or use the self-closing form <${name} ... />`,
+    })
+  }
+  const children = html.slice(openEnd, close.index)
+  const fullPair = html.slice(m.index, close.index + close.length)
+  return { full: fullPair, name, attrs, selfClosing: false, index: m.index, children }
+}
+
+/**
+ * Find the `</name>` that closes an open tag ending at `openEnd`, skipping nested same-name pairs.
+ * Returns null when the tag is never closed.
+ */
+export function pairedClose(html: string, name: string, openEnd: number): { index: number; length: number } | null {
   const closeRe = new RegExp(`</${name}>`, 'g')
   const openRe = new RegExp(`<${name}\\b${LOOSE_ATTRS}>`, 'g')
-  closeRe.lastIndex = openEnd
-  openRe.lastIndex = openEnd
-
   let depth = 1
   let pos = openEnd
   while (depth > 0) {
     closeRe.lastIndex = pos
     const close = closeRe.exec(html)
-    if (!close) {
-      throw new BuildError(`Unclosed <${name}> tag`, {
-        file: fileHint,
-        line: lineOf(html, m.index),
-        hint: `Either close with </${name}> or use the self-closing form <${name} ... />`,
-      })
-    }
+    if (!close) return null
     openRe.lastIndex = pos
     let open = openRe.exec(html)
     while (open && open.index < close.index) {
@@ -79,11 +87,7 @@ export function nextComponent(html: string, from = 0, fileHint?: string): Compon
       open = openRe.exec(html)
     }
     depth--
-    if (depth === 0) {
-      const children = html.slice(openEnd, close.index)
-      const fullPair = html.slice(m.index, close.index + close[0].length)
-      return { full: fullPair, name, attrs, selfClosing: false, index: m.index, children }
-    }
+    if (depth === 0) return { index: close.index, length: close[0].length }
     pos = close.index + close[0].length
   }
   return null

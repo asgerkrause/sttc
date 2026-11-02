@@ -1,5 +1,6 @@
 import { BuildError } from './errors'
 import { escapeHtml } from './html'
+import { slugify } from './markdown'
 
 export type SafeHtml = { kind: 'html'; value: string }
 export type TemplateValue = string | number | boolean | null | undefined | SafeHtml | TemplateValue[] | { [key: string]: TemplateValue }
@@ -46,14 +47,6 @@ function valueToString(value: TemplateValue, rawHtml: boolean) {
   if (isSafeHtml(value)) return rawHtml ? value.value : escapeHtml(value.value)
   if (Array.isArray(value) || typeof value === 'object') return escapeHtml(JSON.stringify(value))
   return escapeHtml(String(value))
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
 }
 
 /** Filters run on plain text; the interpolation escapes the result once. */
@@ -147,7 +140,7 @@ function blockName(token: DirectiveToken) {
 }
 
 /** Finds the close of `open`, skipping nested blocks; returns the depth-0 branch tokens in order. */
-function findClose(tokens: DirectiveToken[], open: DirectiveToken, start: number) {
+function findClose(tokens: DirectiveToken[], open: DirectiveToken, start: number, file?: string) {
   const stack: DirectiveToken[] = [open]
   const branches: BranchToken[] = []
   for (let i = start; i < tokens.length; i++) {
@@ -175,6 +168,7 @@ function findClose(tokens: DirectiveToken[], open: DirectiveToken, start: number
   }
   const name = blockName(open)
   throw new BuildError(`Unclosed component ${name === 'if' ? 'conditional' : 'each'} block`, {
+    file,
     hint: `Every {#${name} ...} needs a matching {/${name}}.`,
   })
 }
@@ -244,7 +238,7 @@ export function renderTemplate(template: string, context: TemplateContext, optio
     switch (token.kind) {
       case 'ifOpen': {
         out += renderPlaceholders(template.slice(cursor, token.index), context, options)
-        const close = findClose(tokens, token, i + 1)
+        const close = findClose(tokens, token, i + 1, options.file)
         const elseAt = close.branches.findIndex((item) => item.kind === 'else')
         if (elseAt !== -1 && elseAt !== close.branches.length - 1) {
           throw new BuildError('Duplicate component conditional else', { hint: 'Use at most one {:else} per {#if ...} block, after any {:else if ...}.' })
@@ -264,9 +258,9 @@ export function renderTemplate(template: string, context: TemplateContext, optio
         break
       }
       case 'eachOpen': {
-        if (!options.allowEach) throw new BuildError('Unsupported component each block', { hint: '{#each ...} is only supported in CMS templates for now.' })
+        if (!options.allowEach) throw new BuildError('Unsupported component each block', { file: options.file, hint: '{#each ...} needs build-time JSON data. Declare <script type="application/json" data-snz> or load src/data/*.json in the component.' })
         out += renderPlaceholders(template.slice(cursor, token.index), context, options)
-        const close = findClose(tokens, token, i + 1)
+        const close = findClose(tokens, token, i + 1, options.file)
         if (close.branches.length) throw new BuildError('Unsupported component each branch', { hint: '{#each ...} does not support {:else} yet.' })
         const source = getPath(context, token.source)
         if (!Array.isArray(source)) {

@@ -124,13 +124,13 @@ describe('custom content collections', () => {
     })
   })
 
-  test('rejects front-matter slug overrides', async () => {
+  test('rejects unsafe front-matter slug overrides with the line', async () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'posts'), { recursive: true })
       await writeFile(join(dir, 'src', 'templates', 'post.html'), '<h1>{{title}}</h1>{{body}}')
-      await writeFile(join(dir, 'content', 'posts', 'hello-world.md'), '---\ntitle: Hello\nslug: surprise\n---\nBody')
+      await writeFile(join(dir, 'content', 'posts', 'hello-world.md'), '---\ntitle: Hello\nslug: Not Safe\n---\nBody')
 
-      await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('unsupported front-matter "slug"')
+      await expect(compileContentFrom({ rootDir: dir })).rejects.toThrow('Unsafe front-matter slug "Not Safe"')
     })
   })
 

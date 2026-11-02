@@ -86,8 +86,17 @@ async function routeExists(distDir: string, href: string) {
   return assetExists(distDir, `${href.replace(/\/$/, '')}/index.html`)
 }
 
+// Refs are percent-encoded (my%20doc.pdf); files on disk keep their spaces.
+function decodeRef(ref: string) {
+  try {
+    const decoded = decodeURIComponent(ref)
+    // Encoded dot segments must not step outside dist.
+    return decoded.split('/').includes('..') ? ref : decoded
+  } catch { return ref }
+}
+
 async function assetExists(distDir: string, href: string) {
-  const rel = (href.endsWith('/') ? `${href}index.html` : href).replace(/^\//, '')
+  const rel = decodeRef(href.endsWith('/') ? `${href}index.html` : href).replace(/^\//, '')
   return stat(join(distDir, rel)).then(() => true).catch(() => false)
 }
 
@@ -116,6 +125,9 @@ export async function checkBuiltOutput(distDir: string, fail: (m: string) => voi
     const errors: string[] = []
     for (const match of html.matchAll(/\{\{[\w.-]+(?::[\w.-]+)?\}\}/g)) {
       errors.push(`${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`)
+    }
+    for (const match of html.matchAll(/<slot\b[^>]*>/gi)) {
+      errors.push(`${file}:${lineOf(html, match.index ?? 0)}: stray <slot> tag "${match[0]}" in output\n  hint: Named slots resolve only inside a component whose template declares {{slot:name}}; check the enclosing component and its children.`)
     }
     return errors
   }
@@ -202,7 +214,7 @@ export function extractBuiltPublicAssetRefs(text: string) {
 }
 
 async function builtAssetExists(distRoot: string, ref: string) {
-  const rel = ref.startsWith('/') ? ref.slice(1) : ref
+  const rel = decodeRef(ref.startsWith('/') ? ref.slice(1) : ref)
   return stat(join(distRoot, rel)).then(() => true).catch(() => false)
 }
 

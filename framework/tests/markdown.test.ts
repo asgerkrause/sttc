@@ -79,17 +79,11 @@ Body`)
     expect(body.trim()).toBe('Body')
   })
 
-  test('keeps malformed front matter fallback safe', () => {
-    const { data, body } = parseFrontMatter(`---
-title: "Fallback"
-ignored
-empty:
+  test('rejects malformed front matter with the file and line', () => {
+    expect(() => parseFrontMatter(`---
+title: "Unclosed
 ---
 
-Body`)
-
-    expect(fmString(data, 'title')).toBe('Fallback')
-    expect(fmString(data, 'empty')).toBe('')
-    expect(body.trim()).toBe('Body')
+Body`, 'content/posts/a.md')).toThrow('Invalid front-matter YAML')
   })
 })

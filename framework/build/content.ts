@@ -5,7 +5,7 @@
 import { readdir, readFile, stat } from 'fs/promises'
 import { join } from 'path'
 import { BuildError, lineOf } from './errors'
-import { fmString, fmStringArray, parseFrontMatter, render as renderMarkdown } from './markdown'
+import { fmString, fmStringArray, parseFrontMatter, render as renderMarkdown, slugify } from './markdown'
 import { root, src } from './paths'
 import { escapeHtml } from './html'
 import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
@@ -44,7 +44,7 @@ export type ContentRoute = {
   collection: string
   /** Raw markdown body (for llms-full.txt). */
   markdown: string
-  /** Display labels parsed from front-matter `tags: [a, b]`; route slugs are derived with slugifyTag. */
+  /** Display labels parsed from front-matter `tags: [a, b]`; route slugs are derived with slugify. */
   tags: string[]
   /** Draft flag — excluded from prod. Always built in dev with a banner. */
   draft: boolean
@@ -87,22 +87,12 @@ async function loadTemplate(srcDir: string, name: string): Promise<string> {
   return readFile(path, 'utf8')
 }
 
-export function slugifyTag(tag: string) {
-  return tag
-    .trim()
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
 export function normalizeContentTags(tags: string[]) {
   const out: string[] = []
   const seen = new Set<string>()
   for (const raw of tags) {
     const label = raw.trim()
-    const slug = slugifyTag(label)
+    const slug = slugify(label)
     if (!label || !slug || seen.has(slug)) continue
     seen.add(slug)
     out.push(label)
@@ -143,18 +133,9 @@ function assertValidContentMediaRefs(value: string, file: string, source: string
     throw new BuildError(`Unsupported CMS media reference "${ref}"`, {
       file,
       line: lineOf(source, offset + (match.index ?? 0)),
-      hint: 'Use /src/images/name.jpg, .png, or .webp. CMS media is optimized to /assets/images/name.webp at build time.',
+      hint: 'Use /src/images/name.jpg, .png, or .webp. CMS media is optimized to /assets/images/name.webp at build time. Encode spaces in file names as %20.',
     })
   }
-}
-
-function assertNoFrontMatterSlug(data: Record<string, unknown>, file: string, source: string) {
-  if (data.slug == null) return
-  throw new BuildError(`${file} uses unsupported front-matter "slug"`, {
-    file,
-    line: lineOf(source, source.indexOf('slug:')),
-    hint: 'Rename the markdown file instead. Filename basename is the URL slug.',
-  })
 }
 
 function markdownBodyStart(raw: string) {
@@ -345,11 +326,12 @@ export async function loadContentCollections(projectRoot = root): Promise<Conten
   return custom.some((collection) => collection.name === 'posts') ? custom : [POSTS_COLLECTION, ...custom]
 }
 
-function assertSafeBasename(basename: string, sourceRel: string) {
-  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(basename)) return
-  throw new BuildError(`Unsafe content filename slug "${basename}"`, {
+function assertSafeSlug(slug: string, sourceRel: string, raw: string, fromFrontMatter: boolean) {
+  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return
+  throw new BuildError(fromFrontMatter ? `Unsafe front-matter slug "${slug}"` : `Unsafe content filename slug "${slug}"`, {
     file: sourceRel,
-    hint: 'Use lowercase URL-safe filenames like acme-project.md. Front-matter slug overrides are not supported.',
+    line: fromFrontMatter ? frontMatterFieldLine(raw, 'slug') : undefined,
+    hint: 'Use lowercase URL-safe slugs like acme-project. Rename the file, or set front-matter slug to override the filename.',
   })
 }
 
@@ -367,10 +349,10 @@ async function compileFile(
   const fullPath = join(dir, filename)
   const sourceRel = `${collection.path}/${filename}`
   const raw = await readFile(fullPath, 'utf8')
-  const { data, body } = parseFrontMatter(raw)
-  assertNoFrontMatterSlug(data, sourceRel, raw)
-  const basename = filename.replace(/\.md$/i, '')
-  assertSafeBasename(basename, sourceRel)
+  const { data, body } = parseFrontMatter(raw, sourceRel)
+  const fromFrontMatter = data.slug !== undefined
+  const basename = fromFrontMatter ? fmString(data, 'slug') : filename.replace(/\.md$/i, '')
+  assertSafeSlug(basename, sourceRel, raw, fromFrontMatter)
   const slug = routeSlugFor(collection.route, basename)
 
   for (const field of collection.required) {
@@ -401,11 +383,12 @@ async function compileFile(
   const vars: TemplateContext = {
     ...typedData,
     title: fmString(data, 'title'),
+    description: fmString(data, 'description'),
     slug,
     basename,
     collection: collection.name,
     body: safeHtml(html),
-    tagsHtml: safeHtml(tags.map((t) => `<a href="/tags/${slugifyTag(t)}/">${escapeHtml(t)}</a>`).join(' ')),
+    tagsHtml: safeHtml(tags.map((t) => `<a href="/tags/${slugify(t)}/">${escapeHtml(t)}</a>`).join(' ')),
   }
   let composed = renderTemplate(template, vars, {
     allowEach: true,
