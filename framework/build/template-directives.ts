@@ -1,5 +1,6 @@
 import { BuildError } from './errors'
 import { escapeHtml } from './html'
+import { slugify } from './markdown'
 
 export type SafeHtml = { kind: 'html'; value: string }
 export type TemplateValue = string | number | boolean | null | undefined | SafeHtml | TemplateValue[] | { [key: string]: TemplateValue }
@@ -46,14 +47,6 @@ function valueToString(value: TemplateValue, rawHtml: boolean) {
   if (isSafeHtml(value)) return rawHtml ? value.value : escapeHtml(value.value)
   if (Array.isArray(value) || typeof value === 'object') return escapeHtml(JSON.stringify(value))
   return escapeHtml(String(value))
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
 }
 
 /** Filters run on plain text; the interpolation escapes the result once. */

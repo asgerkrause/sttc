@@ -88,7 +88,11 @@ async function routeExists(distDir: string, href: string) {
 
 // Refs are percent-encoded (my%20doc.pdf); files on disk keep their spaces.
 function decodeRef(ref: string) {
-  try { return decodeURIComponent(ref) } catch { return ref }
+  try {
+    const decoded = decodeURIComponent(ref)
+    // Encoded dot segments must not step outside dist.
+    return decoded.split('/').includes('..') ? ref : decoded
+  } catch { return ref }
 }
 
 async function assetExists(distDir: string, href: string) {

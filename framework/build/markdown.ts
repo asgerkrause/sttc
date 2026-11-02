@@ -240,13 +240,14 @@ export function parseFrontMatter(src: string, file?: string): { data: Record<str
   return { data: Object.fromEntries(Object.entries(parsed)), body }
 }
 
-// Bun's YAML error line is not reliable, so the first line whose prefix no longer parses is the error.
+// Bun's YAML error line is not reliable. The line after the longest prefix that still parses is the error;
+// a valid multi-line value before the typo then does not pull the line back. Error path only, so O(lines²) is fine.
 function yamlErrorLine(block: string) {
   const lines = block.split('\n')
-  for (let n = 1; n < lines.length; n++) {
-    try { Bun.YAML.parse(lines.slice(0, n).join('\n')) } catch { return n + 1 }
+  for (let n = lines.length - 1; n > 0; n--) {
+    try { Bun.YAML.parse(lines.slice(0, n).join('\n')); return n + 2 } catch {}
   }
-  return lines.length + 1
+  return 2
 }
 
 export function fmString(data: Record<string, unknown>, key: string): string {

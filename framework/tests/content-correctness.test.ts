@@ -6,6 +6,7 @@ import { compileContentFrom } from '../build/content'
 import { BuildError } from '../build/errors'
 import { ensureHeadingIds } from '../build/heading-ids'
 import { parseFrontMatter, render, slugify } from '../build/markdown'
+import { renderPlaceholders } from '../build/template-directives'
 import { checkBuiltOutput } from '../build/check'
 
 async function withProject(fn: (dir: string) => Promise<void>) {
@@ -39,6 +40,7 @@ describe('unicode-safe slugs', () => {
     expect(slugify('Ærø')).toBe('aero')
     expect(slugify('Fødselsdag')).toBe('fodselsdag')
     expect(slugify('Søren Kierkegaard')).toBe('soren-kierkegaard')
+    expect(renderPlaceholders('{{name | slug}}', { name: 'Ærø' }, { placeholders: true })).toBe('aero')
     expect(slugify('Straße')).toBe('strasse')
   })
 
@@ -86,6 +88,14 @@ describe('malformed front matter', () => {
       const error = await captureError(compileContentFrom({ rootDir: dir }))
       expect(error.file).toBe('content/posts/bad.md')
       expect(error.line).toBe(3)
+    })
+  })
+
+  test('a valid multi-line value before the typo keeps the typo line', async () => {
+    await withProject(async (dir) => {
+      await writePost(dir, 'bad.md', '---\ntitle: "Multi\n  line"\ndate: 2026-05-26\ntags: [a b\n---\nBody')
+      const error = await captureError(compileContentFrom({ rootDir: dir }))
+      expect(error.line).toBe(5)
     })
   })
 
