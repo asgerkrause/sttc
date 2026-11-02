@@ -17,7 +17,7 @@ bun install
 bun run dev
 ```
 
-`create` copies the starter into a new or empty directory and refuses to write into a non-empty one. `bun run dev` builds the site, serves `dist/` on `http://127.0.0.1:3000`, and reloads the tab after each rebuild.
+`create` copies the starter into a new or empty directory and refuses to write into a non-empty one. `bun run dev` builds the site, serves `dist/` on `http://127.0.0.1:3000` by default, and reloads the tab after each rebuild.
 
 ## Features
 
@@ -25,7 +25,7 @@ bun run dev
 - **Build-time components.** One `src/components/PascalCase.html` file per component, with declared attributes, slots, `{#if}` and `{#each}` blocks, an optional lifecycle `<script>`, and an optional colocated `<style>`. A malformed component fails the build and names the file and page.
 - **SEO and discovery output.** A route sets `title`, `description`, and an optional `image` through `<SEO />`. Site defaults come from `src/site.json`. The build emits canonical and Open Graph tags, JSON-LD, a sitemap, `llms.txt`, `llms-full.txt`, Markdown and JSON versions of each route, and RSS and JSON feeds once a public post exists.
 - **Images.** `<Image src="hero" alt="…" />` turns a master in `src/images/` into WebP files with responsive variants and intrinsic dimensions.
-- **Optional content.** `bun run new cms` adds Markdown posts, tags, feeds, custom collections, and a PagesCMS configuration.
+- **Optional content.** `bun run new cms` adds Markdown posts, tags, feeds, and a PagesCMS configuration. `bun run new collection <name>` adds a custom collection.
 - **Checks.** `bun run build` ends with `check`, which fails on broken internal links, unresolved placeholders, and missing discovery output. `bun run doctor -- --launch` also rejects the starter's placeholder URL, metadata, and share image.
 - **Small runtime.** `window.snz` mounts component scripts and dispatches `snz:page` and `snz:track` events. It loads no analytics provider.
 - **Project-owned CSS.** The renderer adds no CSS. The starter includes a copy of the Craft v3 CSS system in `src/styles/`, which you can change or delete.

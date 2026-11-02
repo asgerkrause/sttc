@@ -7,7 +7,7 @@ bun install
 bun run dev
 ```
 
-`bun run dev` serves the site on `http://127.0.0.1:3000` and reloads the tab after each rebuild. Edit `src/`; never edit `dist/`. `AGENTS.md` lists every command and source contract.
+`bun run dev` serves the site on `http://127.0.0.1:3000` by default and reloads the tab after each rebuild. Edit `src/`; never edit `dist/`. `AGENTS.md` lists every command and source contract.
 
 ## Starter contents
 
