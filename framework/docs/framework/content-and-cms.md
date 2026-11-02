@@ -12,7 +12,7 @@ bun run new collection projects --route work/{slug} --template project
 
 ## Posts
 
-`posts` is an ordinary collection with defaults: records in `content/posts/`, template `src/templates/post.html`, route `insights/{slug}`. Posts require title, date, and description. Drafts are excluded from production and included in development. Tags generate `/tags/` and `/tags/{tag}/`; posts generate the index at the route prefix (`/insights/` by default), RSS, JSON Feed, and `BlogPosting` schema. Feeds are written only when at least one public post exists.
+`posts` is an ordinary collection with defaults: records in `content/posts/`, template `src/templates/post.html`, route `insights/{slug}`. Posts require title, date, and description. Drafts are excluded from production and included in development. Tags generate `/tags/` and `/tags/{tag}/`. Tag and heading slugs use one shared `slugify`: `ø` → `o`, `æ` → `ae`, `ß` → `ss`, `å` → `a`, other accents drop their marks (`Ærø` → `aero`). Posts generate the index at the route prefix (`/insights/` by default), RSS, JSON Feed, and `BlogPosting` schema. Feeds are written only when at least one public post exists.
 
 To change the posts route, declare `posts` in `content/collections.json`; `route`, `template`, `path`, and `required` override the defaults, and the index moves to the new prefix:
 
@@ -34,7 +34,11 @@ Sitemap `lastmod` comes from front matter `dateModified`, else `date`; the build
 
 ## Markdown
 
-Markdown renders at build time through `framework/build/markdown.ts`. Unsafe HTML, unsafe URL protocols, malformed front matter, and unsupported media references fail with source context. The route Markdown mirrors that discovery emits keep links inside list items and table cells.
+Front matter is YAML. Malformed YAML fails the build with the file and the line that breaks the block; a line numbered 1 is the opening `---`.
+
+Front matter may set `slug` to override the filename as the URL slug. Use lowercase letters, digits, and single hyphens (`acme-project`); any other value fails with the file and line. A duplicate slug fails like any duplicate route.
+
+Markdown renders at build time through `framework/build/markdown.ts`. Unsafe HTML, unsafe URL protocols, and unsupported media references fail with source context. Write spaces in media file names as `%20` (`/assets/files/my%20doc.pdf`, `image: /src/images/my%20photo.png`); raw spaces are not parsed as URLs. `<Image src="...">` still takes a logical name without spaces. The route Markdown mirrors that discovery emits keep links inside list items and table cells.
 
 ## Ownership
 
