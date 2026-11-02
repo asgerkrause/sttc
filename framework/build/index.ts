@@ -302,11 +302,11 @@ async function seedBuildCache(previousDist: string, stageDir: string, projectRoo
   const stageImages = join(stageDir, 'assets', 'images')
   await copyTree(previousImages, stageImages, (relPath) => {
     const rel = relPath.replace(/\\/g, '/')
-    return !rel.endsWith('.webp') && rel !== '.meta' && !rel.startsWith('.meta/')
+    return !rel.endsWith('.webp')
   })
 
   if (await Bun.file(sourceOgImagePath(projectRoot)).exists()) {
-    for (const rel of ['og.webp', 'og.png', '.meta/og.json']) {
+    for (const rel of ['og.webp', 'og.png']) {
       const source = join(previousDist, 'assets', rel)
       if (!(await Bun.file(source).exists())) continue
       const target = join(stageDir, 'assets', rel)
@@ -404,14 +404,16 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   const imageEncode = await scanImageEncodeOptions(context.srcDir, context.componentsDir)
   const imageRoots = await imageSourceRoots(context.rootDir)
   const imagesDist = join(context.distDir, 'assets', 'images')
+  // Build cache, not public output. Vercel keeps node_modules between builds, so this survives deploys.
+  const imageCacheRoot = join(context.rootDir, 'node_modules', '.cache', 'sttc')
   const assetsDist = join(context.distDir, 'assets')
   await mkdir(imagesDist, { recursive: true })
   await assertUniqueImageNames(...imageRoots)
   // (Variant pruning intentionally removed — it raced with the cache check in processImages.
   // Stale variants are harmless: srcset only references widths the current sidecar reports.)
-  imageMeta = await processImageSources(imageRoots, imagesDist, imageEncode)
-  await pruneStaleImages(imagesDist, Object.keys(imageMeta))
-  await processOgImage(sourceOgImagePath(context.rootDir), assetsDist)
+  imageMeta = await processImageSources(imageRoots, imagesDist, join(imageCacheRoot, 'images'), imageEncode)
+  await pruneStaleImages(imagesDist, join(imageCacheRoot, 'images'), Object.keys(imageMeta))
+  await processOgImage(sourceOgImagePath(context.rootDir), assetsDist, imageCacheRoot)
   tick('images', t)
 
   t = performance.now()

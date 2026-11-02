@@ -221,8 +221,9 @@ function encodeOpts(name: string, options: Record<string, ImageEncodeOptions>): 
   return options[name] ?? { max: DEFAULT_IMAGE_MAX, quality: DEFAULT_IMAGE_QUALITY }
 }
 
-function sidecarPath(distDir: string, name: string) {
-  return join(distDir, '.meta', `${name}.json`)
+/** Sidecars live outside dist/ so the public output never ships them. */
+function sidecarPath(cacheDir: string, name: string) {
+  return join(cacheDir, `${name}.json`)
 }
 
 async function readSidecar(path: string): Promise<EncodeSidecar | null> {
@@ -268,21 +269,21 @@ function warnHugeMaster(file: string, width: number, height: number) {
  * Remove outputs no current master accounts for. Filenames are never parsed back into logical
  * names (a master called photo-2024 must survive); the sidecars say which files belong to whom.
  */
-export async function pruneStaleImages(distDir: string, currentNames: Iterable<string>) {
+export async function pruneStaleImages(distDir: string, cacheDir: string, currentNames: Iterable<string>) {
   const names = new Set(currentNames)
   const keep = new Set<string>()
   for (const name of names) {
     keep.add(`${name}.webp`)
-    for (const variant of (await readSidecar(sidecarPath(distDir, name)))?.variants ?? []) keep.add(variant.file)
+    for (const variant of (await readSidecar(sidecarPath(cacheDir, name)))?.variants ?? []) keep.add(variant.file)
   }
   const entries = await readdir(distDir, { withFileTypes: true }).catch(() => [])
   for (const entry of entries) {
     if (!entry.isFile() || !/\.webp$/i.test(entry.name) || keep.has(entry.name)) continue
     await unlink(join(distDir, entry.name))
   }
-  const sidecars = await readdir(join(distDir, '.meta')).catch(() => [])
+  const sidecars = await readdir(cacheDir).catch(() => [])
   for (const file of sidecars) {
-    if (file.endsWith('.json') && !names.has(basename(file, '.json'))) await unlink(join(distDir, '.meta', file))
+    if (file.endsWith('.json') && !names.has(basename(file, '.json'))) await unlink(join(cacheDir, file))
   }
 }
 
@@ -344,11 +345,12 @@ export async function assertUniqueImageNames(...roots: Array<string | ImageSourc
 export async function processImageSources(
   roots: ImageSourceRoot[],
   distDir: string,
+  cacheDir: string,
   options: Record<string, ImageEncodeOptions> = {},
 ): Promise<Record<string, ImageMeta>> {
   const meta: Record<string, ImageMeta> = {}
   for (const root of roots) {
-    Object.assign(meta, await processImages(root.dir, distDir, options))
+    Object.assign(meta, await processImages(root.dir, distDir, cacheDir, options))
   }
   return meta
 }
@@ -357,6 +359,7 @@ export async function processImageSources(
 export async function processImages(
   srcDir: string,
   distDir: string,
+  cacheDir: string,
   options: Record<string, ImageEncodeOptions> = {},
 ): Promise<Record<string, ImageMeta>> {
   assertImageApi()
@@ -368,7 +371,6 @@ export async function processImages(
   }
 
   await mkdir(distDir, { recursive: true })
-  await mkdir(join(distDir, '.meta'), { recursive: true })
 
   const files = (await rasterFiles(srcDir)).filter((file) => basename(file, extname(file)) !== 'og')
   await mapConcurrent(files, CPU_CONCURRENCY, async (file) => {
@@ -388,7 +390,7 @@ export async function processImages(
         .sort((a, b) => a - b),
     )]
 
-    const sidecar = sidecarPath(distDir, name)
+    const sidecar = sidecarPath(cacheDir, name)
     const reencode = await needsReencode(out, sidecar, max, quality, srcMtime, srcHash)
     let sidecarData = await readSidecar(sidecar)
     const sizesChanged = !sidecarData?.sizes || sidecarData.sizes.join(',') !== responsiveSizes.join(',')
@@ -436,7 +438,7 @@ export async function processImages(
   return meta
 }
 
-export async function processOgImage(srcPath: string, distDir: string) {
+export async function processOgImage(srcPath: string, distDir: string, cacheDir: string) {
   assertImageApi()
   if (!(await Bun.file(srcPath).exists())) {
     console.warn(`images: no OG source at ${srcPath} — skipped`)
@@ -448,7 +450,7 @@ export async function processOgImage(srcPath: string, distDir: string) {
   const sourceBytes = await readFile(srcPath)
   const srcMtime = (await stat(srcPath)).mtimeMs
   const srcHash = sourceHash(sourceBytes)
-  const previous = await readSidecar(sidecarPath(distDir, 'og'))
+  const previous = await readSidecar(sidecarPath(cacheDir, 'og'))
   const fresh =
     previous?.srcMtime === srcMtime &&
     previous.srcHash === srcHash &&
@@ -459,6 +461,6 @@ export async function processOgImage(srcPath: string, distDir: string) {
   await mkdir(distDir, { recursive: true })
   await new Bun.Image(sourceBytes).resize(1200, 630, FIT).webp({ quality: 82 }).write(webp)
   await new Bun.Image(sourceBytes).resize(1200, 630, FIT).png({ compressionLevel: 6 }).write(png)
-  await writeSidecar(sidecarPath(distDir, 'og'), { srcMtime, srcHash, max: 1200, quality: 82 })
+  await writeSidecar(sidecarPath(cacheDir, 'og'), { srcMtime, srcHash, max: 1200, quality: 82 })
   console.log('  image og → og.webp, og.png')
 }

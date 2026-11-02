@@ -5,14 +5,14 @@ import { absoluteUrl, buildSchemaGraph, type SiteConfig } from './seo'
 import { loadSiteConfig as readSiteConfig } from './site-config'
 import { buildYear } from './source-files'
 import { publicMarkdownPathFromSlug, routeJsonPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
-import { nextComponent, parseAttrs, type ComponentMatch } from './tags'
+import { nextComponent, pairedClose, parseAttrs, type ComponentMatch } from './tags'
 import { decodeEntities, escapeHtml } from './html'
 import { html as safeHtml, renderPlaceholders, renderTemplate, type TemplateContext } from './template-directives'
 import { ensureHeadingIds } from './heading-ids'
 
 const HEAD_WRAPPER_RE = /^<head[^>]*>([\s\S]*?)<\/head>\s*/i
 const SLOT_NAMED_RE = /\{\{slot:([\w-]+)\}\}/g
-const NAMED_SLOT_TAG_RE = /<slot\s+name=["']([\w-]+)["']\s*>([\s\S]*?)<\/slot>/gi
+const NAMED_SLOT_OPEN_RE = /<slot\s+name=["']([\w-]+)["']\s*(\/?)>/gi
 const SEO_RE = /<SEO((?:\s+(?:[\w-]+(?:="[^"]*")?))*)\s*\/>/i
 const SEO_ATTRS = new Set(['title', 'description', 'image', 'ogImage', 'path', 'unlisted'])
 
@@ -217,15 +217,25 @@ export function createComposer(
     return new Set([...template.matchAll(SLOT_NAMED_RE)].map((m) => m[1]))
   }
 
+  /** Pulls the template's own named slots out of children. A nested `<slot>` stays inside its parent's body. */
   function readSlots(children: string, template: string) {
     const ownSlots = templateSlotNames(template)
     const named: Record<string, string> = {}
-    const defaultChildren = children.replace(NAMED_SLOT_TAG_RE, (full, n, body) => {
-      if (!ownSlots.has(n)) return full
-      named[n] = body
-      return ''
-    }).trim()
-    return { defaultChildren, named }
+    const re = new RegExp(NAMED_SLOT_OPEN_RE)
+    let defaultChildren = ''
+    let pos = 0
+    for (let m = re.exec(children); m; m = re.exec(children)) {
+      const [open, n, selfClosing] = m
+      if (selfClosing || !ownSlots.has(n)) continue
+      const close = pairedClose(children, 'slot', m.index + open.length)
+      if (!close) continue
+      named[n] = children.slice(m.index + open.length, close.index)
+      defaultChildren += children.slice(pos, m.index)
+      pos = close.index + close.length
+      re.lastIndex = pos
+    }
+    defaultChildren += children.slice(pos)
+    return { defaultChildren: defaultChildren.trim(), named }
   }
 
   /** One pass: blocks, attrs, and slots render together. Slots are raw HTML; interpolated values are never rescanned. */
@@ -241,6 +251,7 @@ export function createComposer(
       allowEach: !!componentData,
       placeholders: true,
       preserveUnknownPlaceholders: true,
+      file: componentFileHint(name),
     })
   }
 
@@ -353,16 +364,23 @@ export function createComposer(
     }
   }
 
-  function stripHeadWrapper(html: string, fileHint: string) {
+  /**
+   * Strips the leading head wrapper. The body keeps one newline per stripped line, so error lines in
+   * the body still match the route source.
+   */
+  function stripHeadWrapper(raw: string, fileHint: string) {
+    const html = raw.trimStart()
+    const newlines = (text: string) => '\n'.repeat(text.split('\n').length - 1)
+    const lead = raw.slice(0, raw.length - html.length)
     const match = html.match(HEAD_WRAPPER_RE)
-    if (!match) return { seoAttrs: {} as Record<string, string>, extraHead: '', body: html }
+    if (!match) return { seoAttrs: {} as Record<string, string>, extraHead: '', body: newlines(lead) + html.trimEnd() }
     const seoMatch = match[1].match(SEO_RE)
     if (!seoMatch && /<SEO\b/i.test(match[1])) {
       throw new BuildError('<SEO> must be self-closing', { file: fileHint, hint: 'Use <SEO ... /> inside <head>.' })
     }
     const seoAttrs = seoMatch ? decodeAttrs(parseAttrs(seoMatch[1] ?? '')) : {}
     const extraHead = seoMatch ? match[1].replace(seoMatch[0], '').trim() : match[1].trim()
-    const body = html.slice(match[0].length).trim()
+    const body = newlines(lead + match[0]) + html.slice(match[0].length).trimEnd()
     return { seoAttrs, extraHead, body }
   }
 
@@ -444,10 +462,10 @@ export function createComposer(
         : raw
       rejectStyleInRoute(routedRaw, fileHint)
 
-      const { seoAttrs, extraHead: seoHead, body } = stripHeadWrapper(routedRaw.trim(), fileHint)
+      const { seoAttrs, extraHead: seoHead, body } = stripHeadWrapper(routedRaw, fileHint)
       const inlineSeo = body.search(/<SEO\b/i)
       if (inlineSeo !== -1) {
-        throw buildErrorAt('<SEO /> is only accepted inside the route <head>', routedRaw, routedRaw.lastIndexOf(body) + inlineSeo, {
+        throw buildErrorAt('<SEO /> is only accepted inside the route <head>', body, inlineSeo, {
           file: fileHint,
           hint: 'Keep exactly one self-closing <SEO ... /> inside the route <head>.',
         })
@@ -458,7 +476,7 @@ export function createComposer(
       delete seoOverrides.unlisted
 
       const seoMarkup = await expandSeoMarkup(await mergeSeoAttrs(slug, seoOverrides, fileHint), unlisted || slug === '404')
-      const composedBody = ensureHeadingIds(await compose(body, fileHint), fileHint)
+      const composedBody = ensureHeadingIds(await compose(body, fileHint), fileHint).trimStart()
       const headExtras = [seoHead, ...headLinks].filter(Boolean)
       const extraHead = headExtras.length ? `\n${headExtras.join('\n')}` : ''
       return { html: `<head>\n${seoMarkup}${extraHead}\n</head>\n${composedBody}`, unlisted }
