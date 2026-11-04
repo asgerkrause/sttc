@@ -44,6 +44,6 @@ Dogfood `src/styles/` matches that pin except these brand overrides:
 
 ## Boundary
 
-`templates/default/` is the only creator source and ships inside `@snz/sttc`. `sttc create` copies it directly. There is no creator package, mirrored template, or synchronization step.
+`templates/default/` is the only creator source and ships inside `@byak/sttc`. `sttc create` copies it directly. There is no creator package, mirrored template, or synchronization step.
 
 Components remain useful without JavaScript. Behavior, provider integrations, credentials, and business validation stay project-owned. The build writes each project's generated component contract to `.snz/components-catalog.md`.

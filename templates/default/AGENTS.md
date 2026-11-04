@@ -1,6 +1,6 @@
 # AGENTS.md — STTC site
 
-This project uses `@snz/sttc`, an HTML-first Bun renderer. Edit `src/` and optional `content/`. Never edit generated `dist/` or put source in `.snz/`.
+This project uses `@byak/sttc`, an HTML-first Bun renderer. Edit `src/` and optional `content/`. Never edit generated `dist/` or put source in `.snz/`.
 
 Use Bun only.
 

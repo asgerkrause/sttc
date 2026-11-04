@@ -1,6 +1,6 @@
 # AGENTS.md — STTC
 
-STTC (`@snz/sttc`) is an HTML-first, Bun-native static renderer. Repo: `sanitizestudio/sttc`.
+STTC (`@byak/sttc`) is an HTML-first, Bun-native static renderer. Repo: `asgerkrause/sttc`.
 
 Site work edits `src/` and optional `content/`. Renderer work edits `framework/`. `templates/default/` is the only created-project template and ships in the same package. Build writes `dist/`; never edit it. `.snz/` is cache/state only.
 
@@ -145,4 +145,4 @@ Immutable `Cache-Control` in `vercel.json` applies only to hashed `css|js|woff` 
 
 After structural changes run `bun run framework:verify`; for a narrower loop use `bun run build` or `bun test framework/tests`.
 
-`@snz/sttc` is a public npm package. `sttc create` from this checkout writes `"@snz/sttc": "file:<checkout>"` into the created site; a packaged create writes `^<version>`. Publishing requires explicit human approval.
+`@byak/sttc` is a public npm package. `sttc create` from this checkout writes `"@byak/sttc": "file:<checkout>"` into the created site; a packaged create writes `^<version>`. Publishing requires explicit human approval.
