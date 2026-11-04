@@ -47,3 +47,6 @@ export function createBuildContext(options: BuildContextOptions = {}): BuildCont
     },
   }
 }
+
+// Per invocation: concurrent API builds must never replace global console methods.
+export type BuildLogger = { log: (message: string) => void; warn: (message: string) => void }

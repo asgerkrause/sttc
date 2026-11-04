@@ -5,13 +5,16 @@ import { readdir, readFile, stat } from 'fs/promises'
 import { basename, join, sep } from 'path'
 import { packageRoot, root } from './paths'
 import { discoverSourceRoutes } from './source-files'
-import { BuildError, lineOf } from './errors'
+import { BuildError, lineOf, diagnostic, printJsonResult } from './errors'
 import { compileContentFrom, loadCustomContentCollections } from './content'
 import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, sourceOgImagePath } from './images'
-import { createBuildContext, type BuildContext } from './build-context'
+import { createBuildContext, type BuildContext, type BuildLogger } from './build-context'
 import { loadSiteConfig } from './site-config'
 import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
 import { INLINE_SCRIPT_RE } from './extract-js'
+import { decodeEntities } from './html'
+import { absoluteUrl } from './seo'
+import { publicPathFromSlug, publicMarkdownPathFromSlug, routeJsonPathFromSlug, routeMarkdownPathFromSlug } from '../runtime/lib/paths.js'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
@@ -29,7 +32,7 @@ export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   await checkSeoFiles(context.distDir, fail)
   await checkBuiltOutput(context.distDir, fail, !!opts.allowBrokenLinks)
   await checkEmitContracts(context.distDir, context.srcDir, fail, opts.launch ? warn : () => {})
-  await checkDiscoveryArtifacts(context.distDir, fail)
+  await checkDiscoveryArtifacts(context, fail)
   if (opts.launch) await checkLaunchReadiness(context, fail, warn)
 
   return { errors, warnings }
@@ -630,33 +633,128 @@ async function checkPostAuthors(context: BuildContext, warn: (m: string) => void
   }
 }
 
-async function checkDiscoveryArtifacts(distDir: string, fail: (m: string) => void) {
-  const required = [
-    'llms.txt',
-    'llms-full.txt',
-    'site.manifest.json',
-    'site.jsonld',
-  ]
-  for (const rel of required) {
+function jsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+async function discoveryJson(distDir: string, rel: string, fail: (m: string) => void) {
+  try {
+    const value: unknown = JSON.parse(await readFile(join(distDir, rel), 'utf8'))
+    if (jsonObject(value)) return value
+  } catch { /* Report malformed and missing input through the check report. */ }
+  fail(`${rel}: invalid JSON object`)
+  return undefined
+}
+
+function discoveryRoute(value: unknown, file: string, fail: (m: string) => void) {
+  if (jsonObject(value)) {
+    const { slug, id, path, canonical, title, description, lastModified, representations } = value
+    if (typeof slug === 'string' && typeof id === 'string' && typeof path === 'string'
+      && typeof canonical === 'string' && typeof title === 'string' && typeof description === 'string'
+      && (lastModified === undefined || typeof lastModified === 'string') && jsonObject(representations)
+      && typeof representations.html === 'string' && typeof representations.markdown === 'string'
+      && typeof representations.metadata === 'string') {
+      return { slug, id, path, canonical, title, description, lastModified,
+        representations: { html: representations.html, markdown: representations.markdown, metadata: representations.metadata } }
+    }
+  }
+  fail(`${file}: route ${jsonObject(value) ? String(value.slug) : '(unknown)'} metadata or representations incomplete`)
+  return undefined
+}
+
+async function checkDiscoveryArtifacts(context: BuildContext, fail: (m: string) => void) {
+  const { distDir, srcDir } = context
+  for (const rel of ['llms.txt', 'llms-full.txt', 'site.manifest.json', 'site.jsonld']) {
     if (!(await assetExists(distDir, `/${rel}`))) fail(`missing dist/${rel}`)
   }
-  try {
-    const manifest = JSON.parse(await readFile(join(distDir, 'site.manifest.json'), 'utf8'))
-    if (!Array.isArray(manifest.routes) || !manifest.routes.length) fail('site.manifest.json: routes array empty or missing')
-    if (!Array.isArray(manifest.components)) fail('site.manifest.json: components array missing')
-    if (manifest.schemaVersion !== 2) fail('site.manifest.json: unsupported schemaVersion')
-    for (const route of manifest.routes ?? []) {
-      const representations = route.representations
-      if (!representations || typeof representations.html !== 'string' || typeof representations.markdown !== 'string' || typeof representations.metadata !== 'string') {
-        fail(`site.manifest.json: route ${String(route.slug)} representations incomplete`)
-        continue
+  const manifest = await discoveryJson(distDir, 'site.manifest.json', fail)
+  if (!manifest) return
+  if (!Array.isArray(manifest.components)) fail('site.manifest.json: components array missing')
+  if (manifest.schemaVersion !== 2) fail('site.manifest.json: unsupported schemaVersion')
+  if (!Array.isArray(manifest.routes)) {
+    fail('site.manifest.json: routes array missing')
+    return
+  }
+  const routes = manifest.routes.map((value: unknown) => discoveryRoute(value, 'site.manifest.json', fail))
+    .filter(route => route !== undefined)
+  const site = await loadSiteConfig(join(srcDir, 'site.json')).catch(() => undefined)
+  if (!site) return // checkSiteJson already reports the source error.
+  const publicSlugs = new Set<string>()
+  const sitemap = await readFile(join(distDir, 'sitemap.xml'), 'utf8').catch(() => '')
+  const sitemapEntries = [...sitemap.matchAll(/<url\b[^>]*>([\s\S]*?)<\/url>/g)].map(match => ({
+    canonical: decodeEntities(match[1].match(/<loc\b[^>]*>([\s\S]*?)<\/loc>/)?.[1]?.trim() ?? ''),
+    lastModified: match[1].match(/<lastmod\b[^>]*>([\s\S]*?)<\/lastmod>/)?.[1]?.trim(),
+  }))
+  const sameText = (value: string) => value.replace(/\s+/g, ' ').trim()
+  const sameDate = (a: string | undefined, b: string | undefined) => a === b
+    || (a !== undefined && b !== undefined && Number.isFinite(Date.parse(a)) && Date.parse(a) === Date.parse(b))
+  for (const file of await collectPublicPages(distDir)) {
+    const rel = file.slice(distDir.length + 1).replace(/\\/g, '/')
+    const slug = rel === 'index.html' ? 'index' : rel.slice(0, -'/index.html'.length)
+    const html = await readFile(file, 'utf8')
+    const links = new Map<string, string[]>()
+    let unlisted = false
+    let markedSlug = ''
+    let modified: string | undefined
+    let title = ''
+    let description = ''
+    new HTMLRewriter()
+      .on('html', { element(el) { markedSlug = decodeEntities(el.getAttribute('data-snz-route') ?? '') } })
+      .on('head title', { text(chunk) { title += chunk.text } })
+      .on('head meta', { element(el) {
+        const content = decodeEntities(el.getAttribute('content') ?? '')
+        if (el.getAttribute('name') === 'description' && !description) description = content
+        if (el.getAttribute('name') === 'robots' && content.split(/[\s,]+/).includes('noindex')) unlisted = true
+        if (el.getAttribute('property') === 'article:modified_time') modified = content
+      } })
+      .on('head link', { element(el) {
+        const key = `${el.getAttribute('rel')}:${el.getAttribute('type') ?? ''}`
+        links.set(key, [...(links.get(key) ?? []), decodeEntities(el.getAttribute('href') ?? '')])
+      } }).transform(html)
+    const path = publicPathFromSlug(slug)
+    const canonical = absoluteUrl(site.url, path)
+    const problem = (message: string) => fail(`${file}: route ${path} ${message}`)
+    if (markedSlug !== slug) problem('HTML route identity disagrees with output path')
+    if (links.get('canonical:')?.length !== 1 || links.get('canonical:')?.[0] !== canonical) problem(`canonical must be ${canonical}`)
+    if (slug === '404' || unlisted) continue
+    publicSlugs.add(slug)
+    const entries = routes.filter(route => route.slug === slug)
+    if (entries.length !== 1) problem('must appear exactly once in site.manifest.json')
+    const expectedRepresentations = { html: path, markdown: publicMarkdownPathFromSlug(slug), metadata: routeJsonPathFromSlug(slug) }
+    if (links.get('alternate:text/markdown')?.[0] !== expectedRepresentations.markdown) problem('HTML Markdown target disagrees with route')
+    if (links.get('describedby:application/json')?.[0] !== expectedRepresentations.metadata) problem('HTML metadata target disagrees with route')
+    const metadataFile = expectedRepresentations.metadata.slice(1)
+    const metadataJson = await discoveryJson(distDir, metadataFile, fail)
+    const metadata = metadataJson && discoveryRoute(metadataJson, metadataFile, fail)
+    if (metadataJson && metadataJson.schemaVersion !== 2) problem(`${metadataFile}: unsupported schemaVersion`)
+    const htmlMetadata = { title: decodeEntities(title), description }
+    for (const [label, route] of [['manifest', entries[0]], ['metadata', metadata]] as const) {
+      if (!route) continue
+      if (route.slug !== slug || route.path !== path || route.canonical !== canonical || route.id !== `${canonical}#webpage`) problem(`${label} identity disagrees with route`)
+      for (const key of ['title', 'description'] as const) {
+        if (sameText(route[key]) !== sameText(htmlMetadata[key])) problem(`${label} ${key} disagrees with HTML`)
       }
-      for (const rel of [representations.html, representations.markdown, representations.metadata]) {
-        if (!(await assetExists(distDir, rel))) fail(`site.manifest.json: missing route representation ${rel}`)
+      for (const key of ['html', 'markdown', 'metadata'] as const) {
+        if (route.representations[key] !== expectedRepresentations[key]) problem(`${label} ${key} representation targets another route`)
+        if (!(await assetExists(distDir, expectedRepresentations[key]))) problem(`missing route representation ${expectedRepresentations[key]}`)
       }
     }
-  } catch {
-    fail('site.manifest.json: invalid JSON')
+    const listed = sitemapEntries.filter(entry => entry.canonical === canonical)
+    if (listed.length !== 1) problem('must appear exactly once in sitemap.xml')
+    const lastModified = entries[0]?.lastModified
+    if (metadata && !sameDate(lastModified, metadata.lastModified)) problem('metadata lastModified disagrees with manifest')
+    if (listed.length === 1 && !sameDate(lastModified, listed[0].lastModified)) problem('sitemap lastmod disagrees with manifest lastModified')
+    if (modified !== undefined && lastModified !== undefined && !sameDate(modified, lastModified)) problem('HTML modified date disagrees with manifest lastModified')
+    const markdown = await readFile(join(distDir, routeMarkdownPathFromSlug(slug).slice(1)), 'utf8').catch(() => null)
+    const alias = await readFile(join(distDir, expectedRepresentations.markdown.slice(1)), 'utf8').catch(() => null)
+    if (markdown === null || alias === null || markdown !== alias) problem('same-path Markdown alias differs from routes Markdown')
+  }
+  for (const route of routes) {
+    if (!publicSlugs.has(route.slug)) fail(`site.manifest.json: route ${route.path} is not a public built page`)
+  }
+  const publicCanonicals = new Set([...publicSlugs].map(slug => absoluteUrl(site.url, publicPathFromSlug(slug))))
+  for (const entry of sitemapEntries) {
+    if (!publicCanonicals.has(entry.canonical)) fail(`sitemap.xml: route ${entry.canonical} is not a public built page`)
   }
 }
 
@@ -665,28 +763,46 @@ if (import.meta.main) {
   const skipBuild = process.argv.includes('--skip-build')
   const allowBrokenLinks = process.argv.includes('--allow-broken-links')
   const launch = process.argv.includes('--launch')
-  if (!skipBuild) {
-    const buildArgs = ['bun', join(packageRoot, 'build', 'index.ts')]
-    if (allowBrokenLinks) buildArgs.push('--allow-broken-links')
-    if (launch) buildArgs.push('--launch')
-    const proc = Bun.spawn(buildArgs, { cwd: root, stdout: 'inherit', stderr: 'inherit' })
-    const code = await proc.exited
-    if (code !== 0) process.exit(code)
+  const json = process.argv.includes('--json')
+  if (json) {
+    if (!skipBuild) {
+      const { runBuildCli } = await import('./index')
+      await runBuildCli('check')
+    } else {
+      try {
+        const report = await runChecks({ allowBrokenLinks, launch })
+        printJsonResult('check', report.errors.map(message => ({ message, name: 'BuildError' })), report.warnings)
+        if (report.errors.length) process.exitCode = 1
+      } catch (err) {
+        printJsonResult('check', [diagnostic(err)], [])
+        process.exitCode = 1
+      }
+    }
+  } else {
+    if (!skipBuild) {
+      const buildArgs = ['bun', join(packageRoot, 'build', 'index.ts')]
+      if (allowBrokenLinks) buildArgs.push('--allow-broken-links')
+      if (launch) buildArgs.push('--launch')
+      if (process.argv.includes('--profile')) buildArgs.push('--profile')
+      const proc = Bun.spawn(buildArgs, { cwd: root, stdout: 'inherit', stderr: 'inherit' })
+      const code = await proc.exited
+      if (code !== 0) process.exit(code)
+      console.log(launch ? 'launch check ok' : 'check ok')
+      process.exit(0)
+    }
+    const report = await runChecks({ allowBrokenLinks, launch })
+    for (const w of report.warnings) console.warn(`warn: ${w}`)
+    if (report.errors.length) {
+      for (const e of report.errors) console.error(`error: ${e}`)
+      process.exit(1)
+    }
     console.log(launch ? 'launch check ok' : 'check ok')
-    process.exit(0)
   }
-  const report = await runChecks({ allowBrokenLinks, launch })
-  for (const w of report.warnings) console.warn(`warn: ${w}`)
-  if (report.errors.length) {
-    for (const e of report.errors) console.error(`error: ${e}`)
-    process.exit(1)
-  }
-  console.log(launch ? 'launch check ok' : 'check ok')
 }
 
 // Used by the build pipeline as the final step.
-export async function failOnReport(report: CheckReport, throwOnError = true) {
-  for (const w of report.warnings) console.warn(`warn: ${w}`)
+export async function failOnReport(report: CheckReport, throwOnError = true, logger: BuildLogger = console) {
+  for (const w of report.warnings) logger.warn(`warn: ${w}`)
   if (report.errors.length && throwOnError) {
     throw new BuildError(
       `Strict checks failed (${report.errors.length}):\n  - ${report.errors.join('\n  - ')}`,

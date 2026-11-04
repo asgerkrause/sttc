@@ -1,0 +1,4 @@
+/* Consumer replaced the starter Craft copy with plain CSS. */
+:root { color-scheme: light; --field-note-accent: #a65d37; }
+body { font-family: system-ui; color: var(--field-note-accent); }
+.c { max-width: 53rem; margin-inline: auto; }

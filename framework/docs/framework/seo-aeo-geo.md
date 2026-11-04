@@ -69,6 +69,10 @@ The build writes these for public routes. A 404 route is also written to `dist/4
 
 `feed.xml` and `feed.json` exist only when the site has at least one public post. Sitemap `lastmod` comes from content front matter (`dateModified`, else `date`), never from file modification time, so authored pages carry no `lastmod`.
 
+Build checks compare composed HTML paths and route markers with canonical URLs, manifest membership, sitemap membership, and route JSON identity. Built `noindex` pages and 404 stay outside public inventories; links to unlisted pages remain valid. Metadata titles and descriptions compare decoded text with whitespace normalized. Shared content dates compare timestamps; absent optional article metadata is allowed.
+
+HTML and JSON representation links must target their own route, even when a wrong target exists. Same-path Markdown must exactly match its `/routes/` copy. HTML and Markdown body text are intentionally not required to match. These checks also run with `check --skip-build` and are not disabled by `--allow-broken-links`. They verify local output consistency, not deployed headers, crawling, indexing, or citations.
+
 ## llms.txt
 
 `llms.txt` is a short agent index, not a second sitemap. `llms-full.txt` stays exhaustive.

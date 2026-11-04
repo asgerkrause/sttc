@@ -79,3 +79,17 @@ export function buildErrorAt(
     line: lineOf(source, index),
   })
 }
+
+export function diagnostic(error: unknown) {
+  return error instanceof BuildError
+    ? error.toJSON()
+    : { name: error instanceof Error ? error.name : 'Error', message: error instanceof Error ? error.message : String(error) }
+}
+
+export function printJsonResult(command: 'build' | 'check', errors: ReturnType<typeof diagnostic>[], warnings: string[], profile?: { timings: Record<string, number>; totalMs: number }) {
+  console.log(JSON.stringify({
+    version: 1, command, outcome: errors.length ? 'failure' : 'success', errors,
+    warnings: warnings.map(message => ({ message })),
+    ...(profile ? { profile } : {}),
+  }))
+}

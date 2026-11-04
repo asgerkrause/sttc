@@ -48,7 +48,7 @@ import {
 import { absoluteUrl, buildSchemaGraph, isPublicRoute, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
 import { compileContentFrom, isoDate, loadContentCollections, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
-import { BuildError } from './errors'
+import { diagnostic, printJsonResult, BuildError } from './errors'
 import { copyAssetsTo, copyTree } from './assets'
 import { autoGenerateIndexes } from './generated-routes'
 import { extractTemplateData } from './template-data'
@@ -59,7 +59,7 @@ import { writeComponentsReadme } from './docs'
 import { discoverSourceRoutes } from './source-files'
 import { RouteGraph } from './route-graph'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
-import { createBuildContext, type BuildContext, type BuildContextOptions, type BuildResult } from './build-context'
+import { createBuildContext, type BuildContext, type BuildContextOptions, type BuildResult, type BuildLogger } from './build-context'
 import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
 import { escapeHtml } from './html'
 import { loadSiteConfig } from './site-config'
@@ -222,6 +222,7 @@ async function writeStaticRoutes(
 }
 
 export type BuildOptions = BuildContextOptions & {
+  logger?: BuildLogger
   context?: BuildContext
 }
 
@@ -318,6 +319,7 @@ async function seedBuildCache(previousDist: string, stageDir: string, projectRoo
 
 export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const context = options.context ?? createBuildContext(options)
+  const logger = options.logger ?? console
   const totalStarted = performance.now()
   const lockStarted = performance.now()
   const releaseBuildLock = await acquireBuildLock(context)
@@ -330,7 +332,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   try {
     await rm(stageDir, { recursive: true, force: true })
     await seedBuildCache(context.distDir, stageDir, context.rootDir)
-    result = await buildInto(stageContext)
+    result = await buildInto(stageContext, logger)
     result.timings.lock = lockMs
     let t = performance.now()
     backupDir = await publishStagedDist(context, stageDir)
@@ -342,16 +344,16 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       launch: context.flags.launch,
       validatedBuildInputs: true,
     })
-    await failOnReport(report)
+    await failOnReport(report, true, logger)
     result.timings.check = Math.round(performance.now() - t)
     result.totalMs = Math.round(performance.now() - totalStarted)
     if (process.argv.includes('--profile')) {
-      console.log(
+      logger.log(
         Object.entries(result.timings).map(([k, v]) => `${k} ${v}ms`).join(' · ') +
         ` · total ${result.totalMs}ms`,
       )
     } else {
-      console.log(`built ${result.routes.length} routes in ${result.totalMs}ms`)
+      logger.log(`built ${result.routes.length} routes in ${result.totalMs}ms`)
     }
     return { ...result, context }
   } catch (err) {
@@ -364,7 +366,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   }
 }
 
-async function buildInto(context: BuildContext): Promise<BuildResult> {
+async function buildInto(context: BuildContext, logger: BuildLogger): Promise<BuildResult> {
   assertImageApi()
 
   const t0 = performance.now()
@@ -411,9 +413,9 @@ async function buildInto(context: BuildContext): Promise<BuildResult> {
   await assertUniqueImageNames(...imageRoots)
   // (Variant pruning intentionally removed — it raced with the cache check in processImages.
   // Stale variants are harmless: srcset only references widths the current sidecar reports.)
-  imageMeta = await processImageSources(imageRoots, imagesDist, join(imageCacheRoot, 'images'), imageEncode)
+  imageMeta = await processImageSources(imageRoots, imagesDist, join(imageCacheRoot, 'images'), imageEncode, logger)
   await pruneStaleImages(imagesDist, join(imageCacheRoot, 'images'), Object.keys(imageMeta))
-  await processOgImage(sourceOgImagePath(context.rootDir), assetsDist, imageCacheRoot)
+  await processOgImage(sourceOgImagePath(context.rootDir), assetsDist, imageCacheRoot, logger)
   tick('images', t)
 
   t = performance.now()
@@ -619,19 +621,27 @@ pre { background: var(--error-card); padding: 1em; border-radius: 4px; overflow-
   } catch {}
 }
 
-if (import.meta.main) {
+export async function runBuildCli(command: 'build' | 'check' = 'build') {
+  const json = process.argv.includes('--json')
+  const warnings: string[] = []
+  const logger: BuildLogger = json ? { log: () => {}, warn: message => { warnings.push(message) } } : console
   const context = createBuildContext()
   try {
-    await build({ context })
+    const result = await build({ context, logger })
     // Clear any previous error banner
     try { await rm(join(context.distDir, '__build-error.html'), { force: true }) } catch {}
+    if (json) printJsonResult(command, [], warnings, process.argv.includes('--profile') ? { timings: result.timings, totalMs: result.totalMs } : undefined)
   } catch (err) {
     await writeErrorPage(err, context)
-    if (err instanceof BuildError) {
+    if (json) {
+      printJsonResult(command, [diagnostic(err)], warnings)
+    } else if (err instanceof BuildError) {
       console.error(err.toPretty())
     } else {
       console.error(err)
     }
-    process.exit(1)
+    process.exitCode = 1
   }
 }
+
+if (import.meta.main) await runBuildCli()

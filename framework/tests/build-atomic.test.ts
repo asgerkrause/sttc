@@ -57,8 +57,8 @@ async function distSwapTemps(dir: string) {
   return (await readdir(dir)).filter((entry) => entry.startsWith('dist.__next-') || entry.startsWith('dist.__prev-'))
 }
 
-async function runBuild(dir: string) {
-  const proc = Bun.spawn(['bun', join(packageRoot, 'build', 'index.ts')], {
+async function runBuild(dir: string, flags: string[] = []) {
+  const proc = Bun.spawn(['bun', join(packageRoot, 'build', 'index.ts'), ...flags], {
     cwd: dir,
     stdout: 'pipe',
     stderr: 'pipe',
@@ -139,3 +139,30 @@ describe('atomic dist build', () => {
     expect(await distSwapTemps(dir)).toEqual([])
   })
 })
+
+for (const failure of ['config', 'link']) {
+  test('JSON failure preserves site artifacts and writes error page: ' + failure, async () => {
+    const dir = await makeProject()
+    expect((await runBuild(dir, ['--json'])).code).toBe(0)
+    const paths = new Bun.Glob('**/*')
+    const before = new Map<string, string>()
+    for await (const path of paths.scan({ cwd: join(dir, 'dist'), onlyFiles: true })) {
+      before.set(path, Bun.hash(await Bun.file(join(dir, 'dist', path)).arrayBuffer()).toString())
+    }
+    const source = failure === 'config' ? 'src/site.json' : 'src/pages/index.html'
+    const original = await readFile(join(dir, source), 'utf8')
+    await writeFile(join(dir, source), failure === 'config' ? '{ nope' : '<a href="/missing/">Missing</a>')
+    const result = await runBuild(dir, ['--json'])
+    expect(result.code).toBe(1)
+    const envelope: unknown = JSON.parse(result.stdout)
+    expect(envelope).toMatchObject({ version: 1, command: 'build', outcome: 'failure' })
+    for (const [path, hash] of before) expect(Bun.hash(await Bun.file(join(dir, 'dist', path)).arrayBuffer()).toString()).toBe(hash)
+    const after = []
+    for await (const path of paths.scan({ cwd: join(dir, 'dist'), onlyFiles: true })) after.push(path)
+    expect(after.sort()).toEqual([...before.keys(), '__build-error.html'].sort())
+    expect(await distSwapTemps(dir)).toEqual([])
+    await writeFile(join(dir, source), original)
+    expect((await runBuild(dir, ['--json'])).code).toBe(0)
+    expect(await Bun.file(join(dir, 'dist/__build-error.html')).exists()).toBe(false)
+  })
+}
