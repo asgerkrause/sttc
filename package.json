@@ -64,6 +64,6 @@
     "skills": "bun framework/cli/sttc.ts skills",
     "smoke:create": "bun framework/scripts/smoke-create.ts",
     "test:browser": "bun framework/scripts/browser-test.ts",
-    "browser:install": "bun node_modules/playwright-core/cli.js install chromium --only-shell --no-remove"
+    "browser:install": "PLAYWRIGHT_SKIP_BROWSER_GC=1 bun node_modules/playwright-core/cli.js install chromium --only-shell"
   }
 }
