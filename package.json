@@ -1,6 +1,6 @@
 {
   "name": "@byak/sttc",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "HTML-first static site renderer for Bun with build-time components, responsive images, and built-in SEO and discovery output.",
   "type": "module",
   "license": "MIT",
@@ -26,6 +26,7 @@
     "llms-txt"
   ],
   "files": [
+    "CHANGELOG.md",
     "AGENTS.md",
     "README.md",
     "framework/build/",

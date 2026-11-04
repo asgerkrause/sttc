@@ -1,8 +1,18 @@
 # Changelog
 
+## 0.3.0
+
+- Add versioned JSON results for `build --json` and `check --json`, including warnings, caught failures, and optional build timings.
+- Strengthen consistency checks across generated discovery metadata and route representations. Inconsistent output accepted by earlier versions may now fail validation.
+- Add Chromium behavior tests with seeded regressions and packed-package upgrade checks for a customized historical consumer.
+- Add an agent-evaluation protocol and bounded link-repair grader. No comparative AI productivity claim is established.
+- Test Bun 1.4.0 and 1.4.4 in CI. The minimum remains Bun 1.4.0.
+
+Existing projects retain their owned source and CSS. The browser tooling is development-only and adds no consumer runtime dependency.
+
 ## 0.2.0
 
-Initial public release on npm. Earlier versions were private and never published, so there is no public upgrade path to describe.
+Initial supported public release on npm. A `0.0.0-stage` staging package was published earlier; it was not a supported consumer release.
 
 - HTML-first static renderer: authored routes, build-time components with `@attr` contracts, markdown content collections, and compiler-assisted images.
 - Discovery output: canonical and Open Graph tags, connected JSON-LD, sitemap, feeds, route Markdown and JSON, `llms.txt`, and `llms-full.txt`.
