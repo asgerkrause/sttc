@@ -18,6 +18,8 @@ bun run new cms
 
 `build` runs `check` at the end. `doctor` typechecks, then runs `check`; `--launch` adds the production gate.
 
+Use `bun run build --json` or `bun run check --json` for machine-readable errors and warnings. Require exit status zero and a valid version 1 success result; missing or truncated output is not success. `check` builds first unless `--skip-build` is set. Run `bun run typecheck` separately from JSON checks; the `doctor` script also emits compiler output.
+
 ## Source
 
 - `src/shell.html`: document shell with Header, Main, Footer, and a speculation-rules prefetch block.

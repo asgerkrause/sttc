@@ -23,6 +23,10 @@ Deploy settings:
 
 `bun run build` runs `check` at the end and fails on a renderer contract violation. `bun run doctor` typechecks and runs the same checks out of band.
 
+Automation can use `bun run build --json` or `bun run check --json`. These commands emit one versioned result; require both zero exit status and a valid success envelope. `check --skip-build --json` inspects existing output. Run typechecking separately. See [JSON command output](./cli-output.md) for warnings, profiles, failures, and compatibility rules.
+
+Framework changes are verified with `bun run framework:verify` and the separate [browser behavior gate](./browser-testing.md). The create smoke also checks a [customized historical consumer](./consumer-upgrades.md). These development checks do not certify deployed headers or content accuracy.
+
 ## Package resolution
 
 `@byak/sttc` is published to npm. `bunx @byak/sttc create <dir>` creates a site that depends on `^<version>` from npm. A site created from this repository's checkout depends on `"@byak/sttc": "file:<path to the checkout>"`, so `bun install` links the renderer from disk and the site follows that checkout. A site created from a packed tarball (`bun pm pack`, then `STTC_CREATE_MODE=packaged`) depends on `^<version>` from npm, which installs anywhere, including Vercel. Publishing requires explicit human approval and is not part of any build or verify script.

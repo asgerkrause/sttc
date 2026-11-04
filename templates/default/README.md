@@ -21,6 +21,8 @@ bun run dev
 
 Add source with `bun run new route about` and `bun run new component Hero`.
 
+Agents can use `bun run build --json` or `bun run check --json` for one versioned result with errors and warnings. `check` builds first; `--skip-build` checks existing output. Require both a zero exit status and a valid success result. Run `bun run typecheck` separately: the `doctor` script includes compiler output outside the JSON protocol.
+
 ## Pages and SEO
 
 Each file in `src/pages/` becomes a full HTML document, so navigation uses native page loads. A route can set its metadata in a leading `<head>` wrapper:

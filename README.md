@@ -101,6 +101,10 @@ Run these inside a created site:
 - [Content and CMS](./framework/docs/framework/content-and-cms.md)
 - [Images](./framework/docs/framework/images.md)
 - [Deploy and launch](./framework/docs/framework/deploy-and-launch.md)
+- [JSON command output](./framework/docs/framework/cli-output.md)
+- [Browser verification](./framework/docs/framework/browser-testing.md)
+- [Consumer upgrade smoke](./framework/docs/framework/consumer-upgrades.md)
+- [Agent task evaluation](./framework/benchmarks/agent-tasks.md)
 - [Design decisions](./framework/docs/decisions/README.md)
 
 ## Working on STTC
@@ -110,9 +114,13 @@ This repository is both the renderer and a site built with it. `framework/` hold
 ```bash
 bun install
 bun run framework:verify
+bun run browser:install
+bun run test:browser --seeds
 ```
 
-`framework:verify` typechecks, runs `check`, runs the framework tests, and creates a site from the starter as a smoke test.
+`framework:verify` typechecks, runs `check`, runs the framework tests, and exercises fresh creation and a customized historical consumer with the packed package. Browser behavior and seeded regression checks run separately through `test:browser`; CI runs both gates. Browser tooling is development-only.
+
+For automation, `bun run build --json` and `bun run check --json` emit one versioned JSON result. `check` normally builds first; add `--skip-build` to inspect existing output. Accept success only when the exit status and JSON result both indicate success. Run typechecking separately; the `doctor` script's compiler output is not part of the JSON protocol.
 
 ## License
 

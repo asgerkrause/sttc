@@ -1,3 +1,4 @@
+import type { BuildLogger } from './build-context'
 import { mkdir, readdir, readFile, realpath, stat, unlink, writeFile } from 'fs/promises'
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'path'
 import { BuildError } from './errors'
@@ -258,9 +259,9 @@ async function writeSidecar(sidecar: string, data: EncodeSidecar) {
   await writeFile(sidecar, JSON.stringify(data))
 }
 
-function warnHugeMaster(file: string, width: number, height: number) {
+function warnHugeMaster(file: string, width: number, height: number, logger: BuildLogger) {
   if (width <= HUGE_DIMENSION && height <= HUGE_DIMENSION) return
-  console.warn(
+  logger.warn(
     `  images: large master ${relative(process.cwd(), file)} (${width}×${height}) — consider resizing source`,
   )
 }
@@ -347,10 +348,11 @@ export async function processImageSources(
   distDir: string,
   cacheDir: string,
   options: Record<string, ImageEncodeOptions> = {},
+  logger: BuildLogger = console,
 ): Promise<Record<string, ImageMeta>> {
   const meta: Record<string, ImageMeta> = {}
   for (const root of roots) {
-    Object.assign(meta, await processImages(root.dir, distDir, cacheDir, options))
+    Object.assign(meta, await processImages(root.dir, distDir, cacheDir, options, logger))
   }
   return meta
 }
@@ -361,6 +363,7 @@ export async function processImages(
   distDir: string,
   cacheDir: string,
   options: Record<string, ImageEncodeOptions> = {},
+  logger: BuildLogger = console,
 ): Promise<Record<string, ImageMeta>> {
   assertImageApi()
   const meta: Record<string, ImageMeta> = {}
@@ -381,7 +384,7 @@ export async function processImages(
     const srcHash = sourceHash(sourceBytes)
     const srcMtime = (await stat(file)).mtimeMs
     const { width = 0, height = 0 } = await new Bun.Image(sourceBytes).metadata()
-    warnHugeMaster(file, width, height)
+    warnHugeMaster(file, width, height, logger)
 
     const canonicalEdge = Math.min(max, Math.max(width, height))
     const responsiveSizes = [...new Set(
@@ -424,7 +427,7 @@ export async function processImages(
         variants,
       }
       await writeSidecar(sidecar, sidecarData)
-      console.log(`  image ${relative(srcDir, file)} → ${basename(out)} + ${responsiveSizes.length} sizes (q${quality})`)
+      logger.log(`  image ${relative(srcDir, file)} → ${basename(out)} + ${responsiveSizes.length} sizes (q${quality})`)
     }
 
     meta[name] = {
@@ -438,10 +441,10 @@ export async function processImages(
   return meta
 }
 
-export async function processOgImage(srcPath: string, distDir: string, cacheDir: string) {
+export async function processOgImage(srcPath: string, distDir: string, cacheDir: string, logger: BuildLogger = console) {
   assertImageApi()
   if (!(await Bun.file(srcPath).exists())) {
-    console.warn(`images: no OG source at ${srcPath} — skipped`)
+    logger.warn(`images: no OG source at ${srcPath} — skipped`)
     return
   }
 
@@ -462,5 +465,5 @@ export async function processOgImage(srcPath: string, distDir: string, cacheDir:
   await new Bun.Image(sourceBytes).resize(1200, 630, FIT).webp({ quality: 82 }).write(webp)
   await new Bun.Image(sourceBytes).resize(1200, 630, FIT).png({ compressionLevel: 6 }).write(png)
   await writeSidecar(sidecarPath(cacheDir, 'og'), { srcMtime, srcHash, max: 1200, quality: 82 })
-  console.log('  image og → og.webp, og.png')
+  logger.log('  image og → og.webp, og.png')
 }

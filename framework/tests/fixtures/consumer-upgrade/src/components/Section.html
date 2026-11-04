@@ -1,0 +1,9 @@
+<!--
+  @desc Semantic section wrapper for an authored page topic.
+  @attr id Section identity; required when directly inside main.
+  @attr label Optional accessible label when no visible heading labels the section.
+  @attr c=[sm|lg] Optional Craft container measure.
+-->
+<section id="{{id}}" aria-label="{{label}}">
+  {#if c}<div class="c {{c}}">{{slot}}</div>{:else}<div class="c">{{slot}}</div>{/if}
+</section>

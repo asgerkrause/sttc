@@ -184,3 +184,27 @@ describe('build API spine', () => {
     }
   })
 })
+
+test('concurrent project builds keep loggers local and console unchanged', async () => {
+  const dirs = await Promise.all([mkdtemp(join(tmpdir(), 'sttc-logger-a-')), mkdtemp(join(tmpdir(), 'sttc-logger-b-'))])
+  const originalLog = console.log
+  const originalWarn = console.warn
+  try {
+    const logs = await Promise.all(dirs.map(async dir => {
+      await writeMinimalProject(dir)
+      const messages: string[] = []
+      const logger = { log: (message: string) => { messages.push(message) }, warn: (message: string) => { messages.push(message) } }
+      await build({ context: createBuildContext({ rootDir: dir }), logger })
+      return messages
+    }))
+    for (const [index, messages] of logs.entries()) {
+      expect(messages.some(message => message.includes(dirs[index]))).toBe(true)
+      expect(messages.some(message => message.includes(dirs[1 - index]))).toBe(false)
+      expect(messages.some(message => message.startsWith('built 2 routes'))).toBe(true)
+    }
+    expect(console.log).toBe(originalLog)
+    expect(console.warn).toBe(originalWarn)
+  } finally {
+    await Promise.all(dirs.map(dir => rm(dir, { recursive: true, force: true })))
+  }
+})

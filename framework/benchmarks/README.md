@@ -15,3 +15,9 @@ bun framework/benchmarks/bench.ts internal --scenario routes --mode warm --scale
 bun framework/benchmarks/bench.ts internal --scenario routes --mode route-edit --scale 100 --warmups 5 --samples 30
 bun framework/benchmarks/bench.ts category --dry-run
 ```
+
+## Agent task evaluation
+
+[Agent task protocol](./agent-tasks.md) defines eight fixed tasks, matched outcomes across STTC/Astro/plain HTML, budgets, fresh sessions, retained failures and separate human review. [Result schema](./agent-results.schema.json) distinguishes observations, unknown measurements and not-run work. Renderer performance sample thresholds above are not agent-study statistical justification.
+
+`bun test framework/tests/agent-eval.test.ts` validates one bounded broken-link grader against actual generated good/bad STTC artifacts. Evidence remains in `.snz/benchmarks/agent-tasks/`. This is grader validation, not measured AI productivity; no comparative agent trials have run. See the protocol for preparing a fresh attempt and the remaining baseline/grader work before comparison.

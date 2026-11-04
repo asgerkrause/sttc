@@ -23,9 +23,13 @@ bun run new collection projects --route work/{slug} --template project
 bun run skills sync
 bun run smoke:create
 bun run framework:verify
+bun run browser:install
+bun run test:browser --seeds
 ```
 
 `build` runs `check` at the end. `doctor` typechecks, then runs `check`; `--launch` adds the production gate. `framework:verify` runs `doctor`, the framework tests, and the create smoke. Builds print one concise result; pass `--profile` for phase timings.
+
+For machine output, use `build --json` or `check --json`. The versioned envelope covers caught errors and warnings; require both exit status zero and a valid success result. `check` builds first unless `--skip-build` is set. Run typechecking separately from JSON checks. See [CLI output](./framework/docs/framework/cli-output.md).
 
 ## Mental model
 
@@ -144,5 +148,7 @@ Build errors include file, line, and hint. Fix source, not output.
 Immutable `Cache-Control` in `vercel.json` applies only to hashed `css|js|woff` paths. `check` warns when an immutable rule's `source` lacks a hash group; that is a source-pattern heuristic, not proof that a custom rule matches hashed assets only, so the project verifies custom rules itself.
 
 After structural changes run `bun run framework:verify`; for a narrower loop use `bun run build` or `bun test framework/tests`.
+
+Integration and release verification also run `bun run test:browser --seeds` after `bun run browser:install`. This Bun-driven Chromium gate is separate from ordinary tests and ships no consumer dependency. See [browser testing](./framework/docs/framework/browser-testing.md). The create smoke includes a frozen historical customized consumer; preserve its provenance and owned source files when extending [upgrade coverage](./framework/docs/framework/consumer-upgrades.md).
 
 `@byak/sttc` is a public npm package. `sttc create` from this checkout writes `"@byak/sttc": "file:<checkout>"` into the created site; a packaged create writes `^<version>`. Publishing requires explicit human approval.

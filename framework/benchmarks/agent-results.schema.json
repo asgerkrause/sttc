@@ -1,0 +1,406 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "STTC agent task observation v1",
+  "description": "Null means unavailable, never zero by inference. not-run means no observation. Grader validation is not an agent trial. Evidence must support outcomes; schema validation alone does not prove them.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "protocol",
+    "kind",
+    "stack",
+    "task",
+    "trial",
+    "recordedAt",
+    "revision",
+    "versions",
+    "settings",
+    "outcome",
+    "checks",
+    "interventions",
+    "humanReview",
+    "effort",
+    "evidence",
+    "notes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "protocol": {
+      "const": "agent-tasks-v1"
+    },
+    "kind": {
+      "enum": [
+        "grader-validation",
+        "agent-trial",
+        "illustrative"
+      ]
+    },
+    "stack": {
+      "enum": [
+        "sttc",
+        "astro",
+        "plain-html"
+      ]
+    },
+    "task": {
+      "enum": [
+        "branded-page",
+        "component-reuse",
+        "navigation",
+        "responsive-image",
+        "editorial-record",
+        "broken-link",
+        "accessible-disclosure",
+        "build-error"
+      ]
+    },
+    "trial": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "recordedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "versions": {
+      "type": "object",
+      "required": [
+        "stack",
+        "bun",
+        "os"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stack": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "bun": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "os": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "required": [
+        "model",
+        "reasoning",
+        "serviceTier",
+        "harness",
+        "tools",
+        "docs",
+        "prompt",
+        "order",
+        "budgetSeconds",
+        "budgetToolCalls",
+        "spendLimit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "reasoning": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "serviceTier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "harness": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "docs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "prompt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "order": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "budgetSeconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "budgetToolCalls": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "spendLimit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "outcome": {
+      "enum": [
+        "pass",
+        "fail",
+        "timeout",
+        "infrastructure-invalid",
+        "not-run"
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "status",
+          "evidence"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "fail",
+              "not-run"
+            ]
+          },
+          "evidence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "interventions": {
+      "type": "object",
+      "required": [
+        "rescues",
+        "humanCorrections",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "rescues": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "humanCorrections": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      }
+    },
+    "humanReview": {
+      "type": "object",
+      "required": [
+        "design",
+        "content",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "design": {
+          "enum": [
+            "pass",
+            "fail",
+            "not-run"
+          ]
+        },
+        "content": {
+          "enum": [
+            "pass",
+            "fail",
+            "not-run"
+          ]
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      }
+    },
+    "effort": {
+      "type": "object",
+      "required": [
+        "agentSeconds",
+        "toolCalls",
+        "inputTokens",
+        "outputTokens",
+        "cost",
+        "currency",
+        "reviewSeconds",
+        "correctionSeconds",
+        "correctionOutcome"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "agentSeconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "toolCalls": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "inputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "outputTokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cost": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "currency": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "reviewSeconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "correctionSeconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "correctionOutcome": {
+          "enum": [
+            "pass",
+            "fail",
+            "time-capped",
+            "not-run"
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    }
+  }
+}

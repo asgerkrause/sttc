@@ -1,0 +1,7 @@
+{
+  "name": "Field Notes",
+  "url": "https://field-notes.example",
+  "description": "Synthetic field journal upgrade fixture.",
+  "locale": "en",
+  "scroll": "native"
+}
