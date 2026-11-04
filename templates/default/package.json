@@ -16,7 +16,7 @@
     "skills": "sttc skills"
   },
   "dependencies": {
-    "@snz/sttc": "file:../.."
+    "@byak/sttc": "file:../.."
   },
   "devDependencies": {
     "@types/bun": "1.4.0",

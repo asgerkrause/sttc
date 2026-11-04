@@ -1,7 +1,7 @@
 {
   "name": "STTC",
   "url": "https://example.com",
-  "description": "The @snz/sttc renderer's own site: docs, a style sheet page, and a FAQ built with the renderer.",
+  "description": "The @byak/sttc renderer's own site: docs, a style sheet page, and a FAQ built with the renderer.",
   "locale": "en",
   "scroll": "lenis",
   "twitter": "",

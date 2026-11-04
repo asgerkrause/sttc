@@ -1,6 +1,6 @@
 # STTC site
 
-This site is built with [`@snz/sttc`](https://github.com/sanitizestudio/sttc), an HTML-first static renderer for Bun. It requires Bun 1.4.0 or later.
+This site is built with [`@byak/sttc`](https://github.com/asgerkrause/sttc), an HTML-first static renderer for Bun. It requires Bun 1.4.0 or later.
 
 ```bash
 bun install

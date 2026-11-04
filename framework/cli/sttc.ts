@@ -70,7 +70,7 @@ async function createProject(targetArg: string | undefined) {
   }
 
   const template = join(packageRoot, 'templates', 'default')
-  if (!(await exists(template))) throw new Error('The @snz/sttc package is missing templates/default.')
+  if (!(await exists(template))) throw new Error('The @byak/sttc package is missing templates/default.')
   await copyTemplate(template, target)
 
   const rootPackage = JSON.parse(await Bun.file(join(packageRoot, 'package.json')).text())
@@ -80,7 +80,7 @@ async function createProject(targetArg: string | undefined) {
   targetPackage.name = packageName(basename(target) || 'sttc-site')
   targetPackage.dependencies = {
     ...(targetPackage.dependencies ?? {}),
-    '@snz/sttc': packaged ? `^${rootPackage.version}` : `file:${packageRoot}`,
+    '@byak/sttc': packaged ? `^${rootPackage.version}` : `file:${packageRoot}`,
   }
   await Bun.write(targetPackagePath, `${JSON.stringify(targetPackage, null, 2)}\n`)
 

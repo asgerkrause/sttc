@@ -1,5 +1,5 @@
 {
-  "name": "@snz/sttc",
+  "name": "@byak/sttc",
   "version": "0.2.0",
   "description": "HTML-first static site renderer for Bun with build-time components, responsive images, and built-in SEO and discovery output.",
   "type": "module",
@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sanitizestudio/sttc.git"
+    "url": "git+https://github.com/asgerkrause/sttc.git"
   },
-  "homepage": "https://github.com/sanitizestudio/sttc#readme",
+  "homepage": "https://github.com/asgerkrause/sttc#readme",
   "bugs": {
-    "url": "https://github.com/sanitizestudio/sttc/issues"
+    "url": "https://github.com/asgerkrause/sttc/issues"
   },
   "keywords": [
     "bun",

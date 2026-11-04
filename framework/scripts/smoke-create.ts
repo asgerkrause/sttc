@@ -13,7 +13,7 @@ const packedHarness = join(root, 'packed-harness')
 const packedDir = join(root, 'packed')
 const dotTarget = join(root, 'site-dot')
 const rootPackage = JSON.parse(await Bun.file(join(repoRoot, 'package.json')).text())
-const packedArchive = join(packedDir, `snz-sttc-${rootPackage.version}.tgz`)
+const packedArchive = join(packedDir, `byak-sttc-${rootPackage.version}.tgz`)
 const expectedVersion = `^${rootPackage.version}`
 
 async function run(command: string[], cwd = repoRoot) {
@@ -69,8 +69,8 @@ async function assertStarter(target: string) {
 try {
   await run(['bun', cli, 'create', localTarget])
   await assertStarter(localTarget)
-  const localDependency = (await readPackage(localTarget)).dependencies?.['@snz/sttc']
-  if (!localDependency?.startsWith('file:')) throw new Error('local create did not write file: @snz/sttc dependency')
+  const localDependency = (await readPackage(localTarget)).dependencies?.['@byak/sttc']
+  if (!localDependency?.startsWith('file:')) throw new Error('local create did not write file: @byak/sttc dependency')
   await run(['bun', 'install'], localTarget)
   await run(['bun', 'run', 'skills', 'sync', '--check'], localTarget)
   await run(['bun', 'run', 'new', 'route', 'smoke-page'], localTarget)
@@ -84,11 +84,11 @@ try {
   await run(['bun', 'add', packedArchive], packedHarness)
   await run(['bunx', 'sttc', 'create', packagedTarget], packedHarness)
   await assertStarter(packagedTarget)
-  const packagedDependency = (await readPackage(packagedTarget)).dependencies?.['@snz/sttc']
+  const packagedDependency = (await readPackage(packagedTarget)).dependencies?.['@byak/sttc']
   if (packagedDependency !== expectedVersion) {
     throw new Error(`packaged create wrote ${packagedDependency}; expected ${expectedVersion}`)
   }
-  const installedCli = join(packedHarness, 'node_modules', '@snz', 'sttc', 'framework', 'cli', 'sttc.ts')
+  const installedCli = join(packedHarness, 'node_modules', '@byak', 'sttc', 'framework', 'cli', 'sttc.ts')
   await run(['bun', installedCli, 'doctor'], packagedTarget)
 
   await mkdir(dotTarget)

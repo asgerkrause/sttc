@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@snz/sttc",
+      "name": "@byak/sttc",
       "devDependencies": {
         "@types/bun": "1.4.0",
         "typescript": "7.0.2",
@@ -12,7 +12,7 @@
     "templates/default": {
       "name": "sttc-site",
       "dependencies": {
-        "@snz/sttc": "file:../..",
+        "@byak/sttc": "file:../..",
       },
       "devDependencies": {
         "@types/bun": "1.4.0",
@@ -21,7 +21,7 @@
     },
   },
   "packages": {
-    "@snz/sttc": ["@snz/sttc@root:", {}],
+    "@byak/sttc": ["@byak/sttc@root:", {}],
 
     "@types/bun": ["@types/bun@1.4.0", "", { "dependencies": { "bun-types": "1.4.0" } }, "sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ=="],
 

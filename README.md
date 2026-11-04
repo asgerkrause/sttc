@@ -1,6 +1,6 @@
 # STTC
 
-STTC (`@snz/sttc`) is an HTML-first static site renderer for Bun. You write routes and components as plain HTML files. The build turns them into a static `dist/` folder with one full HTML document per route, responsive images, and SEO and discovery files.
+STTC (`@byak/sttc`) is an HTML-first static site renderer for Bun. You write routes and components as plain HTML files. The build turns them into a static `dist/` folder with one full HTML document per route, responsive images, and SEO and discovery files.
 
 STTC fits small brochure, marketing, and studio sites that should ship as static files. It is not a wrapper around React, Vue, Svelte, or Vite. It has no virtual DOM, no hydration, and no client router. Navigation is native page loads, with speculation-rules prefetch and optional cross-document view transitions.
 
@@ -11,7 +11,7 @@ STTC fits small brochure, marketing, and studio sites that should ship as static
 ## Quick start
 
 ```bash
-bunx @snz/sttc create my-site
+bunx @byak/sttc create my-site
 cd my-site
 bun install
 bun run dev
