@@ -2,7 +2,7 @@ name: Release
 
 # Publishes @byak/sttc to npm through trusted publishing (OIDC). No npm token is stored.
 # Release: bump package.json and CHANGELOG.md, merge, then push tag v<version> from main.
-# npmjs.com trusted publisher: user asgerkrause, repo sttc, workflow release.yml.
+# npmjs.com trusted publisher: user asgerkrause, repo sttc, workflow release.yml, environment npm.
 
 on:
   push:
@@ -11,17 +11,22 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
-  publish:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Require tag to match package version
-        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - name: Require a stable tag on main that matches the package version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "v$version" = "$GITHUB_REF_NAME"
+          case "$version" in *-*) echo "Prerelease versions are not published to latest"; exit 1;; esac
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -34,6 +39,24 @@ jobs:
       - name: Verify
         run: bun run framework:verify
 
+      - name: Install Chromium
+        run: bun run browser:install --with-deps
+
+      - name: Browser behavior and seeded regressions
+        run: bun run test:browser --seeds
+
+  # Only this job can mint the OIDC token; it runs no project code.
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -42,7 +65,7 @@ jobs:
 
       # Trusted publishing needs npm >= 11.5.1.
       - name: Update npm
-        run: npm install -g npm@^11.5.1
+        run: npm install -g npm@11.21.2
 
       - name: Publish
         run: npm publish
