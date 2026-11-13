@@ -433,6 +433,7 @@ export function createComposer(
 <link rel="describedby" href="/llms.txt">`
     return `<title>${escapeAttr(seo.title)}</title>
 <meta name="description" content="${escapeAttr(seo.description)}">${robots}
+<meta name="generator" content="STTC">
 <link rel="canonical" href="${escapeAttr(seo.canonical)}">${representations}
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${escapeAttr(seo.siteName)}">

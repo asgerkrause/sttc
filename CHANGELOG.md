@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+- Emit `<meta name="generator" content="STTC">` on every route, so technology detectors can identify STTC-built sites. Projects see the tag after they update the package and rebuild.
+- Fix `sttc dev` missing edits made right after it printed its URL. The URL now prints only after file watchers start, so tools that wait for it no longer race the watcher setup.
+
 ## 0.3.0
 
 - Add versioned JSON results for `build --json` and `check --json`, including warnings, caught failures, and optional build timings.

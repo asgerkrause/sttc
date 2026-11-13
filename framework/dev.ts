@@ -264,8 +264,6 @@ poll()
 </body></html>`
 }
 
-console.log(`http://${server.hostname}:${server.port}`)
-
 const watchers = new Map<string, ReturnType<typeof watch>>()
 
 function watchTree(rootPath: string, recursive: boolean) {
@@ -303,3 +301,5 @@ watchTree(join(packageRoot, 'build'), true)
 watchTree(join(packageRoot, 'runtime'), true)
 watchTree(root, false) // .pages.yml plus creation/removal of content/ and media/
 await ensureManagedWatchTrees()
+// Announce the URL only once watchers exist; tools treat it as the ready signal.
+console.log(`http://${server.hostname}:${server.port}`)
