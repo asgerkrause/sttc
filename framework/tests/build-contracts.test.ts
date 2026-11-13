@@ -515,6 +515,7 @@ content:
   test('marks every route with the STTC generator', async () => {
     const html = await composeRoute('index', 'src/pages/index.html')
 
+    expect(html.split('<meta name="generator"').length - 1).toBe(1)
     expect(html).toContain('<meta name="generator" content="STTC">')
   })
 

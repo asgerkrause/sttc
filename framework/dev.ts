@@ -276,7 +276,10 @@ function watchTree(rootPath: string, recursive: boolean) {
     }
     watcher.on('close', release)
     watcher.on('error', release)
-  } catch {}
+  } catch (error) {
+    // Edits under this root will not trigger rebuilds; say so instead of failing silently.
+    console.error(`watch failed for ${rootPath}: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 const managedWatchRoots = [

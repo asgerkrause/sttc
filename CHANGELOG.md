@@ -3,7 +3,7 @@
 ## 0.3.1
 
 - Emit `<meta name="generator" content="STTC">` on every route, so technology detectors can identify STTC-built sites. Projects see the tag after they update the package and rebuild.
-- Fix `sttc dev` missing edits made right after it printed its URL. The URL now prints only after file watchers start, so tools that wait for it no longer race the watcher setup.
+- Fix `sttc dev` missing edits made right after it printed its URL. The URL now prints only after watcher setup, so tools that wait for it no longer race it. A watcher that fails to start now logs an error instead of failing silently.
 
 ## 0.3.0
 
