@@ -512,6 +512,13 @@ content:
     expect(html).not.toContain('/index/')
   })
 
+  test('marks every route with the STTC generator', async () => {
+    const html = await composeRoute('index', 'src/pages/index.html')
+
+    expect(html.split('<meta name="generator"').length - 1).toBe(1)
+    expect(html).toContain('<meta name="generator" content="STTC">')
+  })
+
   test('points markdown alternate at the same-path alias and describes JSON plus llms.txt', async () => {
     const html = await composeRoute('about', 'src/pages/about.html')
 

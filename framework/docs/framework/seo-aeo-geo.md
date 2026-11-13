@@ -53,6 +53,7 @@ On-site search is optional later, when the project has a real `/search/` route. 
 The build writes these for public routes. A 404 route is also written to `dist/404.html` so static hosts serve it with status 404 on a hard load.
 
 - canonical `link` tags
+- a `generator` meta tag with content `STTC`; do not add another in the shell or a route `<head>`
 - Open Graph tags
 - Twitter tags, including `twitter:site` when `site.twitter` is set
 - a connected JSON-LD graph in the page

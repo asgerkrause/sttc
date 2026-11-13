@@ -264,8 +264,6 @@ poll()
 </body></html>`
 }
 
-console.log(`http://${server.hostname}:${server.port}`)
-
 const watchers = new Map<string, ReturnType<typeof watch>>()
 
 function watchTree(rootPath: string, recursive: boolean) {
@@ -278,7 +276,10 @@ function watchTree(rootPath: string, recursive: boolean) {
     }
     watcher.on('close', release)
     watcher.on('error', release)
-  } catch {}
+  } catch (error) {
+    // Edits under this root will not trigger rebuilds; say so instead of failing silently.
+    console.error(`watch failed for ${rootPath}: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 const managedWatchRoots = [
@@ -303,3 +304,5 @@ watchTree(join(packageRoot, 'build'), true)
 watchTree(join(packageRoot, 'runtime'), true)
 watchTree(root, false) // .pages.yml plus creation/removal of content/ and media/
 await ensureManagedWatchTrees()
+// Announce the URL only once watchers exist; tools treat it as the ready signal.
+console.log(`http://${server.hostname}:${server.port}`)
