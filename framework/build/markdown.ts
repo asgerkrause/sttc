@@ -4,7 +4,12 @@
 
 import { BuildError, lineOf } from './errors'
 
-const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }
+const ESC = new Map([
+  ['&', '&amp;'],
+  ['<', '&lt;'],
+  ['>', '&gt;'],
+  ['"', '&quot;'],
+])
 const FRONT_MATTER_RE = /^---\n([\s\S]*?)\n---\n?/
 const SAFE_COMPONENT_RE =
   /^(?:<\/?[A-Z][A-Za-z0-9]*(?:\s[^>]*)?>|<[A-Z][A-Za-z0-9]*(?:\s[^>]*)?>[\s\S]*<\/[A-Z][A-Za-z0-9]*>)\s*$/
@@ -16,26 +21,26 @@ export type MarkdownOptions = {
 }
 
 function esc(s: string) {
-  return s.replace(/[&<>\"]/g, (c) => ESC[c] ?? c)
+  return s.replace(/[&<>"]/g, (c) => ESC.get(c) ?? c)
 }
 
 // Letters with no Unicode decomposition; NFKD leaves them out, so map them first. \u00e5 and \u00e9 fold through NFKD (\u00e5 \u2192 a).
-const SLUG_TRANSLITERATIONS: Record<string, string> = {
-  æ: 'ae',
-  ø: 'o',
-  œ: 'oe',
-  ß: 'ss',
-  ð: 'd',
-  đ: 'd',
-  ł: 'l',
-  þ: 'th',
-  ı: 'i',
-}
+const SLUG_TRANSLITERATIONS = new Map([
+  ['æ', 'ae'],
+  ['ø', 'o'],
+  ['œ', 'oe'],
+  ['ß', 'ss'],
+  ['ð', 'd'],
+  ['đ', 'd'],
+  ['ł', 'l'],
+  ['þ', 'th'],
+  ['ı', 'i'],
+])
 
 export function slugify(s: string) {
   return s
     .toLowerCase()
-    .replace(/[\u00e6\u00f8\u0153\u00df\u00f0\u0111\u0142\u00fe\u0131]/g, (c) => SLUG_TRANSLITERATIONS[c] ?? c)
+    .replace(/[\u00e6\u00f8\u0153\u00df\u00f0\u0111\u0142\u00fe\u0131]/g, (c) => SLUG_TRANSLITERATIONS.get(c) ?? c)
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
@@ -226,7 +231,7 @@ function tokenize(src: string, opts: MarkdownOptions): Block[] {
       continue
     }
 
-    if (/^</.test(line)) {
+    if (line.startsWith('<')) {
       const buf: string[] = [line]
       i++
       while (i < lines.length && lines[i].trim() !== '') {
@@ -269,7 +274,9 @@ export function render(src: string, opts: MarkdownOptions = {}): string {
 }
 
 /** Front matter is YAML. Malformed YAML throws with the file line that breaks the block (line 1 is the opening fence). */
-export function parseFrontMatter(src: string, file?: string): { data: Record<string, unknown>; body: string } {
+export type FrontMatter = { data: Record<string, unknown>; body: string }
+
+export function parseFrontMatter(src: string, file?: string): FrontMatter {
   const m = src.match(FRONT_MATTER_RE)
   if (!m) return { data: {}, body: src }
   const block = m[1] ?? ''

@@ -22,7 +22,7 @@ export type ComponentMatch = {
   children: string
 }
 
-export function parseAttrs(attrPart: string): Record<string, string> {
+export function parseAttrs(attrPart: string) {
   const out: Record<string, string> = {}
   for (const m of attrPart.matchAll(ATTR_PAIR_RE)) {
     out[m[1]] = m[2] ?? '1' // boolean attrs collapse to '1'

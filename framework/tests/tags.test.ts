@@ -3,7 +3,7 @@ import { BuildError } from '../build/errors'
 import { autoGenerateIndexes } from '../build/generated-routes'
 import { normalizeContentTags, type ContentRoute } from '../build/content'
 import { slugify } from '../build/markdown'
-import type { RouteGraph } from '../build/route-graph'
+import type { RouteOwner } from '../build/route-graph'
 import { nextComponent, parseAttrs } from '../build/tags'
 
 describe('component tag parser', () => {
@@ -78,8 +78,9 @@ describe('component tag parser', () => {
   test('generated tag routes use safe slugs and escaped display labels', async () => {
     const bodies = new Map<string, string>()
     const routeGraph = {
-      async compose(owner: { slug: string }, body: string) {
+      async compose(owner: RouteOwner, body: string) {
         bodies.set(owner.slug, body)
+        return { route: owner, html: body }
       },
     }
     const post: ContentRoute = {
@@ -94,7 +95,7 @@ describe('component tag parser', () => {
       draft: false,
     }
 
-    await autoGenerateIndexes(routeGraph as unknown as RouteGraph, [post])
+    await autoGenerateIndexes(routeGraph, [post])
 
     expect(bodies.has('tags/r-d-seo')).toBe(true)
     expect(bodies.get('tags/r-d-seo')).toContain('<h1>Tag: <code>R&amp;D &lt;SEO&gt;</code></h1>')

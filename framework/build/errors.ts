@@ -107,7 +107,7 @@ export function printJsonResult(
       outcome: errors.length ? 'failure' : 'success',
       errors,
       warnings: warnings.map((message) => ({ message })),
-      ...(profile ? { profile } : {}),
+      profile,
     }),
   )
 }

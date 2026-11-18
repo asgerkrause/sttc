@@ -7,6 +7,9 @@ export const INLINE_SCRIPT_RE =
   /<script(?![^>]*\bsrc=)(?![^>]*type=["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>/gi
 
 export type ScriptBlock = { label: string; slug?: string; code: string; file?: string }
+export type ExtractedScripts = { html: string; scripts: string[] }
+export type RouteTopScripts = { body: string; scripts: string[] }
+export type ShellHeadScripts = { html: string; blocks: ScriptBlock[] }
 
 function indent(code: string, spaces = 2) {
   const pad = ' '.repeat(spaces)
@@ -16,7 +19,7 @@ function indent(code: string, spaces = 2) {
     .join('\n')
 }
 
-export function extractInlineScripts(html: string): { html: string; scripts: string[] } {
+export function extractInlineScripts(html: string): ExtractedScripts {
   const scripts: string[] = []
   const cleaned = html.replace(INLINE_SCRIPT_RE, (_, body: string) => {
     const trimmed = body.trim()
@@ -30,7 +33,7 @@ const ROUTE_SCRIPT_RE =
   /^<script(?![^>]*\bsrc=)(?![^>]*type=["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>\s*/i
 
 /** Route: inline <script> only before SEO/body markup. */
-export function extractRouteTopScripts(body: string, filename: string): { body: string; scripts: string[] } {
+export function extractRouteTopScripts(body: string, filename: string): RouteTopScripts {
   let rest = body.trim()
   const scripts: string[] = []
 
@@ -57,7 +60,7 @@ function rejectScriptInRouteBody(html: string, file: string) {
   }
 }
 
-export function extractShellHeadScripts(raw: string): { html: string; blocks: ScriptBlock[] } {
+export function extractShellHeadScripts(raw: string): ShellHeadScripts {
   const headMatch = raw.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
   if (!headMatch) return { html: raw, blocks: [] }
 

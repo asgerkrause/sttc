@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import type { Composer } from '../build/compose'
 import { BuildError } from '../build/errors'
 import { RouteGraph } from '../build/route-graph'
 
 function graph() {
   return new RouteGraph({
-    composer: { prepareRoute: async () => ({ html: '', unlisted: false }) } as unknown as Composer,
+    composer: { prepareRoute: async () => ({ html: '', unlisted: false }) },
   })
 }
 

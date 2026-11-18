@@ -285,7 +285,7 @@ function normalizeFields(value: unknown): ContentFieldConfig[] | undefined {
     const record = field as Record<string, unknown>
     if (typeof record.name !== 'string' || !record.name.trim())
       configError('Custom collection field.name must be a non-empty string')
-    return { ...record, name: record.name.trim() } as ContentFieldConfig
+    return { ...record, name: record.name.trim() }
   })
 }
 

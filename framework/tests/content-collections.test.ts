@@ -54,7 +54,7 @@ describe('custom content collections', () => {
       )
       await writeFile(
         join(dir, 'content', 'posts', 'safe-post.md'),
-        '---\ntitle: Bad \"><img src=x onerror=alert(1)>\ndate: 2026-05-26\ndescription: Use <script>alert(1)</script> & keep safe\n---\nBody',
+        '---\ntitle: Bad "><img src=x onerror=alert(1)>\ndate: 2026-05-26\ndescription: Use <script>alert(1)</script> & keep safe\n---\nBody',
       )
 
       const [route] = await compileContentFrom({ rootDir: dir, includeDrafts: false })
