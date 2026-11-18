@@ -54,7 +54,7 @@ function postItems(posts: ContentRoute[]) {
 }
 
 export async function autoGenerateIndexes(
-  routeGraph: RouteGraph,
+  routeGraph: Pick<RouteGraph, 'compose'>,
   posts: ContentRoute[],
   options: GeneratedRouteOptions = {},
 ) {

@@ -22,12 +22,14 @@ bun run new post hello-world
 bun run new collection projects --route work/{slug} --template project
 bun run skills sync
 bun run smoke:create
+bun run fmt
+bun run lint
 bun run framework:verify
 bun run browser:install
 bun run test:browser --seeds
 ```
 
-`build` runs `check` at the end. `doctor` typechecks, then runs `check`; `--launch` adds the production gate. `framework:verify` runs `doctor`, the framework tests, and the create smoke. Builds print one concise result; pass `--profile` for phase timings.
+`build` runs `check` at the end. `doctor` typechecks, then runs `check`; `--launch` adds the production gate. `framework:verify` runs the format check, `lint`, `doctor`, the framework tests, and the create smoke. `lint` is Oxlint with the local anti-slop plugin; see [Oxlint and anti-slop](./framework/docs/decisions/oxlint-anti-slop.md). Builds print one concise result; pass `--profile` for phase timings.
 
 For machine output, use `build --json` or `check --json`. The versioned envelope covers caught errors and warnings; require both exit status zero and a valid success result. `check` builds first unless `--skip-build` is set. Run typechecking separately from JSON checks. See [CLI output](./framework/docs/framework/cli-output.md).
 

@@ -309,15 +309,15 @@ export function buildSchemaGraph(
           titlesBySlug: page.titlesBySlug,
         })
       : undefined
-  const webPage: JsonLdNode = {
+  const webPage = {
     '@type': 'WebPage',
     '@id': `${page.canonical}#webpage`,
     name: page.title,
     description: page.description,
     url: page.canonical,
     isPartOf: { '@id': absoluteUrl(site.url, '/#website') },
+    dateModified: page.dateModified || undefined,
   }
-  if (page.dateModified) webPage.dateModified = page.dateModified
 
   return {
     '@context': 'https://schema.org',

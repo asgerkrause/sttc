@@ -22,7 +22,9 @@ const LEAD_COMMENT_RE = /^\s*<!--([\s\S]*?)-->\s*/
 const ATTR_HEAD_RE = /^([A-Za-z_][\w-]*)(!?)(?:\s*=\[([^\]]*)\])?(?=$|\s)/
 const ATTR_HINT = 'Use @attr name[!] [=[a|b]] [:class] description.'
 
-export function parseInlineSchema(html: string, file?: string): { schema: ComponentSchema; html: string } {
+export type InlineSchema = { schema: ComponentSchema; html: string }
+
+export function parseInlineSchema(html: string, file?: string): InlineSchema {
   const m = html.match(LEAD_COMMENT_RE)
   if (!m) return { schema: {}, html }
   const block = m[1]

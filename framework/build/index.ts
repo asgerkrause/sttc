@@ -72,7 +72,6 @@ import {
 import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
 import { escapeHtml } from './html'
 import { loadSiteConfig } from './site-config'
-import type { TemplateValue } from './template-directives'
 
 function assertImageEncodePlan(
   instancesByRoute: Map<string, ComposeInstance[]>,
@@ -518,7 +517,7 @@ async function buildInto(context: BuildContext, logger: BuildLogger): Promise<Bu
     const cssAsset = await bundleRouteCss(route.slug, css, componentsCssDir)
     await routeGraph.compose(staticOwners[index]!, body, {
       headLinks: cssAsset ? [routeCssLink(cssAsset)] : undefined,
-      data: { site: site as unknown as TemplateValue, ...routeData },
+      data: { site, ...routeData },
       index,
     })
     return routeScriptBlocks(route.slug, scripts)

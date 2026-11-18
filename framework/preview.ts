@@ -45,14 +45,12 @@ async function fileResponse(req: Request, urlPath: string, status = 200) {
   const file = Bun.file(abs)
   if (!(await file.exists())) return null
   const type = typeOf(urlPath) ?? file.type
-  const headers: Record<string, string> = {
-    'Cache-Control': cacheControl(urlPath),
-  }
-  if (type) headers['Content-Type'] = type
+  const headers = new Headers({ 'Cache-Control': cacheControl(urlPath) })
+  if (type) headers.set('Content-Type', type)
   if (wantsGzip(req, urlPath, type)) {
     const bytes = Buffer.from(await file.arrayBuffer())
-    headers['Content-Encoding'] = 'gzip'
-    headers['Vary'] = 'Accept-Encoding'
+    headers.set('Content-Encoding', 'gzip')
+    headers.set('Vary', 'Accept-Encoding')
     return new Response(Bun.gzipSync(bytes), { status, headers })
   }
   return new Response(file, { status, headers })

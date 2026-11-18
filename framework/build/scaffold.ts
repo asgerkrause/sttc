@@ -281,8 +281,10 @@ function collectionConfigEntry(collectionName: string, label: string, template: 
   }
 }
 
+type CollectionFile = { collections: unknown[] }
+
 async function readCollectionConfig(path: string) {
-  let config: { collections: unknown[] } = { collections: [] }
+  let config: CollectionFile = { collections: [] }
   if (!(await exists(path))) return config
 
   try {

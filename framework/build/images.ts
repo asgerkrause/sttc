@@ -161,10 +161,7 @@ function escapeImageAttr(value: string) {
   return escapeHtml(value)
 }
 
-export function resolveImageAttrs(
-  meta: Record<string, ImageMeta>,
-  attrs: Record<string, string>,
-): Record<string, string> {
+export function resolveImageAttrs(meta: Record<string, ImageMeta>, attrs: Record<string, string>) {
   const name = imageNameFromSrc(attrs.src ?? '')
   imageEncodeOptionsFromAttrs(attrs)
   if (attrs.alt === undefined) {

@@ -7,7 +7,7 @@ export async function mapConcurrent<T, R>(
   run: (item: T, index: number) => Promise<R>,
 ): Promise<R[]> {
   if (items.length === 0) return []
-  const results = new Array<R>(items.length)
+  const results: R[] = []
   let cursor = 0
   const errors: unknown[] = []
   const workers = Array.from({ length: Math.min(Math.max(1, limit), items.length) }, async () => {

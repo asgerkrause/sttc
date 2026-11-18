@@ -153,7 +153,7 @@ function exampleInvocation(name: string, schema: ComponentSchema | undefined, sl
   return attrText ? `<${name} ${attrText} />` : `<${name} />`
 }
 
-function exampleAttrs(schema?: ComponentSchema): Record<string, string> {
+function exampleAttrs(schema?: ComponentSchema) {
   const attrs: Record<string, string> = {}
   for (const [key, rule] of Object.entries(schema?.attrs ?? {})) {
     if (rule.required) attrs[key] = exampleValue(key, rule)

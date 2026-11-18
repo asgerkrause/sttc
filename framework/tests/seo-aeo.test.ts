@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, stat } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildSchemaGraph, writeRobots, writeSitemap, type SiteConfig } from '../build/seo'
-import { MANIFEST_SCHEMA_VERSION, routeSchemaExtras, writeDiscovery } from '../build/discovery'
+import { MANIFEST_SCHEMA_VERSION, routeSchemaExtras, writeDiscovery, type RouteRecord } from '../build/discovery'
 import { GENERATOR_NAME, GENERATOR_VERSION } from '../build/version'
 
 const baseSite: SiteConfig = {
@@ -123,13 +123,13 @@ describe('AEO/GEO site facts', () => {
   })
 
   test('uses explicit component schema without name-based semantics or record mutation', () => {
-    const record = {
+    const record: RouteRecord = {
       slug: 'faq',
       title: 'FAQ',
       description: 'Questions.',
       components: [
-        { name: 'Accordion', attrs: { summary: 'Question?', body: '<p>Answer.</p>' } as Record<string, string> },
-        { name: 'ServiceCard', attrs: { title: 'Design', href: '/design/' } as Record<string, string> },
+        { name: 'Accordion', attrs: { summary: 'Question?', body: '<p>Answer.</p>' } },
+        { name: 'ServiceCard', attrs: { title: 'Design', href: '/design/' } },
       ],
       internalLinks: [],
       schemas: ['WebPage'],

@@ -247,7 +247,7 @@ export function createComposer(
   ) {
     const componentData = dataByComponent.get(name)
     const context: TemplateContext = {
-      ...(componentData ?? {}),
+      ...componentData,
       ...attrs,
       slot: safeHtml(slots.defaultChildren),
       ...Object.fromEntries(
@@ -514,7 +514,7 @@ export function createComposer(
     // Substitute shell-level site config placeholders before component expansion.
     const site = await loadSiteConfig()
     const scroll = site.scroll ?? 'lenis'
-    const shellVars: Record<string, string> = {
+    const shellVars = {
       siteName: site.name,
       currentYear: buildYear(),
       locale: site.locale ?? 'en',

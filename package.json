@@ -45,9 +45,11 @@
     "sttc": "./framework/cli/sttc.ts"
   },
   "devDependencies": {
+    "@oxlint/plugins": "1.94.0",
     "@types/bun": "1.4.4",
-    "typescript": "7.0.2",
-    "playwright-core": "1.61.1"
+    "oxlint": "1.94.0",
+    "playwright-core": "1.61.1",
+    "typescript": "7.0.2"
   },
   "engines": {
     "bun": ">=1.4.4"
@@ -59,8 +61,9 @@
     "dev": "bun framework/cli/sttc.ts dev",
     "preview": "bun framework/cli/sttc.ts preview",
     "doctor": "bun run typecheck && bun framework/cli/sttc.ts doctor",
-    "framework:verify": "bun run doctor && bun test framework/tests && bun run smoke:create",
+    "framework:verify": "bun run fmt --check && bun run lint && bun run doctor && bun test framework/tests && bun run smoke:create",
     "test": "bun test framework/tests",
+    "lint": "oxlint --deny-warnings",
     "fmt": "bun fmt --no-semi --single-quote --print-width 120 'framework/**/*.{ts,js,json}'",
     "new": "bun framework/cli/sttc.ts new",
     "skills": "bun framework/cli/sttc.ts skills",

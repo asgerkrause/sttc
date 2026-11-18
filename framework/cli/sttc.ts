@@ -10,14 +10,14 @@ const args = process.argv.slice(2)
 const cmd = args[0]
 const rest = args.slice(1)
 
-const commands: Record<string, string[]> = {
-  dev: ['bun', join(frameworkRoot, 'dev.ts')],
-  preview: ['bun', join(frameworkRoot, 'preview.ts')],
-  build: ['bun', join(frameworkRoot, 'build', 'index.ts')],
-  check: ['bun', join(frameworkRoot, 'build', 'check.ts')],
-  new: ['bun', join(frameworkRoot, 'build', 'scaffold.ts')],
-  skills: ['bun', join(frameworkRoot, 'build', 'skills.ts')],
-}
+const commands = new Map([
+  ['dev', ['bun', join(frameworkRoot, 'dev.ts')]],
+  ['preview', ['bun', join(frameworkRoot, 'preview.ts')]],
+  ['build', ['bun', join(frameworkRoot, 'build', 'index.ts')]],
+  ['check', ['bun', join(frameworkRoot, 'build', 'check.ts')]],
+  ['new', ['bun', join(frameworkRoot, 'build', 'scaffold.ts')]],
+  ['skills', ['bun', join(frameworkRoot, 'build', 'skills.ts')]],
+])
 
 function usage(): never {
   console.error('Usage: sttc <create|dev|preview|build|check|doctor|new|skills> [...args]')
@@ -89,7 +89,7 @@ async function createProject(targetArg: string | undefined) {
   const packaged = process.env.STTC_CREATE_MODE === 'packaged' || !(await exists(join(packageRoot, '.git')))
   targetPackage.name = packageName(basename(target) || 'sttc-site')
   targetPackage.dependencies = {
-    ...(targetPackage.dependencies ?? {}),
+    ...targetPackage.dependencies,
     '@byak/sttc': packaged ? `^${rootPackage.version}` : `file:${packageRoot}`,
   }
   await Bun.write(targetPackagePath, `${JSON.stringify(targetPackage, null, 2)}\n`)
@@ -117,6 +117,6 @@ if (cmd === 'doctor') {
   process.exit(await check.exited)
 }
 
-const command = commands[cmd]
+const command = commands.get(cmd)
 if (!command) usage()
 await run(command)

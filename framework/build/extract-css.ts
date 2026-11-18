@@ -28,7 +28,9 @@ function minifyCss(css: string) {
     .join('\n')
 }
 
-export function stripStyleBlocks(html: string): { html: string; css: string[] } {
+export type StyleBlocks = { html: string; css: string[] }
+
+export function stripStyleBlocks(html: string): StyleBlocks {
   const css: string[] = []
   const cleaned = html
     .replace(STYLE_RE, (_, content: string) => {
@@ -53,7 +55,7 @@ export function rejectStyleInRoute(html: string, file: string) {
   }
 }
 
-export function extractRouteStyleBlocks(html: string): { html: string; css: string[] } {
+export function extractRouteStyleBlocks(html: string): StyleBlocks {
   return stripStyleBlocks(html)
 }
 
@@ -163,7 +165,7 @@ function wrapImportConditions(css: string, conditions: string) {
     out = `@layer ${name ? `${name} ` : ''}{\n${out}\n}`
     rest = rest.slice(layer[0].length).trim()
   }
-  if (/^supports\(/.test(rest)) {
+  if (rest.startsWith('supports(')) {
     const end = matchingParen(rest, 'supports'.length)
     out = `@supports ${rest.slice('supports'.length, end + 1)} {\n${out}\n}`
     rest = rest.slice(end + 1).trim()

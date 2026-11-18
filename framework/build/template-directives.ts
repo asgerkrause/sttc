@@ -314,17 +314,11 @@ export function renderTemplate(template: string, context: TemplateContext, optio
         }
         const body = template.slice(token.end, close.token.index)
         out += sortedEachSource(source, token.sort)
-          .map((item, index) =>
-            renderTemplate(
-              body,
-              {
-                ...context,
-                [token.alias]: item,
-                ...(token.indexAlias ? { [token.indexAlias]: index } : {}),
-              },
-              options,
-            ),
-          )
+          .map((item, index) => {
+            const itemContext = { ...context, [token.alias]: item }
+            if (token.indexAlias) itemContext[token.indexAlias] = index
+            return renderTemplate(body, itemContext, options)
+          })
           .join('')
         cursor = close.token.end
         i = close.tokenIndex
