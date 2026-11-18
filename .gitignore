@@ -1,16 +1,16 @@
 dist/
 .snz/
+node_modules/
 
-# Pi agent (SANITIZE)
-.pi/scratch/
-.pi/shape/
-.pi/init-auto/
-.pi/brand-auto/
+# Local editor and agent state
+.vscode/
+.idea/
+.cursor/
+.cursorignore
+.cursorindexingignore
+*.code-workspace
+.claude/
+.pi/
 
 # macOS
 .DS_Store
-
-# Pi session exports
-pi-session-*.html
-
-node_modules/
