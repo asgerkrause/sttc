@@ -45,7 +45,7 @@
     "sttc": "./framework/cli/sttc.ts"
   },
   "devDependencies": {
-    "@types/bun": "1.4.0",
+    "@types/bun": "1.4.4",
     "typescript": "7.0.2",
     "playwright-core": "1.61.1"
   },
@@ -61,6 +61,7 @@
     "doctor": "bun run typecheck && bun framework/cli/sttc.ts doctor",
     "framework:verify": "bun run doctor && bun test framework/tests && bun run smoke:create",
     "test": "bun test framework/tests",
+    "fmt": "bun fmt --no-semi --single-quote --print-width 120 'framework/**/*.{ts,js,json}'",
     "new": "bun framework/cli/sttc.ts new",
     "skills": "bun framework/cli/sttc.ts skills",
     "smoke:create": "bun framework/scripts/smoke-create.ts",
