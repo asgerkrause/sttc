@@ -144,7 +144,7 @@ export function sourceOgImagePath(projectRoot = process.cwd()) {
 
 export function assertImageApi() {
   if (typeof Bun.Image !== 'function') {
-    throw new Error('Bun.Image requires Bun >= 1.4.0. Run: bun upgrade')
+    throw new Error('STTC requires Bun >= 1.4.4. Run: bun upgrade')
   }
 }
 

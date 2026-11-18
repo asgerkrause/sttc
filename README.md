@@ -6,7 +6,7 @@ STTC fits small brochure, marketing, and studio sites that should ship as static
 
 ## Requirements
 
-- [Bun](https://bun.sh) 1.4.0 or later. STTC runs on Bun only; it does not support Node or npm scripts.
+- [Bun](https://bun.sh) 1.4.4 or later. STTC runs on Bun only; it does not support Node or npm scripts.
 
 ## Quick start
 
