@@ -11,7 +11,12 @@ export type SourceRoute = {
 }
 
 async function exists(path: string) {
-  try { await stat(path); return true } catch { return false }
+  try {
+    await stat(path)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function sourceDateEpoch(value = process.env.SOURCE_DATE_EPOCH) {

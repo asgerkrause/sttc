@@ -18,10 +18,12 @@ describe('bounded build concurrency', () => {
   })
 
   test('reports the lowest-index failure deterministically', async () => {
-    await expect(mapConcurrent([0, 1, 2], 3, async (item) => {
-      if (item === 2) throw new Error('later')
-      if (item === 1) throw new Error('first')
-    })).rejects.toThrow('first')
+    await expect(
+      mapConcurrent([0, 1, 2], 3, async (item) => {
+        if (item === 2) throw new Error('later')
+        if (item === 1) throw new Error('first')
+      }),
+    ).rejects.toThrow('first')
   })
 
   test('returns results aligned to input index', async () => {

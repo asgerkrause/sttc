@@ -45,7 +45,9 @@ describe('app bundle writer', () => {
     await mkdir(src, { recursive: true })
     await writeFile(join(src, 'app.js'), 'window.__appLoaded = true\n')
 
-    const blocks = componentScriptBlocks(new Map([['Counter', ['window.__mountedComponent = el.dataset.snzComponent']]]))
+    const blocks = componentScriptBlocks(
+      new Map([['Counter', ['window.__mountedComponent = el.dataset.snzComponent']]]),
+    )
     const filename = await writeAppJs(join(src, 'app.js'), dist, blocks)
     const bundled = await readFile(join(dist, filename), 'utf8')
 
@@ -61,10 +63,12 @@ describe('app bundle writer', () => {
     await mkdir(src, { recursive: true })
     await writeFile(join(src, 'app.js'), 'window.__appLoaded = true\n')
 
-    const blocks = componentScriptBlocks(new Map([
-      ['Counter', ['window.__ok = 1']],
-      ['Hero', ['const = 1']],
-    ]))
+    const blocks = componentScriptBlocks(
+      new Map([
+        ['Counter', ['window.__ok = 1']],
+        ['Hero', ['const = 1']],
+      ]),
+    )
     let error: unknown
     try {
       await writeAppJs(join(src, 'app.js'), dist, blocks)
@@ -101,7 +105,10 @@ describe('app bundle writer', () => {
     const src = join(root, 'src')
     const dist = join(root, 'dist', 'assets', 'js')
     await mkdir(src, { recursive: true })
-    await writeFile(join(src, 'app.js'), 'window.__public = process.env.PUBLIC_TEST_VALUE\nwindow.__secret = process.env.SECRET_TEST_VALUE\n')
+    await writeFile(
+      join(src, 'app.js'),
+      'window.__public = process.env.PUBLIC_TEST_VALUE\nwindow.__secret = process.env.SECRET_TEST_VALUE\n',
+    )
 
     const filename = await writeAppJs(join(src, 'app.js'), dist, [])
     const bundled = await readFile(join(dist, filename), 'utf8')

@@ -12,7 +12,7 @@ const preferredPort = Number(process.env.PORT ?? 3000)
 const hostname = process.env.HOST ?? '127.0.0.1'
 
 let building = false
-let dirty = false           // event arrived while we were building or absorbing — needs a build after the window
+let dirty = false // event arrived while we were building or absorbing — needs a build after the window
 let buildCooldownUntil = 0
 // macOS FSEvents fires many events per save. Content stamps reject read/duplicate echoes; genuine
 // events during ECHO_ABSORB_MS are delayed until the current burst settles, never dropped.
@@ -25,7 +25,9 @@ const sseClients = new Set<ReadableStreamDefaultController>()
 function broadcast(event: string, data: unknown = {}) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
   for (const c of sseClients) {
-    try { c.enqueue(payload) } catch {}
+    try {
+      c.enqueue(payload)
+    } catch {}
   }
 }
 
@@ -91,7 +93,9 @@ async function stamp(absPath: string): Promise<string | null> {
   try {
     const s = await fsStat(absPath)
     return `${s.isDirectory() ? 'd' : 'f'}:${s.mtimeMs}:${s.size}`
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
 async function looksLikeRealChange(absPath: string): Promise<boolean> {
@@ -147,63 +151,65 @@ await runBuild()
 const server = await startServer()
 
 async function handleRequest(req: Request) {
-    const url = new URL(req.url)
-    let path = decodeURIComponent(url.pathname)
-    if (path.endsWith('/')) path = path.slice(0, -1) || '/'
+  const url = new URL(req.url)
+  let path = decodeURIComponent(url.pathname)
+  if (path.endsWith('/')) path = path.slice(0, -1) || '/'
 
-    // SSE event stream
-    if (path === '/__snz/events') {
-      const stream = new ReadableStream({
-        start(controller) {
-          sseClients.add(controller)
-          controller.enqueue(`event: hello\ndata: {}\n\n`)
-        },
-        cancel(controller) { sseClients.delete(controller) },
-      })
-      return new Response(stream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      })
+  // SSE event stream
+  if (path === '/__snz/events') {
+    const stream = new ReadableStream({
+      start(controller) {
+        sseClients.add(controller)
+        controller.enqueue(`event: hello\ndata: {}\n\n`)
+      },
+      cancel(controller) {
+        sseClients.delete(controller)
+      },
+    })
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    })
+  }
+
+  // HMR client script
+  if (path === '/__snz/hmr.js') {
+    return new Response(HMR_CLIENT, { headers: { 'Content-Type': 'text/javascript' } })
+  }
+
+  // If the most recent build failed, serve the error banner for all HTML requests.
+  const errorPage = Bun.file(join(dist, '__build-error.html'))
+  const wantsHtml = !isAssetPath(path) || path.endsWith('.html') || path === '/'
+  if (wantsHtml && (await errorPage.exists())) return htmlResponse(await errorPage.text(), 500)
+
+  const filePath = path === '/' ? '/index.html' : path
+
+  const candidates = filePath.endsWith('.html') ? [filePath] : [filePath, `${filePath}.html`, `${filePath}/index.html`]
+  for (const p of candidates) {
+    const abs = join(dist, p)
+    if (!abs.startsWith(dist + sep)) return new Response('Not found', { status: 404 })
+    const f = Bun.file(abs)
+    if (await f.exists()) {
+      if (p.endsWith('.html')) return htmlResponse(await f.text())
+      return new Response(f)
     }
+  }
 
-    // HMR client script
-    if (path === '/__snz/hmr.js') {
-      return new Response(HMR_CLIENT, { headers: { 'Content-Type': 'text/javascript' } })
-    }
+  if (isAssetPath(path)) return new Response('Not found', { status: 404 })
 
-    // If the most recent build failed, serve the error banner for all HTML requests.
-    const errorPage = Bun.file(join(dist, '__build-error.html'))
-    const wantsHtml = !isAssetPath(path) || path.endsWith('.html') || path === '/'
-    if (wantsHtml && (await errorPage.exists())) return htmlResponse(await errorPage.text(), 500)
-
-    const filePath = path === '/' ? '/index.html' : path
-
-    const candidates = filePath.endsWith('.html') ? [filePath] : [filePath, `${filePath}.html`, `${filePath}/index.html`]
-    for (const p of candidates) {
-      const abs = join(dist, p)
-      if (!abs.startsWith(dist + sep)) return new Response('Not found', { status: 404 })
-      const f = Bun.file(abs)
-      if (await f.exists()) {
-        if (p.endsWith('.html')) return htmlResponse(await f.text())
-        return new Response(f)
-      }
-    }
-
-    if (isAssetPath(path)) return new Response('Not found', { status: 404 })
-
-    // Until the first build lands there is no site to serve; show a waiting page that polls.
-    if (!(await Bun.file(join(dist, 'index.html')).exists())) {
-      return new Response(waitingPage(), {
-        status: 503,
-        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '1' },
-      })
-    }
-    const notFound = Bun.file(join(dist, '404', 'index.html'))
-    if (await notFound.exists()) return htmlResponse(await notFound.text(), 404)
-    return new Response('Not found', { status: 404 })
+  // Until the first build lands there is no site to serve; show a waiting page that polls.
+  if (!(await Bun.file(join(dist, 'index.html')).exists())) {
+    return new Response(waitingPage(), {
+      status: 503,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '1' },
+    })
+  }
+  const notFound = Bun.file(join(dist, '404', 'index.html'))
+  if (await notFound.exists()) return htmlResponse(await notFound.text(), 404)
+  return new Response('Not found', { status: 404 })
 }
 
 /** Every HTML response carries the HMR client so a rebuild reloads the tab, error page included. */
@@ -283,13 +289,16 @@ function watchTree(rootPath: string, recursive: boolean) {
 }
 
 const managedWatchRoots = [
-  ...['pages', 'components', 'templates', 'styles', 'app', 'data', 'images', 'videos', 'files']
-    .map((rel) => join(src, rel)),
+  ...['pages', 'components', 'templates', 'styles', 'app', 'data', 'images', 'videos', 'files'].map((rel) =>
+    join(src, rel),
+  ),
   ...['content', 'media'].map((rel) => join(root, rel)),
 ]
 async function ensureManagedWatchTrees() {
   for (const path of managedWatchRoots) {
-    const present = await fsStat(path).then((entry) => entry.isDirectory()).catch(() => false)
+    const present = await fsStat(path)
+      .then((entry) => entry.isDirectory())
+      .catch(() => false)
     const current = watchers.get(path)
     if (present && !current) watchTree(path, true)
     if (!present && current) {

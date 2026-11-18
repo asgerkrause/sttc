@@ -19,7 +19,8 @@ describe('agent-readable Markdown output', () => {
   })
 
   test('keeps links, code, images, and emphasis inside list items and table cells', () => {
-    const markdown = htmlToMarkdown(`<ul><li><a href="/docs/">Docs</a> with <code>bun run build</code></li><li><strong>Bold</strong> and <em>soft</em></li></ul>
+    const markdown =
+      htmlToMarkdown(`<ul><li><a href="/docs/">Docs</a> with <code>bun run build</code></li><li><strong>Bold</strong> and <em>soft</em></li></ul>
 <table><tr><th>Name</th><th>Link</th></tr><tr><td><img src="/assets/images/a.webp" alt="A"></td><td><a href="https://example.com/">Site</a></td></tr></table>
 <h2>Use <code>&lt;Image&gt;</code></h2>`)
 

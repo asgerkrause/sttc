@@ -36,11 +36,21 @@ async function run(command: string[]) {
 }
 
 async function exists(path: string) {
-  try { await stat(path); return true } catch { return false }
+  try {
+    await stat(path)
+    return true
+  } catch {
+    return false
+  }
 }
 
 function packageName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'sttc-site'
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'sttc-site'
+  )
 }
 
 async function copyTemplate(source: string, target: string, prefix = ''): Promise<void> {
@@ -98,7 +108,11 @@ if (cmd === 'create') {
 }
 if (cmd === 'doctor') {
   const check = spawn(['bun', join(frameworkRoot, 'build', 'check.ts'), ...rest], {
-    cwd: process.cwd(), stdout: 'inherit', stderr: 'inherit', stdin: 'inherit', env: process.env,
+    cwd: process.cwd(),
+    stdout: 'inherit',
+    stderr: 'inherit',
+    stdin: 'inherit',
+    env: process.env,
   })
   process.exit(await check.exited)
 }

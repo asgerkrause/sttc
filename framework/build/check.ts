@@ -7,18 +7,34 @@ import { packageRoot, root } from './paths'
 import { discoverSourceRoutes } from './source-files'
 import { BuildError, lineOf, diagnostic, printJsonResult } from './errors'
 import { compileContentFrom, loadCustomContentCollections } from './content'
-import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, sourceOgImagePath } from './images'
+import {
+  assertUniqueImageNames,
+  imageSourceRoots,
+  parsePagesCmsMediaInputs,
+  parsePagesCmsMediaOutputs,
+  sourceOgImagePath,
+} from './images'
 import { createBuildContext, type BuildContext, type BuildLogger } from './build-context'
 import { loadSiteConfig } from './site-config'
 import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
 import { INLINE_SCRIPT_RE } from './extract-js'
 import { decodeEntities } from './html'
 import { absoluteUrl } from './seo'
-import { publicPathFromSlug, publicMarkdownPathFromSlug, routeJsonPathFromSlug, routeMarkdownPathFromSlug } from '../runtime/lib/paths.js'
+import {
+  publicPathFromSlug,
+  publicMarkdownPathFromSlug,
+  routeJsonPathFromSlug,
+  routeMarkdownPathFromSlug,
+} from '../runtime/lib/paths.js'
 
 export type CheckReport = { errors: string[]; warnings: string[] }
 
-type CheckOptions = { allowBrokenLinks?: boolean; launch?: boolean; context?: BuildContext; validatedBuildInputs?: boolean }
+type CheckOptions = {
+  allowBrokenLinks?: boolean
+  launch?: boolean
+  context?: BuildContext
+  validatedBuildInputs?: boolean
+}
 
 export async function runChecks(opts: CheckOptions = {}): Promise<CheckReport> {
   const context = opts.context ?? createBuildContext()
@@ -65,7 +81,9 @@ function isComposedPublicPage(distDir: string, file: string) {
 /** dist/index.html plus every composed `{slug}/index.html`; raw public HTML under assets/ is excluded. */
 async function collectPublicPages(distDir: string) {
   const index = join(distDir, 'index.html')
-  return (await collectHtmlFiles(distDir)).filter((file) => file === index || isComposedPublicPage(distDir, file)).sort()
+  return (await collectHtmlFiles(distDir))
+    .filter((file) => file === index || isComposedPublicPage(distDir, file))
+    .sort()
 }
 
 function extractLdJson(html: string) {
@@ -95,12 +113,16 @@ function decodeRef(ref: string) {
     const decoded = decodeURIComponent(ref)
     // Encoded dot segments must not step outside dist.
     return decoded.split('/').includes('..') ? ref : decoded
-  } catch { return ref }
+  } catch {
+    return ref
+  }
 }
 
 async function assetExists(distDir: string, href: string) {
   const rel = decodeRef(href.endsWith('/') ? `${href}index.html` : href).replace(/^\//, '')
-  return stat(join(distDir, rel)).then(() => true).catch(() => false)
+  return stat(join(distDir, rel))
+    .then(() => true)
+    .catch(() => false)
 }
 
 const PUBLIC_ASSET_RE = /\/assets\/(images|videos|files)\/[^"'`\s<>)\\]+/g
@@ -127,10 +149,14 @@ export async function checkBuiltOutput(distDir: string, fail: (m: string) => voi
   const placeholderErrors = (file: string, html: string) => {
     const errors: string[] = []
     for (const match of html.matchAll(/\{\{[\w.-]+(?::[\w.-]+)?\}\}/g)) {
-      errors.push(`${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`)
+      errors.push(
+        `${file}:${lineOf(html, match.index ?? 0)}: unresolved template placeholder "${match[0]}"\n  hint: Set a default in the composer, pass the attr, or let optional attrs/classes be pruned by the renderer.`,
+      )
     }
     for (const match of html.matchAll(/<slot\b[^>]*>/gi)) {
-      errors.push(`${file}:${lineOf(html, match.index ?? 0)}: stray <slot> tag "${match[0]}" in output\n  hint: Named slots resolve only inside a component whose template declares {{slot:name}}; check the enclosing component and its children.`)
+      errors.push(
+        `${file}:${lineOf(html, match.index ?? 0)}: stray <slot> tag "${match[0]}" in output\n  hint: Named slots resolve only inside a component whose template declares {{slot:name}}; check the enclosing component and its children.`,
+      )
     }
     return errors
   }
@@ -218,7 +244,9 @@ export function extractBuiltPublicAssetRefs(text: string) {
 
 async function builtAssetExists(distRoot: string, ref: string) {
   const rel = decodeRef(ref.startsWith('/') ? ref.slice(1) : ref)
-  return stat(join(distRoot, rel)).then(() => true).catch(() => false)
+  return stat(join(distRoot, rel))
+    .then(() => true)
+    .catch(() => false)
 }
 
 function missingPublicAssetHint(ref: string) {
@@ -232,30 +260,40 @@ function missingPublicAssetHint(ref: string) {
 }
 
 async function checkSiteJson(srcDir: string, fail: (m: string) => void) {
-  try { await loadSiteConfig(join(srcDir, 'site.json')) } catch (error) {
+  try {
+    await loadSiteConfig(join(srcDir, 'site.json'))
+  } catch (error) {
     if (error instanceof BuildError) fail(error.toPretty())
     else fail(error instanceof Error ? error.message : String(error))
   }
 }
 
-async function checkSourceContracts(context: BuildContext, fail: (m: string) => void, warn: (m: string) => void, validatedBuildInputs: boolean) {
+async function checkSourceContracts(
+  context: BuildContext,
+  fail: (m: string) => void,
+  warn: (m: string) => void,
+  validatedBuildInputs: boolean,
+) {
   await checkVercelConfig(context.rootDir, warn)
 
-  const imageRoots = validatedBuildInputs ? [] : await imageSourceRoots(context.rootDir).catch((err) => {
-    if (err instanceof BuildError) {
-      fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
-      return []
-    }
-    fail(err instanceof Error ? err.message : String(err))
-    return []
-  })
-  if (!validatedBuildInputs) await assertUniqueImageNames(...imageRoots).catch((err) => {
-    if (err instanceof BuildError) {
-      fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
-      return
-    }
-    fail(err instanceof Error ? err.message : String(err))
-  })
+  const imageRoots = validatedBuildInputs
+    ? []
+    : await imageSourceRoots(context.rootDir).catch((err) => {
+        if (err instanceof BuildError) {
+          fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
+          return []
+        }
+        fail(err instanceof Error ? err.message : String(err))
+        return []
+      })
+  if (!validatedBuildInputs)
+    await assertUniqueImageNames(...imageRoots).catch((err) => {
+      if (err instanceof BuildError) {
+        fail(err.hint ? `${err.message}\n  hint: ${err.hint}` : err.message)
+        return
+      }
+      fail(err instanceof Error ? err.message : String(err))
+    })
 
   if (!validatedBuildInputs) {
     const routeSlugs = new Map<string, string>()
@@ -263,10 +301,12 @@ async function checkSourceContracts(context: BuildContext, fail: (m: string) => 
       routeSlugs.set(route.slug, route.sourceRel)
     }
 
-    const contentRoutes = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir }).catch((err) => {
-      fail(err instanceof Error ? err.message : String(err))
-      return []
-    })
+    const contentRoutes = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir }).catch(
+      (err) => {
+        fail(err instanceof Error ? err.message : String(err))
+        return []
+      },
+    )
     for (const route of contentRoutes) {
       const existing = routeSlugs.get(route.slug)
       if (existing) fail(`${route.source}: content route collides with ${existing} at /${route.slug}/`)
@@ -312,30 +352,44 @@ async function checkSourceContracts(context: BuildContext, fail: (m: string) => 
 const COMPONENT_SCRIPT_RE = INLINE_SCRIPT_RE
 
 function hasRecursiveRaf(code: string) {
-  for (const match of code.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*{[\s\S]*?requestAnimationFrame\(\s*\1\s*\)/g)) {
+  for (const match of code.matchAll(
+    /function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*{[\s\S]*?requestAnimationFrame\(\s*\1\s*\)/g,
+  )) {
     if (match[1]) return true
   }
   return false
 }
 
 function activeScriptNeedsGuard(code: string) {
-  if (/snz\?\.on(?:Active|Visible)|snz\.on(?:Active|Visible)|window\.snz\?\.on(?:Active|Visible)|window\.snz\.on(?:Active|Visible)/.test(code)) return false
+  if (
+    /snz\?\.on(?:Active|Visible)|snz\.on(?:Active|Visible)|window\.snz\?\.on(?:Active|Visible)|window\.snz\.on(?:Active|Visible)/.test(
+      code,
+    )
+  )
+    return false
   if (/new\s+IntersectionObserver\b/.test(code)) return false
-  return hasRecursiveRaf(code)
-    || /\bsetInterval\s*\(/.test(code)
-    || /\.play\s*\(/.test(code)
-    || /addEventListener\(\s*['"]scroll['"]/.test(code)
+  return (
+    hasRecursiveRaf(code) ||
+    /\bsetInterval\s*\(/.test(code) ||
+    /\.play\s*\(/.test(code) ||
+    /addEventListener\(\s*['"]scroll['"]/.test(code)
+  )
 }
 
 async function checkComponentActiveScripts(componentsDir: string, warn: (m: string) => void) {
   let entries: string[]
-  try { entries = await readdir(componentsDir) } catch { return }
+  try {
+    entries = await readdir(componentsDir)
+  } catch {
+    return
+  }
   for (const file of entries.filter((entry) => entry.endsWith('.html')).sort()) {
     const rel = `src/components/${file}`
     const raw = await readFile(join(componentsDir, file), 'utf8').catch(() => '')
     for (const match of raw.matchAll(COMPONENT_SCRIPT_RE)) {
       const code = match[1] ?? ''
-      if (activeScriptNeedsGuard(code)) warn(`${rel}: component script appears to run active work without snz.onActive/onVisible`)
+      if (activeScriptNeedsGuard(code))
+        warn(`${rel}: component script appears to run active work without snz.onActive/onVisible`)
     }
   }
 }
@@ -352,7 +406,10 @@ export function checkPagesCmsConfig(pages: string, warn: (m: string) => void) {
   }
 
   for (const output of outputs) {
-    if (output !== '/assets/images') warn(`.pages.yml: media.output "${output}" should be /assets/images because CMS images publish as optimized assets`)
+    if (output !== '/assets/images')
+      warn(
+        `.pages.yml: media.output "${output}" should be /assets/images because CMS images publish as optimized assets`,
+      )
   }
 }
 
@@ -376,7 +433,10 @@ const HASH_GROUP_RE = /\[(?:a-f0-9|0-9a-f)\]\{8/
 
 function hasCacheHeader(rule: VercelHeaderRule, valueIncludes: string) {
   if (!Array.isArray(rule.headers)) return false
-  return rule.headers.some((header: VercelHeader) => header?.key === 'Cache-Control' && typeof header.value === 'string' && header.value.includes(valueIncludes))
+  return rule.headers.some(
+    (header: VercelHeader) =>
+      header?.key === 'Cache-Control' && typeof header.value === 'string' && header.value.includes(valueIncludes),
+  )
 }
 
 const STYLESHEET_TAG_RE = /<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi
@@ -397,17 +457,21 @@ export async function checkEmitContracts(
 ) {
   const stylesDir = join(srcDir, 'styles')
   for (const file of [
-    ...await collectFilesByExtension(stylesDir, '.ttf'),
-    ...await collectFilesByExtension(stylesDir, '.otf'),
+    ...(await collectFilesByExtension(stylesDir, '.ttf')),
+    ...(await collectFilesByExtension(stylesDir, '.otf')),
   ]) {
-    fail(`${file}: TTF and OTF fonts are not emitted\n  hint: Commit WOFF or WOFF2 under src/styles and point @font-face at those files.`)
+    fail(
+      `${file}: TTF and OTF fonts are not emitted\n  hint: Commit WOFF or WOFF2 under src/styles and point @font-face at those files.`,
+    )
   }
 
   for (const file of await collectPublicPages(distDir)) {
     const html = await readFile(file, 'utf8').catch(() => '')
     if (!html) continue
     if (html.includes('/__snz/hmr')) {
-      fail(`${file}: HMR client leaked into production HTML\n  hint: HMR is injected only by the dev server. Rebuild without the dev injector.`)
+      fail(
+        `${file}: HMR client leaked into production HTML\n  hint: HMR is injected only by the dev server. Rebuild without the dev injector.`,
+      )
     }
 
     const stylesheets: string[] = []
@@ -419,7 +483,9 @@ export async function checkEmitContracts(
       if (href) stylesheets.push(href)
     }
     if (stylesheets.length > 2) {
-      warn(`${file}: ${stylesheets.length} render-blocking stylesheets\n  hint: Keep project CSS and component CSS as the only head stylesheets. Route CSS may use data-snz-route-css.`)
+      warn(
+        `${file}: ${stylesheets.length} render-blocking stylesheets\n  hint: Keep project CSS and component CSS as the only head stylesheets. Route CSS may use data-snz-route-css.`,
+      )
     }
 
     const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? html
@@ -432,7 +498,9 @@ export async function checkEmitContracts(
       }
       const deferred = /\btype=["']module["']/i.test(attrs) || /\bdefer\b/i.test(attrs) || /\basync\b/i.test(attrs)
       if (!deferred) {
-        warn(`${prettyFileLine(file, html, match.index ?? 0)}: render-blocking script ${src}\n  hint: Use type="module", defer, or async for head scripts.`)
+        warn(
+          `${prettyFileLine(file, html, match.index ?? 0)}: render-blocking script ${src}\n  hint: Use type="module", defer, or async for head scripts.`,
+        )
       }
     }
   }
@@ -444,10 +512,14 @@ export async function checkEmitContracts(
     const css = await readFile(file, 'utf8').catch(() => '')
     if (!css) continue
     if (/@import\b/.test(css)) {
-      warn(`${file}: emitted CSS still contains @import\n  hint: The build flattens src/styles.css. Avoid remote @import in project CSS.`)
+      warn(
+        `${file}: emitted CSS still contains @import\n  hint: The build flattens src/styles.css. Avoid remote @import in project CSS.`,
+      )
     }
     if (/url\([^)]*\.(ttf|otf)(\?|#|["')])/i.test(css)) {
-      fail(`${file}: emitted CSS still references TTF/OTF\n  hint: Point @font-face at WOFF or WOFF2 files under src/styles.`)
+      fail(
+        `${file}: emitted CSS still references TTF/OTF\n  hint: Point @font-face at WOFF or WOFF2 files under src/styles.`,
+      )
     }
   }
 }
@@ -480,24 +552,34 @@ export async function checkVercelConfig(projectRoot: string, warn: (m: string) =
     if (config[key] !== value) warn(`${rel}: ${key} should be ${label} for sttc Bun static deploys`)
   }
 
-  const headers = Array.isArray(config.headers) ? config.headers as VercelHeaderRule[] : []
+  const headers = Array.isArray(config.headers) ? (config.headers as VercelHeaderRule[]) : []
   for (const rule of headers) {
-    if (typeof rule.source !== 'string' || !hasCacheHeader(rule, 'immutable') || HASH_GROUP_RE.test(rule.source)) continue
-    warn(`${rel}: immutable Cache-Control on "${rule.source}" is not limited to hashed assets; replaced media would stay cached. Match the hash group, e.g. /assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)`)
+    if (typeof rule.source !== 'string' || !hasCacheHeader(rule, 'immutable') || HASH_GROUP_RE.test(rule.source))
+      continue
+    warn(
+      `${rel}: immutable Cache-Control on "${rule.source}" is not limited to hashed assets; replaced media would stay cached. Match the hash group, e.g. /assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)`,
+    )
   }
-  if (!headers.some((rule) => (
-    typeof rule.source === 'string'
-    && rule.source.includes('llms')
-    && rule.source.includes('robots')
-    && rule.source.includes('sitemap')
-    && hasCacheHeader(rule, 'max-age=3600')
-  ))) {
+  if (
+    !headers.some(
+      (rule) =>
+        typeof rule.source === 'string' &&
+        rule.source.includes('llms') &&
+        rule.source.includes('robots') &&
+        rule.source.includes('sitemap') &&
+        hasCacheHeader(rule, 'max-age=3600'),
+    )
+  ) {
     warn(`${rel}: discovery files should use short Cache-Control headers`)
   }
 }
 
 function htmlText(value: string) {
-  return value.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function attrValue(attrs: string, name: string) {
@@ -521,23 +603,32 @@ async function checkRouteSemantics(file: string, fail: (m: string) => void, warn
 
   const titleMatches = [...html.matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)]
   const titles = titleMatches.map((m) => htmlText(m[1]))
-  if (titles.length === 0 || !titles[0]) fail(`${file}: missing page title\n  hint: Add <SEO title="Meaningful title" description="..." /> to the route head.`)
+  if (titles.length === 0 || !titles[0])
+    fail(
+      `${file}: missing page title\n  hint: Add <SEO title="Meaningful title" description="..." /> to the route head.`,
+    )
   if (titles.length > 1) fail(`${file}: multiple page titles\n  hint: Keep one <SEO /> entry per route.`)
 
   const descMatches = [...html.matchAll(/<meta\s+[^>]*name=["']description["'][^>]*>/gi)]
   const descriptions = descMatches.map((m) => attrValue(m[0], 'content') ?? '')
-  if (descriptions.length === 0) fail(`${file}: missing meta description\n  hint: Add <SEO description="Specific 50–160 character summary" />.`)
+  if (descriptions.length === 0)
+    fail(`${file}: missing meta description\n  hint: Add <SEO description="Specific 50–160 character summary" />.`)
   if (descriptions.length > 1) fail(`${file}: multiple meta descriptions\n  hint: Keep one route description.`)
-  if (descriptions[0] !== undefined && weakDescription(descriptions[0])) warn(`${file}: weak meta description\n  hint: Use a specific 50–160 character summary; do not ship placeholders.`)
+  if (descriptions[0] !== undefined && weakDescription(descriptions[0]))
+    warn(`${file}: weak meta description\n  hint: Use a specific 50–160 character summary; do not ship placeholders.`)
 
   const h1Matches = [...html.matchAll(/<h1\b[^>]*>/gi)]
   if (h1Matches.length === 0) fail(`${file}: missing H1\n  hint: Add one visible <h1> that names the page.`)
-  if (h1Matches.length > 1) fail(`${file}: multiple H1s\n  hint: Keep one primary <h1>; demote section headings to <h2>.`)
+  if (h1Matches.length > 1)
+    fail(`${file}: multiple H1s\n  hint: Keep one primary <h1>; demote section headings to <h2>.`)
 
   for (const m of html.matchAll(/<img\b([^>]*)>/gi)) {
     const attrs = m[1]
     const alt = attrValue(attrs, 'alt')
-    if (alt === undefined) fail(`${prettyFileLine(file, html, m.index)}: image missing alt\n  hint: Add descriptive alt text, or alt="" for decorative images.`)
+    if (alt === undefined)
+      fail(
+        `${prettyFileLine(file, html, m.index)}: image missing alt\n  hint: Add descriptive alt text, or alt="" for decorative images.`,
+      )
   }
 
   for (const m of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
@@ -546,8 +637,14 @@ async function checkRouteSemantics(file: string, fail: (m: string) => void, warn
     const aria = attrValue(attrs, 'aria-label')?.trim()
     const title = attrValue(attrs, 'title')?.trim()
     const accessible = aria || text || title
-    if (!accessible) fail(`${prettyFileLine(file, html, m.index)}: link has no accessible name\n  hint: Add visible text or aria-label for icon-only links.`)
-    if (/^(click here|read more|learn more|more|here)$/i.test(text) && !aria) warn(`${prettyFileLine(file, html, m.index)}: vague link text "${text}"\n  hint: Make link text specific, or add aria-label with context.`)
+    if (!accessible)
+      fail(
+        `${prettyFileLine(file, html, m.index)}: link has no accessible name\n  hint: Add visible text or aria-label for icon-only links.`,
+      )
+    if (/^(click here|read more|learn more|more|here)$/i.test(text) && !aria)
+      warn(
+        `${prettyFileLine(file, html, m.index)}: vague link text "${text}"\n  hint: Make link text specific, or add aria-label with context.`,
+      )
   }
 }
 
@@ -555,28 +652,48 @@ async function checkLaunchSiteConfig(context: BuildContext, fail: (m: string) =>
   const rel = 'src/site.json'
   const raw = await readFile(join(context.srcDir, 'site.json'), 'utf8').catch(() => '')
   let site: Record<string, unknown>
-  try { site = JSON.parse(raw) } catch { return }
+  try {
+    site = JSON.parse(raw)
+  } catch {
+    return
+  }
   const url = typeof site.url === 'string' ? site.url : ''
-  if (!/^https:\/\/[^\s/$.?#].[^\s]*$/i.test(url) || /localhost|127\.0\.0\.1|0\.0\.0\.0|\.local\b|example\.com/i.test(url)) {
-    fail(`${rel}: launch site.url must be a public https URL\n  hint: Set site.url to the production origin before launch.`)
+  if (
+    !/^https:\/\/[^\s/$.?#].[^\s]*$/i.test(url) ||
+    /localhost|127\.0\.0\.1|0\.0\.0\.0|\.local\b|example\.com/i.test(url)
+  ) {
+    fail(
+      `${rel}: launch site.url must be a public https URL\n  hint: Set site.url to the production origin before launch.`,
+    )
   }
   const image = typeof site.image === 'string' ? site.image : typeof site.ogImage === 'string' ? site.ogImage : ''
   if (!image) fail(`${rel}: launch image missing\n  hint: Set image to a real social preview image path.`)
 
   const master = sourceOgImagePath(context.rootDir)
-  const og = await readFile(master).then((bytes) => new Bun.Image(bytes).metadata()).catch(() => null)
+  const og = await readFile(master)
+    .then((bytes) => new Bun.Image(bytes).metadata())
+    .catch(() => null)
   if (!og) fail(`${master}: launch OG master missing or unreadable\n  hint: Add a 1200×630 og.png under src/images.`)
-  else if ((og.width ?? 0) < 600 || (og.height ?? 0) < 315) fail(`${master}: launch OG master is ${og.width}×${og.height}; needs at least 600×315\n  hint: Replace the placeholder with a real 1200×630 social image.`)
+  else if ((og.width ?? 0) < 600 || (og.height ?? 0) < 315)
+    fail(
+      `${master}: launch OG master is ${og.width}×${og.height}; needs at least 600×315\n  hint: Replace the placeholder with a real 1200×630 social image.`,
+    )
 
   const starter = join(packageRoot, '..', 'templates', 'default', 'src')
   const starterSite = JSON.parse(await readFile(join(starter, 'site.json'), 'utf8').catch(() => '{}'))
   for (const key of ['name', 'description']) {
-    if (site[key] && site[key] === starterSite[key]) fail(`${rel}: launch ${key} is the starter's placeholder "${site[key]}"\n  hint: Set site.${key} for the real site.`)
+    if (site[key] && site[key] === starterSite[key])
+      fail(
+        `${rel}: launch ${key} is the starter's placeholder "${site[key]}"\n  hint: Set site.${key} for the real site.`,
+      )
   }
-  const seoTitle = async (file: string) => (await readFile(file, 'utf8').catch(() => '')).match(/<SEO\b[^>]*\stitle=["']([^"']*)["']/)?.[1]
+  const seoTitle = async (file: string) =>
+    (await readFile(file, 'utf8').catch(() => '')).match(/<SEO\b[^>]*\stitle=["']([^"']*)["']/)?.[1]
   const indexTitle = await seoTitle(join(context.srcDir, 'pages', 'index.html'))
-  if (indexTitle && indexTitle === await seoTitle(join(starter, 'pages', 'index.html'))) {
-    fail(`src/pages/index.html: launch title is the starter's placeholder "${indexTitle}"\n  hint: Give the home page its own title.`)
+  if (indexTitle && indexTitle === (await seoTitle(join(starter, 'pages', 'index.html')))) {
+    fail(
+      `src/pages/index.html: launch title is the starter's placeholder "${indexTitle}"\n  hint: Give the home page its own title.`,
+    )
   }
 }
 
@@ -586,14 +703,20 @@ async function checkPrivateOutputUrls(distDir: string, fail: (m: string) => void
   for (const file of files) {
     const text = await readFile(file, 'utf8').catch(() => '')
     const m = text.match(privateUrl)
-    if (m?.index !== undefined) fail(`${prettyFileLine(file, text, m.index)}: private URL in output\n  hint: Replace localhost/private URLs with production URLs before launch.`)
+    if (m?.index !== undefined)
+      fail(
+        `${prettyFileLine(file, text, m.index)}: private URL in output\n  hint: Replace localhost/private URLs with production URLs before launch.`,
+      )
   }
 }
 
 async function checkDraftLeakage(context: BuildContext, fail: (m: string) => void) {
   const content = await compileContentFrom({ rootDir: context.rootDir, srcDir: context.srcDir }).catch(() => [])
   for (const route of content) {
-    if (route.draft) fail(`${route.source}: draft content included in production build\n  hint: Draft content must not emit during launch checks.`)
+    if (route.draft)
+      fail(
+        `${route.source}: draft content included in production build\n  hint: Draft content must not emit during launch checks.`,
+      )
   }
 }
 
@@ -610,12 +733,16 @@ async function checkLaunchReadiness(context: BuildContext, fail: (m: string) => 
     const desc = attrValue(descTag, 'content') ?? ''
     if (title) {
       const existing = titleOwners.get(title)
-      if (existing && title !== 'Not found') fail(`${file}: duplicate page title also used by ${existing}\n  hint: Give each launch route a unique title.`)
+      if (existing && title !== 'Not found')
+        fail(`${file}: duplicate page title also used by ${existing}\n  hint: Give each launch route a unique title.`)
       else titleOwners.set(title, file)
     }
     if (desc) {
       const existing = descOwners.get(desc)
-      if (existing) warn(`${file}: duplicate meta description also used by ${existing}\n  hint: Give each launch route a route-specific description.`)
+      if (existing)
+        warn(
+          `${file}: duplicate meta description also used by ${existing}\n  hint: Give each launch route a route-specific description.`,
+        )
       else descOwners.set(desc, file)
     }
   }
@@ -629,7 +756,9 @@ async function checkPostAuthors(context: BuildContext, warn: (m: string) => void
   for (const route of content) {
     if (route.collection !== 'posts' || route.draft) continue
     if (route.data.author?.trim()) continue
-    warn(`${route.source}: public post has no author\n  hint: Set front-matter author and a matching site.author or site.authors entry.`)
+    warn(
+      `${route.source}: public post has no author\n  hint: Set front-matter author and a matching site.author or site.authors entry.`,
+    )
   }
 }
 
@@ -641,7 +770,9 @@ async function discoveryJson(distDir: string, rel: string, fail: (m: string) => 
   try {
     const value: unknown = JSON.parse(await readFile(join(distDir, rel), 'utf8'))
     if (jsonObject(value)) return value
-  } catch { /* Report malformed and missing input through the check report. */ }
+  } catch {
+    /* Report malformed and missing input through the check report. */
+  }
   fail(`${rel}: invalid JSON object`)
   return undefined
 }
@@ -649,13 +780,33 @@ async function discoveryJson(distDir: string, rel: string, fail: (m: string) => 
 function discoveryRoute(value: unknown, file: string, fail: (m: string) => void) {
   if (jsonObject(value)) {
     const { slug, id, path, canonical, title, description, lastModified, representations } = value
-    if (typeof slug === 'string' && typeof id === 'string' && typeof path === 'string'
-      && typeof canonical === 'string' && typeof title === 'string' && typeof description === 'string'
-      && (lastModified === undefined || typeof lastModified === 'string') && jsonObject(representations)
-      && typeof representations.html === 'string' && typeof representations.markdown === 'string'
-      && typeof representations.metadata === 'string') {
-      return { slug, id, path, canonical, title, description, lastModified,
-        representations: { html: representations.html, markdown: representations.markdown, metadata: representations.metadata } }
+    if (
+      typeof slug === 'string' &&
+      typeof id === 'string' &&
+      typeof path === 'string' &&
+      typeof canonical === 'string' &&
+      typeof title === 'string' &&
+      typeof description === 'string' &&
+      (lastModified === undefined || typeof lastModified === 'string') &&
+      jsonObject(representations) &&
+      typeof representations.html === 'string' &&
+      typeof representations.markdown === 'string' &&
+      typeof representations.metadata === 'string'
+    ) {
+      return {
+        slug,
+        id,
+        path,
+        canonical,
+        title,
+        description,
+        lastModified,
+        representations: {
+          html: representations.html,
+          markdown: representations.markdown,
+          metadata: representations.metadata,
+        },
+      }
     }
   }
   fail(`${file}: route ${jsonObject(value) ? String(value.slug) : '(unknown)'} metadata or representations incomplete`)
@@ -675,19 +826,20 @@ async function checkDiscoveryArtifacts(context: BuildContext, fail: (m: string) 
     fail('site.manifest.json: routes array missing')
     return
   }
-  const routes = manifest.routes.map((value: unknown) => discoveryRoute(value, 'site.manifest.json', fail))
-    .filter(route => route !== undefined)
+  const routes = manifest.routes
+    .map((value: unknown) => discoveryRoute(value, 'site.manifest.json', fail))
+    .filter((route) => route !== undefined)
   const site = await loadSiteConfig(join(srcDir, 'site.json')).catch(() => undefined)
   if (!site) return // checkSiteJson already reports the source error.
   const publicSlugs = new Set<string>()
   const sitemap = await readFile(join(distDir, 'sitemap.xml'), 'utf8').catch(() => '')
-  const sitemapEntries = [...sitemap.matchAll(/<url\b[^>]*>([\s\S]*?)<\/url>/g)].map(match => ({
+  const sitemapEntries = [...sitemap.matchAll(/<url\b[^>]*>([\s\S]*?)<\/url>/g)].map((match) => ({
     canonical: decodeEntities(match[1].match(/<loc\b[^>]*>([\s\S]*?)<\/loc>/)?.[1]?.trim() ?? ''),
     lastModified: match[1].match(/<lastmod\b[^>]*>([\s\S]*?)<\/lastmod>/)?.[1]?.trim(),
   }))
   const sameText = (value: string) => value.replace(/\s+/g, ' ').trim()
-  const sameDate = (a: string | undefined, b: string | undefined) => a === b
-    || (a !== undefined && b !== undefined && Number.isFinite(Date.parse(a)) && Date.parse(a) === Date.parse(b))
+  const sameDate = (a: string | undefined, b: string | undefined) =>
+    a === b || (a !== undefined && b !== undefined && Number.isFinite(Date.parse(a)) && Date.parse(a) === Date.parse(b))
   for (const file of await collectPublicPages(distDir)) {
     const rel = file.slice(distDir.length + 1).replace(/\\/g, '/')
     const slug = rel === 'index.html' ? 'index' : rel.slice(0, -'/index.html'.length)
@@ -699,60 +851,95 @@ async function checkDiscoveryArtifacts(context: BuildContext, fail: (m: string) 
     let title = ''
     let description = ''
     new HTMLRewriter()
-      .on('html', { element(el) { markedSlug = decodeEntities(el.getAttribute('data-snz-route') ?? '') } })
-      .on('head title', { text(chunk) { title += chunk.text } })
-      .on('head meta', { element(el) {
-        const content = decodeEntities(el.getAttribute('content') ?? '')
-        if (el.getAttribute('name') === 'description' && !description) description = content
-        if (el.getAttribute('name') === 'robots' && content.split(/[\s,]+/).includes('noindex')) unlisted = true
-        if (el.getAttribute('property') === 'article:modified_time') modified = content
-      } })
-      .on('head link', { element(el) {
-        const key = `${el.getAttribute('rel')}:${el.getAttribute('type') ?? ''}`
-        links.set(key, [...(links.get(key) ?? []), decodeEntities(el.getAttribute('href') ?? '')])
-      } }).transform(html)
+      .on('html', {
+        element(el) {
+          markedSlug = decodeEntities(el.getAttribute('data-snz-route') ?? '')
+        },
+      })
+      .on('head title', {
+        text(chunk) {
+          title += chunk.text
+        },
+      })
+      .on('head meta', {
+        element(el) {
+          const content = decodeEntities(el.getAttribute('content') ?? '')
+          if (el.getAttribute('name') === 'description' && !description) description = content
+          if (el.getAttribute('name') === 'robots' && content.split(/[\s,]+/).includes('noindex')) unlisted = true
+          if (el.getAttribute('property') === 'article:modified_time') modified = content
+        },
+      })
+      .on('head link', {
+        element(el) {
+          const key = `${el.getAttribute('rel')}:${el.getAttribute('type') ?? ''}`
+          links.set(key, [...(links.get(key) ?? []), decodeEntities(el.getAttribute('href') ?? '')])
+        },
+      })
+      .transform(html)
     const path = publicPathFromSlug(slug)
     const canonical = absoluteUrl(site.url, path)
     const problem = (message: string) => fail(`${file}: route ${path} ${message}`)
     if (markedSlug !== slug) problem('HTML route identity disagrees with output path')
-    if (links.get('canonical:')?.length !== 1 || links.get('canonical:')?.[0] !== canonical) problem(`canonical must be ${canonical}`)
+    if (links.get('canonical:')?.length !== 1 || links.get('canonical:')?.[0] !== canonical)
+      problem(`canonical must be ${canonical}`)
     if (slug === '404' || unlisted) continue
     publicSlugs.add(slug)
-    const entries = routes.filter(route => route.slug === slug)
+    const entries = routes.filter((route) => route.slug === slug)
     if (entries.length !== 1) problem('must appear exactly once in site.manifest.json')
-    const expectedRepresentations = { html: path, markdown: publicMarkdownPathFromSlug(slug), metadata: routeJsonPathFromSlug(slug) }
-    if (links.get('alternate:text/markdown')?.[0] !== expectedRepresentations.markdown) problem('HTML Markdown target disagrees with route')
-    if (links.get('describedby:application/json')?.[0] !== expectedRepresentations.metadata) problem('HTML metadata target disagrees with route')
+    const expectedRepresentations = {
+      html: path,
+      markdown: publicMarkdownPathFromSlug(slug),
+      metadata: routeJsonPathFromSlug(slug),
+    }
+    if (links.get('alternate:text/markdown')?.[0] !== expectedRepresentations.markdown)
+      problem('HTML Markdown target disagrees with route')
+    if (links.get('describedby:application/json')?.[0] !== expectedRepresentations.metadata)
+      problem('HTML metadata target disagrees with route')
     const metadataFile = expectedRepresentations.metadata.slice(1)
     const metadataJson = await discoveryJson(distDir, metadataFile, fail)
     const metadata = metadataJson && discoveryRoute(metadataJson, metadataFile, fail)
     if (metadataJson && metadataJson.schemaVersion !== 2) problem(`${metadataFile}: unsupported schemaVersion`)
     const htmlMetadata = { title: decodeEntities(title), description }
-    for (const [label, route] of [['manifest', entries[0]], ['metadata', metadata]] as const) {
+    for (const [label, route] of [
+      ['manifest', entries[0]],
+      ['metadata', metadata],
+    ] as const) {
       if (!route) continue
-      if (route.slug !== slug || route.path !== path || route.canonical !== canonical || route.id !== `${canonical}#webpage`) problem(`${label} identity disagrees with route`)
+      if (
+        route.slug !== slug ||
+        route.path !== path ||
+        route.canonical !== canonical ||
+        route.id !== `${canonical}#webpage`
+      )
+        problem(`${label} identity disagrees with route`)
       for (const key of ['title', 'description'] as const) {
         if (sameText(route[key]) !== sameText(htmlMetadata[key])) problem(`${label} ${key} disagrees with HTML`)
       }
       for (const key of ['html', 'markdown', 'metadata'] as const) {
-        if (route.representations[key] !== expectedRepresentations[key]) problem(`${label} ${key} representation targets another route`)
-        if (!(await assetExists(distDir, expectedRepresentations[key]))) problem(`missing route representation ${expectedRepresentations[key]}`)
+        if (route.representations[key] !== expectedRepresentations[key])
+          problem(`${label} ${key} representation targets another route`)
+        if (!(await assetExists(distDir, expectedRepresentations[key])))
+          problem(`missing route representation ${expectedRepresentations[key]}`)
       }
     }
-    const listed = sitemapEntries.filter(entry => entry.canonical === canonical)
+    const listed = sitemapEntries.filter((entry) => entry.canonical === canonical)
     if (listed.length !== 1) problem('must appear exactly once in sitemap.xml')
     const lastModified = entries[0]?.lastModified
-    if (metadata && !sameDate(lastModified, metadata.lastModified)) problem('metadata lastModified disagrees with manifest')
-    if (listed.length === 1 && !sameDate(lastModified, listed[0].lastModified)) problem('sitemap lastmod disagrees with manifest lastModified')
-    if (modified !== undefined && lastModified !== undefined && !sameDate(modified, lastModified)) problem('HTML modified date disagrees with manifest lastModified')
+    if (metadata && !sameDate(lastModified, metadata.lastModified))
+      problem('metadata lastModified disagrees with manifest')
+    if (listed.length === 1 && !sameDate(lastModified, listed[0].lastModified))
+      problem('sitemap lastmod disagrees with manifest lastModified')
+    if (modified !== undefined && lastModified !== undefined && !sameDate(modified, lastModified))
+      problem('HTML modified date disagrees with manifest lastModified')
     const markdown = await readFile(join(distDir, routeMarkdownPathFromSlug(slug).slice(1)), 'utf8').catch(() => null)
     const alias = await readFile(join(distDir, expectedRepresentations.markdown.slice(1)), 'utf8').catch(() => null)
-    if (markdown === null || alias === null || markdown !== alias) problem('same-path Markdown alias differs from routes Markdown')
+    if (markdown === null || alias === null || markdown !== alias)
+      problem('same-path Markdown alias differs from routes Markdown')
   }
   for (const route of routes) {
     if (!publicSlugs.has(route.slug)) fail(`site.manifest.json: route ${route.path} is not a public built page`)
   }
-  const publicCanonicals = new Set([...publicSlugs].map(slug => absoluteUrl(site.url, publicPathFromSlug(slug))))
+  const publicCanonicals = new Set([...publicSlugs].map((slug) => absoluteUrl(site.url, publicPathFromSlug(slug))))
   for (const entry of sitemapEntries) {
     if (!publicCanonicals.has(entry.canonical)) fail(`sitemap.xml: route ${entry.canonical} is not a public built page`)
   }
@@ -771,7 +958,11 @@ if (import.meta.main) {
     } else {
       try {
         const report = await runChecks({ allowBrokenLinks, launch })
-        printJsonResult('check', report.errors.map(message => ({ message, name: 'BuildError' })), report.warnings)
+        printJsonResult(
+          'check',
+          report.errors.map((message) => ({ message, name: 'BuildError' })),
+          report.warnings,
+        )
         if (report.errors.length) process.exitCode = 1
       } catch (err) {
         printJsonResult('check', [diagnostic(err)], [])
@@ -804,9 +995,8 @@ if (import.meta.main) {
 export async function failOnReport(report: CheckReport, throwOnError = true, logger: BuildLogger = console) {
   for (const w of report.warnings) logger.warn(`warn: ${w}`)
   if (report.errors.length && throwOnError) {
-    throw new BuildError(
-      `Strict checks failed (${report.errors.length}):\n  - ${report.errors.join('\n  - ')}`,
-      { hint: 'Fix the listed issues. --allow-broken-links skips only the broken route and link checks.' },
-    )
+    throw new BuildError(`Strict checks failed (${report.errors.length}):\n  - ${report.errors.join('\n  - ')}`, {
+      hint: 'Fix the listed issues. --allow-broken-links skips only the broken route and link checks.',
+    })
   }
 }

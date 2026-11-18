@@ -33,15 +33,33 @@ function composer(schemas = new Map<string, ComponentSchema>(), data = new Map<s
       ['ElseIf', '<div>{#if title}<b>{{title}}</b>{:else if eyebrow}<i>{{eyebrow}}</i>{:else}<em>None</em>{/if}</div>'],
       ['Hero', '<p>{{title}}</p><aside>{{slot:aside}}</aside>'],
       ['Titled', '<div title="{{title}}">{{slot}}</div>'],
-      ['Gallery', '<ul>{#each items as item}<li>{#if item.image}<img src="{{item.image}}">{:else}<span>{{item.name}}</span>{/if}</li>{/each}</ul>'],
+      [
+        'Gallery',
+        '<ul>{#each items as item}<li>{#if item.image}<img src="{{item.image}}">{:else}<span>{{item.name}}</span>{/if}</li>{/each}</ul>',
+      ],
       ['BadDoubleElse', '<div>{#if title}<b>{{title}}</b>{:else}<i>Missing</i>{:else}<em>Bad</em>{/if}</div>'],
       ['BadEach', '<div>{#each items as item}<b>{{item}}</b>{/each}</div>'],
       ['Logo', '<a class="logo">{#if slot}<span aria-hidden="true">{{slot}}</span>{/if}<span>{{siteName}}</span></a>'],
-      ['Code', '<figure class="code">{#if lang}<figcaption>{{lang}}</figcaption>{/if}<pre><code data-language="{{lang}}">{{slot}}</code></pre></figure>'],
-      ['Counter', '<span class="count" data-value="{{value}}" data-duration="{{duration}}"><span>{#if prefix}{{prefix}}{/if}<data value="{{value}}">{{value}}</data>{#if suffix}{{suffix}}{/if}</span>{#if label}<small>{{label}}</small>{/if}</span>'],
-      ['Icon', '{#if label}<span class="icon" role="img" aria-label="{{label}}">{{slot}}</span>{:else}<span class="icon" aria-hidden="true">{{slot}}</span>{/if}'],
-      ['Split', '{#if label}<span class="split" data-split aria-label="{{label}}">{{slot}}</span>{:else}<span class="split" data-split>{{slot}}</span>{/if}'],
-      ['FAQ', '<div class="faq">{#each items as item}<Accordion group="faq" summary="{{item.summary}}" body="{{item.body}}" />{/each}</div>'],
+      [
+        'Code',
+        '<figure class="code">{#if lang}<figcaption>{{lang}}</figcaption>{/if}<pre><code data-language="{{lang}}">{{slot}}</code></pre></figure>',
+      ],
+      [
+        'Counter',
+        '<span class="count" data-value="{{value}}" data-duration="{{duration}}"><span>{#if prefix}{{prefix}}{/if}<data value="{{value}}">{{value}}</data>{#if suffix}{{suffix}}{/if}</span>{#if label}<small>{{label}}</small>{/if}</span>',
+      ],
+      [
+        'Icon',
+        '{#if label}<span class="icon" role="img" aria-label="{{label}}">{{slot}}</span>{:else}<span class="icon" aria-hidden="true">{{slot}}</span>{/if}',
+      ],
+      [
+        'Split',
+        '{#if label}<span class="split" data-split aria-label="{{label}}">{{slot}}</span>{:else}<span class="split" data-split>{{slot}}</span>{/if}',
+      ],
+      [
+        'FAQ',
+        '<div class="faq">{#each items as item}<Accordion group="faq" summary="{{item.summary}}" body="{{item.body}}" />{/each}</div>',
+      ],
       ['Accordion', '<details><summary>{{summary}}</summary><div>{{body}}</div></details>'],
     ]),
     schemas,
@@ -70,7 +88,10 @@ describe('build error source spans', () => {
 
   test('reports unknown component line', async () => {
     try {
-      await composer().prepareRouteSource('<p>Intro</p>\n<Missing />', { slug: 'page', fileHint: 'src/pages/page.html' })
+      await composer().prepareRouteSource('<p>Intro</p>\n<Missing />', {
+        slug: 'page',
+        fileHint: 'src/pages/page.html',
+      })
       throw new Error('expected BuildError')
     } catch (err) {
       expectBuildError(err, 2, 'src/pages/page.html')
@@ -83,7 +104,10 @@ describe('build error source spans', () => {
     ])
 
     try {
-      await composer(schemas).prepareRouteSource('<p>Intro</p>\n<Card />', { slug: 'page', fileHint: 'src/pages/page.html' })
+      await composer(schemas).prepareRouteSource('<p>Intro</p>\n<Card />', {
+        slug: 'page',
+        fileHint: 'src/pages/page.html',
+      })
       throw new Error('expected BuildError')
     } catch (err) {
       expectBuildError(err, 2, 'src/pages/page.html')
@@ -92,7 +116,10 @@ describe('build error source spans', () => {
 
   test('reports image attr line', async () => {
     try {
-      await composer().prepareRouteSource('<p>Intro</p>\n<Image src="hero" />', { slug: 'page', fileHint: 'src/pages/page.html' })
+      await composer().prepareRouteSource('<p>Intro</p>\n<Image src="hero" />', {
+        slug: 'page',
+        fileHint: 'src/pages/page.html',
+      })
       throw new Error('expected BuildError')
     } catch (err) {
       expectBuildError(err, 2, 'src/pages/page.html')
@@ -126,7 +153,10 @@ describe('build error source spans', () => {
 
   test('adds route source frame for nested component errors', async () => {
     try {
-      await composer().prepareRouteSource('<p>Intro</p>\n<Wrapper />', { slug: 'page', fileHint: 'src/pages/page.html' })
+      await composer().prepareRouteSource('<p>Intro</p>\n<Wrapper />', {
+        slug: 'page',
+        fileHint: 'src/pages/page.html',
+      })
       throw new Error('expected BuildError')
     } catch (err) {
       expectBuildError(err, 2, 'src/components/Wrapper.html')
@@ -141,10 +171,10 @@ describe('build error source spans', () => {
     const schemas = new Map<string, ComponentSchema>([
       ['Button', { attrs: { label: {}, href: {}, variant: { enum: ['accent tone'], asClass: true } } }],
     ])
-    const html = await composer(schemas).prepareRouteSource(
-      '<Button label="Go" variant="accent tone" />',
-      { slug: 'page', fileHint: 'src/pages/page.html' },
-    )
+    const html = await composer(schemas).prepareRouteSource('<Button label="Go" variant="accent tone" />', {
+      slug: 'page',
+      fileHint: 'src/pages/page.html',
+    })
     expect(html).toContain('<a class="btn accent tone">Go</a>')
   })
 
@@ -152,10 +182,10 @@ describe('build error source spans', () => {
     const schemas = new Map<string, ComponentSchema>([
       ['Card', { attrs: { title: {}, variant: { enum: ['outlined', 'ghost', 'accent'], asClass: true } } }],
     ])
-    const html = await composer(schemas).prepareRouteSource(
-      '<Card title="Plain" variant="" />',
-      { slug: 'page', fileHint: 'src/pages/page.html' },
-    )
+    const html = await composer(schemas).prepareRouteSource('<Card title="Plain" variant="" />', {
+      slug: 'page',
+      fileHint: 'src/pages/page.html',
+    })
     expect(html).toContain('<article>Plain</article>')
   })
 
@@ -164,7 +194,10 @@ describe('build error source spans', () => {
       ['Button', { attrs: { label: {}, href: {}, variant: { asClass: true } } }],
     ])
     try {
-      await composer(schemas).prepareRouteSource('<Button variant="accent/evil" />', { slug: 'page', fileHint: 'src/pages/page.html' })
+      await composer(schemas).prepareRouteSource('<Button variant="accent/evil" />', {
+        slug: 'page',
+        fileHint: 'src/pages/page.html',
+      })
       throw new Error('expected BuildError')
     } catch (err) {
       expect(err).toBeInstanceOf(BuildError)
@@ -173,13 +206,11 @@ describe('build error source spans', () => {
   })
 
   test('allows global track attr and emits data-snz-track', async () => {
-    const schemas = new Map<string, ComponentSchema>([
-      ['Card', { attrs: { title: { required: true } } }],
-    ])
-    const html = await composer(schemas).prepareRouteSource(
-      '<Card title="Contact" track="Contact CTA" />',
-      { slug: 'page', fileHint: 'src/pages/page.html' },
-    )
+    const schemas = new Map<string, ComponentSchema>([['Card', { attrs: { title: { required: true } } }]])
+    const html = await composer(schemas).prepareRouteSource('<Card title="Contact" track="Contact CTA" />', {
+      slug: 'page',
+      fileHint: 'src/pages/page.html',
+    })
     expect(html).toContain('<article data-snz-track="Contact CTA">Contact</article>')
   })
 
@@ -229,10 +260,10 @@ describe('build error source spans', () => {
   })
 
   test('renders component conditional else branches', async () => {
-    const html = await composer().prepareRouteSource(
-      '<BadElse title="Card" />\n<BadElse />',
-      { slug: 'page', fileHint: 'src/pages/page.html' },
-    )
+    const html = await composer().prepareRouteSource('<BadElse title="Card" />\n<BadElse />', {
+      slug: 'page',
+      fileHint: 'src/pages/page.html',
+    })
     expect(html).toContain('<div><b>Card</b></div>')
     expect(html).toContain('<div><i>Missing</i></div>')
   })
@@ -249,12 +280,20 @@ describe('build error source spans', () => {
   })
 
   test('renders FAQ from component JSON data with each', async () => {
-    const html = await composer(new Map(), new Map([['FAQ', {
-      items: [
-        { summary: 'One', body: 'First' },
-        { summary: 'Two', body: 'Second' },
-      ],
-    }]])).prepareRouteSource('<FAQ />', { slug: 'page', fileHint: 'src/pages/page.html' })
+    const html = await composer(
+      new Map(),
+      new Map([
+        [
+          'FAQ',
+          {
+            items: [
+              { summary: 'One', body: 'First' },
+              { summary: 'Two', body: 'Second' },
+            ],
+          },
+        ],
+      ]),
+    ).prepareRouteSource('<FAQ />', { slug: 'page', fileHint: 'src/pages/page.html' })
     expect(html).toContain('<summary>One</summary><div>First</div>')
     expect(html).toContain('<summary>Two</summary><div>Second</div>')
   })
@@ -270,9 +309,17 @@ describe('build error source spans', () => {
   })
 
   test('renders nested each and if blocks per item', async () => {
-    const html = await composer(new Map(), new Map([['Gallery', {
-      items: [{ name: 'One', image: '/one.webp' }, { name: 'Two' }],
-    }]])).prepareRouteSource('<Gallery />', { slug: 'page', fileHint: 'src/pages/page.html' })
+    const html = await composer(
+      new Map(),
+      new Map([
+        [
+          'Gallery',
+          {
+            items: [{ name: 'One', image: '/one.webp' }, { name: 'Two' }],
+          },
+        ],
+      ]),
+    ).prepareRouteSource('<Gallery />', { slug: 'page', fileHint: 'src/pages/page.html' })
     expect(html).toContain('<ul><li><img src="/one.webp"></li><li><span>Two</span></li></ul>')
   })
 
@@ -301,10 +348,10 @@ describe('build error source spans', () => {
   })
 
   test('renders SEO titles once from escaped attribute text', async () => {
-    const html = await composer().prepareRouteSource(
-      '<head><SEO title="Hello &amp; welcome" /></head><h1>Hi</h1>',
-      { slug: 'page', fileHint: 'src/pages/page.html' },
-    )
+    const html = await composer().prepareRouteSource('<head><SEO title="Hello &amp; welcome" /></head><h1>Hi</h1>', {
+      slug: 'page',
+      fileHint: 'src/pages/page.html',
+    })
     expect(html).toContain('<title>Hello &amp; welcome</title>')
     expect(html).not.toContain('&amp;amp;')
   })
@@ -354,7 +401,10 @@ describe('build error source spans', () => {
     } catch (err) {
       expect((err as BuildError).hint).toBe('Supported: @desc, @attr, @schema')
     }
-    const { schema } = parseInlineSchema('<!--\n  @attr variant=[a|b] :class Visual style.\n  @attr tone =[c|d] Spaced enum.\n  @attr title! Heading.\n-->', file)
+    const { schema } = parseInlineSchema(
+      '<!--\n  @attr variant=[a|b] :class Visual style.\n  @attr tone =[c|d] Spaced enum.\n  @attr title! Heading.\n-->',
+      file,
+    )
     expect(schema.attrs).toEqual({
       variant: { enum: ['a', 'b'], asClass: true, description: 'Visual style.' },
       tone: { enum: ['c', 'd'], description: 'Spaced enum.' },
@@ -383,7 +433,7 @@ describe('build error source spans', () => {
   })
 
   test('omits optional built-in component fragments with conditionals', async () => {
-    const siteName = (await Bun.file('src/site.json').json() as { name: string }).name
+    const siteName = ((await Bun.file('src/site.json').json()) as { name: string }).name
     const html = await composer().prepareRouteSource(
       '<Logo />\n<Logo><svg></svg></Logo>\n<Code>plain</Code>\n<Counter value="10" />\n<Counter value="10" prefix="$" suffix="k" label="Revenue" />',
       { slug: 'page', fileHint: 'src/pages/page.html' },
@@ -392,7 +442,9 @@ describe('build error source spans', () => {
     expect(html).toContain(`<a class="logo"><span aria-hidden="true"><svg></svg></span><span>${siteName}</span></a>`)
     expect(html).toContain('<figure class="code"><pre><code>plain</code></pre></figure>')
     expect(html).toContain('<span class="count" data-value="10"><span><data value="10">10</data></span></span>')
-    expect(html).toContain('<span class="count" data-value="10"><span>$<data value="10">10</data>k</span><small>Revenue</small></span>')
+    expect(html).toContain(
+      '<span class="count" data-value="10"><span>$<data value="10">10</data>k</span><small>Revenue</small></span>',
+    )
     expect(html).not.toContain('{{prefix}}')
     expect(html).not.toContain('{{suffix}}')
   })

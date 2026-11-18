@@ -41,30 +41,37 @@ describe('AEO/GEO site facts', () => {
   })
 
   test('merges route schema extras into baseline graph', () => {
-    const graph = buildSchemaGraph(baseSite, {
-      title: 'Post',
-      description: 'Post page.',
-      canonical: 'https://example.com/insights/post/',
-    }, [{ '@type': 'BlogPosting', headline: 'Post' }])
+    const graph = buildSchemaGraph(
+      baseSite,
+      {
+        title: 'Post',
+        description: 'Post page.',
+        canonical: 'https://example.com/insights/post/',
+      },
+      [{ '@type': 'BlogPosting', headline: 'Post' }],
+    )
 
     expect(graph['@graph'].map((node) => node['@type'])).toEqual(['Organization', 'WebSite', 'WebPage', 'BlogPosting'])
   })
 
   test('emits rich organization and topic facts when configured', () => {
-    const graph = buildSchemaGraph({
-      ...baseSite,
-      organization: {
-        legalName: 'Example Studio LLC',
-        sameAs: ['https://www.linkedin.com/company/example'],
-        contact: { email: 'hello@example.com', url: '/contact/' },
-        address: { addressLocality: 'Copenhagen', addressCountry: 'DK' },
+    const graph = buildSchemaGraph(
+      {
+        ...baseSite,
+        organization: {
+          legalName: 'Example Studio LLC',
+          sameAs: ['https://www.linkedin.com/company/example'],
+          contact: { email: 'hello@example.com', url: '/contact/' },
+          address: { addressLocality: 'Copenhagen', addressCountry: 'DK' },
+        },
+        topics: ['Bun', 'Static sites'],
       },
-      topics: ['Bun', 'Static sites'],
-    }, {
-      title: 'Home',
-      description: 'Home page.',
-      canonical: 'https://example.com/',
-    })
+      {
+        title: 'Home',
+        description: 'Home page.',
+        canonical: 'https://example.com/',
+      },
+    )
 
     const organization = graph['@graph'][0] as Record<string, unknown>
     const website = graph['@graph'][1] as Record<string, unknown>
@@ -100,7 +107,13 @@ describe('AEO/GEO site facts', () => {
       canonical: 'https://example.com/about/',
     })
 
-    expect(productGraph['@graph'].map((node) => node['@type'])).toEqual(['Organization', 'Brand', 'WebSite', 'WebPage', 'Product'])
+    expect(productGraph['@graph'].map((node) => node['@type'])).toEqual([
+      'Organization',
+      'Brand',
+      'WebSite',
+      'WebPage',
+      'Product',
+    ])
     expect(productGraph['@graph'].at(-1)).toMatchObject({
       '@id': 'https://example.com/platform/#product',
       brand: { '@id': 'https://example.com/#brand' },
@@ -121,9 +134,19 @@ describe('AEO/GEO site facts', () => {
       internalLinks: [],
       schemas: ['WebPage'],
     }
-    const extras = routeSchemaExtras(record, new Map([['ServiceCard', {
-      schema: { type: 'Service', map: { name: 'title', url: 'href' } },
-    }]]), undefined, baseSite)
+    const extras = routeSchemaExtras(
+      record,
+      new Map([
+        [
+          'ServiceCard',
+          {
+            schema: { type: 'Service', map: { name: 'title', url: 'href' } },
+          },
+        ],
+      ]),
+      undefined,
+      baseSite,
+    )
 
     expect(record.schemas).toEqual(['WebPage'])
     expect(extras.schemas).toEqual(['WebPage', 'Service'])
@@ -131,46 +154,55 @@ describe('AEO/GEO site facts', () => {
   })
 
   test('does not publish filesystem route mtime as an editorial BlogPosting date', () => {
-    const extras = routeSchemaExtras({
-      slug: 'insights/hello',
-      title: 'Hello',
-      description: 'Post page.',
-      components: [],
-      internalLinks: [],
-      schemas: ['WebPage'],
-      lastModified: '2026-05-27T08:00:00.000Z',
-    }, new Map(), {
-      slug: 'insights/hello',
-      routeFile: 'insights/hello.html',
-      body: '',
-      source: 'content/posts/hello.md',
-      data: { title: 'Hello', date: '2026-05-26', description: 'Post page.' },
-      date: '2026-05-26T00:00:00.000Z',
-      collection: 'posts',
-      markdown: 'Body',
-      tags: [],
-      draft: false,
-    }, baseSite)
+    const extras = routeSchemaExtras(
+      {
+        slug: 'insights/hello',
+        title: 'Hello',
+        description: 'Post page.',
+        components: [],
+        internalLinks: [],
+        schemas: ['WebPage'],
+        lastModified: '2026-05-27T08:00:00.000Z',
+      },
+      new Map(),
+      {
+        slug: 'insights/hello',
+        routeFile: 'insights/hello.html',
+        body: '',
+        source: 'content/posts/hello.md',
+        data: { title: 'Hello', date: '2026-05-26', description: 'Post page.' },
+        date: '2026-05-26T00:00:00.000Z',
+        collection: 'posts',
+        markdown: 'Body',
+        tags: [],
+        draft: false,
+      },
+      baseSite,
+    )
 
-    expect(extras.extraJsonLd).toContainEqual(expect.objectContaining({
-      '@type': 'BlogPosting',
-      dateModified: undefined,
-    }))
+    expect(extras.extraJsonLd).toContainEqual(
+      expect.objectContaining({
+        '@type': 'BlogPosting',
+        dateModified: undefined,
+      }),
+    )
   })
 
   test('writes discovery version metadata without requiring rich site config', async () => {
     await withTempDir(async (distDir) => {
       await writeDiscovery(distDir, {
         site: baseSite,
-        routes: [{
-          slug: 'index',
-          title: 'Home',
-          description: 'Home page.',
-          components: [],
-          internalLinks: [],
-          schemas: [],
-          renderedHtml: '<head><title>Home</title></head><main><h1>Home</h1><p>Useful page.</p></main>',
-        }],
+        routes: [
+          {
+            slug: 'index',
+            title: 'Home',
+            description: 'Home page.',
+            components: [],
+            internalLinks: [],
+            schemas: [],
+            renderedHtml: '<head><title>Home</title></head><main><h1>Home</h1><p>Useful page.</p></main>',
+          },
+        ],
         componentSchemas: new Map(),
         componentUseCounts: new Map(),
         contentByslug: new Map(),
@@ -197,8 +229,24 @@ describe('AEO/GEO site facts', () => {
       await writeDiscovery(distDir, {
         site: baseSite,
         routes: [
-          { slug: 'index', title: 'Home', description: 'Home page.', components: [], internalLinks: ['/preview/'], schemas: [], unlisted: false },
-          { slug: 'preview', title: 'Preview', description: 'Direct preview.', components: [], internalLinks: [], schemas: ['WebPage'], unlisted: true },
+          {
+            slug: 'index',
+            title: 'Home',
+            description: 'Home page.',
+            components: [],
+            internalLinks: ['/preview/'],
+            schemas: [],
+            unlisted: false,
+          },
+          {
+            slug: 'preview',
+            title: 'Preview',
+            description: 'Direct preview.',
+            components: [],
+            internalLinks: [],
+            schemas: ['WebPage'],
+            unlisted: true,
+          },
         ],
         componentSchemas: new Map(),
         componentUseCounts: new Map(),
@@ -218,39 +266,48 @@ describe('AEO/GEO site facts', () => {
     await withTempDir(async (distDir) => {
       await writeDiscovery(distDir, {
         site: baseSite,
-        routes: [{
-          slug: 'insights/hello',
-          title: 'Hello',
-          description: 'Post page.',
-          components: [],
-          internalLinks: [],
-          schemas: ['WebPage'],
-          lastModified: '2026-05-27T08:00:00.000Z',
-        }],
+        routes: [
+          {
+            slug: 'insights/hello',
+            title: 'Hello',
+            description: 'Post page.',
+            components: [],
+            internalLinks: [],
+            schemas: ['WebPage'],
+            lastModified: '2026-05-27T08:00:00.000Z',
+          },
+        ],
         componentSchemas: new Map(),
         componentUseCounts: new Map(),
-        contentByslug: new Map([['insights/hello', {
-          slug: 'insights/hello',
-          routeFile: 'insights/hello.html',
-          body: '',
-          source: 'content/posts/hello.md',
-          data: { title: 'Hello', date: '2026-05-26', dateModified: '2026-05-28', description: 'Post page.' },
-          date: '2026-05-26T00:00:00.000Z',
-          collection: 'posts',
-          markdown: 'Body',
-          tags: [],
-          draft: false,
-        }]]),
+        contentByslug: new Map([
+          [
+            'insights/hello',
+            {
+              slug: 'insights/hello',
+              routeFile: 'insights/hello.html',
+              body: '',
+              source: 'content/posts/hello.md',
+              data: { title: 'Hello', date: '2026-05-26', dateModified: '2026-05-28', description: 'Post page.' },
+              date: '2026-05-26T00:00:00.000Z',
+              collection: 'posts',
+              markdown: 'Body',
+              tags: [],
+              draft: false,
+            },
+          ],
+        ]),
       })
 
       const route = JSON.parse(await readFile(join(distDir, 'routes', 'insights', 'hello.json'), 'utf8'))
       expect(route.schemas).toEqual(['WebPage', 'BlogPosting'])
-      expect(route.extraJsonLd).toContainEqual(expect.objectContaining({
-        '@type': 'BlogPosting',
-        headline: 'Hello',
-        datePublished: '2026-05-26T00:00:00.000Z',
-        dateModified: '2026-05-28T00:00:00.000Z',
-      }))
+      expect(route.extraJsonLd).toContainEqual(
+        expect.objectContaining({
+          '@type': 'BlogPosting',
+          headline: 'Hello',
+          datePublished: '2026-05-26T00:00:00.000Z',
+          dateModified: '2026-05-28T00:00:00.000Z',
+        }),
+      )
     })
   })
 

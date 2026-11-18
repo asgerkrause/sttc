@@ -6,7 +6,8 @@ import { BuildError, lineOf } from './errors'
 
 const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }
 const FRONT_MATTER_RE = /^---\n([\s\S]*?)\n---\n?/
-const SAFE_COMPONENT_RE = /^(?:<\/?[A-Z][A-Za-z0-9]*(?:\s[^>]*)?>|<[A-Z][A-Za-z0-9]*(?:\s[^>]*)?>[\s\S]*<\/[A-Z][A-Za-z0-9]*>)\s*$/
+const SAFE_COMPONENT_RE =
+  /^(?:<\/?[A-Z][A-Za-z0-9]*(?:\s[^>]*)?>|<[A-Z][A-Za-z0-9]*(?:\s[^>]*)?>[\s\S]*<\/[A-Z][A-Za-z0-9]*>)\s*$/
 const SAFE_HTML_RE = /^<\/?(?:br|hr|sup|sub|small|mark|kbd|abbr|cite|span)\s*\/?>\s*$/i
 
 export type MarkdownOptions = {
@@ -14,10 +15,22 @@ export type MarkdownOptions = {
   headingIds?: boolean
 }
 
-function esc(s: string) { return s.replace(/[&<>\"]/g, (c) => ESC[c] ?? c) }
+function esc(s: string) {
+  return s.replace(/[&<>\"]/g, (c) => ESC[c] ?? c)
+}
 
 // Letters with no Unicode decomposition; NFKD leaves them out, so map them first. \u00e5 and \u00e9 fold through NFKD (\u00e5 \u2192 a).
-const SLUG_TRANSLITERATIONS: Record<string, string> = { \u00e6: 'ae', \u00f8: 'o', \u0153: 'oe', \u00df: 'ss', \u00f0: 'd', \u0111: 'd', \u0142: 'l', \u00fe: 'th', \u0131: 'i' }
+const SLUG_TRANSLITERATIONS: Record<string, string> = {
+  æ: 'ae',
+  ø: 'o',
+  œ: 'oe',
+  ß: 'ss',
+  ð: 'd',
+  đ: 'd',
+  ł: 'l',
+  þ: 'th',
+  ı: 'i',
+}
 
 export function slugify(s: string) {
   return s
@@ -30,7 +43,10 @@ export function slugify(s: string) {
 }
 
 export function stripTags(s: string) {
-  return s.replace(/<[^>]+>/g, '').replace(/&[a-z0-9#]+;/gi, '').trim()
+  return s
+    .replace(/<[^>]+>/g, '')
+    .replace(/&[a-z0-9#]+;/gi, '')
+    .trim()
 }
 
 function isSafeUrl(raw: string) {
@@ -51,7 +67,18 @@ function assertSafeUrl(raw: string, file: string | undefined, source: string, of
 }
 
 function assertNoUnsafeHtml(src: string, opts: MarkdownOptions) {
-  const unsafeNames = new Set(['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select'])
+  const unsafeNames = new Set([
+    'script',
+    'style',
+    'iframe',
+    'object',
+    'embed',
+    'form',
+    'input',
+    'button',
+    'textarea',
+    'select',
+  ])
   for (const match of src.matchAll(/<\s*\/?\s*([A-Za-z][A-Za-z0-9]*)\b/g)) {
     const tag = match[1]
     if (!tag) continue
@@ -91,14 +118,22 @@ function inline(src: string, opts: MarkdownOptions, fullSource: string): string 
   return s
 }
 
-type Block = { kind: 'heading' | 'p' | 'ul' | 'ol' | 'pre' | 'quote' | 'hr' | 'html' | 'table'; depth?: number; content: string }
+type Block = {
+  kind: 'heading' | 'p' | 'ul' | 'ol' | 'pre' | 'quote' | 'hr' | 'html' | 'table'
+  depth?: number
+  content: string
+}
 
 function isTableStart(lines: string[], i: number) {
   return !!lines[i]?.includes('|') && /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[i + 1] ?? '')
 }
 
 function splitTableRow(line: string) {
-  return line.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim())
+  return line
+    .trim()
+    .replace(/^\||\|$/g, '')
+    .split('|')
+    .map((cell) => cell.trim())
 }
 
 function renderTable(lines: string[], opts: MarkdownOptions, fullSource: string) {
@@ -118,14 +153,20 @@ function tokenize(src: string, opts: MarkdownOptions): Block[] {
 
   while (i < lines.length) {
     const line = lines[i]
-    if (line.trim() === '') { i++; continue }
+    if (line.trim() === '') {
+      i++
+      continue
+    }
 
     const fence = line.match(/^```([\w-]*)\s*$/)
     if (fence) {
       const lang = fence[1]
       const buf: string[] = []
       i++
-      while (i < lines.length && !lines[i].match(/^```\s*$/)) { buf.push(lines[i]); i++ }
+      while (i < lines.length && !lines[i].match(/^```\s*$/)) {
+        buf.push(lines[i])
+        i++
+      }
       if (i < lines.length) i++
       const langClass = lang ? ` class="lang-${esc(lang)}"` : ''
       blocks.push({ kind: 'pre', content: `<pre><code${langClass}>${esc(buf.join('\n'))}</code></pre>` })
@@ -138,17 +179,22 @@ function tokenize(src: string, opts: MarkdownOptions): Block[] {
       const content = inline(heading[2].trim(), opts, src)
       const id = opts.headingIds === false ? '' : ` id="${slugify(stripTags(content))}"`
       blocks.push({ kind: 'heading', depth, content: `<h${depth}${id}>${content}</h${depth}>` })
-      i++; continue
+      i++
+      continue
     }
 
     if (/^[-*_]{3,}\s*$/.test(line)) {
       blocks.push({ kind: 'hr', content: '<hr>' })
-      i++; continue
+      i++
+      continue
     }
 
     if (/^>\s?/.test(line)) {
       const buf: string[] = []
-      while (i < lines.length && /^>\s?/.test(lines[i])) { buf.push(lines[i].replace(/^>\s?/, '')); i++ }
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        buf.push(lines[i].replace(/^>\s?/, ''))
+        i++
+      }
       blocks.push({ kind: 'quote', content: `<blockquote>${render(buf.join('\n'), opts)}</blockquote>` })
       continue
     }
@@ -156,7 +202,10 @@ function tokenize(src: string, opts: MarkdownOptions): Block[] {
     if (isTableStart(lines, i)) {
       const buf = [lines[i], lines[i + 1]]
       i += 2
-      while (i < lines.length && lines[i].includes('|') && lines[i].trim() !== '') { buf.push(lines[i]); i++ }
+      while (i < lines.length && lines[i].includes('|') && lines[i].trim() !== '') {
+        buf.push(lines[i])
+        i++
+      }
       blocks.push({ kind: 'table', content: renderTable(buf, opts, src) })
       continue
     }
@@ -180,7 +229,10 @@ function tokenize(src: string, opts: MarkdownOptions): Block[] {
     if (/^</.test(line)) {
       const buf: string[] = [line]
       i++
-      while (i < lines.length && lines[i].trim() !== '') { buf.push(lines[i]); i++ }
+      while (i < lines.length && lines[i].trim() !== '') {
+        buf.push(lines[i])
+        i++
+      }
       const html = buf.join('\n')
       if (!SAFE_COMPONENT_RE.test(html.trim()) && !SAFE_HTML_RE.test(html.trim())) {
         blocks.push({ kind: 'p', content: `<p>${inline(html, opts, src)}</p>` })
@@ -198,7 +250,8 @@ function tokenize(src: string, opts: MarkdownOptions): Block[] {
       !/^(#{1,6}\s|>|[-*+]\s|\d+\.\s|```)/.test(lines[i]) &&
       !isTableStart(lines, i)
     ) {
-      buf.push(lines[i]); i++
+      buf.push(lines[i])
+      i++
     }
     blocks.push({ kind: 'p', content: `<p>${inline(buf.join(' ').trim(), opts, src)}</p>` })
   }
@@ -207,10 +260,12 @@ function tokenize(src: string, opts: MarkdownOptions): Block[] {
 
 export function render(src: string, opts: MarkdownOptions = {}): string {
   assertNoUnsafeHtml(src, opts)
-  return tokenize(src, opts).map((b) => {
-    if (b.kind === 'heading') return b.content
-    return b.content
-  }).join('\n')
+  return tokenize(src, opts)
+    .map((b) => {
+      if (b.kind === 'heading') return b.content
+      return b.content
+    })
+    .join('\n')
 }
 
 /** Front matter is YAML. Malformed YAML throws with the file line that breaks the block (line 1 is the opening fence). */
@@ -245,7 +300,10 @@ export function parseFrontMatter(src: string, file?: string): { data: Record<str
 function yamlErrorLine(block: string) {
   const lines = block.split('\n')
   for (let n = lines.length - 1; n > 0; n--) {
-    try { Bun.YAML.parse(lines.slice(0, n).join('\n')); return n + 2 } catch {}
+    try {
+      Bun.YAML.parse(lines.slice(0, n).join('\n'))
+      return n + 2
+    } catch {}
   }
   return 2
 }
@@ -264,7 +322,10 @@ export function fmStringArray(data: Record<string, unknown>, key: string): strin
   if (Array.isArray(v)) return v.map((x) => String(x))
   if (typeof v === 'string') {
     const inner = v.replace(/^\[|\]$/g, '')
-    return inner.split(',').map((t) => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+    return inner
+      .split(',')
+      .map((t) => t.trim().replace(/^["']|["']$/g, ''))
+      .filter(Boolean)
   }
   return []
 }

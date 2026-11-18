@@ -20,7 +20,10 @@ function rendersImageBridge(html: string) {
 }
 
 /** Read components: strip inline <style> + <script>, build template + schema + script registries. */
-export async function prepareComponents(componentsDir: string, projectRoot = root): Promise<{
+export async function prepareComponents(
+  componentsDir: string,
+  projectRoot = root,
+): Promise<{
   cssBlocks: CssBlock[]
   templates: Map<string, string>
   schemas: Map<string, ComponentSchema>
@@ -50,7 +53,10 @@ export async function prepareComponents(componentsDir: string, projectRoot = roo
         hint: 'Delete SEO.html and use one self-closing <SEO ... /> directive in each route <head>.',
       })
     }
-    const { html: noData, data: componentData } = await extractTemplateData(raw, { file: `src/components/${file}`, projectRoot })
+    const { html: noData, data: componentData } = await extractTemplateData(raw, {
+      file: `src/components/${file}`,
+      projectRoot,
+    })
     if (Object.keys(componentData).length) data.set(name, componentData)
     const { html: noScript, scripts: blocks } = extractInlineScripts(noData)
     if (blocks.length) scripts.set(name, blocks)

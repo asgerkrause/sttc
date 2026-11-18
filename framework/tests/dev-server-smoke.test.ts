@@ -19,10 +19,7 @@ function randomPort() {
   return 39000 + Math.floor(Math.random() * 1000)
 }
 
-async function readStream(
-  stream: ReadableStream<Uint8Array> | null,
-  onText: (text: string) => void,
-) {
+async function readStream(stream: ReadableStream<Uint8Array> | null, onText: (text: string) => void) {
   if (!stream) return
   const decoder = new TextDecoder()
   for await (const chunk of stream) onText(decoder.decode(chunk))
@@ -89,15 +86,21 @@ async function makeDevProject() {
   tempDirs.push(dir)
   await mkdir(join(dir, 'src', 'pages'), { recursive: true })
   await mkdir(join(dir, 'src', 'components'), { recursive: true })
-  await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
-    name: 'Dev watch fixture',
-    url: 'https://example.com',
-    description: 'Fixture for real development rebuild behavior.',
-    locale: 'en',
-  }))
-  await writeFile(join(dir, 'src', 'shell.html'), `<!doctype html><html lang="en"><head>
+  await writeFile(
+    join(dir, 'src', 'site.json'),
+    JSON.stringify({
+      name: 'Dev watch fixture',
+      url: 'https://example.com',
+      description: 'Fixture for real development rebuild behavior.',
+      locale: 'en',
+    }),
+  )
+  await writeFile(
+    join(dir, 'src', 'shell.html'),
+    `<!doctype html><html lang="en"><head>
 <meta charset="UTF-8"><script src="/router.js" type="module"></script><script src="/assets/js/app.js" type="module"></script>
-</head><body><main></main></body></html>`)
+</head><body><main></main></body></html>`,
+  )
   await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>Before rebuild</h1>')
   await writeFile(join(dir, 'src', 'pages', '404.html'), '<h1>Not found</h1>')
   await writeFile(join(dir, 'src', 'styles.css'), 'body{margin:0}')
@@ -156,8 +159,12 @@ describe('dev server smoke', () => {
       const docs = await text(url)
       expect(docs.response.status).toBe(200)
       expect(docs.body).toContain('<script src="/__snz/hmr.js" defer></script>')
-      expect(docs.body).toBe((await Bun.file(join(process.cwd(), 'dist', 'docs', 'index.html')).text())
-        .replace('</body>', '<script src="/__snz/hmr.js" defer></script></body>'))
+      expect(docs.body).toBe(
+        (await Bun.file(join(process.cwd(), 'dist', 'docs', 'index.html')).text()).replace(
+          '</body>',
+          '<script src="/__snz/hmr.js" defer></script></body>',
+        ),
+      )
     }
 
     const notFound = await text(`${base}/not-real/`)

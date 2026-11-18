@@ -1,13 +1,30 @@
 import { decodeEntities } from './html'
 
 const BLOCK_TAGS = new Set([
-  'address', 'article', 'aside', 'details', 'div', 'fieldset', 'figcaption', 'figure', 'footer',
-  'form', 'header', 'main', 'nav', 'p', 'section', 'ul',
+  'address',
+  'article',
+  'aside',
+  'details',
+  'div',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'form',
+  'header',
+  'main',
+  'nav',
+  'p',
+  'section',
+  'ul',
 ])
 
 /** Strips remaining tags; entities decode once, on the whole document. */
 function text(value: string) {
-  return value.replace(/<[^>]+>/g, '').replace(/[ \t]+/g, ' ').trim()
+  return value
+    .replace(/<[^>]+>/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .trim()
 }
 
 function attr(attrs: string, name: string) {
@@ -15,14 +32,17 @@ function attr(attrs: string, name: string) {
 }
 
 function tableToMarkdown(body: string) {
-  const rows = [...body.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map((row) =>
-    [...row[1].matchAll(/<(th|td)\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((cell) => text(cell[2])),
-  ).filter((row) => row.length)
+  const rows = [...body.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
+    .map((row) => [...row[1].matchAll(/<(th|td)\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((cell) => text(cell[2])))
+    .filter((row) => row.length)
   if (!rows.length) return ''
   const width = Math.max(...rows.map((row) => row.length))
   const normalized = rows.map((row) => [...row, ...Array(width - row.length).fill('')])
   const header = normalized[0]
-  return `\n| ${header.join(' | ')} |\n| ${header.map(() => '---').join(' | ')} |\n${normalized.slice(1).map((row) => `| ${row.join(' | ')} |`).join('\n')}\n`
+  return `\n| ${header.join(' | ')} |\n| ${header.map(() => '---').join(' | ')} |\n${normalized
+    .slice(1)
+    .map((row) => `| ${row.join(' | ')} |`)
+    .join('\n')}\n`
 }
 
 function listToMarkdown(body: string, ordered: boolean) {
@@ -36,10 +56,15 @@ export function htmlToMarkdown(html: string) {
     .replace(/<head\b[\s\S]*?<\/head>/gi, '')
     .replace(/<(script|style|template|svg)\b[\s\S]*?<\/\1>/gi, '')
     .replace(/<!--([\s\S]*?)-->/g, '')
-    .replace(/<pre\b[^>]*>([\s\S]*?)<\/pre>/gi, (_, body) => `\n\`\`\`\n${body.replace(/^<code\b[^>]*>|<\/code>$/gi, '').trim()}\n\`\`\`\n`)
+    .replace(
+      /<pre\b[^>]*>([\s\S]*?)<\/pre>/gi,
+      (_, body) => `\n\`\`\`\n${body.replace(/^<code\b[^>]*>|<\/code>$/gi, '').trim()}\n\`\`\`\n`,
+    )
     // Inline marks first so list items, table cells, and headings keep links, code, images, and emphasis.
     .replace(/<code\b[^>]*>([\s\S]*?)<\/code>/gi, (_, body) => `\`${text(body)}\``)
-    .replace(/<img\b([^>]*)>/gi, (_, attrs) => attr(attrs, 'src') ? `![${attr(attrs, 'alt')}](${attr(attrs, 'src')})` : '')
+    .replace(/<img\b([^>]*)>/gi, (_, attrs) =>
+      attr(attrs, 'src') ? `![${attr(attrs, 'alt')}](${attr(attrs, 'src')})` : '',
+    )
     // Images before anchors so a linked image keeps both: [![alt](src)](href).
     .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs, body) => {
       const label = text(body)
@@ -51,15 +76,20 @@ export function htmlToMarkdown(html: string) {
     .replace(/<table\b[^>]*>([\s\S]*?)<\/table>/gi, (_, body) => tableToMarkdown(body))
     .replace(/<ol\b[^>]*>([\s\S]*?)<\/ol>/gi, (_, body) => listToMarkdown(body, true))
     .replace(/<ul\b[^>]*>([\s\S]*?)<\/ul>/gi, (_, body) => listToMarkdown(body, false))
-    .replace(/<dl\b[^>]*>([\s\S]*?)<\/dl>/gi, (_, body) => body
-      .replace(/<dt\b[^>]*>([\s\S]*?)<\/dt>/gi, (_match: string, term: string) => `\n**${text(term)}**\n`)
-      .replace(/<dd\b[^>]*>([\s\S]*?)<\/dd>/gi, (_match: string, description: string) => `${text(description)}\n`))
+    .replace(/<dl\b[^>]*>([\s\S]*?)<\/dl>/gi, (_, body) =>
+      body
+        .replace(/<dt\b[^>]*>([\s\S]*?)<\/dt>/gi, (_match: string, term: string) => `\n**${text(term)}**\n`)
+        .replace(/<dd\b[^>]*>([\s\S]*?)<\/dd>/gi, (_match: string, description: string) => `${text(description)}\n`),
+    )
     .replace(/<summary\b[^>]*>([\s\S]*?)<\/summary>/gi, (_, body) => `\n### ${text(body)}\n`)
-    .replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi, (_, level, body) => `\n${'#'.repeat(Number(level))} ${text(body)}\n`)
+    .replace(
+      /<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi,
+      (_, level, body) => `\n${'#'.repeat(Number(level))} ${text(body)}\n`,
+    )
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<hr\s*\/?>/gi, '\n---\n')
 
-  out = out.replace(/<\/?([a-z][\w-]*)\b[^>]*>/gi, (_, tag) => BLOCK_TAGS.has(String(tag).toLowerCase()) ? '\n' : '')
+  out = out.replace(/<\/?([a-z][\w-]*)\b[^>]*>/gi, (_, tag) => (BLOCK_TAGS.has(String(tag).toLowerCase()) ? '\n' : ''))
   return decodeEntities(out)
     .replace(/\u00a0/g, ' ')
     .replace(/\r/g, '')

@@ -25,7 +25,10 @@ describe('benchmark fixture contracts', () => {
     tempDirs.push(dir)
     await createFixture(dir, 'routes', 2)
     await mkdir(join(dir, 'dist', 'routes'), { recursive: true })
-    await writeFile(join(dir, 'dist', 'site.manifest.json'), JSON.stringify({ routes: [{ slug: 'index' }, { slug: 'page-0001' }] }))
+    await writeFile(
+      join(dir, 'dist', 'site.manifest.json'),
+      JSON.stringify({ routes: [{ slug: 'index' }, { slug: 'page-0001' }] }),
+    )
     await writeFile(join(dir, 'dist', 'index.html'), '<h1>Page 0</h1>')
     for (const slug of ['index', 'page-0001']) {
       await writeFile(join(dir, 'dist', 'routes', `${slug}.json`), '{}')

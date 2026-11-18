@@ -5,8 +5,7 @@ import { publicPath } from './lib/paths.js'
 
 const main = document.querySelector('body > main')
 
-const DISCLOSURE_SEL =
-  'button[aria-controls][aria-expanded]:not([data-snz-ignore])'
+const DISCLOSURE_SEL = 'button[aria-controls][aria-expanded]:not([data-snz-ignore])'
 
 const ACTIVE_MEDIA_SELECTOR = 'video[autoplay], audio[autoplay]'
 const ACTIVE_MANUAL_SELECTOR = '[data-active="manual"]'
@@ -78,14 +77,17 @@ function getVisibilityObserver(options) {
 
   const bucket = {
     counts: new Map(),
-    observer: new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        for (const sub of visibilitySubscriptions) {
-          if (sub.el !== entry.target || sub.key !== key) continue
-          updateVisibilitySubscription(sub, isVisibleEntry(entry, sub.threshold), entry)
+    observer: new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          for (const sub of visibilitySubscriptions) {
+            if (sub.el !== entry.target || sub.key !== key) continue
+            updateVisibilitySubscription(sub, isVisibleEntry(entry, sub.threshold), entry)
+          }
         }
-      }
-    }, { root: null, rootMargin: options.rootMargin, threshold: options.threshold }),
+      },
+      { root: null, rootMargin: options.rootMargin, threshold: options.threshold },
+    ),
   }
   visibilityObservers.set(key, bucket)
   return bucket
@@ -94,7 +96,12 @@ function getVisibilityObserver(options) {
 function notifyVisibilitySubscription(sub, entry) {
   const state = sub.activeMode ? sub.active : sub.visible
   const previous = sub.lastState
-  const detail = { visible: sub.visible, active: sub.active, entry, ratio: entry?.intersectionRatio ?? (sub.visible ? 1 : 0) }
+  const detail = {
+    visible: sub.visible,
+    active: sub.active,
+    entry,
+    ratio: entry?.intersectionRatio ?? (sub.visible ? 1 : 0),
+  }
   sub.change?.(detail)
   if (previous === state) return
   sub.lastState = state
@@ -121,7 +128,17 @@ function observeVisibility(el, handlers = {}, activeMode = false) {
   const threshold = normalizeThreshold(handlers.threshold)
   const rootMargin = typeof handlers.margin === 'string' ? handlers.margin : '0px'
   const key = visibilityKey({ rootMargin, threshold })
-  const sub = { ...handlers, el, key, threshold, rootMargin, activeMode, visible: false, active: false, lastState: undefined }
+  const sub = {
+    ...handlers,
+    el,
+    key,
+    threshold,
+    rootMargin,
+    activeMode,
+    visible: false,
+    active: false,
+    lastState: undefined,
+  }
   visibilitySubscriptions.add(sub)
 
   if (!('IntersectionObserver' in window)) {
@@ -210,9 +227,7 @@ function toggleDisclosure(control) {
 
 function closeNavDisclosure(navId) {
   if (!navId) return
-  for (const control of document.querySelectorAll(
-    `${DISCLOSURE_SEL}[aria-controls="${CSS.escape(navId)}"]`,
-  )) {
+  for (const control of document.querySelectorAll(`${DISCLOSURE_SEL}[aria-controls="${CSS.escape(navId)}"]`)) {
     setDisclosure(control, false)
   }
 }
@@ -226,9 +241,7 @@ function closeDisclosuresForLink(link) {
   }
   const header = link.closest('header')
   if (!header) return
-  for (const control of header.querySelectorAll(
-    `${DISCLOSURE_SEL}[aria-expanded="true"]`,
-  )) {
+  for (const control of header.querySelectorAll(`${DISCLOSURE_SEL}[aria-expanded="true"]`)) {
     setDisclosure(control, false)
   }
 }
@@ -269,7 +282,11 @@ function onPage(slug, fn) {
   // Fire immediately if the document is already activated and matches.
   if (currentPage && (key === '*' || key === currentPage.slug)) {
     queueMicrotask(() => {
-      try { fn(currentPage) } catch (e) { console.error(e) }
+      try {
+        fn(currentPage)
+      } catch (e) {
+        console.error(e)
+      }
     })
   }
   return () => pageHandlers.get(key)?.delete(fn)
@@ -322,10 +339,18 @@ function activatePage() {
   syncNavCurrent()
   currentPage = detail
   for (const fn of pageHandlers.get('*') ?? []) {
-    try { fn(detail) } catch (e) { console.error(e) }
+    try {
+      fn(detail)
+    } catch (e) {
+      console.error(e)
+    }
   }
   for (const fn of pageHandlers.get(slug) ?? []) {
-    try { fn(detail) } catch (e) { console.error(e) }
+    try {
+      fn(detail)
+    } catch (e) {
+      console.error(e)
+    }
   }
   document.dispatchEvent(new CustomEvent('snz:page', { detail }))
 }

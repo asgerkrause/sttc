@@ -14,12 +14,7 @@ export function publicPath(pathname) {
 }
 
 export function isAssetPath(path) {
-  return (
-    path.startsWith('/assets/') ||
-    path.startsWith('/lib/') ||
-    path === '/router.js' ||
-    /\.[a-z0-9]+$/i.test(path)
-  )
+  return path.startsWith('/assets/') || path.startsWith('/lib/') || path === '/router.js' || /\.[a-z0-9]+$/i.test(path)
 }
 
 export function slugFromRouteFile(filename) {

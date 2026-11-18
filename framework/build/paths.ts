@@ -35,7 +35,9 @@ export function projectPaths(projectRoot = root) {
 }
 
 async function exists(path: string) {
-  return stat(path).then(() => true).catch(() => false)
+  return stat(path)
+    .then(() => true)
+    .catch(() => false)
 }
 
 export function sourceAppDir(projectRoot = root) {

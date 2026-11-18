@@ -14,14 +14,23 @@ async function writeMinimalProject(dir: string) {
   await mkdir(join(dir, 'src', 'videos'), { recursive: true })
   await mkdir(join(dir, 'src', 'files'), { recursive: true })
 
-  await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
-    name: 'Context Fixture',
-    url: 'https://example.com',
-    description: 'Temp project used to prove context-aware framework APIs.',
-    locale: 'en',
-  }, null, 2))
+  await writeFile(
+    join(dir, 'src', 'site.json'),
+    JSON.stringify(
+      {
+        name: 'Context Fixture',
+        url: 'https://example.com',
+        description: 'Temp project used to prove context-aware framework APIs.',
+        locale: 'en',
+      },
+      null,
+      2,
+    ),
+  )
 
-  await writeFile(join(dir, 'src', 'shell.html'), `<!doctype html>
+  await writeFile(
+    join(dir, 'src', 'shell.html'),
+    `<!doctype html>
 <html lang="{{locale}}">
 <head>
   <meta charset="UTF-8">
@@ -34,12 +43,16 @@ async function writeMinimalProject(dir: string) {
   <main></main>
 </body>
 </html>
-`)
+`,
+  )
   await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>Context fixture</h1>')
   await writeFile(join(dir, 'src', 'pages', '404.html'), '<h1>Not found</h1>')
   await writeFile(join(dir, 'src', 'styles.css'), ':root{color-scheme:light}body{margin:0;font-family:sans-serif}')
   await writeFile(join(dir, 'src', 'app.ts'), 'export {}\n')
-  await writeFile(join(dir, 'src', 'files', 'manual.html'), '<!doctype html><title>Raw manual</title><p>Public raw file</p>\n')
+  await writeFile(
+    join(dir, 'src', 'files', 'manual.html'),
+    '<!doctype html><title>Raw manual</title><p>Public raw file</p>\n',
+  )
 }
 
 describe('build API spine', () => {
@@ -80,7 +93,10 @@ describe('build API spine', () => {
       const shellFile = join(dir, 'src', 'shell.html')
       const shell = (await readFile(shellFile, 'utf8'))
         .replace('<html lang="{{locale}}">', '<html lang="{{locale}}" data-scroll="{{scroll}}">')
-        .replace('  <script src="/assets/js/app.js"', '  <script src="/assets/js/scroll.js" defer></script>\n  <script src="/assets/js/app.js"')
+        .replace(
+          '  <script src="/assets/js/app.js"',
+          '  <script src="/assets/js/scroll.js" defer></script>\n  <script src="/assets/js/app.js"',
+        )
       await writeFile(shellFile, shell)
       const siteFile = join(dir, 'src', 'site.json')
       const site = JSON.parse(await readFile(siteFile, 'utf8'))
@@ -111,14 +127,24 @@ describe('build API spine', () => {
     try {
       await writeMinimalProject(dir)
       const components = join(dir, 'src', 'components')
-      await writeFile(join(components, 'Used.html'), `<article><Inner /></article>\n<style>.used-marker{color:green}</style>\n<script>window.__used = el</script>\n`)
-      await writeFile(join(components, 'Inner.html'), `<span>{{slot}}</span>\n<style>.inner-marker{color:blue}</style>\n<script>window.__inner = el</script>\n`)
-      await writeFile(join(components, 'Unused.html'), `<aside></aside>\n<style>.unused-marker{color:red}</style>\n<script>window.__unused = el</script>\n`)
+      await writeFile(
+        join(components, 'Used.html'),
+        `<article><Inner /></article>\n<style>.used-marker{color:green}</style>\n<script>window.__used = el</script>\n`,
+      )
+      await writeFile(
+        join(components, 'Inner.html'),
+        `<span>{{slot}}</span>\n<style>.inner-marker{color:blue}</style>\n<script>window.__inner = el</script>\n`,
+      )
+      await writeFile(
+        join(components, 'Unused.html'),
+        `<aside></aside>\n<style>.unused-marker{color:red}</style>\n<script>window.__unused = el</script>\n`,
+      )
       await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>Context fixture</h1><Used />')
 
       const result = await build({ context: createBuildContext({ rootDir: dir }) })
-      const cssFiles = (await (await import('fs/promises')).readdir(join(dir, 'dist', 'assets', 'css')))
-        .filter((file) => /^components\..+\.css$/.test(file))
+      const cssFiles = (await (await import('fs/promises')).readdir(join(dir, 'dist', 'assets', 'css'))).filter(
+        (file) => /^components\..+\.css$/.test(file),
+      )
       const css = await readFile(join(dir, 'dist', 'assets', 'css', cssFiles[0]!), 'utf8')
       const app = await readFile(join(dir, 'dist', 'assets', 'js', result.appJsFile), 'utf8')
       const html = await readFile(join(dir, 'dist', 'index.html'), 'utf8')
@@ -144,7 +170,10 @@ describe('build API spine', () => {
       const components = join(dir, 'src', 'components')
       await writeFile(join(components, 'Image.html'), '<div>{{imgMain}}</div>')
       await writeFile(join(components, 'Picture.html'), '<Image src="{{src}}" alt="{{alt}}" max="{{max}}" />')
-      await writeFile(join(dir, 'src', 'pages', 'index.html'), '<h1>Image</h1><Picture src="hero" alt="Hero" max="800" />')
+      await writeFile(
+        join(dir, 'src', 'pages', 'index.html'),
+        '<h1>Image</h1><Picture src="hero" alt="Hero" max="800" />',
+      )
       await Bun.write(join(dir, 'src', 'images', 'hero.png'), Bun.file('templates/default/src/images/og.png'))
 
       await expect(build({ context: createBuildContext({ rootDir: dir }) })).rejects.toThrow(
@@ -190,21 +219,30 @@ test('concurrent project builds keep loggers local and console unchanged', async
   const originalLog = console.log
   const originalWarn = console.warn
   try {
-    const logs = await Promise.all(dirs.map(async dir => {
-      await writeMinimalProject(dir)
-      const messages: string[] = []
-      const logger = { log: (message: string) => { messages.push(message) }, warn: (message: string) => { messages.push(message) } }
-      await build({ context: createBuildContext({ rootDir: dir }), logger })
-      return messages
-    }))
+    const logs = await Promise.all(
+      dirs.map(async (dir) => {
+        await writeMinimalProject(dir)
+        const messages: string[] = []
+        const logger = {
+          log: (message: string) => {
+            messages.push(message)
+          },
+          warn: (message: string) => {
+            messages.push(message)
+          },
+        }
+        await build({ context: createBuildContext({ rootDir: dir }), logger })
+        return messages
+      }),
+    )
     for (const [index, messages] of logs.entries()) {
-      expect(messages.some(message => message.includes(dirs[index]))).toBe(true)
-      expect(messages.some(message => message.includes(dirs[1 - index]))).toBe(false)
-      expect(messages.some(message => message.startsWith('built 2 routes'))).toBe(true)
+      expect(messages.some((message) => message.includes(dirs[index]))).toBe(true)
+      expect(messages.some((message) => message.includes(dirs[1 - index]))).toBe(false)
+      expect(messages.some((message) => message.startsWith('built 2 routes'))).toBe(true)
     }
     expect(console.log).toBe(originalLog)
     expect(console.warn).toBe(originalWarn)
   } finally {
-    await Promise.all(dirs.map(dir => rm(dir, { recursive: true, force: true })))
+    await Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true })))
   }
 })

@@ -10,7 +10,7 @@ afterEach(async () => {
   for (const dir of tempDirs.splice(0)) await rm(dir, { recursive: true, force: true })
 })
 
-async function makeProject(options: { siteJson?: string, body?: string } = {}) {
+async function makeProject(options: { siteJson?: string; body?: string } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'snz-atomic-dist-'))
   tempDirs.push(dir)
 
@@ -19,13 +19,19 @@ async function makeProject(options: { siteJson?: string, body?: string } = {}) {
   await mkdir(join(dir, 'src', 'styles'), { recursive: true })
   await mkdir(join(dir, 'dist'), { recursive: true })
 
-  await writeFile(join(dir, 'src', 'site.json'), options.siteJson ?? JSON.stringify({
-    name: 'Atomic Dist',
-    url: 'https://example.com',
-    description: 'Atomic build fixture.',
-    locale: 'en',
-  }))
-  await writeFile(join(dir, 'src', 'shell.html'), `<!doctype html>
+  await writeFile(
+    join(dir, 'src', 'site.json'),
+    options.siteJson ??
+      JSON.stringify({
+        name: 'Atomic Dist',
+        url: 'https://example.com',
+        description: 'Atomic build fixture.',
+        locale: 'en',
+      }),
+  )
+  await writeFile(
+    join(dir, 'src', 'shell.html'),
+    `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -38,14 +44,18 @@ async function makeProject(options: { siteJson?: string, body?: string } = {}) {
   <main></main>
 </body>
 </html>
-`)
+`,
+  )
   await writeFile(join(dir, 'src', 'styles.css'), 'body{font-family:system-ui}\n')
   await writeFile(join(dir, 'src', 'app.ts'), 'window.__atomicDist = true\n')
-  await writeFile(join(dir, 'src', 'pages', 'index.html'), `<head>
+  await writeFile(
+    join(dir, 'src', 'pages', 'index.html'),
+    `<head>
   <SEO title="Home" description="Home page." path="/" />
 </head>
 ${options.body ?? '<h1>Home body</h1>'}
-`)
+`,
+  )
   await writeFile(join(dir, 'src', 'pages', '404.html'), '<h1>Not found</h1>\n')
   await writeFile(join(dir, 'dist', 'keep.txt'), 'old dist')
   await writeFile(join(dir, 'dist', 'stale.txt'), 'stale output')
@@ -100,7 +110,8 @@ describe('atomic dist build', () => {
     const dir = await makeProject()
     const imageDir = join(dir, 'src', 'images')
     const imagePath = join(imageDir, 'hero.png')
-    const png = 'iVBORw0KGgoAAAANSUhEUgAAADwAAABaCAIAAABrM6JiAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAPKADAAQAAAABAAAAWgAAAACdrWuxAAAA4klEQVRoBe3SwQkAIRDF0NH+e97tIKcgDMRr4CNPzzf7zt135Zku/erVkk4aBPoegKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04alop/QME/wGzn3VIjwAAAABJRU5ErkJggg=='
+    const png =
+      'iVBORw0KGgoAAAANSUhEUgAAADwAAABaCAIAAABrM6JiAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAPKADAAQAAAABAAAAWgAAAACdrWuxAAAA4klEQVRoBe3SwQkAIRDF0NH+e97tIKcgDMRr4CNPzzf7zt135Zku/erVkk4aBPoegKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04alop/QME/wGzn3VIjwAAAABJRU5ErkJggg=='
     await mkdir(imageDir, { recursive: true })
     await writeFile(imagePath, Buffer.from(png, 'base64'))
 
@@ -156,7 +167,8 @@ for (const failure of ['config', 'link']) {
     expect(result.code).toBe(1)
     const envelope: unknown = JSON.parse(result.stdout)
     expect(envelope).toMatchObject({ version: 1, command: 'build', outcome: 'failure' })
-    for (const [path, hash] of before) expect(Bun.hash(await Bun.file(join(dir, 'dist', path)).arrayBuffer()).toString()).toBe(hash)
+    for (const [path, hash] of before)
+      expect(Bun.hash(await Bun.file(join(dir, 'dist', path)).arrayBuffer()).toString()).toBe(hash)
     const after = []
     for await (const path of paths.scan({ cwd: join(dir, 'dist'), onlyFiles: true })) after.push(path)
     expect(after.sort()).toEqual([...before.keys(), '__build-error.html'].sort())

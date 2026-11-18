@@ -92,5 +92,3 @@ export function pairedClose(html: string, name: string, openEnd: number): { inde
   }
   return null
 }
-
-

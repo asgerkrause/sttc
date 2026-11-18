@@ -34,10 +34,23 @@ async function readPackage(target: string) {
 
 async function assertStarter(target: string) {
   for (const path of [
-    'AGENTS.md', 'README.md', 'src/shell.html', 'src/site.json', 'src/app.ts', 'src/snz.d.ts',
-    'src/styles.css', 'src/styles/global.css',
-    'src/styles/tokens.css', 'src/styles/crft.css', 'src/styles/crft-manifest.json',
-    'src/pages/index.html', 'src/pages/404.html', 'src/images/og.png', 'tsconfig.json', 'vercel.json', '.gitignore',
+    'AGENTS.md',
+    'README.md',
+    'src/shell.html',
+    'src/site.json',
+    'src/app.ts',
+    'src/snz.d.ts',
+    'src/styles.css',
+    'src/styles/global.css',
+    'src/styles/tokens.css',
+    'src/styles/crft.css',
+    'src/styles/crft-manifest.json',
+    'src/pages/index.html',
+    'src/pages/404.html',
+    'src/images/og.png',
+    'tsconfig.json',
+    'vercel.json',
+    '.gitignore',
   ]) {
     if (!(await Bun.file(join(target, path)).exists())) throw new Error(`created starter missing ${path}`)
   }
@@ -47,15 +60,18 @@ async function assertStarter(target: string) {
   if (styles.includes('layers')) throw new Error('created starter includes legacy CSS layers')
   if (styles.some((path) => /\.(woff2?|ttf|otf)$/i.test(path))) throw new Error('created starter includes font assets')
   const manifest: unknown = JSON.parse(await Bun.file(join(stylesDir, 'crft-manifest.json')).text())
-  if (!manifest || typeof manifest !== 'object'
-    || !('contractVersion' in manifest) || manifest.contractVersion !== 3
-    || !('packagingVersion' in manifest) || manifest.packagingVersion !== 1) {
+  if (
+    !manifest ||
+    typeof manifest !== 'object' ||
+    !('contractVersion' in manifest) ||
+    manifest.contractVersion !== 3 ||
+    !('packagingVersion' in manifest) ||
+    manifest.packagingVersion !== 1
+  ) {
     throw new Error('created starter has an invalid Craft v3 package manifest')
   }
 
-  const components = (await readdir(join(target, 'src', 'components')))
-    .filter((file) => file.endsWith('.html'))
-    .sort()
+  const components = (await readdir(join(target, 'src', 'components'))).filter((file) => file.endsWith('.html')).sort()
   const expected = ['Footer.html', 'Grid.html', 'Header.html', 'Image.html', 'Logo.html', 'Section.html', 'Video.html']
   if (components.join(',') !== expected.join(',')) {
     throw new Error(`created starter has unexpected components: ${components.join(', ')}`)
@@ -71,13 +87,17 @@ async function ownedInputs(target: string) {
   const paths = (await readdir(target, { recursive: true, withFileTypes: true }))
     .filter((entry) => entry.isFile())
     .map((entry) => join(entry.parentPath, entry.name).slice(target.length + 1))
-    .filter((path) => !/^(node_modules|dist|\.snz)(\/|$)/.test(path)
-      && !['package.json', 'bun.lock', 'bun.lockb'].includes(path))
+    .filter(
+      (path) =>
+        !/^(node_modules|dist|\.snz)(\/|$)/.test(path) && !['package.json', 'bun.lock', 'bun.lockb'].includes(path),
+    )
     .sort()
-  return Promise.all(paths.map(async (path) => ({
-    path,
-    hash: new Bun.CryptoHasher('sha256').update(await Bun.file(join(target, path)).arrayBuffer()).digest('hex'),
-  })))
+  return Promise.all(
+    paths.map(async (path) => ({
+      path,
+      hash: new Bun.CryptoHasher('sha256').update(await Bun.file(join(target, path)).arrayBuffer()).digest('hex'),
+    })),
+  )
 }
 
 async function assertPreserved(target: string, before: Awaited<ReturnType<typeof ownedInputs>>) {
@@ -106,19 +126,24 @@ async function assertConsumerOutput(target: string) {
   const styles: string[] = []
   const scripts: string[] = []
   new HTMLRewriter()
-    .on('link[rel="stylesheet"]', { element(el) {
-      const href = el.getAttribute('href')
-      if (href?.startsWith('/assets/')) styles.push(href)
-    } })
-    .on('script[src]', { element(el) {
-      const src = el.getAttribute('src')
-      if (src?.startsWith('/assets/')) scripts.push(src)
-    } }).transform(await Bun.file(join(target, 'dist/index.html')).text())
-  const css = (await Promise.all(styles.map(path => Bun.file(join(target, 'dist', path.slice(1))).text()))).join('\n')
+    .on('link[rel="stylesheet"]', {
+      element(el) {
+        const href = el.getAttribute('href')
+        if (href?.startsWith('/assets/')) styles.push(href)
+      },
+    })
+    .on('script[src]', {
+      element(el) {
+        const src = el.getAttribute('src')
+        if (src?.startsWith('/assets/')) scripts.push(src)
+      },
+    })
+    .transform(await Bun.file(join(target, 'dist/index.html')).text())
+  const css = (await Promise.all(styles.map((path) => Bun.file(join(target, 'dist', path.slice(1))).text()))).join('\n')
   if (!css.includes('--field-note-accent') || !css.includes('.field-note') || !css.includes('53rem')) {
     throw new Error('consumer CSS output missing')
   }
-  const js = (await Promise.all(scripts.map(path => Bun.file(join(target, 'dist', path.slice(1))).text()))).join('\n')
+  const js = (await Promise.all(scripts.map((path) => Bun.file(join(target, 'dist', path.slice(1))).text()))).join('\n')
   if (!js.includes('field-notes')) throw new Error('consumer app output missing')
 }
 
@@ -152,9 +177,20 @@ async function assertConsumerUpgrade() {
     ['script[src*="/app."]', 'consumer app output missing'],
   ]) {
     try {
-      await Bun.write(home, new HTMLRewriter().on(selector, { element(el) { el.remove() } }).transform(originalHome))
+      await Bun.write(
+        home,
+        new HTMLRewriter()
+          .on(selector, {
+            element(el) {
+              el.remove()
+            },
+          })
+          .transform(originalHome),
+      )
       await expectFailure(`unreferenced asset: ${selector}`, () => assertConsumerOutput(target), message)
-    } finally { await Bun.write(home, originalHome) }
+    } finally {
+      await Bun.write(home, originalHome)
+    }
   }
   await assertConsumerOutput(target)
 
@@ -179,18 +215,27 @@ async function assertConsumerUpgrade() {
     // Simulate a candidate that newly requires a starter-owned Craft file.
     await Bun.write(candidate, originalCli.replace('\n', '\nawait Bun.file("src/styles/crft-manifest.json").text();\n'))
     const missingDependency = Bun.spawn(['bun', candidate, 'build'], {
-      cwd: target, stdout: 'ignore', stderr: 'pipe',
+      cwd: target,
+      stdout: 'ignore',
+      stderr: 'pipe',
     })
     const diagnostic = await new Response(missingDependency.stderr).text()
-    if (await missingDependency.exited === 0 || !diagnostic.includes('ENOENT')
-      || !diagnostic.includes('src/styles/crft-manifest.json')) {
+    if (
+      (await missingDependency.exited) === 0 ||
+      !diagnostic.includes('ENOENT') ||
+      !diagnostic.includes('src/styles/crft-manifest.json')
+    ) {
       throw new Error('consumer failure proof did not reject the new required starter file')
     }
     console.log('consumer failure proof ok: new required starter file')
     await rm(join(target, 'dist'), { recursive: true, force: true })
     await Bun.write(candidate, 'process.exit(0)\n')
     await run(['bun', candidate, 'build'], target)
-    await expectFailure('successful candidate without output', () => assertConsumerOutput(target), 'consumer output missing: index.html')
+    await expectFailure(
+      'successful candidate without output',
+      () => assertConsumerOutput(target),
+      'consumer output missing: index.html',
+    )
   } finally {
     await Bun.write(candidate, originalCli)
   }

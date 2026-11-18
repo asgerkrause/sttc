@@ -4,7 +4,9 @@ import { BuildError } from '../build/errors'
 import { RouteGraph } from '../build/route-graph'
 
 function graph() {
-  return new RouteGraph({ composer: { prepareRoute: async () => ({ html: '', unlisted: false }) } as unknown as Composer })
+  return new RouteGraph({
+    composer: { prepareRoute: async () => ({ html: '', unlisted: false }) } as unknown as Composer,
+  })
 }
 
 describe('route ownership', () => {
@@ -23,7 +25,9 @@ describe('route ownership', () => {
 
     routes.register({ slug: 'about', kind: 'static', source: 'src/pages/about.html' })
 
-    expect(() => routes.register({ slug: 'about', kind: 'static', source: 'src/pages/about/index.html' })).toThrow(BuildError)
+    expect(() => routes.register({ slug: 'about', kind: 'static', source: 'src/pages/about/index.html' })).toThrow(
+      BuildError,
+    )
   })
 
   test('fails when content collides with authored static route', () => {
@@ -31,7 +35,9 @@ describe('route ownership', () => {
 
     routes.register({ slug: 'about', kind: 'static', source: 'src/pages/about.html' })
 
-    expect(() => routes.register({ slug: 'about', kind: 'content', source: 'content/pages/about.md' })).toThrow(BuildError)
+    expect(() => routes.register({ slug: 'about', kind: 'content', source: 'content/pages/about.md' })).toThrow(
+      BuildError,
+    )
   })
 
   test('fails when generated indexes collide with authored routes', () => {

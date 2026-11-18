@@ -59,8 +59,9 @@ const card = `<!--
 const section = `<!-- @desc Neutral benchmark section. -->\n<section>{{slot}}</section>`
 
 function routeBody(index: number) {
-  const cards = Array.from({ length: 8 }, (_, cardIndex) =>
-    `<Card title="Card ${cardIndex + 1}"><p>Deterministic body ${index}-${cardIndex}.</p></Card>`,
+  const cards = Array.from(
+    { length: 8 },
+    (_, cardIndex) => `<Card title="Card ${cardIndex + 1}"><p>Deterministic body ${index}-${cardIndex}.</p></Card>`,
   ).join('\n')
   const path = index === 0 ? '/' : `/page-${String(index).padStart(4, '0')}/`
   return `<head><SEO title="Page ${index}" description="Deterministic benchmark route ${index}." path="${path}" /></head>\n<h1>Page ${index}</h1>\n${cards}\n`
@@ -68,19 +69,29 @@ function routeBody(index: number) {
 
 export async function createFixture(rootDir: string, scenario: Scenario, scale: number) {
   await rm(rootDir, { recursive: true, force: true })
-  await write(join(rootDir, 'src/site.json'), JSON.stringify({
-    name: 'SNZ benchmark',
-    url: 'https://benchmark.invalid',
-    description: 'Deterministic benchmark fixture for renderer performance.',
-    locale: 'en',
-  }, null, 2))
+  await write(
+    join(rootDir, 'src/site.json'),
+    JSON.stringify(
+      {
+        name: 'SNZ benchmark',
+        url: 'https://benchmark.invalid',
+        description: 'Deterministic benchmark fixture for renderer performance.',
+        locale: 'en',
+      },
+      null,
+      2,
+    ),
+  )
   await write(join(rootDir, 'src/shell.html'), shell)
   await write(join(rootDir, 'src/components/Card.html'), card)
   await write(join(rootDir, 'src/components/Section.html'), section)
   await write(join(rootDir, 'src/styles.css'), ':root{font-family:system-ui}\n')
   await write(join(rootDir, 'src/app.ts'), 'export {}\n')
   await write(join(rootDir, 'src/pages/index.html'), routeBody(0))
-  await write(join(rootDir, 'src/pages/404.html'), '<head><SEO title="Not found" description="Deterministic benchmark 404 route." /></head>\n<h1>Not found</h1>\n')
+  await write(
+    join(rootDir, 'src/pages/404.html'),
+    '<head><SEO title="Not found" description="Deterministic benchmark 404 route." /></head>\n<h1>Not found</h1>\n',
+  )
 
   if (scenario === 'routes') {
     for (let index = 1; index < scale; index++) {
@@ -90,7 +101,10 @@ export async function createFixture(rootDir: string, scenario: Scenario, scale: 
     await write(join(rootDir, 'src/templates/post.html'), '<article><h1>{{title}}</h1>{{body}}</article>\n')
     for (let index = 0; index < scale; index++) {
       const id = String(index).padStart(4, '0')
-      await write(join(rootDir, 'content/posts', `post-${id}.md`), `---\ntitle: Post ${id}\ndate: 2025-01-01\ndescription: Deterministic content record ${id}.\ntags: [group-${index % 10}]\n---\n\nParagraph ${id}.\n`)
+      await write(
+        join(rootDir, 'content/posts', `post-${id}.md`),
+        `---\ntitle: Post ${id}\ndate: 2025-01-01\ndescription: Deterministic content record ${id}.\ntags: [group-${index % 10}]\n---\n\nParagraph ${id}.\n`,
+      )
     }
   } else {
     for (let index = 0; index < scale; index++) {
@@ -107,7 +121,10 @@ async function inventory(root: string) {
     for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
       const path = join(dir, entry.name)
       if (entry.isDirectory()) await walk(path)
-      else if (entry.isFile()) { files++; bytes += (await stat(path)).size }
+      else if (entry.isFile()) {
+        files++
+        bytes += (await stat(path)).size
+      }
     }
   }
   await walk(root)
@@ -115,7 +132,9 @@ async function inventory(root: string) {
 }
 
 export async function validateFixture(rootDir: string, scenario: Scenario, scale: number) {
-  const manifest = await Bun.file(join(rootDir, 'dist/site.manifest.json')).json() as { routes?: Array<{ slug: string }> }
+  const manifest = (await Bun.file(join(rootDir, 'dist/site.manifest.json')).json()) as {
+    routes?: Array<{ slug: string }>
+  }
   const slugs = (manifest.routes ?? []).map((route) => route.slug).sort()
   const expected = ['index']
   if (scenario === 'routes') {
@@ -140,7 +159,8 @@ export async function validateFixture(rootDir: string, scenario: Scenario, scale
       routeSlugs.push(rel.replace(/\\/g, '/').replace(new RegExp(`\\.${extension}$`), ''))
     }
     routeSlugs.sort()
-    if (JSON.stringify(routeSlugs) !== JSON.stringify(expected)) throw new Error(`route ${extension.toUpperCase()} inventory mismatch`)
+    if (JSON.stringify(routeSlugs) !== JSON.stringify(expected))
+      throw new Error(`route ${extension.toUpperCase()} inventory mismatch`)
   }
 
   const publicSlugs: string[] = ['index']
@@ -155,9 +175,8 @@ export async function validateFixture(rootDir: string, scenario: Scenario, scale
   publicSlugs.sort()
   if (JSON.stringify(publicSlugs) !== JSON.stringify(expected)) throw new Error('public route inventory mismatch')
 
-  const publicPath = (slug: string) => slug === 'index'
-    ? join(rootDir, 'dist', 'index.html')
-    : join(rootDir, 'dist', slug, 'index.html')
+  const publicPath = (slug: string) =>
+    slug === 'index' ? join(rootDir, 'dist', 'index.html') : join(rootDir, 'dist', slug, 'index.html')
   for (const slug of expected) {
     const jsonPath = join(rootDir, 'dist', 'routes', `${slug}.json`)
     const markdownPath = join(rootDir, 'dist', 'routes', `${slug}.md`)
@@ -170,14 +189,16 @@ export async function validateFixture(rootDir: string, scenario: Scenario, scale
     for (let index = 0; index < scale; index++) {
       const slug = index === 0 ? 'index' : `page-${String(index).padStart(4, '0')}`
       const page = await Bun.file(publicPath(slug)).text()
-      if (!new RegExp(`<h1[^>]*>Page ${index}</h1>`).test(page) || page.includes('{{')) throw new Error(`invalid route output ${slug}`)
+      if (!new RegExp(`<h1[^>]*>Page ${index}</h1>`).test(page) || page.includes('{{'))
+        throw new Error(`invalid route output ${slug}`)
     }
   }
   if (scenario === 'content') {
     for (let index = 0; index < scale; index++) {
       const id = String(index).padStart(4, '0')
       const page = await Bun.file(publicPath(`insights/post-${id}`)).text()
-      if (!new RegExp(`<h1[^>]*>Post ${id}</h1>`).test(page) || page.includes('{{')) throw new Error(`invalid content output post-${id}`)
+      if (!new RegExp(`<h1[^>]*>Post ${id}</h1>`).test(page) || page.includes('{{'))
+        throw new Error(`invalid content output post-${id}`)
     }
     const feed = await Bun.file(join(rootDir, 'dist', 'feed.xml')).text()
     const last = String(scale - 1).padStart(4, '0')
@@ -188,7 +209,8 @@ export async function validateFixture(rootDir: string, scenario: Scenario, scale
     const mediaDir = join(rootDir, 'dist', 'assets', 'files')
     const expectedFiles = Array.from({ length: scale }, (_, index) => `asset-${String(index).padStart(4, '0')}.bin`)
     const actualFiles = (await readdir(mediaDir).catch(() => [])).sort()
-    if (JSON.stringify(actualFiles) !== JSON.stringify(expectedFiles)) throw new Error('media output inventory mismatch')
+    if (JSON.stringify(actualFiles) !== JSON.stringify(expectedFiles))
+      throw new Error('media output inventory mismatch')
     for (let index = 0; index < scale; index++) {
       const rel = `assets/files/${expectedFiles[index]}`
       const bytes = new Uint8Array(await Bun.file(join(rootDir, 'dist', rel)).arrayBuffer())
@@ -200,10 +222,21 @@ export async function validateFixture(rootDir: string, scenario: Scenario, scale
   }
 }
 
-async function runOnce(frameworkRoot: string, rootDir: string, scenario: Scenario, mode: Mode, scale: number, iteration: number, warmup: boolean): Promise<RunRecord> {
+async function runOnce(
+  frameworkRoot: string,
+  rootDir: string,
+  scenario: Scenario,
+  mode: Mode,
+  scale: number,
+  iteration: number,
+  warmup: boolean,
+): Promise<RunRecord> {
   if (mode === 'clean') await rm(join(rootDir, 'dist'), { recursive: true, force: true })
   if (mode === 'route-edit') {
-    await write(join(rootDir, 'src/pages/index.html'), `${routeBody(0)}\n<!-- benchmark edit ${String(iteration).padStart(8, '0')} -->\n`)
+    await write(
+      join(rootDir, 'src/pages/index.html'),
+      `${routeBody(0)}\n<!-- benchmark edit ${String(iteration).padStart(8, '0')} -->\n`,
+    )
   }
   const started = performance.now()
   const proc = Bun.spawn(['bun', join(frameworkRoot, 'framework/build/index.ts')], {
@@ -303,18 +336,24 @@ async function internal() {
     frameworkRoot,
   }
   await write(resultPath, `${JSON.stringify({ schemaVersion: 1, environment, records }, null, 2)}\n`)
-  console.log(JSON.stringify({
-    scenario,
-    mode,
-    scale,
-    samples,
-    wallMs: summary(measured.map((record) => record.wallMs)),
-    cpuMs: summary(measured.map((record) => record.cpuUserMs + record.cpuSystemMs)),
-    peakRssBytes: Math.max(...measured.map((record) => record.maxRssBytes)),
-    outputFiles: measured[0]?.outputFiles,
-    outputBytes: measured[0]?.outputBytes,
-    resultPath,
-  }, null, 2))
+  console.log(
+    JSON.stringify(
+      {
+        scenario,
+        mode,
+        scale,
+        samples,
+        wallMs: summary(measured.map((record) => record.wallMs)),
+        cpuMs: summary(measured.map((record) => record.cpuUserMs + record.cpuSystemMs)),
+        peakRssBytes: Math.max(...measured.map((record) => record.maxRssBytes)),
+        outputFiles: measured[0]?.outputFiles,
+        outputBytes: measured[0]?.outputBytes,
+        resultPath,
+      },
+      null,
+      2,
+    ),
+  )
 }
 
 async function validate() {
@@ -325,16 +364,23 @@ async function validate() {
 }
 
 function categoryDryRun() {
-  console.log(JSON.stringify({
-    status: 'dry-run-only',
-    category: 'General-purpose static site generators with reusable composition and no mandatory hydration',
-    peers,
-    primaryScales: [10, 100, 1000],
-    warmups: 5,
-    samples: 30,
-    claimGate: 'Fastest in every claimed cell and bootstrap 95% CI for SNZ / next-best below 0.95 on Linux x64 and arm64',
-    note: 'Peer installation and measured category runs require separate approval.',
-  }, null, 2))
+  console.log(
+    JSON.stringify(
+      {
+        status: 'dry-run-only',
+        category: 'General-purpose static site generators with reusable composition and no mandatory hydration',
+        peers,
+        primaryScales: [10, 100, 1000],
+        warmups: 5,
+        samples: 30,
+        claimGate:
+          'Fastest in every claimed cell and bootstrap 95% CI for SNZ / next-best below 0.95 on Linux x64 and arm64',
+        note: 'Peer installation and measured category runs require separate approval.',
+      },
+      null,
+      2,
+    ),
+  )
 }
 
 if (import.meta.main) {

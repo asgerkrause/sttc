@@ -30,10 +30,7 @@ const ROUTE_SCRIPT_RE =
   /^<script(?![^>]*\bsrc=)(?![^>]*type=["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>\s*/i
 
 /** Route: inline <script> only before SEO/body markup. */
-export function extractRouteTopScripts(
-  body: string,
-  filename: string,
-): { body: string; scripts: string[] } {
+export function extractRouteTopScripts(body: string, filename: string): { body: string; scripts: string[] } {
   let rest = body.trim()
   const scripts: string[] = []
 
@@ -83,9 +80,7 @@ export function routeScriptBlocks(slug: string, scripts: string[], file = `src/p
 export function componentScriptBlocks(byComponent: Map<string, string[]>): ScriptBlock[] {
   const out: ScriptBlock[] = []
   for (const [name, blocks] of byComponent) {
-    const body = blocks
-      .map((b, i) => `// block ${i + 1}\n${b}`)
-      .join('\n\n')
+    const body = blocks.map((b, i) => `// block ${i + 1}\n${b}`).join('\n\n')
     const wrapped = `window.snz?._registerComponent('${name}', (el) => {\n${indent(body)}\n});`
     out.push({ label: `component:${name}`, code: wrapped, file: `src/components/${name}.html` })
   }
@@ -127,11 +122,7 @@ async function removeOldAppBundles(distAppDir: string, keep: string) {
  * Bundles the author app entry with Bun.build, appends extracted shell/component/route scripts,
  * writes dist/assets/js/app.{hash}.js, and returns the hashed filename.
  */
-export async function writeAppJs(
-  srcAppPath: string,
-  distAppDir: string,
-  blocks: ScriptBlock[],
-): Promise<string> {
+export async function writeAppJs(srcAppPath: string, distAppDir: string, blocks: ScriptBlock[]): Promise<string> {
   await mkdir(distAppDir, { recursive: true })
   const tempDir = join(distAppDir, '.app-build')
   await rm(tempDir, { recursive: true, force: true })
@@ -151,7 +142,11 @@ export async function writeAppJs(
       throw: false,
     })
     if (!result.success) {
-      const message = result.logs.map((log) => log.message).filter(Boolean).join('\n') || `Could not bundle ${srcAppPath}`
+      const message =
+        result.logs
+          .map((log) => log.message)
+          .filter(Boolean)
+          .join('\n') || `Could not bundle ${srcAppPath}`
       throw new BuildError(message, {
         file: srcAppPath,
         hint: 'Check imports from src/app.js or src/app.ts. Only PUBLIC_* env vars are inlined.',
@@ -192,7 +187,11 @@ export async function writeRouterJs(srcRouterPath: string, distJsDir: string): P
     throw: false,
   })
   if (!result.success) {
-    const message = result.logs.map((log) => log.message).filter(Boolean).join('\n') || `Could not bundle ${srcRouterPath}`
+    const message =
+      result.logs
+        .map((log) => log.message)
+        .filter(Boolean)
+        .join('\n') || `Could not bundle ${srcRouterPath}`
     throw new BuildError(message, {
       file: srcRouterPath,
       hint: 'Check framework/runtime/router.js and its lib/paths.js import.',
@@ -230,14 +229,15 @@ async function minifyBrowserJs(code: string, tempFile: string, blocks: ScriptBlo
     // failing line names it. Lines before the first marker are the bundled app entry.
     const failure = result.logs.find((log) => log.level === 'error') ?? result.logs[0]
     const line = failure?.position?.line ?? 0
-    const marker = code.split('\n', line).reverse().find((text) => text.startsWith('// build: '))
+    const marker = code
+      .split('\n', line)
+      .reverse()
+      .find((text) => text.startsWith('// build: '))
     const block = marker ? blocks.find((candidate) => candidate.label === marker.slice('// build: '.length)) : undefined
     const where = failure?.position?.lineText ? `\n  ${failure.position.lineText.trim()}` : ''
     throw new BuildError(`${failure?.message ?? 'Could not bundle scripts'} in ${block?.label ?? 'app'}${where}`, {
       file: block?.file ?? appFile,
-      hint: block
-        ? `Fix the <script> in ${block.file ?? block.label}.`
-        : 'Check the bundled output of src/app.ts.',
+      hint: block ? `Fix the <script> in ${block.file ?? block.label}.` : 'Check the bundled output of src/app.ts.',
     })
   }
   const output = result.outputs.find((file) => file.path.endsWith('.js'))

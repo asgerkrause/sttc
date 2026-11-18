@@ -1,9 +1,6 @@
 import type { Composer, ComposeInstance } from './compose'
 import type { TemplateContext } from './template-directives'
-import {
-  extractRouteMetadata,
-  type RouteRecord,
-} from './discovery'
+import { extractRouteMetadata, type RouteRecord } from './discovery'
 import { BuildError } from './errors'
 
 type RouteComposer = Pick<Composer, 'prepareRoute'>
@@ -60,7 +57,8 @@ export class RouteGraph {
     const existing = this.#routes.get(owner.slug)
     // A slug composes once, by its registered owner; anything else is a duplicate route.
     if (existing && this.#composed.has(owner.slug)) throw this.#duplicate(owner, existing)
-    const route = existing && existing.kind === owner.kind && existing.source === owner.source ? existing : this.register(owner)
+    const route =
+      existing && existing.kind === owner.kind && existing.source === owner.source ? existing : this.register(owner)
     this.#composed.add(route.slug)
     const { html, unlisted } = await this.#composer.prepareRoute(body, {
       slug: route.slug,

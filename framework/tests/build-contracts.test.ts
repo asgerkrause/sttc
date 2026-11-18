@@ -6,9 +6,22 @@ import { createComposer } from '../build/compose'
 import { buildYear, outFileFromSlug, slugFromPageRel, sourceDateEpoch } from '../build/source-files'
 import { slugify } from '../build/markdown'
 import { BuildError } from '../build/errors'
-import { assertUniqueImageNames, imageSourceRoots, parsePagesCmsMediaInputs, parsePagesCmsMediaOutputs, processImages, resolveImageAttrs } from '../build/images'
+import {
+  assertUniqueImageNames,
+  imageSourceRoots,
+  parsePagesCmsMediaInputs,
+  parsePagesCmsMediaOutputs,
+  processImages,
+  resolveImageAttrs,
+} from '../build/images'
 import { imageNameFromSrc, parsePositiveImageInteger } from '../build/scan-images'
-import { publicMarkdownPathFromSlug, publicPathFromSlug, routeJsonPathFromSlug, routeMarkdownPathFromSlug, slugFromPath } from '../runtime/lib/paths.js'
+import {
+  publicMarkdownPathFromSlug,
+  publicPathFromSlug,
+  routeJsonPathFromSlug,
+  routeMarkdownPathFromSlug,
+  slugFromPath,
+} from '../runtime/lib/paths.js'
 import { checkBuiltOutput, checkPagesCmsConfig, checkVercelConfig, extractBuiltPublicAssetRefs } from '../build/check'
 import { selectAppEntry } from '../build/paths'
 
@@ -61,12 +74,15 @@ describe('build path contracts', () => {
     const previous = process.env.SOURCE_DATE_EPOCH
     try {
       await mkdir(join(dir, 'src'), { recursive: true })
-      await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
-        name: 'Year Site',
-        url: 'https://example.com',
-        description: 'Year fixture',
-        locale: 'en',
-      }))
+      await writeFile(
+        join(dir, 'src', 'site.json'),
+        JSON.stringify({
+          name: 'Year Site',
+          url: 'https://example.com',
+          description: 'Year fixture',
+          locale: 'en',
+        }),
+      )
       process.env.SOURCE_DATE_EPOCH = '0'
       const composer = createComposer(new Map(), new Map(), () => ({}), undefined, undefined, new Map(), {
         siteFile: join(dir, 'src', 'site.json'),
@@ -88,9 +104,16 @@ describe('build path contracts', () => {
     expect(parsePositiveImageInteger('1200', 'max')).toBe(1200)
     expect(() => parsePositiveImageInteger('1200px', 'max')).toThrow('positive integer')
     expect(() => parsePositiveImageInteger('0', 'quality')).toThrow('positive integer')
-    expect(() => resolveImageAttrs({ hero: { width: 1200, height: 800 } }, {
-      src: 'hero', alt: 'Hero', quality: '101',
-    })).toThrow('quality must be 1–100')
+    expect(() =>
+      resolveImageAttrs(
+        { hero: { width: 1200, height: 800 } },
+        {
+          src: 'hero',
+          alt: 'Hero',
+          quality: '101',
+        },
+      ),
+    ).toThrow('quality must be 1–100')
   })
 
   test('rejects invalid Image output dimensions before rendering', () => {
@@ -100,7 +123,8 @@ describe('build path contracts', () => {
   })
 
   test('prunes optional unresolved placeholders from component attributes', async () => {
-    const boxTemplate = '<section id="{{id}}" data-theme="{{theme}}" class="c {{center}}" style="--x: {{x}}; color: red">{{slot}}</section>'
+    const boxTemplate =
+      '<section id="{{id}}" data-theme="{{theme}}" class="c {{center}}" style="--x: {{x}}; color: red">{{slot}}</section>'
     const composer = createComposer(new Map([['Box', boxTemplate]]), new Map(), () => ({}))
 
     const html = await composer.prepareRouteSource('<Box><p>Hi</p></Box>', { slug: 'index', fileHint: 'test.html' })
@@ -144,21 +168,33 @@ content:
   test('accepts canonical Vercel static deploy config', async () => {
     const dir = await tempProject()
     try {
-      await writeFile(join(dir, 'vercel.json'), JSON.stringify({
-        framework: null,
-        installCommand: 'bun install',
-        buildCommand: 'bun run build',
-        devCommand: 'bun run dev',
-        outputDirectory: 'dist',
-        bunVersion: '1.x',
-        cleanUrls: true,
-        trailingSlash: true,
-        headers: [
-          { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }] },
-          { source: '/assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
-          { source: '/(llms|llms-full|robots|sitemap).(txt|xml)', headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }] },
-        ],
-      }))
+      await writeFile(
+        join(dir, 'vercel.json'),
+        JSON.stringify({
+          framework: null,
+          installCommand: 'bun install',
+          buildCommand: 'bun run build',
+          devCommand: 'bun run dev',
+          outputDirectory: 'dist',
+          bunVersion: '1.x',
+          cleanUrls: true,
+          trailingSlash: true,
+          headers: [
+            {
+              source: '/assets/(.*)',
+              headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
+            },
+            {
+              source: '/assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)',
+              headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+            },
+            {
+              source: '/(llms|llms-full|robots|sitemap).(txt|xml)',
+              headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }],
+            },
+          ],
+        }),
+      )
       const warnings: string[] = []
 
       await checkVercelConfig(dir, (warning) => warnings.push(warning))
@@ -171,14 +207,26 @@ content:
 
   test('warns when an immutable Cache-Control rule is not limited to hashed assets', async () => {
     const dir = await tempProject()
-    const immutable = (source: string) => ({ source, headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] })
-    const warning = (source: string) => `vercel.json: immutable Cache-Control on "${source}" is not limited to hashed assets; replaced media would stay cached. Match the hash group, e.g. /assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)`
+    const immutable = (source: string) => ({
+      source,
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+    })
+    const warning = (source: string) =>
+      `vercel.json: immutable Cache-Control on "${source}" is not limited to hashed assets; replaced media would stay cached. Match the hash group, e.g. /assets/(css|js)/(.*)\\.([a-f0-9]{8,})\\.(css|js|woff2?)`
     try {
       const shipped = JSON.parse(await readFile('vercel.json', 'utf8'))
-      await writeFile(join(dir, 'vercel.json'), JSON.stringify({
-        ...shipped,
-        headers: [...shipped.headers, immutable('/assets/(.*)'), immutable('/assets/js/vendor/(.*)'), immutable('/assets/:path+')],
-      }))
+      await writeFile(
+        join(dir, 'vercel.json'),
+        JSON.stringify({
+          ...shipped,
+          headers: [
+            ...shipped.headers,
+            immutable('/assets/(.*)'),
+            immutable('/assets/js/vendor/(.*)'),
+            immutable('/assets/:path+'),
+          ],
+        }),
+      )
       const warnings: string[] = []
 
       await checkVercelConfig(dir, (warning) => warnings.push(warning))
@@ -192,12 +240,15 @@ content:
   test('warns on Vercel deploy config drift', async () => {
     const dir = await tempProject()
     try {
-      await writeFile(join(dir, 'vercel.json'), JSON.stringify({
-        installCommand: 'npm install',
-        buildCommand: 'npm run build',
-        outputDirectory: 'public',
-        headers: [],
-      }))
+      await writeFile(
+        join(dir, 'vercel.json'),
+        JSON.stringify({
+          installCommand: 'npm install',
+          buildCommand: 'npm run build',
+          outputDirectory: 'public',
+          headers: [],
+        }),
+      )
       const warnings: string[] = []
 
       await checkVercelConfig(dir, (warning) => warnings.push(warning))
@@ -219,9 +270,13 @@ content:
   test('warns on PagesCMS media output drift', () => {
     const warnings: string[] = []
 
-    checkPagesCmsConfig(`media:\n  - name: images\n    input: src/images\n    output: /src/images\n`, (warning) => warnings.push(warning))
+    checkPagesCmsConfig(`media:\n  - name: images\n    input: src/images\n    output: /src/images\n`, (warning) =>
+      warnings.push(warning),
+    )
 
-    expect(warnings).toContain('.pages.yml: media.output "/src/images" should be /assets/images because CMS images publish as optimized assets')
+    expect(warnings).toContain(
+      '.pages.yml: media.output "/src/images" should be /assets/images because CMS images publish as optimized assets',
+    )
   })
 
   test('extracts built image refs from HTML attrs, meta content, srcset, and JSON', () => {
@@ -229,8 +284,9 @@ content:
 <meta property="og:image" content="/assets/images/og.webp">
 <video poster="/assets/images/poster.webp"></video>
 <img srcset="/assets/images/hero-320.webp 320w, /assets/images/hero-640.webp 640w">
-{"image":"/assets/images/team.webp","template":"/assets/images/{src}.webp"}`)
-      .filter((ref) => ref.startsWith('/assets/images/'))
+{"image":"/assets/images/team.webp","template":"/assets/images/{src}.webp"}`).filter((ref) =>
+      ref.startsWith('/assets/images/'),
+    )
 
     expect(refs).toEqual([
       '/assets/images/hero-320.webp',
@@ -263,11 +319,17 @@ content:
       await mkdir(join(dir, 'routes'), { recursive: true })
       await mkdir(join(dir, 'media'), { recursive: true })
       const ld = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage"}</script>'
-      await writeFile(join(dir, 'index.html'), `${ld}<meta property="og:image" content="/assets/images/og.webp"><img src="/assets/images/hero.webp">`)
+      await writeFile(
+        join(dir, 'index.html'),
+        `${ld}<meta property="og:image" content="/assets/images/og.webp"><img src="/assets/images/hero.webp">`,
+      )
       await writeFile(join(dir, 'assets', 'images', 'og.webp'), 'ok')
       await writeFile(join(dir, 'assets', 'images', 'hero.webp'), 'ok')
       await writeFile(join(dir, 'routes', 'team.json'), JSON.stringify({ image: '/assets/images/team.webp' }))
-      await writeFile(join(dir, 'media', 'index.html'), `${ld}<video src="/assets/videos/intro.mp4"></video><a href="/assets/files/menu.pdf">Menu</a>`)
+      await writeFile(
+        join(dir, 'media', 'index.html'),
+        `${ld}<video src="/assets/videos/intro.mp4"></video><a href="/assets/files/menu.pdf">Menu</a>`,
+      )
       await writeFile(join(dir, '404.html'), ld)
       const errors: string[] = []
 
@@ -291,7 +353,10 @@ content:
   test('uses PagesCMS media.input as image source root', async () => {
     const dir = await tempProject()
     try {
-      await writeFile(join(dir, '.pages.yml'), `media:\n  - name: images\n    input: uploads/images\n    output: /assets/images\n`)
+      await writeFile(
+        join(dir, '.pages.yml'),
+        `media:\n  - name: images\n    input: uploads/images\n    output: /assets/images\n`,
+      )
       const roots = await imageSourceRoots(dir)
 
       expect(roots.map((root) => root.label)).toContain('uploads/images')
@@ -303,10 +368,16 @@ content:
   test('rejects unsafe PagesCMS media.input paths', async () => {
     const dir = await tempProject()
     try {
-      await writeFile(join(dir, '.pages.yml'), `media:\n  - name: images\n    input: ../outside\n    output: /assets/images\n`)
+      await writeFile(
+        join(dir, '.pages.yml'),
+        `media:\n  - name: images\n    input: ../outside\n    output: /assets/images\n`,
+      )
       await expect(imageSourceRoots(dir)).rejects.toThrow('Invalid PagesCMS media.input "../outside"')
 
-      await writeFile(join(dir, '.pages.yml'), `media:\n  - name: images\n    input: C:\\outside\\images\n    output: /assets/images\n`)
+      await writeFile(
+        join(dir, '.pages.yml'),
+        `media:\n  - name: images\n    input: C:\\outside\\images\n    output: /assets/images\n`,
+      )
       await expect(imageSourceRoots(dir)).rejects.toThrow('Invalid PagesCMS media.input "C:\\outside\\images"')
     } finally {
       await rm(dir, { recursive: true, force: true })
@@ -365,15 +436,20 @@ content:
   })
 
   test('uses actual portrait variant widths in srcset descriptors', () => {
-    const attrs = resolveImageAttrs({ portrait: {
-      width: 600,
-      height: 900,
-      variants: [
-        { file: 'portrait-320.webp', width: 213 },
-        { file: 'portrait-640.webp', width: 427 },
-        { file: 'portrait-900.webp', width: 600 },
-      ],
-    } }, { src: 'portrait', alt: 'Portrait' })
+    const attrs = resolveImageAttrs(
+      {
+        portrait: {
+          width: 600,
+          height: 900,
+          variants: [
+            { file: 'portrait-320.webp', width: 213 },
+            { file: 'portrait-640.webp', width: 427 },
+            { file: 'portrait-900.webp', width: 600 },
+          ],
+        },
+      },
+      { src: 'portrait', alt: 'Portrait' },
+    )
     expect(attrs.imgMain).toContain('/assets/images/portrait-320.webp 213w')
     expect(attrs.imgMain).toContain('/assets/images/portrait-640.webp 427w')
     expect(attrs.imgMain).toContain('/assets/images/portrait-900.webp 600w')
@@ -386,7 +462,8 @@ content:
       const srcDir = join(dir, 'src')
       const distDir = join(dir, 'dist')
       await mkdir(srcDir, { recursive: true })
-      const png = 'iVBORw0KGgoAAAANSUhEUgAAADwAAABaCAIAAABrM6JiAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAPKADAAQAAAABAAAAWgAAAACdrWuxAAAA4klEQVRoBe3SwQkAIRDF0NH+e97tIKcgDMRr4CNPzzf7zt135Zku/erVkk4aBPoegKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04alop/QME/wGzn3VIjwAAAABJRU5ErkJggg=='
+      const png =
+        'iVBORw0KGgoAAAANSUhEUgAAADwAAABaCAIAAABrM6JiAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAPKADAAQAAAABAAAAWgAAAACdrWuxAAAA4klEQVRoBe3SwQkAIRDF0NH+e97tIKcgDMRr4CNPzzf7zt135Zku/erVkk4aBPoegKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04akpa5YSxpAFHTUmrnDCWNOCoKWmVE8aSBhw1Ja1ywljSgKOmpFVOGEsacNSUtMoJY0kDjpqSVjlhLGnAUVPSKieMJQ04alop/QME/wGzn3VIjwAAAABJRU5ErkJggg=='
       await writeFile(join(srcDir, 'portrait.png'), Buffer.from(png, 'base64'))
       const meta = await processImages(srcDir, distDir, join(dir, 'cache'), { portrait: { max: 1200, quality: 82 } })
       expect(meta.portrait.width).toBe(60)
@@ -401,19 +478,25 @@ content:
   })
 
   test('accepts empty alt for decorative Image output', () => {
-    const attrs = resolveImageAttrs({ decoration: { width: 400, height: 300 } }, {
-      src: 'decoration',
-      alt: '',
-    })
+    const attrs = resolveImageAttrs(
+      { decoration: { width: 400, height: 300 } },
+      {
+        src: 'decoration',
+        alt: '',
+      },
+    )
     expect(attrs.imgMain).toContain('alt=""')
   })
 
   test('keeps eager Image output as plain main image', () => {
-    const attrs = resolveImageAttrs({ hero: { width: 1200, height: 800, sizes: [320, 640] } }, {
-      src: 'hero',
-      alt: 'Hero',
-      loading: 'eager',
-    })
+    const attrs = resolveImageAttrs(
+      { hero: { width: 1200, height: 800, sizes: [320, 640] } },
+      {
+        src: 'hero',
+        alt: 'Hero',
+        loading: 'eager',
+      },
+    )
 
     expect(attrs.imgTmp).toBe('')
     expect(attrs.imgMain).not.toContain('class=')
@@ -421,10 +504,13 @@ content:
   })
 
   test('keeps lazy Image output native and CSS-independent', () => {
-    const attrs = resolveImageAttrs({ hero: { width: 1200, height: 800 } }, {
-      src: 'hero',
-      alt: 'Hero',
-    })
+    const attrs = resolveImageAttrs(
+      { hero: { width: 1200, height: 800 } },
+      {
+        src: 'hero',
+        alt: 'Hero',
+      },
+    )
 
     expect(attrs.imgTmp).toBe('')
     expect(attrs.imgMain).not.toContain('class=')
@@ -433,11 +519,14 @@ content:
 
   test('preserves non-SEO route head metadata', async () => {
     const composer = createComposer(new Map(), new Map(), () => ({}))
-    const html = await composer.prepareRouteSource(`<head>
+    const html = await composer.prepareRouteSource(
+      `<head>
   <SEO title="About" description="About this organization." />
   <meta name="theme-color" content="#000">
 </head>
-<h1>About</h1>`, { slug: 'about', fileHint: 'src/pages/about.html' })
+<h1>About</h1>`,
+      { slug: 'about', fileHint: 'src/pages/about.html' },
+    )
     expect(html).toContain('<meta name="theme-color" content="#000">')
     expect(html).toContain('<title>About</title>')
   })
@@ -467,32 +556,39 @@ content:
 
   test('rejects duplicate route SEO directives', async () => {
     const composer = createComposer(new Map(), new Map(), () => ({}))
-    expect(composer.prepareRouteSource('<head><SEO title="Head" /></head><SEO title="Body" /><h1>Page</h1>', {
-      slug: 'page',
-      fileHint: 'src/pages/page.html',
-    })).rejects.toThrow('only accepted inside the route <head>')
+    expect(
+      composer.prepareRouteSource('<head><SEO title="Head" /></head><SEO title="Body" /><h1>Page</h1>', {
+        slug: 'page',
+        fileHint: 'src/pages/page.html',
+      }),
+    ).rejects.toThrow('only accepted inside the route <head>')
   })
 
   test('rejects SEO directives in the shell', async () => {
     const composer = createComposer(new Map(), new Map(), () => ({}))
-    expect(composer.prepareShellSource('<html><head><SEO /></head><body><main></main></body></html>'))
-      .rejects.toThrow('route-only')
+    expect(composer.prepareShellSource('<html><head><SEO /></head><body><main></main></body></html>')).rejects.toThrow(
+      'route-only',
+    )
   })
 
   test('rejects non-self-closing SEO directives', async () => {
     const composer = createComposer(new Map(), new Map(), () => ({}))
-    expect(composer.prepareRouteSource('<head><SEO title="Preview" unlisted></head><h1>Preview</h1>', {
-      slug: 'preview',
-      fileHint: 'src/pages/preview.html',
-    })).rejects.toThrow('<SEO> must be self-closing')
+    expect(
+      composer.prepareRouteSource('<head><SEO title="Preview" unlisted></head><h1>Preview</h1>', {
+        slug: 'preview',
+        fileHint: 'src/pages/preview.html',
+      }),
+    ).rejects.toThrow('<SEO> must be self-closing')
   })
 
   test('rejects invalid SEO unlisted values', async () => {
     const composer = createComposer(new Map(), new Map(), () => ({}))
-    expect(composer.prepareRoute('<head><SEO unlisted="private" /></head><h1>Preview</h1>', {
-      slug: 'preview',
-      fileHint: 'src/pages/preview.html',
-    })).rejects.toThrow('attribute "unlisted" must be bare, "true", or "false"')
+    expect(
+      composer.prepareRoute('<head><SEO unlisted="private" /></head><h1>Preview</h1>', {
+        slug: 'preview',
+        fileHint: 'src/pages/preview.html',
+      }),
+    ).rejects.toThrow('attribute "unlisted" must be bare, "true", or "false"')
   })
 
   test('uses explicit route slug for default SEO instead of source file path', async () => {
@@ -530,10 +626,13 @@ content:
 
   test('assigns stable heading ids on authored headings', async () => {
     const composer = createComposer(new Map(), new Map(), () => ({}))
-    const html = await composer.prepareRouteSource('<head><SEO title="About" description="About this organization." /></head><h1>About</h1><h2>Next steps</h2>', {
-      slug: 'about',
-      fileHint: 'src/pages/about.html',
-    })
+    const html = await composer.prepareRouteSource(
+      '<head><SEO title="About" description="About this organization." /></head><h1>About</h1><h2>Next steps</h2>',
+      {
+        slug: 'about',
+        fileHint: 'src/pages/about.html',
+      },
+    )
     expect(html).toContain('<h1 id="about">About</h1>')
     expect(html).toContain('<h2 id="next-steps">Next steps</h2>')
   })
@@ -541,19 +640,25 @@ content:
   test('emits twitter:site from a configured handle', async () => {
     const dir = await tempProject()
     try {
-      await writeFile(join(dir, 'site.json'), JSON.stringify({
-        name: 'Example',
-        url: 'https://example.com',
-        description: 'Useful site.',
-        twitter: 'sttc',
-      }))
+      await writeFile(
+        join(dir, 'site.json'),
+        JSON.stringify({
+          name: 'Example',
+          url: 'https://example.com',
+          description: 'Useful site.',
+          twitter: 'sttc',
+        }),
+      )
       const composer = createComposer(new Map(), new Map(), () => ({}), undefined, undefined, undefined, {
         siteFile: join(dir, 'site.json'),
       })
-      const html = await composer.prepareRouteSource('<head><SEO title="Home" description="Home page for the twitter handle test." /></head><h1>Home</h1>', {
-        slug: 'index',
-        fileHint: 'src/pages/index.html',
-      })
+      const html = await composer.prepareRouteSource(
+        '<head><SEO title="Home" description="Home page for the twitter handle test." /></head><h1>Home</h1>',
+        {
+          slug: 'index',
+          fileHint: 'src/pages/index.html',
+        },
+      )
       expect(html).toContain('<meta name="twitter:site" content="@sttc">')
     } finally {
       await rm(dir, { recursive: true, force: true })

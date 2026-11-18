@@ -19,10 +19,28 @@ describe('runtime ownership contracts', () => {
     expect(rootTypes).not.toContain('window.va')
     expect(rootTypes).toContain("'snz:page': CustomEvent<SnzPageDetail>")
     expect(rootTypes).toContain("'snz:track': CustomEvent<{ event: string; data: Record<string, unknown> }>")
-    for (const method of ['page', 'onPage', 'track', 'onVisible', 'isVisible', 'onActive', 'isActive', 'registerComponent', '_registerComponent']) {
+    for (const method of [
+      'page',
+      'onPage',
+      'track',
+      'onVisible',
+      'isVisible',
+      'onActive',
+      'isActive',
+      'registerComponent',
+      '_registerComponent',
+    ]) {
       expect(rootTypes).toContain(`${method}(`)
     }
-    for (const removed of ['navigate', 'prefetch', 'beforeNavigate', 'afterNavigate', '_reload', '_mountComponents', '_unmountIn']) {
+    for (const removed of [
+      'navigate',
+      'prefetch',
+      'beforeNavigate',
+      'afterNavigate',
+      '_reload',
+      '_mountComponents',
+      '_unmountIn',
+    ]) {
       expect(rootTypes).not.toContain(`${removed}(`)
     }
   })
@@ -44,9 +62,21 @@ describe('runtime ownership contracts', () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
 
     for (const removed of [
-      'fetch(', 'pushState', 'startViewTransition', 'mergeHead', 'announcer', 'focusRouteRoot',
-      'routeCache', 'preload', 'popstate', 'scroll-reset',
-      'navigate', 'prefetch', '_reload', '_mountComponents', '_unmountIn',
+      'fetch(',
+      'pushState',
+      'startViewTransition',
+      'mergeHead',
+      'announcer',
+      'focusRouteRoot',
+      'routeCache',
+      'preload',
+      'popstate',
+      'scroll-reset',
+      'navigate',
+      'prefetch',
+      '_reload',
+      '_mountComponents',
+      '_unmountIn',
     ]) {
       expect(router).not.toContain(removed)
     }
@@ -55,9 +85,24 @@ describe('runtime ownership contracts', () => {
   test('router exposes the page runtime API', async () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
     const api = router.slice(router.indexOf('window.snz = {'), router.indexOf('}', router.indexOf('window.snz = {')))
-    const keys = api.split('\n').slice(1).map((line) => line.trim().replace(/[:,].*$/, '')).filter(Boolean).sort()
+    const keys = api
+      .split('\n')
+      .slice(1)
+      .map((line) => line.trim().replace(/[:,].*$/, ''))
+      .filter(Boolean)
+      .sort()
 
-    expect(keys).toEqual(['_registerComponent', 'isActive', 'isVisible', 'onActive', 'onPage', 'onVisible', 'page', 'registerComponent', 'track'])
+    expect(keys).toEqual([
+      '_registerComponent',
+      'isActive',
+      'isVisible',
+      'onActive',
+      'onPage',
+      'onVisible',
+      'page',
+      'registerComponent',
+      'track',
+    ])
     expect(router).toContain('return document.documentElement.dataset.snzRoute')
     expect(router).toContain("window.addEventListener('DOMContentLoaded', activatePage")
     expect(router).toContain("document.dispatchEvent(new CustomEvent('snz:page', { detail }))")
@@ -86,7 +131,7 @@ describe('runtime ownership contracts', () => {
     expect(router).toContain('function isVisible')
     expect(router).toContain('function isActive')
     expect(router).toContain('ACTIVE_MEDIA_SELECTOR')
-    expect(router).toContain("[data-active=\"manual\"]")
+    expect(router).toContain('[data-active="manual"]')
     expect(router).toContain('video[autoplay], audio[autoplay]')
     expect(router).toContain('DEFAULT_MEDIA_THRESHOLD = 0.2')
     expect(router).toContain("document.addEventListener('visibilitychange', updateActiveSubscriptions)")
@@ -96,7 +141,9 @@ describe('runtime ownership contracts', () => {
     const router = await readFile('framework/runtime/router.js', 'utf8')
 
     expect(router).not.toContain('window.va')
-    expect(router).toContain("document.dispatchEvent(new CustomEvent('snz:track', { detail: { event, data: { ...data } } }))")
+    expect(router).toContain(
+      "document.dispatchEvent(new CustomEvent('snz:track', { detail: { event, data: { ...data } } }))",
+    )
     expect(router).toContain("e.target.closest('[data-snz-track]')")
   })
 
@@ -122,7 +169,9 @@ describe('runtime ownership contracts', () => {
       expect(css).toContain('::view-transition-old(main)')
       expect(css).toContain('::view-transition-new(main)')
       expect(css).toContain('@media (prefers-reduced-motion: reduce)')
-      expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*\{\s*::view-transition-group\(\*\),\s*::view-transition-old\(\*\),\s*::view-transition-new\(\*\)\s*\{\s*animation: none;/)
+      expect(css).toMatch(
+        /@media \(prefers-reduced-motion: reduce\)\s*\{\s*::view-transition-group\(\*\),\s*::view-transition-old\(\*\),\s*::view-transition-new\(\*\)\s*\{\s*animation: none;/,
+      )
       expect(css).toContain('@supports (animation-timeline: view())')
       expect(css).toContain('@media (prefers-reduced-motion: no-preference)')
       expect(css).toContain('view-transition-name: main')

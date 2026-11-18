@@ -41,24 +41,29 @@ export class BuildError extends Error {
   }
 
   toPretty(): string {
-    const where = this.file
-      ? this.line
-        ? ` (${this.file}:${this.line})`
-        : ` (${this.file})`
-      : ''
+    const where = this.file ? (this.line ? ` (${this.file}:${this.line})` : ` (${this.file})`) : ''
     const stack = this.frames.length
-      ? `\n  source stack:${this.frames.map((frame) => {
-        const label = frame.label ? `${frame.label} ` : ''
-        const where = formatWhere(frame)
-        return `\n  - ${label}${where}`.trimEnd()
-      }).join('')}`
+      ? `\n  source stack:${this.frames
+          .map((frame) => {
+            const label = frame.label ? `${frame.label} ` : ''
+            const where = formatWhere(frame)
+            return `\n  - ${label}${where}`.trimEnd()
+          })
+          .join('')}`
       : ''
     const hint = this.hint ? `\n  hint: ${this.hint}` : ''
     return `BuildError: ${this.message}${where}${stack}${hint}`
   }
 
   toJSON() {
-    return { name: this.name, message: this.message, file: this.file, line: this.line, hint: this.hint, frames: this.frames }
+    return {
+      name: this.name,
+      message: this.message,
+      file: this.file,
+      line: this.line,
+      hint: this.hint,
+      frames: this.frames,
+    }
   }
 }
 
@@ -83,13 +88,26 @@ export function buildErrorAt(
 export function diagnostic(error: unknown) {
   return error instanceof BuildError
     ? error.toJSON()
-    : { name: error instanceof Error ? error.name : 'Error', message: error instanceof Error ? error.message : String(error) }
+    : {
+        name: error instanceof Error ? error.name : 'Error',
+        message: error instanceof Error ? error.message : String(error),
+      }
 }
 
-export function printJsonResult(command: 'build' | 'check', errors: ReturnType<typeof diagnostic>[], warnings: string[], profile?: { timings: Record<string, number>; totalMs: number }) {
-  console.log(JSON.stringify({
-    version: 1, command, outcome: errors.length ? 'failure' : 'success', errors,
-    warnings: warnings.map(message => ({ message })),
-    ...(profile ? { profile } : {}),
-  }))
+export function printJsonResult(
+  command: 'build' | 'check',
+  errors: ReturnType<typeof diagnostic>[],
+  warnings: string[],
+  profile?: { timings: Record<string, number>; totalMs: number },
+) {
+  console.log(
+    JSON.stringify({
+      version: 1,
+      command,
+      outcome: errors.length ? 'failure' : 'success',
+      errors,
+      warnings: warnings.map((message) => ({ message })),
+      ...(profile ? { profile } : {}),
+    }),
+  )
 }

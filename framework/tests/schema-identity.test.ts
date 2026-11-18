@@ -137,11 +137,13 @@ describe('schema identity and breadcrumbs', () => {
     })
 
     expect(typesOf(graph)).toEqual(['Organization', 'WebSite', 'WebPage'])
-    expect(breadcrumbList(baseSite, {
-      title: 'Home',
-      canonical: 'https://example.com',
-      slug: 'about',
-    })).toBeUndefined()
+    expect(
+      breadcrumbList(baseSite, {
+        title: 'Home',
+        canonical: 'https://example.com',
+        slug: 'about',
+      }),
+    ).toBeUndefined()
     expect(isHomeCanonical('https://example.com', 'https://example.com/')).toBe(true)
     expect(isHomeCanonical('https://example.com/', '/')).toBe(true)
     expect(isHomeCanonical('https://example.com', 'https://example.com/insights/hello/')).toBe(false)

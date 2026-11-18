@@ -53,13 +53,27 @@ describe('asset hashing', () => {
     try {
       const cache = join(dir, 'cache')
       await mkdir(cache, { recursive: true })
-      for (const file of ['photo-2024.webp', 'photo-2024-320.webp', 'photo-2024-640.webp', 'old.webp', 'old-320.webp']) {
+      for (const file of [
+        'photo-2024.webp',
+        'photo-2024-320.webp',
+        'photo-2024-640.webp',
+        'old.webp',
+        'old-320.webp',
+      ]) {
         await writeFile(join(dir, file), 'webp')
       }
-      await writeFile(join(cache, 'photo-2024.json'), JSON.stringify({
-        srcMtime: 1, max: 1600, quality: 80, width: 640, height: 480, sizes: [320],
-        variants: [{ file: 'photo-2024-320.webp', width: 320 }],
-      }))
+      await writeFile(
+        join(cache, 'photo-2024.json'),
+        JSON.stringify({
+          srcMtime: 1,
+          max: 1600,
+          quality: 80,
+          width: 640,
+          height: 480,
+          sizes: [320],
+          variants: [{ file: 'photo-2024-320.webp', width: 320 }],
+        }),
+      )
       await writeFile(join(cache, 'old.json'), '{}')
 
       await pruneStaleImages(dir, cache, ['photo-2024'])

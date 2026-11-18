@@ -239,13 +239,20 @@ export function createComposer(
   }
 
   /** One pass: blocks, attrs, and slots render together. Slots are raw HTML; interpolated values are never rescanned. */
-  function renderTemplateOnce(name: string, template: string, attrs: TemplateContext, slots: ReturnType<typeof readSlots>) {
+  function renderTemplateOnce(
+    name: string,
+    template: string,
+    attrs: TemplateContext,
+    slots: ReturnType<typeof readSlots>,
+  ) {
     const componentData = dataByComponent.get(name)
     const context: TemplateContext = {
       ...(componentData ?? {}),
       ...attrs,
       slot: safeHtml(slots.defaultChildren),
-      ...Object.fromEntries([...templateSlotNames(template)].map((slot) => [`slot:${slot}`, safeHtml(slots.named[slot] ?? '')])),
+      ...Object.fromEntries(
+        [...templateSlotNames(template)].map((slot) => [`slot:${slot}`, safeHtml(slots.named[slot] ?? '')]),
+      ),
     }
     return renderTemplate(template, context, {
       allowEach: !!componentData,
@@ -268,7 +275,7 @@ export function createComposer(
     } catch (err) {
       if (err instanceof BuildError && err.line) throw err
       throw buildErrorAt(err instanceof Error ? err.message : String(err), source, m.index, {
-        file: err instanceof BuildError ? err.file ?? fileHint : fileHint,
+        file: err instanceof BuildError ? (err.file ?? fileHint) : fileHint,
         hint: err instanceof BuildError ? err.hint : 'Check the component attributes and referenced source files.',
       })
     }
@@ -297,10 +304,11 @@ export function createComposer(
   function augmentRoot(name: string, fragment: string, rawAttrs: Record<string, string>): string {
     const schema = schemas.get(name)
     const asClassAttrs = schema?.attrs
-      ? Object.entries(schema.attrs).filter(([, rule]) => rule.asClass).map(([k]) => k)
+      ? Object.entries(schema.attrs)
+          .filter(([, rule]) => rule.asClass)
+          .map(([k]) => k)
       : []
-    const extraClasses = asClassAttrs
-      .flatMap((k) => (rawAttrs[k] ?? '').trim().split(/\s+/).filter(Boolean))
+    const extraClasses = asClassAttrs.flatMap((k) => (rawAttrs[k] ?? '').trim().split(/\s+/).filter(Boolean))
     for (const cls of extraClasses) {
       if (!/^[A-Za-z_][\w-]*$/.test(cls)) {
         throw new BuildError(`Invalid class token "${cls}" from <${name} /> attribute`, {
@@ -427,7 +435,9 @@ export function createComposer(
     const schemaJson = seo.schemaJson.replace(/</g, '\\u003c')
     const robots = unlisted ? '\n<meta name="robots" content="noindex,nofollow">' : ''
     const slug = slugFromPath(attrs.path ?? '/')
-    const representations = unlisted ? '' : `
+    const representations = unlisted
+      ? ''
+      : `
 <link rel="alternate" type="text/markdown" href="${escapeAttr(publicMarkdownPathFromSlug(slug))}">
 <link rel="describedby" type="application/json" href="${escapeAttr(routeJsonPathFromSlug(slug))}">
 <link rel="describedby" href="/llms.txt">`
@@ -476,7 +486,10 @@ export function createComposer(
       const unlisted = seoBooleanAttr(seoOverrides, 'unlisted', fileHint)
       delete seoOverrides.unlisted
 
-      const seoMarkup = await expandSeoMarkup(await mergeSeoAttrs(slug, seoOverrides, fileHint), unlisted || slug === '404')
+      const seoMarkup = await expandSeoMarkup(
+        await mergeSeoAttrs(slug, seoOverrides, fileHint),
+        unlisted || slug === '404',
+      )
       const composedBody = ensureHeadingIds(await compose(body, fileHint), fileHint).trimStart()
       const headExtras = [seoHead, ...headLinks].filter(Boolean)
       const extraHead = headExtras.length ? `\n${headExtras.join('\n')}` : ''
@@ -523,5 +536,3 @@ export function createComposer(
     prepareShellSource,
   }
 }
-
-

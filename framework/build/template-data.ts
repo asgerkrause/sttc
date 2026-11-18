@@ -3,7 +3,8 @@ import { normalize, relative, resolve } from 'path'
 import { buildErrorAt, BuildError } from './errors'
 import type { TemplateContext, TemplateValue } from './template-directives'
 
-const DATA_SCRIPT_RE = /<script\b(?=[^>]*\bdata-snz\b)(?=[^>]*\btype=["']application\/json["'])([^>]*)>([\s\S]*?)<\/script>/gi
+const DATA_SCRIPT_RE =
+  /<script\b(?=[^>]*\bdata-snz\b)(?=[^>]*\btype=["']application\/json["'])([^>]*)>([\s\S]*?)<\/script>/gi
 const SRC_RE = /\bsrc=["']([^"']+)["']/i
 
 export type TemplateDataResult = {
@@ -16,9 +17,11 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function toTemplateValue(value: unknown): TemplateValue {
-  if (value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value
+  if (value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
+    return value
   if (Array.isArray(value)) return value.map(toTemplateValue)
-  if (isPlainObject(value)) return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toTemplateValue(item)])) as TemplateValue
+  if (isPlainObject(value))
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toTemplateValue(item)])) as TemplateValue
   return String(value)
 }
 
@@ -55,7 +58,9 @@ function parseJsonData(raw: string, file: string, source: string, offset: number
         hint: 'Use { "items": [...] }, not an array or primitive at the top level.',
       })
     }
-    return Object.fromEntries(Object.entries(parsed).map(([key, value]) => [key, toTemplateValue(value)])) as TemplateContext
+    return Object.fromEntries(
+      Object.entries(parsed).map(([key, value]) => [key, toTemplateValue(value)]),
+    ) as TemplateContext
   } catch (err) {
     if (err instanceof BuildError) throw err
     const message = err instanceof Error ? err.message : 'Fix JSON syntax.'
@@ -80,8 +85,16 @@ async function safeDataPath(projectRoot: string, srcAttr: string) {
       hint: 'Use a JSON file under src/data/ instead.',
     })
   }
-  const normalized = srcAttr.replace(/\\/g, '/').replace(/^\/src\/data\//, '').replace(/^src\/data\//, '')
-  if (!normalized || normalized.startsWith('/') || normalized.split('/').includes('..') || !normalized.endsWith('.json')) {
+  const normalized = srcAttr
+    .replace(/\\/g, '/')
+    .replace(/^\/src\/data\//, '')
+    .replace(/^src\/data\//, '')
+  if (
+    !normalized ||
+    normalized.startsWith('/') ||
+    normalized.split('/').includes('..') ||
+    !normalized.endsWith('.json')
+  ) {
     throw new BuildError('SNZ data src must point to a JSON file under src/data/', {
       hint: 'Use src="services.json" or src="/src/data/services.json".',
     })
@@ -107,10 +120,13 @@ async function safeDataPath(projectRoot: string, srcAttr: string) {
   return fullPath
 }
 
-export async function extractTemplateData(html: string, options: {
-  file: string
-  projectRoot: string
-}): Promise<TemplateDataResult> {
+export async function extractTemplateData(
+  html: string,
+  options: {
+    file: string
+    projectRoot: string
+  },
+): Promise<TemplateDataResult> {
   const blocks: Array<{ full: string; attrs: string; body: string; index: number }> = []
   for (const match of html.matchAll(DATA_SCRIPT_RE)) {
     blocks.push({
@@ -134,14 +150,20 @@ export async function extractTemplateData(html: string, options: {
           })
         })
       : block.body
-    const dataFile = src ? `src/data/${src.replace(/\\/g, '/').replace(/^\/src\/data\//, '').replace(/^src\/data\//, '')}` : options.file
+    const dataFile = src
+      ? `src/data/${src
+          .replace(/\\/g, '/')
+          .replace(/^\/src\/data\//, '')
+          .replace(/^src\/data\//, '')}`
+      : options.file
     Object.assign(data, parseJsonData(raw, options.file, html, block.index, dataFile))
   }
 
   return {
-    html: html.replace(DATA_SCRIPT_RE, '').replace(/\n{3,}/g, '\n\n').trim(),
+    html: html
+      .replace(DATA_SCRIPT_RE, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
     data,
   }
 }
-
-

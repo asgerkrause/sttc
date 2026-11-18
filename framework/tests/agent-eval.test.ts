@@ -10,22 +10,54 @@ function record(value: unknown): value is Record<string, unknown> {
 // Only the vocabulary used by this schema; fail closed if it grows.
 function validate(value: unknown, rule: unknown): boolean {
   if (!record(rule)) throw new Error('Invalid schema node')
-  const supported = ['$schema', 'title', 'description', 'type', 'required', 'additionalProperties', 'properties', 'items', 'enum', 'const', 'minimum', 'minLength']
-  if (Object.keys(rule).some(key => !supported.includes(key))) throw new Error('Unsupported schema keyword')
+  const supported = [
+    '$schema',
+    'title',
+    'description',
+    'type',
+    'required',
+    'additionalProperties',
+    'properties',
+    'items',
+    'enum',
+    'const',
+    'minimum',
+    'minLength',
+  ]
+  if (Object.keys(rule).some((key) => !supported.includes(key))) throw new Error('Unsupported schema keyword')
   if ('const' in rule && value !== rule.const) return false
   if (Array.isArray(rule.enum) && !rule.enum.includes(value)) return false
   if (rule.type) {
     const types = Array.isArray(rule.type) ? rule.type : [rule.type]
-    if (!types.some(type => type === 'null' ? value === null : type === 'integer' ? typeof value === 'number' && Number.isInteger(value) : type === 'object' ? record(value) : type === 'array' ? Array.isArray(value) : typeof value === type)) return false
+    if (
+      !types.some((type) =>
+        type === 'null'
+          ? value === null
+          : type === 'integer'
+            ? typeof value === 'number' && Number.isInteger(value)
+            : type === 'object'
+              ? record(value)
+              : type === 'array'
+                ? Array.isArray(value)
+                : typeof value === type,
+      )
+    )
+      return false
   }
-  if (typeof value === 'number' && (!Number.isFinite(value) || typeof rule.minimum === 'number' && value < rule.minimum)) return false
+  if (
+    typeof value === 'number' &&
+    (!Number.isFinite(value) || (typeof rule.minimum === 'number' && value < rule.minimum))
+  )
+    return false
   if (typeof value === 'string' && typeof rule.minLength === 'number' && value.length < rule.minLength) return false
-  if (Array.isArray(value) && rule.items && !value.every(item => validate(item, rule.items))) return false
+  if (Array.isArray(value) && rule.items && !value.every((item) => validate(item, rule.items))) return false
   if (record(value) && record(rule.properties)) {
     const properties = rule.properties
-    if (Array.isArray(rule.required) && rule.required.some(key => typeof key !== 'string' || !(key in value))) return false
-    if (rule.additionalProperties === false && Object.keys(value).some(key => !(key in properties))) return false
-    if (!Object.entries(value).every(([key, child]) => !(key in properties) || validate(child, properties[key]))) return false
+    if (Array.isArray(rule.required) && rule.required.some((key) => typeof key !== 'string' || !(key in value)))
+      return false
+    if (rule.additionalProperties === false && Object.keys(value).some((key) => !(key in properties))) return false
+    if (!Object.entries(value).every(([key, child]) => !(key in properties) || validate(child, properties[key])))
+      return false
   }
   return true
 }
@@ -33,16 +65,16 @@ function validate(value: unknown, rule: unknown): boolean {
 test('real build artifacts reject styled broken link, retain failure, and accept source repair', async () => {
   const root = await prepareRepair()
   const bad = await gradeRepair(root, true)
-  expect(bad.result.checks.find(check => check.name === 'build')?.status).toBe('pass')
-  expect(bad.result.checks.find(check => check.name === 'repair-link')?.status).toBe('fail')
+  expect(bad.result.checks.find((check) => check.name === 'build')?.status).toBe('pass')
+  expect(bad.result.checks.find((check) => check.name === 'repair-link')?.status).toBe('fail')
   expect(bad.result.outcome).toBe('fail')
   const strictBad = await gradeRepair(root)
-  expect(strictBad.result.checks.find(check => check.name === 'build')?.status).toBe('fail')
+  expect(strictBad.result.checks.find((check) => check.name === 'build')?.status).toBe('fail')
   const source = join(root, 'src/pages/index.html')
   await Bun.write(source, (await Bun.file(source).text()).replace('href="/missing/"', 'href="/page-0001/"'))
   const good = await gradeRepair(root)
   expect(good.result.outcome).toBe('pass')
-  expect(good.result.checks.every(check => check.status === 'pass')).toBe(true)
+  expect(good.result.checks.every((check) => check.status === 'pass')).toBe(true)
   expect(await Bun.file(join(bad.evidenceDir, 'dist/index.html')).text()).toContain('href="/missing/"')
   expect(await Bun.file(join(bad.evidenceDir, 'result.json')).json()).toEqual(bad.result)
   expect(await Bun.file(join(strictBad.evidenceDir, 'result.json')).json()).toEqual(strictBad.result)
@@ -61,5 +93,5 @@ test('real build artifacts reject styled broken link, retain failure, and accept
 
 test('missing output cannot pass artifact acceptance', async () => {
   const root = await prepareRepair()
-  expect((await inspectRepair(root)).every(check => check.status === 'fail')).toBe(true)
+  expect((await inspectRepair(root)).every((check) => check.status === 'fail')).toBe(true)
 })

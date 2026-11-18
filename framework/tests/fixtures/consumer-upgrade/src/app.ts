@@ -1,2 +1,2 @@
-document.documentElement.dataset.journal = 'field-notes';
-export {};
+document.documentElement.dataset.journal = 'field-notes'
+export {}

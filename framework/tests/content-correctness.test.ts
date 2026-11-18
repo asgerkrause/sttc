@@ -51,7 +51,11 @@ describe('unicode-safe slugs', () => {
   test('tag routes and heading ids use the same slug', async () => {
     await withProject(async (dir) => {
       await writeFile(join(dir, 'src', 'templates', 'post.html'), '{{tagsHtml}}{{body}}')
-      await writePost(dir, 'tagged.md', '---\ntitle: Tagged\ndate: 2026-05-26\ndescription: Tagged post\ntags: [Ærø, Fødselsdag]\n---\n## Søren Kierkegaard\n')
+      await writePost(
+        dir,
+        'tagged.md',
+        '---\ntitle: Tagged\ndate: 2026-05-26\ndescription: Tagged post\ntags: [Ærø, Fødselsdag]\n---\n## Søren Kierkegaard\n',
+      )
 
       const [route] = await compileContentFrom({ rootDir: dir })
       expect(route?.body).toContain('href="/tags/aero/"')
@@ -108,7 +112,11 @@ describe('front-matter slug override', () => {
   test('replaces the filename slug in the route and in template basename', async () => {
     await withProject(async (dir) => {
       await writeFile(join(dir, 'src', 'templates', 'post.html'), '<p>{{basename}}</p>{{body}}')
-      await writePost(dir, 'My Long Draft.md', '---\ntitle: Hi\ndate: 2026-05-26\ndescription: Hi\nslug: short-name\n---\nBody')
+      await writePost(
+        dir,
+        'My Long Draft.md',
+        '---\ntitle: Hi\ndate: 2026-05-26\ndescription: Hi\nslug: short-name\n---\nBody',
+      )
 
       const [route] = await compileContentFrom({ rootDir: dir })
       expect(route?.slug).toBe('insights/short-name')
@@ -142,7 +150,11 @@ describe('media references with spaces', () => {
   test('front-matter image with a %20 file name publishes the encoded webp path', async () => {
     await withProject(async (dir) => {
       await writeFile(join(dir, 'src', 'templates', 'post.html'), '<img src="{{image}}" alt="">{{body}}')
-      await writePost(dir, 'photo.md', '---\ntitle: Hi\ndate: 2026-05-26\ndescription: Hi\nimage: /src/images/my%20photo.png\n---\nBody')
+      await writePost(
+        dir,
+        'photo.md',
+        '---\ntitle: Hi\ndate: 2026-05-26\ndescription: Hi\nimage: /src/images/my%20photo.png\n---\nBody',
+      )
 
       const [route] = await compileContentFrom({ rootDir: dir })
       expect(route?.body).toContain('src="/assets/images/my%20photo.webp"')
@@ -171,10 +183,16 @@ describe('collection records without a description', () => {
   test('a missing description renders an empty value, not a placeholder', async () => {
     await withProject(async (dir) => {
       await mkdir(join(dir, 'content', 'projects'), { recursive: true })
-      await writeFile(join(dir, 'content', 'collections.json'), JSON.stringify({
-        collections: [{ name: 'projects', path: 'content/projects', template: 'project.html', route: 'work/{slug}' }],
-      }))
-      await writeFile(join(dir, 'src', 'templates', 'project.html'), '<meta name="description" content="{{description}}">{{body}}')
+      await writeFile(
+        join(dir, 'content', 'collections.json'),
+        JSON.stringify({
+          collections: [{ name: 'projects', path: 'content/projects', template: 'project.html', route: 'work/{slug}' }],
+        }),
+      )
+      await writeFile(
+        join(dir, 'src', 'templates', 'project.html'),
+        '<meta name="description" content="{{description}}">{{body}}',
+      )
       await writeFile(join(dir, 'content', 'projects', 'acme.md'), '---\ntitle: Acme\n---\nBody')
 
       const routes = await compileContentFrom({ rootDir: dir })

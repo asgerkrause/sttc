@@ -67,7 +67,10 @@ describe('skill synchronization', () => {
       const launchBody = '# Launch\n'
       const launchFrontmatter = '---\nname: snz-launch\ndescription: Use when testing launch sync.\n---\n'
       const launchHash = new Bun.CryptoHasher('sha256').update(`${launchFrontmatter}${launchBody}`).digest('hex')
-      await writeFile(join(sourceRoot, 'snz-launch', 'SKILL.md'), `${launchFrontmatter}<!-- @snz-skill snz-launch ${launchHash} -->\n${launchBody}`)
+      await writeFile(
+        join(sourceRoot, 'snz-launch', 'SKILL.md'),
+        `${launchFrontmatter}<!-- @snz-skill snz-launch ${launchHash} -->\n${launchBody}`,
+      )
 
       const componentDestination = join(projectRoot, '.agents', 'skills', 'snz-component')
       await mkdir(componentDestination, { recursive: true })
@@ -105,7 +108,10 @@ describe('skill synchronization', () => {
       const launchBody = '# Launch\n'
       const launchFrontmatter = '---\nname: snz-launch\ndescription: Use when testing launch sync.\n---\n'
       const launchHash = new Bun.CryptoHasher('sha256').update(`${launchFrontmatter}${launchBody}`).digest('hex')
-      await writeFile(join(sourceRoot, 'snz-launch', 'SKILL.md'), `${launchFrontmatter}<!-- @snz-skill snz-launch ${launchHash} -->\n${launchBody}`)
+      await writeFile(
+        join(sourceRoot, 'snz-launch', 'SKILL.md'),
+        `${launchFrontmatter}<!-- @snz-skill snz-launch ${launchHash} -->\n${launchBody}`,
+      )
       await mkdir(join(projectRoot, '.agents', 'skills', 'snz-launch', 'SKILL.md'), { recursive: true })
 
       await expect(syncSkills({ sourceRoot, projectRoot })).rejects.toThrow()
