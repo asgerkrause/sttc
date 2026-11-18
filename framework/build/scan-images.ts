@@ -18,8 +18,10 @@ export function imageNameFromSrc(value: string, file?: string) {
     })
   }
   if (
-    value === '.' || value === '..' ||
-    value.includes('/') || value.includes('\\') ||
+    value === '.' ||
+    value === '..' ||
+    value.includes('/') ||
+    value.includes('\\') ||
     /\.(jpe?g|png|webp)$/i.test(value) ||
     !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value)
   ) {
@@ -30,11 +32,7 @@ export function imageNameFromSrc(value: string, file?: string) {
   return value
 }
 
-export function parsePositiveImageInteger(
-  value: string | undefined,
-  key: string,
-  file?: string,
-): number | undefined {
+export function parsePositiveImageInteger(value: string | undefined, key: string, file?: string): number | undefined {
   if (value === undefined) return undefined
   const prefix = file ? `${file}: ` : ''
   if (!/^[1-9]\d*$/.test(value)) {
@@ -47,10 +45,7 @@ export function parsePositiveImageInteger(
   return number
 }
 
-export function imageEncodeOptionsFromAttrs(
-  attrs: Record<string, string>,
-  file?: string,
-): ImageEncodeOptions {
+export function imageEncodeOptionsFromAttrs(attrs: Record<string, string>, file?: string): ImageEncodeOptions {
   const max = parsePositiveImageInteger(attrs.max, 'max', file) ?? DEFAULT_IMAGE_MAX
   const quality = parsePositiveImageInteger(attrs.quality, 'quality', file) ?? DEFAULT_IMAGE_QUALITY
   if (quality > 100) {
@@ -60,12 +55,7 @@ export function imageEncodeOptionsFromAttrs(
   return { max, quality }
 }
 
-function mergeOptions(
-  map: Map<string, ImageEncodeOptions>,
-  name: string,
-  max: number,
-  quality: number,
-) {
+function mergeOptions(map: Map<string, ImageEncodeOptions>, name: string, max: number, quality: number) {
   const prev = map.get(name)
   if (!prev) {
     map.set(name, { max, quality })

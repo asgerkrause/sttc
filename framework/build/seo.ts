@@ -130,9 +130,9 @@ export function personId(site: SiteConfig, person: SitePerson): string {
 export function matchAuthor(site: SiteConfig, name: string): SitePerson | undefined {
   const slug = personSlug(name)
   const lower = name.trim().toLowerCase()
-  return authorsFor(site).find((person) => (
-    person.name.trim().toLowerCase() === lower || personSlug(person.name) === slug
-  ))
+  return authorsFor(site).find(
+    (person) => person.name.trim().toLowerCase() === lower || personSlug(person.name) === slug,
+  )
 }
 
 export function isHomeCanonical(siteUrl: string, canonical: string): boolean {
@@ -164,12 +164,14 @@ export function breadcrumbList(
   const segments = page.slug.split('/').filter(Boolean)
   if (!segments.length) return undefined
 
-  const items: JsonLdNode[] = [{
-    '@type': 'ListItem',
-    position: 1,
-    name: site.name,
-    item: site.url,
-  }]
+  const items: JsonLdNode[] = [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: site.name,
+      item: site.url,
+    },
+  ]
 
   let prefix = ''
   for (const segment of segments.slice(0, -1)) {
@@ -223,12 +225,14 @@ function organizationNode(site: SiteConfig): Record<string, unknown> {
     url: site.url,
     logo: logo ? absoluteUrl(site.url, logo) : undefined,
     sameAs,
-    contactPoint: contact ? cleanObject({
-      '@type': 'ContactPoint',
-      email: contact.email,
-      telephone: contact.telephone,
-      url: contact.url ? absoluteUrl(site.url, contact.url) : undefined,
-    }) : undefined,
+    contactPoint: contact
+      ? cleanObject({
+          '@type': 'ContactPoint',
+          email: contact.email,
+          telephone: contact.telephone,
+          url: contact.url ? absoluteUrl(site.url, contact.url) : undefined,
+        })
+      : undefined,
     address: address ? cleanObject({ '@type': 'PostalAddress', ...address }) : undefined,
   })
 
@@ -262,13 +266,15 @@ function productNode(site: SiteConfig, canonical: string): JsonLdNode | undefine
     audience: product.audience ? { '@type': 'Audience', audienceType: product.audience } : undefined,
     brand: site.brand ? { '@id': absoluteUrl(site.url, '/#brand') } : undefined,
     manufacturer: { '@id': absoluteUrl(site.url, '/#organization') },
-    offers: offer ? cleanObject({
-      '@type': 'Offer',
-      price: offer.price,
-      priceCurrency: offer.priceCurrency,
-      availability: offer.availability ? `https://schema.org/${offer.availability}` : undefined,
-      url: offer.url ? absoluteUrl(site.url, offer.url) : canonical,
-    }) : undefined,
+    offers: offer
+      ? cleanObject({
+          '@type': 'Offer',
+          price: offer.price,
+          priceCurrency: offer.priceCurrency,
+          availability: offer.availability ? `https://schema.org/${offer.availability}` : undefined,
+          url: offer.url ? absoluteUrl(site.url, offer.url) : canonical,
+        })
+      : undefined,
   })
 }
 
@@ -294,14 +300,15 @@ export function buildSchemaGraph(
   const brand = brandNode(site)
   const people = authorsFor(site).map((person) => personNode(site, person))
   const product = productNode(site, page.canonical)
-  const crumbs = page.slug !== undefined
-    ? breadcrumbList(site, {
-      title: page.title,
-      canonical: page.canonical,
-      slug: page.slug,
-      titlesBySlug: page.titlesBySlug,
-    })
-    : undefined
+  const crumbs =
+    page.slug !== undefined
+      ? breadcrumbList(site, {
+          title: page.title,
+          canonical: page.canonical,
+          slug: page.slug,
+          titlesBySlug: page.titlesBySlug,
+        })
+      : undefined
   const webPage: JsonLdNode = {
     '@type': 'WebPage',
     '@id': `${page.canonical}#webpage`,

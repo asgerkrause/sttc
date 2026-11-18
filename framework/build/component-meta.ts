@@ -32,7 +32,8 @@ export function parseInlineSchema(html: string, file?: string): { schema: Compon
   block.split('\n').forEach((rawLine, i) => {
     const line = rawLine.trim()
     if (!line.startsWith('@')) return
-    const fail = (message: string, hint: string) => new BuildError(message, { file, line: lineOf(html, blockStart) + i, hint })
+    const fail = (message: string, hint: string) =>
+      new BuildError(message, { file, line: lineOf(html, blockStart) + i, hint })
     const tag = line.split(/\s+/)[0]!
     const body = line.slice(tag.length).trim()
 
@@ -48,7 +49,11 @@ export function parseInlineSchema(html: string, file?: string): { schema: Compon
       let rest = body.slice(matched.length).trim()
       const attr: SchemaAttr = {}
       if (bang === '!') attr.required = true
-      if (enumList !== undefined) attr.enum = enumList.split('|').map((s) => s.trim()).filter(Boolean)
+      if (enumList !== undefined)
+        attr.enum = enumList
+          .split('|')
+          .map((s) => s.trim())
+          .filter(Boolean)
 
       if (rest.startsWith(':class')) {
         attr.asClass = true

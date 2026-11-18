@@ -24,7 +24,8 @@ function fail(raw: string, key: string, message: string, hint: string): never {
 function optionalString(raw: string, owner: Record<string, unknown>, key: string) {
   const value = owner[key]
   if (value === undefined) return
-  if (typeof value !== 'string') fail(raw, key, `site.json "${key}" must be a string`, `Set "${key}" to a string or remove it.`)
+  if (typeof value !== 'string')
+    fail(raw, key, `site.json "${key}" must be a string`, `Set "${key}" to a string or remove it.`)
 }
 
 function cleanToken(value: string) {
@@ -37,11 +38,25 @@ function validateRobots(raw: string, value: unknown) {
     fail(raw, 'robots', 'site.json robots must contain a groups array', 'Use { "robots": { "groups": [...] } }.')
   }
   for (const group of (value.groups ?? []) as unknown[]) {
-    if (!isObject(group) || !Array.isArray(group.userAgents) || !group.userAgents.length || group.userAgents.some((item) => typeof item !== 'string' || !cleanToken(item))) {
-      fail(raw, 'robots', 'Each robots group needs at least one user agent', 'Use { "userAgents": ["*"], "allow": ["/"] }.')
+    if (
+      !isObject(group) ||
+      !Array.isArray(group.userAgents) ||
+      !group.userAgents.length ||
+      group.userAgents.some((item) => typeof item !== 'string' || !cleanToken(item))
+    ) {
+      fail(
+        raw,
+        'robots',
+        'Each robots group needs at least one user agent',
+        'Use { "userAgents": ["*"], "allow": ["/"] }.',
+      )
     }
     for (const key of ['allow', 'disallow'] as const) {
-      if (group[key] !== undefined && (!Array.isArray(group[key]) || group[key].some((item) => typeof item !== 'string' || !cleanToken(item) || !item.startsWith('/')))) {
+      if (
+        group[key] !== undefined &&
+        (!Array.isArray(group[key]) ||
+          group[key].some((item) => typeof item !== 'string' || !cleanToken(item) || !item.startsWith('/')))
+      ) {
         fail(raw, 'robots', `robots ${key} must contain root-relative paths`, `Use paths such as "/" or "/private/".`)
       }
     }
@@ -58,83 +73,130 @@ function isHttpUrl(value: string) {
 }
 
 function validatePerson(raw: string, value: unknown, key: string) {
-  if (!isObject(value)) fail(raw, key, `site.json "${key}" must be an object`, `Set "${key}" to an object with a non-empty name.`)
+  if (!isObject(value))
+    fail(raw, key, `site.json "${key}" must be an object`, `Set "${key}" to an object with a non-empty name.`)
   if (typeof value.name !== 'string' || !value.name.trim()) {
     fail(raw, key, `site.json "${key}.name" is required`, `Set "${key}.name" to a non-empty string.`)
   }
   for (const field of ['url', 'jobTitle', 'image']) optionalString(raw, value, field)
   if (value.sameAs === undefined) return
-  if (!Array.isArray(value.sameAs) || value.sameAs.some((item) => typeof item !== 'string' || (item.trim() !== '' && !isHttpUrl(item)))) {
-    fail(raw, 'sameAs', `site.json "${key}.sameAs" must be HTTP(S) URLs`, `Use an array of http(s) URLs, or omit sameAs.`)
+  if (
+    !Array.isArray(value.sameAs) ||
+    value.sameAs.some((item) => typeof item !== 'string' || (item.trim() !== '' && !isHttpUrl(item)))
+  ) {
+    fail(
+      raw,
+      'sameAs',
+      `site.json "${key}.sameAs" must be HTTP(S) URLs`,
+      `Use an array of http(s) URLs, or omit sameAs.`,
+    )
   }
 }
 
 function validateAuthors(raw: string, parsed: Record<string, unknown>) {
   if (parsed.author !== undefined) validatePerson(raw, parsed.author, 'author')
   if (parsed.authors === undefined) return
-  if (!Array.isArray(parsed.authors)) fail(raw, 'authors', 'site.json "authors" must be an array', 'Use an array of people, each with a name.')
+  if (!Array.isArray(parsed.authors))
+    fail(raw, 'authors', 'site.json "authors" must be an array', 'Use an array of people, each with a name.')
   for (const person of parsed.authors) validatePerson(raw, person, 'authors')
 }
 
 function validateDiscovery(raw: string, value: unknown) {
   if (value === undefined) return
-  if (!isObject(value)) fail(raw, 'discovery', 'site.json discovery must be an object', 'Use { "featured": ["about"], "notes": "..." }.')
+  if (!isObject(value))
+    fail(raw, 'discovery', 'site.json discovery must be an object', 'Use { "featured": ["about"], "notes": "..." }.')
   if (value.featured !== undefined) {
-    if (!Array.isArray(value.featured) || value.featured.some((item) => (
-      typeof item !== 'string' || !item.trim() || item.startsWith('/') || item.includes('.html')
-    ))) {
-      fail(raw, 'featured', 'site.json discovery.featured must be slug strings', 'Use slugs such as "index" or "insights/hello" with no leading slash or .html.')
+    if (
+      !Array.isArray(value.featured) ||
+      value.featured.some(
+        (item) => typeof item !== 'string' || !item.trim() || item.startsWith('/') || item.includes('.html'),
+      )
+    ) {
+      fail(
+        raw,
+        'featured',
+        'site.json discovery.featured must be slug strings',
+        'Use slugs such as "index" or "insights/hello" with no leading slash or .html.',
+      )
     }
   }
   if (value.notes === undefined) return
-  if (typeof value.notes !== 'string') fail(raw, 'notes', 'site.json discovery.notes must be a string', 'Set discovery.notes to a string or remove it.')
+  if (typeof value.notes !== 'string')
+    fail(raw, 'notes', 'site.json discovery.notes must be a string', 'Set discovery.notes to a string or remove it.')
   if (value.notes.includes('##')) {
-    fail(raw, 'notes', 'site.json discovery.notes cannot contain markdown headings', 'llms.txt v2 forbids headings in the notes block. Remove ## from discovery.notes.')
+    fail(
+      raw,
+      'notes',
+      'site.json discovery.notes cannot contain markdown headings',
+      'llms.txt v2 forbids headings in the notes block. Remove ## from discovery.notes.',
+    )
   }
 }
 
 function validateProduct(raw: string, value: unknown) {
   if (value === undefined) return
-  if (!isObject(value)) fail(raw, 'product', 'site.json product must be an object', 'Declare name, description, and canonical path.')
+  if (!isObject(value))
+    fail(raw, 'product', 'site.json product must be an object', 'Declare name, description, and canonical path.')
   for (const key of ['name', 'description', 'path']) {
-    if (typeof value[key] !== 'string' || !value[key].trim()) fail(raw, key, `site.json product.${key} is required`, `Set product.${key} to a non-empty string.`)
+    if (typeof value[key] !== 'string' || !value[key].trim())
+      fail(raw, key, `site.json product.${key} is required`, `Set product.${key} to a non-empty string.`)
   }
   if (!(value.path as string).startsWith('/') || !(value.path as string).endsWith('/')) {
     fail(raw, 'path', 'site.json product.path must be a canonical route path', 'Use a path such as "/platform/".')
   }
   if (value.offers !== undefined) {
-    if (!isObject(value.offers)) fail(raw, 'offers', 'site.json product.offers must be an object', 'Declare only truthful visible offer facts.')
+    if (!isObject(value.offers))
+      fail(raw, 'offers', 'site.json product.offers must be an object', 'Declare only truthful visible offer facts.')
     const offer = value.offers
     for (const key of ['price', 'priceCurrency']) optionalString(raw, offer, key)
     if ((offer.price === undefined) !== (offer.priceCurrency === undefined)) {
-      fail(raw, 'offers', 'Product offer price and currency must be declared together', 'Set both price and priceCurrency, or omit both.')
+      fail(
+        raw,
+        'offers',
+        'Product offer price and currency must be declared together',
+        'Set both price and priceCurrency, or omit both.',
+      )
     }
   }
 }
 
 export function parseSiteConfig(raw: string, file = 'src/site.json'): SiteConfig {
   let parsed: unknown
-  try { parsed = JSON.parse(raw) } catch (error) {
+  try {
+    parsed = JSON.parse(raw)
+  } catch (error) {
     throw new BuildError('src/site.json is not valid JSON', {
       file,
       line: 1,
       hint: error instanceof Error ? error.message : 'Fix JSON syntax.',
     })
   }
-  if (!isObject(parsed)) fail(raw, 'name', 'src/site.json must contain an object', 'Start with name, url, and description.')
+  if (!isObject(parsed))
+    fail(raw, 'name', 'src/site.json must contain an object', 'Start with name, url, and description.')
   for (const key of ['name', 'url', 'description']) {
-    if (typeof parsed[key] !== 'string' || !parsed[key].trim()) fail(raw, key, `site.json "${key}" is required`, `Set "${key}" to a non-empty string.`)
+    if (typeof parsed[key] !== 'string' || !parsed[key].trim())
+      fail(raw, key, `site.json "${key}" is required`, `Set "${key}" to a non-empty string.`)
   }
   for (const key of ['locale', 'twitter', 'image', 'ogImage']) optionalString(raw, parsed, key)
   if (parsed.scroll !== undefined && parsed.scroll !== 'lenis' && parsed.scroll !== 'native') {
-    fail(raw, 'scroll', 'site.json "scroll" must be "lenis" or "native"', 'Use "lenis" for smooth scrolling or "native" to exclude Lenis from the build.')
+    fail(
+      raw,
+      'scroll',
+      'site.json "scroll" must be "lenis" or "native"',
+      'Use "lenis" for smooth scrolling or "native" to exclude Lenis from the build.',
+    )
   }
   try {
     const url = new URL(parsed.url as string)
     if (!/^https?:$/.test(url.protocol) || url.pathname !== '/' || url.search || url.hash) throw new Error()
     parsed.url = url.origin
   } catch {
-    fail(raw, 'url', 'site.json "url" must be an HTTP(S) origin', 'Use an origin such as https://example.com with no path, query, or hash.')
+    fail(
+      raw,
+      'url',
+      'site.json "url" must be an HTTP(S) origin',
+      'Use an origin such as https://example.com with no path, query, or hash.',
+    )
   }
   validateProduct(raw, parsed.product)
   validateRobots(raw, parsed.robots)
@@ -154,5 +216,3 @@ export async function loadSiteConfig(file: string) {
   })
   return parseSiteConfig(raw, shown)
 }
-
-

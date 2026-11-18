@@ -20,13 +20,17 @@ const demo = args.includes('--demo')
 function usage(): never {
   console.error('Usage: bun run new <component|route|post> <name> [--force] [--demo]')
   console.error('       bun run new cms [--force]')
-  console.error('       bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]')
+  console.error(
+    '       bun run new collection <name> [--route <pattern>] [--template <name>] [--label <label>] [--force]',
+  )
   process.exit(1)
 }
 
 if (!kind) usage()
 if (kind === 'page') {
-  console.error('CMS pages are not supported. Use `bun run new route <slug>` for authored pages or `bun run new collection <name>` for custom records.')
+  console.error(
+    'CMS pages are not supported. Use `bun run new route <slug>` for authored pages or `bun run new collection <name>` for custom records.',
+  )
   process.exit(1)
 }
 if (!['component', 'route', 'post', 'cms', 'collection'].includes(kind)) usage()
@@ -35,11 +39,16 @@ if (kind !== 'cms' && !name) usage()
 const requiredName = name ?? ''
 
 async function exists(p: string) {
-  try { await stat(p); return true } catch { return false }
+  try {
+    await stat(p)
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function writeIfMissing(path: string, content: string) {
-  if (await exists(path) && !force) {
+  if ((await exists(path)) && !force) {
     console.error(`refusing to overwrite ${path} (pass --force to overwrite)`)
     process.exit(2)
   }
@@ -60,7 +69,11 @@ function optionValue(flag: string) {
 }
 
 function titleize(value: string) {
-  return value.split('-').filter(Boolean).map((w) => `${w[0]?.toUpperCase() ?? ''}${w.slice(1)}`).join(' ')
+  return value
+    .split('-')
+    .filter(Boolean)
+    .map((w) => `${w[0]?.toUpperCase() ?? ''}${w.slice(1)}`)
+    .join(' ')
 }
 
 function singularize(value: string) {
@@ -93,7 +106,13 @@ function validateCollectionRoute(value: string) {
 
 function validateTemplateName(value: string) {
   const template = value.endsWith('.html') ? value : `${value}.html`
-  if (!template.includes('/') && !template.includes('\\') && !template.includes('..') && /^[a-z][a-z0-9-]*\.html$/.test(template)) return template
+  if (
+    !template.includes('/') &&
+    !template.includes('\\') &&
+    !template.includes('..') &&
+    /^[a-z][a-z0-9-]*\.html$/.test(template)
+  )
+    return template
   console.error('collection template must be a lowercase .html filename in src/templates/')
   process.exit(1)
 }
@@ -268,7 +287,8 @@ async function readCollectionConfig(path: string) {
 
   try {
     const parsed = JSON.parse(await Bun.file(path).text())
-    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.collections)) throw new Error('expected { "collections": [] }')
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.collections))
+      throw new Error('expected { "collections": [] }')
     config = parsed
   } catch (err) {
     console.error(`invalid ${path}: ${err instanceof Error ? err.message : 'fix JSON syntax'}`)
@@ -282,7 +302,9 @@ async function writeCollectionConfig(collectionName: string, label: string, temp
   const entry = collectionConfigEntry(collectionName, label, template, route)
   const config = await readCollectionConfig(path)
 
-  const index = config.collections.findIndex((item) => item && typeof item === 'object' && (item as { name?: unknown }).name === collectionName)
+  const index = config.collections.findIndex(
+    (item) => item && typeof item === 'object' && (item as { name?: unknown }).name === collectionName,
+  )
   if (index !== -1 && !force) {
     console.error(`collection "${collectionName}" already exists in ${path} (pass --force to replace)`)
     process.exit(2)
@@ -434,22 +456,32 @@ Write here.
   const pagesPath = join(root, '.pages.yml')
 
   const config = await readCollectionConfig(configPath)
-  if (!force && config.collections.some((item) => item && typeof item === 'object' && (item as { name?: unknown }).name === requiredName)) {
+  if (
+    !force &&
+    config.collections.some(
+      (item) => item && typeof item === 'object' && (item as { name?: unknown }).name === requiredName,
+    )
+  ) {
     console.error(`collection "${requiredName}" already exists in ${configPath} (pass --force to replace)`)
     process.exit(2)
   }
-  if (!force && await exists(templatePath)) {
+  if (!force && (await exists(templatePath))) {
     console.error(`refusing to overwrite ${templatePath} (pass --force to overwrite)`)
     process.exit(2)
   }
-  if (!force && await exists(pagesPath) && pagesCollectionPattern(requiredName).test(await Bun.file(pagesPath).text())) {
+  if (
+    !force &&
+    (await exists(pagesPath)) &&
+    pagesCollectionPattern(requiredName).test(await Bun.file(pagesPath).text())
+  ) {
     console.error(`collection "${requiredName}" already exists in ${pagesPath} (pass --force to replace)`)
     process.exit(2)
   }
 
   await writeCollectionConfig(requiredName, label, template, route)
   await mkdir(join(root, 'content', requiredName), { recursive: true })
-  if (!(await exists(join(root, 'content', requiredName, '.gitkeep')))) await writeFile(join(root, 'content', requiredName, '.gitkeep'), '')
+  if (!(await exists(join(root, 'content', requiredName, '.gitkeep'))))
+    await writeFile(join(root, 'content', requiredName, '.gitkeep'), '')
   await writeIfMissing(templatePath, collectionTemplate(requiredName, route))
   await upsertPagesCollection(requiredName, label)
 

@@ -73,10 +73,7 @@ function parsePagesCmsMediaField(yaml: string, field: 'input' | 'output'): strin
 function normalizePagesCmsMediaInput(input: string) {
   const rel = input.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/g, '')
   const parts = rel.split('/').filter(Boolean)
-  if (
-    !parts.length || rel.startsWith('/') || /^[A-Za-z]:\//.test(rel) ||
-    parts.includes('..') || parts.includes('.')
-  ) {
+  if (!parts.length || rel.startsWith('/') || /^[A-Za-z]:\//.test(rel) || parts.includes('..') || parts.includes('.')) {
     throw new BuildError(`Invalid PagesCMS media.input "${input}"`, {
       file: '.pages.yml',
       hint: 'Use a safe repo-relative media path like src/images. Absolute paths and traversal are not allowed.',
@@ -117,13 +114,8 @@ function uniqueRoots(roots: ImageSourceRoot[]) {
 }
 
 export async function imageSourceRoots(projectRoot = process.cwd()): Promise<ImageSourceRoot[]> {
-  const mediaRoots = (await pagesCmsMediaInputs(projectRoot)).map((input) =>
-    sourceRoot(projectRoot, input, input),
-  )
-  const roots = uniqueRoots([
-    sourceRoot(projectRoot, 'src/images'),
-    ...mediaRoots,
-  ])
+  const mediaRoots = (await pagesCmsMediaInputs(projectRoot)).map((input) => sourceRoot(projectRoot, input, input))
+  const roots = uniqueRoots([sourceRoot(projectRoot, 'src/images'), ...mediaRoots])
   const projectReal = await realpath(projectRoot)
 
   for (const root of roots) {
@@ -261,9 +253,7 @@ async function writeSidecar(sidecar: string, data: EncodeSidecar) {
 
 function warnHugeMaster(file: string, width: number, height: number, logger: BuildLogger) {
   if (width <= HUGE_DIMENSION && height <= HUGE_DIMENSION) return
-  logger.warn(
-    `  images: large master ${relative(process.cwd(), file)} (${width}×${height}) — consider resizing source`,
-  )
+  logger.warn(`  images: large master ${relative(process.cwd(), file)} (${width}×${height}) — consider resizing source`)
 }
 
 /**
@@ -330,17 +320,13 @@ export async function assertUniqueImageNames(...roots: Array<string | ImageSourc
   if (!duplicates.length) return
 
   const details = duplicates
-    .map(([name, files]) => [
-      `- ${name}`,
-      ...files.map((file) => `  - ${relative(process.cwd(), file)}`),
-    ].join('\n'))
+    .map(([name, files]) => [`- ${name}`, ...files.map((file) => `  - ${relative(process.cwd(), file)}`)].join('\n'))
     .join('\n')
   const scope = sourceRoots.map((root) => root.label).join(', ')
 
-  throw new BuildError(
-    `Duplicate image logical names found. Rename one master before build.\n${details}`,
-    { hint: `Image logical names are file basenames. Keep each basename unique across ${scope}.` },
-  )
+  throw new BuildError(`Duplicate image logical names found. Rename one master before build.\n${details}`, {
+    hint: `Image logical names are file basenames. Keep each basename unique across ${scope}.`,
+  })
 }
 
 export async function processImageSources(
@@ -387,11 +373,13 @@ export async function processImages(
     warnHugeMaster(file, width, height, logger)
 
     const canonicalEdge = Math.min(max, Math.max(width, height))
-    const responsiveSizes = [...new Set(
-      [...RESPONSIVE_BREAKPOINTS.filter((edge) => edge < canonicalEdge), canonicalEdge]
-        .filter((edge) => edge > 0)
-        .sort((a, b) => a - b),
-    )]
+    const responsiveSizes = [
+      ...new Set(
+        [...RESPONSIVE_BREAKPOINTS.filter((edge) => edge < canonicalEdge), canonicalEdge]
+          .filter((edge) => edge > 0)
+          .sort((a, b) => a - b),
+      ),
+    ]
 
     const sidecar = sidecarPath(cacheDir, name)
     const reencode = await needsReencode(out, sidecar, max, quality, srcMtime, srcHash)
@@ -400,7 +388,10 @@ export async function processImages(
     const metadataMissing = !sidecarData?.width || !sidecarData?.height || !sidecarData?.variants
     let variantsMissing = false
     for (const w of responsiveSizes) {
-      if (!(await Bun.file(join(distDir, `${name}-${w}.webp`)).exists())) { variantsMissing = true; break }
+      if (!(await Bun.file(join(distDir, `${name}-${w}.webp`)).exists())) {
+        variantsMissing = true
+        break
+      }
     }
 
     if (reencode || sizesChanged || variantsMissing || metadataMissing) {
@@ -441,7 +432,12 @@ export async function processImages(
   return meta
 }
 
-export async function processOgImage(srcPath: string, distDir: string, cacheDir: string, logger: BuildLogger = console) {
+export async function processOgImage(
+  srcPath: string,
+  distDir: string,
+  cacheDir: string,
+  logger: BuildLogger = console,
+) {
   assertImageApi()
   if (!(await Bun.file(srcPath).exists())) {
     logger.warn(`images: no OG source at ${srcPath} — skipped`)

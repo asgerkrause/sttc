@@ -1,6 +1,15 @@
 import { mkdir, readdir, rm, stat } from 'fs/promises'
 import { join, sep } from 'path'
-import { dist, root, sourceAppDir, sourceFilesDir, sourceImagesDir, sourceStylesDir, sourceStylesFile, sourceVideosDir } from './paths'
+import {
+  dist,
+  root,
+  sourceAppDir,
+  sourceFilesDir,
+  sourceImagesDir,
+  sourceStylesDir,
+  sourceStylesFile,
+  sourceVideosDir,
+} from './paths'
 
 // Recursive copy implemented with sequential per-file writes. fs.cp(recursive: true) was
 // observed to race with adjacent writes (image variants would vanish), so we walk + Bun.write.
@@ -13,7 +22,11 @@ export async function copyTree(
   baseRel = '',
 ) {
   let entries
-  try { entries = await readdir(srcDir, { withFileTypes: true }) } catch { return }
+  try {
+    entries = await readdir(srcDir, { withFileTypes: true })
+  } catch {
+    return
+  }
   await mkdir(destDir, { recursive: true })
   for (const entry of entries) {
     if (entry.name === '.DS_Store' || entry.name === '.gitkeep') continue
@@ -64,9 +77,11 @@ export async function copyAssetsTo(
   }
   await copyTree(sourceAppDir(projectRoot), jsDist, (name) => {
     const path = slashPath(name)
-    return name === 'app.js'
-      || name === 'app.ts'
-      || (nativeScroll && (path === 'scroll.js' || path === 'vendor/lenis.min.js'))
+    return (
+      name === 'app.js' ||
+      name === 'app.ts' ||
+      (nativeScroll && (path === 'scroll.js' || path === 'vendor/lenis.min.js'))
+    )
   })
   const imagesDist = join(assetsDist, 'images')
   await mkdir(imagesDist, { recursive: true })

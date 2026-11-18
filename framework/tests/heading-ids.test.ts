@@ -4,8 +4,9 @@ import { ensureHeadingIds } from '../build/heading-ids'
 
 describe('ensureHeadingIds', () => {
   test('adds ids to bare h1/h2', () => {
-    expect(ensureHeadingIds('<h1>Hello</h1><h2>World</h2>', 'src/pages/index.html'))
-      .toBe('<h1 id="hello">Hello</h1><h2 id="world">World</h2>')
+    expect(ensureHeadingIds('<h1>Hello</h1><h2>World</h2>', 'src/pages/index.html')).toBe(
+      '<h1 id="hello">Hello</h1><h2 id="world">World</h2>',
+    )
   })
 
   test('keeps existing ids', () => {
@@ -14,8 +15,9 @@ describe('ensureHeadingIds', () => {
   })
 
   test('slugifies inner tags', () => {
-    expect(ensureHeadingIds('<h2>Hello <code>API</code></h2>', 'src/pages/index.html'))
-      .toBe('<h2 id="hello-api">Hello <code>API</code></h2>')
+    expect(ensureHeadingIds('<h2>Hello <code>API</code></h2>', 'src/pages/index.html')).toBe(
+      '<h2 id="hello-api">Hello <code>API</code></h2>',
+    )
   })
 
   test('throws BuildError on collision', () => {
@@ -30,7 +32,9 @@ describe('ensureHeadingIds', () => {
       expect(build.hint).toBe('Set an explicit unique id on one of the colliding headings.')
     }
 
-    expect(() => ensureHeadingIds('<h2 id="hello">Intro</h2><h2>Hello</h2>', 'src/pages/about.html')).toThrow(BuildError)
+    expect(() => ensureHeadingIds('<h2 id="hello">Intro</h2><h2>Hello</h2>', 'src/pages/about.html')).toThrow(
+      BuildError,
+    )
   })
 
   test('leaves empty/unslugable headings unchanged', () => {
@@ -40,7 +44,8 @@ describe('ensureHeadingIds', () => {
 
   test('does not rewrite headings inside svg/script', () => {
     const html = '<svg><h2>Chart</h2></svg><script>const html = "<h2>Nope</h2>"</script><h2>Visible</h2>'
-    expect(ensureHeadingIds(html, 'src/pages/index.html'))
-      .toBe('<svg><h2>Chart</h2></svg><script>const html = "<h2>Nope</h2>"</script><h2 id="visible">Visible</h2>')
+    expect(ensureHeadingIds(html, 'src/pages/index.html')).toBe(
+      '<svg><h2>Chart</h2></svg><script>const html = "<h2>Nope</h2>"</script><h2 id="visible">Visible</h2>',
+    )
   })
 })

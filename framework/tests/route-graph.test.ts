@@ -9,11 +9,14 @@ function testComposer(): Composer {
   return {
     resetSiteConfig() {},
     prepareShellSource: async (raw: string) => raw,
-    prepareRoute: async (raw: string, route: RouteComposeInput) => ({ html: `<head>
+    prepareRoute: async (raw: string, route: RouteComposeInput) => ({
+      html: `<head>
 <title>${route.slug}</title>
 <meta name="description" content="${route.fileHint}">
 </head>
-${raw}`, unlisted: false }),
+${raw}`,
+      unlisted: false,
+    }),
     prepareRouteSource: async (raw: string, route: RouteComposeInput) => `<head>
 <title>${route.slug}</title>
 <meta name="description" content="${route.fileHint}">
@@ -27,7 +30,7 @@ describe('route graph', () => {
     const instances: ComposeInstance[] = [{ name: 'Section', attrs: {}, route: 'insights' }]
     const graph = new RouteGraph({
       composer: testComposer(),
-      instancesFor: (slug) => slug === 'insights' ? instances : [],
+      instancesFor: (slug) => (slug === 'insights' ? instances : []),
     })
 
     const { html } = await graph.compose(
@@ -38,15 +41,17 @@ describe('route graph', () => {
 
     expect(html).toContain('<Section>')
     expect(graph.slugs()).toEqual(['insights'])
-    expect(graph.records()).toMatchObject([{
-      slug: 'insights',
-      title: 'insights',
-      description: 'generated:insights',
-      components: instances,
-      internalLinks: ['/insights/one/'],
-      schemas: ['CollectionPage'],
-      renderedHtml: html,
-    }])
+    expect(graph.records()).toMatchObject([
+      {
+        slug: 'insights',
+        title: 'insights',
+        description: 'generated:insights',
+        components: instances,
+        internalLinks: ['/insights/one/'],
+        schemas: ['CollectionPage'],
+        renderedHtml: html,
+      },
+    ])
   })
 
   test('records visible Schema.org microdata types', async () => {
@@ -67,7 +72,10 @@ describe('route graph', () => {
       '<h1>Hello</h1>',
       { lastModified: '2026-05-27T08:00:00.000Z' },
     )
-    await graph.compose({ slug: 'insights', kind: 'generated', source: 'generated:insights' }, '<a href="/insights/hello/">Hello</a>')
+    await graph.compose(
+      { slug: 'insights', kind: 'generated', source: 'generated:insights' },
+      '<a href="/insights/hello/">Hello</a>',
+    )
 
     const bySlug = new Map(graph.records().map((record) => [record.slug, record.lastModified]))
     expect(bySlug.get('about')).toBeUndefined()
@@ -88,21 +96,21 @@ describe('route graph', () => {
     const graph = new RouteGraph({ composer: testComposer() })
     graph.register({ slug: 'insights', kind: 'static', source: 'src/pages/insights.html' })
 
-    await expect(graph.compose(
-      { slug: 'insights', kind: 'generated', source: 'generated:insights' },
-      '<h1>Index</h1>',
-      { schemas: ['CollectionPage'] },
-    )).rejects.toThrow(BuildError)
-    await expect(graph.compose(
-      { slug: 'insights', kind: 'generated', source: 'generated:insights' },
-      '<h1>Index</h1>',
-    )).rejects.toThrow('Duplicate route slug "insights"')
+    await expect(
+      graph.compose({ slug: 'insights', kind: 'generated', source: 'generated:insights' }, '<h1>Index</h1>', {
+        schemas: ['CollectionPage'],
+      }),
+    ).rejects.toThrow(BuildError)
+    await expect(
+      graph.compose({ slug: 'insights', kind: 'generated', source: 'generated:insights' }, '<h1>Index</h1>'),
+    ).rejects.toThrow('Duplicate route slug "insights"')
     expect(graph.records()).toEqual([])
 
     await graph.compose({ slug: 'insights', kind: 'static', source: 'src/pages/insights.html' }, '<h1>Authored</h1>')
     expect(graph.records().map((record) => record.slug)).toEqual(['insights'])
-    await expect(graph.compose({ slug: 'insights', kind: 'static', source: 'src/pages/insights.html' }, '<h1>Again</h1>'))
-      .rejects.toThrow('Duplicate route slug "insights"')
+    await expect(
+      graph.compose({ slug: 'insights', kind: 'static', source: 'src/pages/insights.html' }, '<h1>Again</h1>'),
+    ).rejects.toThrow('Duplicate route slug "insights"')
     expect(graph.records()).toHaveLength(1)
   })
 })
@@ -140,7 +148,9 @@ describe('generated post indexes', () => {
   test('fails when the posts index collides with the tags index', async () => {
     const graph = new RouteGraph({ composer: testComposer() })
 
-    await expect(autoGenerateIndexes(graph, [{ ...post, slug: 'tags/hello' }], { route: 'tags/{slug}' })).rejects.toThrow('Duplicate route slug "tags"')
+    await expect(
+      autoGenerateIndexes(graph, [{ ...post, slug: 'tags/hello' }], { route: 'tags/{slug}' }),
+    ).rejects.toThrow('Duplicate route slug "tags"')
     expect(graph.records().filter((record) => record.slug === 'tags')).toHaveLength(1)
   })
 
@@ -148,6 +158,8 @@ describe('generated post indexes', () => {
     const graph = new RouteGraph({ composer: testComposer() })
     graph.register({ slug: 'blog', kind: 'static', source: 'src/pages/blog.html' })
 
-    await expect(autoGenerateIndexes(graph, [post], { route: 'blog/{slug}/entry' })).rejects.toThrow('Duplicate route slug "blog"')
+    await expect(autoGenerateIndexes(graph, [post], { route: 'blog/{slug}/entry' })).rejects.toThrow(
+      'Duplicate route slug "blog"',
+    )
   })
 })

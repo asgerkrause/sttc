@@ -39,13 +39,16 @@ import {
   scanImageEncodeOptions,
   type ImageEncodeOptions,
 } from './scan-images'
+import { sourceAppFile, sourceRouterFile, sourceStylesDir, sourceStylesFile } from './paths'
 import {
-  sourceAppFile,
-  sourceRouterFile,
-  sourceStylesDir,
-  sourceStylesFile,
-} from './paths'
-import { absoluteUrl, buildSchemaGraph, isPublicRoute, writeRobots, writeSitemap, type JsonLdNode, type SiteConfig } from './seo'
+  absoluteUrl,
+  buildSchemaGraph,
+  isPublicRoute,
+  writeRobots,
+  writeSitemap,
+  type JsonLdNode,
+  type SiteConfig,
+} from './seo'
 import { compileContentFrom, isoDate, loadContentCollections, type ContentRoute } from './content'
 import { writeFeeds } from './feeds'
 import { diagnostic, printJsonResult, BuildError } from './errors'
@@ -59,7 +62,13 @@ import { writeComponentsReadme } from './docs'
 import { discoverSourceRoutes } from './source-files'
 import { RouteGraph } from './route-graph'
 import { publicPathFromSlug } from '../runtime/lib/paths.js'
-import { createBuildContext, type BuildContext, type BuildContextOptions, type BuildResult, type BuildLogger } from './build-context'
+import {
+  createBuildContext,
+  type BuildContext,
+  type BuildContextOptions,
+  type BuildResult,
+  type BuildLogger,
+} from './build-context'
 import { IO_CONCURRENCY, mapConcurrent } from './concurrency'
 import { escapeHtml } from './html'
 import { loadSiteConfig } from './site-config'
@@ -76,9 +85,10 @@ function assertImageEncodePlan(
       const name = imageNameFromSrc(instance.attrs.src ?? '')
       const next = imageEncodeOptionsFromAttrs(instance.attrs)
       const previous = concrete.get(name)
-      concrete.set(name, previous
-        ? { max: Math.max(previous.max, next.max), quality: Math.max(previous.quality, next.quality) }
-        : next)
+      concrete.set(
+        name,
+        previous ? { max: Math.max(previous.max, next.max), quality: Math.max(previous.quality, next.quality) } : next,
+      )
     }
   }
 
@@ -118,10 +128,13 @@ function applyRouteHead(shellHtml: string, routeHead: string) {
 
 function moveRouteCssLinksLast(html: string) {
   const routeLinks: string[] = []
-  const withoutRouteLinks = html.replace(/\n?\s*<link rel="stylesheet" href="\/assets\/css\/routes\/[^"]+" data-snz-route-css data-snz-head>/g, (link) => {
-    routeLinks.push(link.trim())
-    return ''
-  })
+  const withoutRouteLinks = html.replace(
+    /\n?\s*<link rel="stylesheet" href="\/assets\/css\/routes\/[^"]+" data-snz-route-css data-snz-head>/g,
+    (link) => {
+      routeLinks.push(link.trim())
+      return ''
+    },
+  )
   if (!routeLinks.length) return html
 
   const insert = `\n${routeLinks.map((link) => `  ${link}`).join('\n')}`
@@ -154,7 +167,9 @@ function articleMeta(extraJsonLd: JsonLdNode[]) {
     '<meta property="og:type" content="article">',
     published ? `<meta property="article:published_time" content="${escapeHtml(published)}">` : '',
     modified ? `<meta property="article:modified_time" content="${escapeHtml(modified)}">` : '',
-  ].filter(Boolean).join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 function applyArticleMeta(routeHead: string, extraJsonLd: JsonLdNode[]) {
@@ -172,14 +187,21 @@ function enrichRouteHead(
 ) {
   const article = extraJsonLd.find((node) => node['@type'] === 'BlogPosting')
   const dateModified = typeof article?.dateModified === 'string' ? article.dateModified : undefined
-  const graph = replaceSchemaJson(routeHead, buildSchemaGraph(site, {
-    title: record.title,
-    description: record.description,
-    canonical: absoluteUrl(site.url, publicPathFromSlug(record.slug)),
-    slug: record.slug,
-    titlesBySlug,
-    dateModified,
-  }, extraJsonLd))
+  const graph = replaceSchemaJson(
+    routeHead,
+    buildSchemaGraph(
+      site,
+      {
+        title: record.title,
+        description: record.description,
+        canonical: absoluteUrl(site.url, publicPathFromSlug(record.slug)),
+        slug: record.slug,
+        titlesBySlug,
+        dateModified,
+      },
+      extraJsonLd,
+    ),
+  )
   return applyArticleMeta(graph, extraJsonLd)
 }
 
@@ -204,7 +226,9 @@ async function writeStaticRoutes(
   site: SiteConfig,
 ) {
   const titlesBySlug = Object.fromEntries(
-    records.filter((record) => isPublicRoute(record) && record.slug !== '404').map((record) => [record.slug, record.title]),
+    records
+      .filter((record) => isPublicRoute(record) && record.slug !== '404')
+      .map((record) => [record.slug, record.title]),
   )
   await mapConcurrent(records, 4, async (record) => {
     const { head, body } = splitRouteHtml(record.renderedHtml ?? '')
@@ -227,7 +251,12 @@ export type BuildOptions = BuildContextOptions & {
 }
 
 async function exists(path: string) {
-  try { await stat(path); return true } catch { return false }
+  try {
+    await stat(path)
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function acquireBuildLock(context: BuildContext) {
@@ -240,15 +269,25 @@ async function acquireBuildLock(context: BuildContext) {
     try {
       await mkdir(lockDir)
       await Bun.write(join(lockDir, 'pid'), String(process.pid))
-      return async () => { await rm(lockDir, { recursive: true, force: true }) }
+      return async () => {
+        await rm(lockDir, { recursive: true, force: true })
+      }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
       const owner = Number(await readFile(join(lockDir, 'pid'), 'utf8').catch(() => ''))
       let alive = Number.isInteger(owner) && owner > 0
       if (alive) {
-        try { process.kill(owner, 0) } catch { alive = false }
+        try {
+          process.kill(owner, 0)
+        } catch {
+          alive = false
+        }
       }
-      const age = Date.now() - await stat(lockDir).then((entry) => entry.mtimeMs).catch(() => 0)
+      const age =
+        Date.now() -
+        (await stat(lockDir)
+          .then((entry) => entry.mtimeMs)
+          .catch(() => 0))
       if (!alive && age >= 2_000) {
         await rm(lockDir, { recursive: true, force: true })
         continue
@@ -349,8 +388,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     result.totalMs = Math.round(performance.now() - totalStarted)
     if (process.argv.includes('--profile')) {
       logger.log(
-        Object.entries(result.timings).map(([k, v]) => `${k} ${v}ms`).join(' · ') +
-        ` · total ${result.totalMs}ms`,
+        Object.entries(result.timings)
+          .map(([k, v]) => `${k} ${v}ms`)
+          .join(' · ') + ` · total ${result.totalMs}ms`,
       )
     } else {
       logger.log(`built ${result.routes.length} routes in ${result.totalMs}ms`)
@@ -371,11 +411,19 @@ async function buildInto(context: BuildContext, logger: BuildLogger): Promise<Bu
 
   const t0 = performance.now()
   const timings: Record<string, number> = {}
-  const tick = (label: string, start: number) => { timings[label] = Math.round(performance.now() - start) }
+  const tick = (label: string, start: number) => {
+    timings[label] = Math.round(performance.now() - start)
+  }
 
   let t = performance.now()
   const site = await loadSiteConfig(context.siteFile)
-  const { cssBlocks, templates, schemas, scripts: componentScripts, data: componentData } = await prepareComponents(context.componentsDir, context.rootDir)
+  const {
+    cssBlocks,
+    templates,
+    schemas,
+    scripts: componentScripts,
+    data: componentData,
+  } = await prepareComponents(context.componentsDir, context.rootDir)
   tick('components', t)
   let imageMeta: Record<string, ImageMeta> = {}
   const instancesByRoute = new Map<string, ComposeInstance[]>()
@@ -424,10 +472,10 @@ async function buildInto(context: BuildContext, logger: BuildLogger): Promise<Bu
   })
   const projectCss = hasGlobalStyles
     ? await bundleProjectCss(
-      sourceStylesFile(context.rootDir),
-      sourceStylesDir(context.rootDir),
-      join(context.distDir, 'assets', 'css'),
-    )
+        sourceStylesFile(context.rootDir),
+        sourceStylesDir(context.rootDir),
+        join(context.distDir, 'assets', 'css'),
+      )
     : null
   tick('assets', t)
 
@@ -435,7 +483,9 @@ async function buildInto(context: BuildContext, logger: BuildLogger): Promise<Bu
   const componentsCssDir = join(context.distDir, 'assets', 'css')
   const scriptBlocks: ScriptBlock[] = []
 
-  const { html: strippedShell, blocks: shellScripts } = extractShellHeadScripts(await readFile(context.shellFile, 'utf8'))
+  const { html: strippedShell, blocks: shellScripts } = extractShellHeadScripts(
+    await readFile(context.shellFile, 'utf8'),
+  )
   scriptBlocks.push(...shellScripts)
 
   // Compose the shell before routes so shell component use contributes to site-wide pruning.
@@ -483,15 +533,11 @@ async function buildInto(context: BuildContext, logger: BuildLogger): Promise<Bu
     routeGraph.register({ slug: route.slug, kind: 'content', source: route.source })
   }
   await mapConcurrent(contentRoutes, IO_CONCURRENCY, async (route, index) => {
-    await routeGraph.compose(
-      { slug: route.slug, kind: 'content', source: route.source },
-      route.body,
-      {
-        // Sitemap lastmod is honest only for content: front-matter dates, never file mtimes.
-        lastModified: isoDate(route.data.dateModified) ?? isoDate(route.data.date),
-        index: contentStart + index,
-      },
-    )
+    await routeGraph.compose({ slug: route.slug, kind: 'content', source: route.source }, route.body, {
+      // Sitemap lastmod is honest only for content: front-matter dates, never file mtimes.
+      lastModified: isoDate(route.data.dateModified) ?? isoDate(route.data.date),
+      index: contentStart + index,
+    })
   })
 
   tick('routes', t)
@@ -521,9 +567,7 @@ async function buildInto(context: BuildContext, logger: BuildLogger): Promise<Bu
   scriptBlocks.splice(
     shellScripts.length,
     0,
-    ...componentScriptBlocks(new Map(
-      [...componentScripts].filter(([name]) => usedComponents.has(name)),
-    )),
+    ...componentScriptBlocks(new Map([...componentScripts].filter(([name]) => usedComponents.has(name)))),
   )
 
   const routeRecords = routeGraph.records()
@@ -533,10 +577,12 @@ async function buildInto(context: BuildContext, logger: BuildLogger): Promise<Bu
 
   await writeComponentsReadme(context.rootDir, templates, schemas)
 
-  const routeExtrasBySlug = new Map(routeRecords.map((record) => [
-    record.slug,
-    routeSchemaExtras(record, schemas, contentByslug.get(record.slug), site),
-  ]))
+  const routeExtrasBySlug = new Map(
+    routeRecords.map((record) => [
+      record.slug,
+      routeSchemaExtras(record, schemas, contentByslug.get(record.slug), site),
+    ]),
+  )
   const schemaExtrasBySlug = new Map([...routeExtrasBySlug].map(([slug, extras]) => [slug, extras.extraJsonLd]))
 
   await writeDiscovery(context.distDir, {
@@ -555,10 +601,7 @@ async function buildInto(context: BuildContext, logger: BuildLogger): Promise<Bu
     join(context.distDir, 'assets', 'js'),
     scriptBlocks,
   )
-  const routerJsFile = await writeRouterJs(
-    sourceRouterFile(),
-    join(context.distDir, 'assets', 'js'),
-  )
+  const routerJsFile = await writeRouterJs(sourceRouterFile(), join(context.distDir, 'assets', 'js'))
   tick('app', t)
 
   t = performance.now()
@@ -581,9 +624,9 @@ async function writeErrorPage(err: unknown, context: BuildContext = createBuildC
   const isBuild = err instanceof BuildError
   const title = isBuild ? 'Build error' : 'Build failed'
   const msg = err instanceof Error ? err.message : String(err)
-  const file = isBuild ? err.file ?? '' : ''
-  const hint = isBuild ? err.hint ?? '' : ''
-  const stack = err instanceof Error ? err.stack ?? '' : ''
+  const file = isBuild ? (err.file ?? '') : ''
+  const hint = isBuild ? (err.hint ?? '') : ''
+  const stack = err instanceof Error ? (err.stack ?? '') : ''
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -624,13 +667,28 @@ pre { background: var(--error-card); padding: 1em; border-radius: 4px; overflow-
 export async function runBuildCli(command: 'build' | 'check' = 'build') {
   const json = process.argv.includes('--json')
   const warnings: string[] = []
-  const logger: BuildLogger = json ? { log: () => {}, warn: message => { warnings.push(message) } } : console
+  const logger: BuildLogger = json
+    ? {
+        log: () => {},
+        warn: (message) => {
+          warnings.push(message)
+        },
+      }
+    : console
   const context = createBuildContext()
   try {
     const result = await build({ context, logger })
     // Clear any previous error banner
-    try { await rm(join(context.distDir, '__build-error.html'), { force: true }) } catch {}
-    if (json) printJsonResult(command, [], warnings, process.argv.includes('--profile') ? { timings: result.timings, totalMs: result.totalMs } : undefined)
+    try {
+      await rm(join(context.distDir, '__build-error.html'), { force: true })
+    } catch {}
+    if (json)
+      printJsonResult(
+        command,
+        [],
+        warnings,
+        process.argv.includes('--profile') ? { timings: result.timings, totalMs: result.totalMs } : undefined,
+      )
   } catch (err) {
     await writeErrorPage(err, context)
     if (json) {

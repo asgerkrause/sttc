@@ -15,17 +15,19 @@ export async function writeFeeds(distDir: string, site: SiteConfig, posts: Conte
   const sorted = [...posts].sort((a, b) => (b.date ?? b.data.date).localeCompare(a.date ?? a.data.date))
 
   // RSS 2.0
-  const items = sorted.map((p) => {
-    const url = absoluteUrl(site.url, publicPathFromSlug(p.slug))
-    const pub = new Date(p.date ?? p.data.date).toUTCString()
-    return `    <item>
+  const items = sorted
+    .map((p) => {
+      const url = absoluteUrl(site.url, publicPathFromSlug(p.slug))
+      const pub = new Date(p.date ?? p.data.date).toUTCString()
+      return `    <item>
       <title>${esc(p.data.title)}</title>
       <link>${url}</link>
       <guid>${url}</guid>
       <pubDate>${pub}</pubDate>
       <description>${esc(p.data.description ?? '')}</description>
     </item>`
-  }).join('\n')
+    })
+    .join('\n')
 
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">

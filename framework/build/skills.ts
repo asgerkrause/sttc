@@ -74,7 +74,11 @@ export async function syncSkills({ sourceRoot, projectRoot, check = false }: Syn
     }
 
     const destinationMarker = bodyHash(destination)
-    if (!destinationMarker || destinationMarker.name !== name || destinationMarker.currentHash !== destinationMarker.installedHash) {
+    if (
+      !destinationMarker ||
+      destinationMarker.name !== name ||
+      destinationMarker.currentHash !== destinationMarker.installedHash
+    ) {
       result.conflicts.push(name)
       continue
     }

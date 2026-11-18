@@ -43,7 +43,10 @@ describe('collection scaffold', () => {
   test('creates custom collection config, folder, template, and PagesCMS entry', async () => {
     const dir = await tempProject()
     try {
-      const result = await runScaffold(['collection', 'projects', '--route', 'work/{slug}', '--template', 'project'], dir)
+      const result = await runScaffold(
+        ['collection', 'projects', '--route', 'work/{slug}', '--template', 'project'],
+        dir,
+      )
       const config = JSON.parse(await readFile(join(dir, 'content', 'collections.json'), 'utf8'))
       const template = await readFile(join(dir, 'src', 'templates', 'project.html'), 'utf8')
       const pages = await readFile(join(dir, '.pages.yml'), 'utf8')
@@ -95,7 +98,12 @@ describe('create template surface', () => {
   test('one-package create skips generated and install artifacts', async () => {
     const dir = await tempProject()
     const templateRoot = join(repoRoot, 'templates', 'default')
-    const artifacts = [join(templateRoot, 'dist'), join(templateRoot, 'node_modules'), join(templateRoot, '.snz'), join(templateRoot, 'bun.lock')]
+    const artifacts = [
+      join(templateRoot, 'dist'),
+      join(templateRoot, 'node_modules'),
+      join(templateRoot, '.snz'),
+      join(templateRoot, 'bun.lock'),
+    ]
     try {
       await mkdir(join(templateRoot, 'dist'), { recursive: true })
       await writeFile(join(templateRoot, 'dist', 'ignored.html'), 'ignored')
@@ -123,7 +131,15 @@ describe('create template surface', () => {
     const tokens = await readFile(join(root, 'src', 'styles', 'tokens.css'), 'utf8')
     const css = await readFile(join(root, 'src', 'styles', 'crft.css'), 'utf8')
     const manifest: unknown = JSON.parse(await readFile(join(root, 'src', 'styles', 'crft-manifest.json'), 'utf8'))
-    expect(components).toEqual(['Footer.html', 'Grid.html', 'Header.html', 'Image.html', 'Logo.html', 'Section.html', 'Video.html'])
+    expect(components).toEqual([
+      'Footer.html',
+      'Grid.html',
+      'Header.html',
+      'Image.html',
+      'Logo.html',
+      'Section.html',
+      'Video.html',
+    ])
     expect(styles).toBe('@import "/assets/css/global.css";\n')
     expect(globalStyles).toContain('@layer reset, base, tokens, type, layout, grid, motion, utility, project;')
     expect(globalStyles).toContain('@import "./tokens.css";')
@@ -151,12 +167,16 @@ describe('create template surface', () => {
     for (const root of [repoRoot, join(repoRoot, 'templates', 'default')]) {
       const { templates, schemas } = await prepareComponents(join(root, 'src', 'components'), root)
       const composer = createComposer(templates, schemas, () => ({}))
-      const html = await composer.prepareRouteSource(`
+      const html = await composer.prepareRouteSource(
+        `
 <Section id="default" label="Overview"><p>Default</p></Section>
 <Section id="small" c="sm"><p>Small</p></Section>
-<Section id="large" c="lg"><Grid>Default grid</Grid><Grid cols="3-2" x="2-1" y="2-1" order="f-a-l">Nested grid</Grid></Section>`, {
-        slug: 'example', fileHint: 'src/pages/example.html',
-      })
+<Section id="large" c="lg"><Grid>Default grid</Grid><Grid cols="3-2" x="2-1" y="2-1" order="f-a-l">Nested grid</Grid></Section>`,
+        {
+          slug: 'example',
+          fileHint: 'src/pages/example.html',
+        },
+      )
       expect(html).toContain('<section id="default" aria-label="Overview">')
       expect(html).toContain('<div class="c"><p>Default</p></div>')
       expect(html).toContain('<div class="c sm"><p>Small</p></div>')
@@ -172,7 +192,10 @@ describe('create template surface', () => {
       const { templates, schemas, data, cssBlocks } = await prepareComponents(join(root, 'src', 'components'), root)
       const composer = createComposer(templates, schemas, () => ({}), undefined, undefined, data)
       const html = await composer.prepareShellSource('<Header />')
-      const css = cssBlocks.filter((block) => block.source === 'Header.html').map((block) => block.css).join('\n')
+      const css = cssBlocks
+        .filter((block) => block.source === 'Header.html')
+        .map((block) => block.css)
+        .join('\n')
       expect(html).toContain('<nav aria-label="Primary">')
       expect(html).toContain('<a href="/">Home</a>')
       expect(html).not.toMatch(/\s[cs](?:=|>)/)
@@ -193,17 +216,36 @@ describe('create template surface', () => {
         const raw = await readFile(join(pages, file), 'utf8')
         const route = await extractTemplateData(raw, { file, projectRoot: root })
         const { html: body } = extractRouteStyleBlocks(extractRouteTopScripts(route.html, file).body)
-        const html = await composer.prepareRouteSource(body, { slug: file.replace(/\.html$/, ''), fileHint: file, data: route.data })
+        const html = await composer.prepareRouteSource(body, {
+          slug: file.replace(/\.html$/, ''),
+          fileHint: file,
+          data: route.data,
+        })
         const ids: string[] = []
         const allIds: string[] = []
         const forbidden: string[] = []
         new HTMLRewriter()
-          .on('main > section', { element(element) { ids.push(element.getAttribute('id') ?? '') } })
-          .on('[id]', { element(element) { allIds.push(element.getAttribute('id') ?? '') } })
-          .on('section[class], [t], [s], [x], [y], [data-skin]', { element(element) { forbidden.push(element.tagName) } })
+          .on('main > section', {
+            element(element) {
+              ids.push(element.getAttribute('id') ?? '')
+            },
+          })
+          .on('[id]', {
+            element(element) {
+              allIds.push(element.getAttribute('id') ?? '')
+            },
+          })
+          .on('section[class], [t], [s], [x], [y], [data-skin]', {
+            element(element) {
+              forbidden.push(element.tagName)
+            },
+          })
           .transform(`<main>${html}</main>`)
         expect(ids.length, `${root}/${file}: direct main sections`).toBeGreaterThan(0)
-        expect(ids.every((id) => id.trim().length > 0), `${root}/${file}: nonempty section IDs`).toBe(true)
+        expect(
+          ids.every((id) => id.trim().length > 0),
+          `${root}/${file}: nonempty section IDs`,
+        ).toBe(true)
         expect(new Set(allIds).size, `${root}/${file}: unique document IDs`).toBe(allIds.length)
         expect(forbidden, `${root}/${file}: legacy hooks or section classes`).toEqual([])
       }
@@ -221,9 +263,17 @@ describe('authoring scaffold', () => {
       expect(html).toContain('<SEO title="Case Study" description="..." />')
       expect(html).toContain('<Section>')
       expect(html).toContain('<h1>Case Study</h1>')
-      const composer = createComposer(new Map([['Section', '<section>{{slot}}</section>']]), new Map([['Section', { description: 'Project-owned wrapper.' }]]), () => ({}))
-      expect(await composer.prepareRouteSource(html, { slug: 'work/case-study', fileHint: 'src/pages/work/case-study.html' }))
-        .toContain('<section>')
+      const composer = createComposer(
+        new Map([['Section', '<section>{{slot}}</section>']]),
+        new Map([['Section', { description: 'Project-owned wrapper.' }]]),
+        () => ({}),
+      )
+      expect(
+        await composer.prepareRouteSource(html, {
+          slug: 'work/case-study',
+          fileHint: 'src/pages/work/case-study.html',
+        }),
+      ).toContain('<section>')
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -261,7 +311,13 @@ describe('authoring scaffold', () => {
       const rendered = await composer.prepareRouteSource(html, { slug: 'styles', fileHint: 'src/pages/styles.html' })
       expect(rendered).toContain('<h2 id="hero-demo">Hero demo</h2>')
       const ids: string[] = []
-      new HTMLRewriter().on('[id]', { element(element) { ids.push(element.getAttribute('id') ?? '') } }).transform(rendered)
+      new HTMLRewriter()
+        .on('[id]', {
+          element(element) {
+            ids.push(element.getAttribute('id') ?? '')
+          },
+        })
+        .transform(rendered)
       expect(new Set(ids).size).toBe(ids.length)
       expect(rendered.match(/id="hero-demo-section"/g)).toHaveLength(1)
     } finally {

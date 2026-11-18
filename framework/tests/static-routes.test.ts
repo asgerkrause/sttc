@@ -19,13 +19,18 @@ async function makeProject() {
   await mkdir(join(dir, 'src', 'styles'), { recursive: true })
   await mkdir(join(dir, 'src', 'images'), { recursive: true })
 
-  await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
-    name: 'Static Routes',
-    url: 'https://example.com',
-    description: 'Static route test site.',
-    locale: 'en',
-  }))
-  await writeFile(join(dir, 'src', 'shell.html'), `<!doctype html>
+  await writeFile(
+    join(dir, 'src', 'site.json'),
+    JSON.stringify({
+      name: 'Static Routes',
+      url: 'https://example.com',
+      description: 'Static route test site.',
+      locale: 'en',
+    }),
+  )
+  await writeFile(
+    join(dir, 'src', 'shell.html'),
+    `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -38,8 +43,11 @@ async function makeProject() {
   <main></main>
 </body>
 </html>
-`)
-  await writeFile(join(dir, 'src', 'components', 'Accordion.html'), `<!--
+`,
+  )
+  await writeFile(
+    join(dir, 'src', 'components', 'Accordion.html'),
+    `<!--
   @desc FAQ accordion.
   @attr summary! Question.
   @attr body! Answer.
@@ -48,21 +56,36 @@ async function makeProject() {
 <style>
   details { color: red; }
 </style>
-`)
-  await writeFile(join(dir, 'src', 'components', 'Section.html'), `<!--
+`,
+  )
+  await writeFile(
+    join(dir, 'src', 'components', 'Section.html'),
+    `<!--
   @desc Content block.
 -->
 <section>{{slot}}</section>
-`)
+`,
+  )
   await writeFile(join(dir, 'src', 'styles.css'), 'body{font-family:system-ui}\n')
-  await writeFile(join(dir, 'src', 'images', 'case.png'), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'))
+  await writeFile(
+    join(dir, 'src', 'images', 'case.png'),
+    Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64',
+    ),
+  )
   await writeFile(join(dir, 'src', 'app.ts'), 'window.__staticRoutesTest = true\n')
-  await writeFile(join(dir, 'src', 'pages', 'index.html'), `<head>
+  await writeFile(
+    join(dir, 'src', 'pages', 'index.html'),
+    `<head>
   <SEO title="Home" description="Home page." />
 </head>
 <h1>Home body</h1>
-`)
-  await writeFile(join(dir, 'src', 'pages', 'work', 'case.html'), `<head>
+`,
+  )
+  await writeFile(
+    join(dir, 'src', 'pages', 'work', 'case.html'),
+    `<head>
   <SEO title="Case" description="Case page." image="/assets/images/case.webp" />
 </head>
 <h1>Case body</h1>
@@ -71,12 +94,16 @@ async function makeProject() {
 <style>
   .case-note { color: blue; }
 </style>
-`)
-  await writeFile(join(dir, 'src', 'pages', '404.html'), `<head>
+`,
+  )
+  await writeFile(
+    join(dir, 'src', 'pages', '404.html'),
+    `<head>
   <SEO title="Not found" description="Missing page." />
 </head>
 <h1>Not found</h1>
-`)
+`,
+  )
 
   return dir
 }
@@ -84,27 +111,41 @@ async function makeProject() {
 async function addPosts(dir: string) {
   await mkdir(join(dir, 'content', 'posts'), { recursive: true })
   await mkdir(join(dir, 'src', 'templates'), { recursive: true })
-  await writeFile(join(dir, 'content', 'collections.json'), JSON.stringify({
-    collections: [{ name: 'posts', route: 'blog/{slug}', template: 'entry.html' }],
-  }))
-  await writeFile(join(dir, 'src', 'templates', 'entry.html'), `<head>
+  await writeFile(
+    join(dir, 'content', 'collections.json'),
+    JSON.stringify({
+      collections: [{ name: 'posts', route: 'blog/{slug}', template: 'entry.html' }],
+    }),
+  )
+  await writeFile(
+    join(dir, 'src', 'templates', 'entry.html'),
+    `<head>
   <SEO title="{{title}}" description="{{description}}" />
 </head>
 <article><h1>{{title}}</h1><p>{{tagsHtml}}</p>{{body}}</article>
-`)
-  await writeFile(join(dir, 'src', 'templates', 'posts-index.html'), `<head>
+`,
+  )
+  await writeFile(
+    join(dir, 'src', 'templates', 'posts-index.html'),
+    `<head>
   <SEO title="Journal" description="Project-owned index." path="{{path}}" />
 </head>
 <h1>Journal</h1>
 <ul>{#each posts as post}<li><a href="{{post.path}}">{{post.title}}</a></li>{/each}</ul>
-`)
-  await writeFile(join(dir, 'src', 'templates', 'tags.html'), `<head>
+`,
+  )
+  await writeFile(
+    join(dir, 'src', 'templates', 'tags.html'),
+    `<head>
   <SEO title="Topic {{tag}}" description="Project-owned tag page." path="{{path}}" />
 </head>
 <h1>Topic {{tag}}</h1>
 {{items}}
-`)
-  await writeFile(join(dir, 'content', 'posts', 'hello.md'), `---
+`,
+  )
+  await writeFile(
+    join(dir, 'content', 'posts', 'hello.md'),
+    `---
 title: Hello
 date: 2026-05-26
 dateModified: 2026-06-01
@@ -112,7 +153,8 @@ description: First post.
 tags: [Craft]
 ---
 See [the case](/work/case/) and \`bun run build\`.
-`)
+`,
+  )
 }
 
 async function runBuild(dir: string) {
@@ -148,8 +190,12 @@ describe('static public routes', () => {
     expect(deep).toContain('<link rel="alternate" type="text/markdown" href="/work/case/index.md" data-snz-head>')
     expect(deep).toContain('<link rel="describedby" href="/llms.txt" data-snz-head>')
     expect(deep).toContain('"@type":"BreadcrumbList"')
-    expect(deep).toContain('<meta property="og:image" content="https://example.com/assets/images/case.webp" data-snz-head>')
-    expect(deep).toContain('<meta name="twitter:image" content="https://example.com/assets/images/case.webp" data-snz-head>')
+    expect(deep).toContain(
+      '<meta property="og:image" content="https://example.com/assets/images/case.webp" data-snz-head>',
+    )
+    expect(deep).toContain(
+      '<meta name="twitter:image" content="https://example.com/assets/images/case.webp" data-snz-head>',
+    )
     expect(deep).toContain('<main>\n<h1 id="case-body">Case body</h1>')
     expect(deep).not.toContain('"@type":"FAQPage"')
     expect(deep).toContain('What changes?')
@@ -160,7 +206,9 @@ describe('static public routes', () => {
     await expect(stat(join(dir, 'dist', 'routes', 'work', 'case.html'))).rejects.toThrow()
     expect(await readFile(join(dir, 'dist', 'work', 'case', 'index.md'), 'utf8')).toContain('# Case body')
     expect(await readFile(join(dir, 'dist', 'index.md'), 'utf8')).toContain('# Home body')
-    expect(await readFile(join(dir, 'dist', '404.html'), 'utf8')).toBe(await readFile(join(dir, 'dist', '404', 'index.html'), 'utf8'))
+    expect(await readFile(join(dir, 'dist', '404.html'), 'utf8')).toBe(
+      await readFile(join(dir, 'dist', '404', 'index.html'), 'utf8'),
+    )
     await expect(stat(join(dir, 'dist', 'feed.xml'))).rejects.toThrow()
     await expect(stat(join(dir, 'dist', 'feed.json'))).rejects.toThrow()
 
@@ -168,13 +216,17 @@ describe('static public routes', () => {
     expect(sitemap).toContain('<loc>https://example.com/</loc></url>')
     expect(sitemap).not.toContain('<lastmod>')
 
-    const routeCssFile = (await readdir(join(dir, 'dist', 'assets', 'css', 'routes'))).find((file) => file.startsWith('work-case.'))
+    const routeCssFile = (await readdir(join(dir, 'dist', 'assets', 'css', 'routes'))).find((file) =>
+      file.startsWith('work-case.'),
+    )
     expect(routeCssFile).toBeTruthy()
     const routeCss = await readFile(join(dir, 'dist', 'assets', 'css', 'routes', routeCssFile!), 'utf8')
     expect(routeCss).toContain('@layer snz.pages.work-case {')
     expect(routeCss).toContain('.case-note { color: blue; }')
 
-    const componentCssFile = (await readdir(join(dir, 'dist', 'assets', 'css'))).find((file) => /^components\.[a-f0-9]+\.css$/.test(file))
+    const componentCssFile = (await readdir(join(dir, 'dist', 'assets', 'css'))).find((file) =>
+      /^components\.[a-f0-9]+\.css$/.test(file),
+    )
     expect(componentCssFile).toBeTruthy()
     const componentCss = await readFile(join(dir, 'dist', 'assets', 'css', componentCssFile!), 'utf8')
     expect(componentCss).toContain('@layer snz.components {')
@@ -206,8 +258,12 @@ describe('static public routes', () => {
     expect(sitemap).toContain('<loc>https://example.com/</loc></url>')
     expect(sitemap).toContain('<loc>https://example.com/blog/</loc></url>')
 
-    expect(await readFile(join(dir, 'dist', 'feed.xml'), 'utf8')).toContain('<link>https://example.com/blog/hello/</link>')
-    expect(JSON.parse(await readFile(join(dir, 'dist', 'feed.json'), 'utf8')).items[0].url).toBe('https://example.com/blog/hello/')
+    expect(await readFile(join(dir, 'dist', 'feed.xml'), 'utf8')).toContain(
+      '<link>https://example.com/blog/hello/</link>',
+    )
+    expect(JSON.parse(await readFile(join(dir, 'dist', 'feed.json'), 'utf8')).items[0].url).toBe(
+      'https://example.com/blog/hello/',
+    )
 
     const markdown = await readFile(join(dir, 'dist', 'blog', 'hello', 'index.md'), 'utf8')
     expect(markdown).toContain('[the case](/work/case/) and `bun run build`')

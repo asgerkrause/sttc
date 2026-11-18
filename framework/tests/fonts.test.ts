@@ -22,10 +22,7 @@ describe('font emit', () => {
   font-family: "SNZ Mono";
   src: url("./mono.def456.woff") format("woff");
 }`
-    expect(fontPreloadsFromCss(css)).toEqual([
-      '/assets/css/sans.abc123.woff2',
-      '/assets/css/mono.def456.woff',
-    ])
+    expect(fontPreloadsFromCss(css)).toEqual(['/assets/css/sans.abc123.woff2', '/assets/css/mono.def456.woff'])
   })
 
   test('copies WOFF files with a content hash', async () => {

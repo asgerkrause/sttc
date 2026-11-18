@@ -18,10 +18,13 @@ async function withProject(fn: (dir: string) => Promise<void>) {
 
 describe('build-time JSON template data', () => {
   test('extracts inline JSON data and strips the script', async () => {
-    const result = await extractTemplateData('<script type="application/json" data-snz>{"title":"Services"}</script><h1>{{title}}</h1>', {
-      file: 'src/pages/services.html',
-      projectRoot: process.cwd(),
-    })
+    const result = await extractTemplateData(
+      '<script type="application/json" data-snz>{"title":"Services"}</script><h1>{{title}}</h1>',
+      {
+        file: 'src/pages/services.html',
+        projectRoot: process.cwd(),
+      },
+    )
 
     expect(result.html).toBe('<h1>{{title}}</h1>')
     expect(result.data.title).toBe('Services')
@@ -30,10 +33,13 @@ describe('build-time JSON template data', () => {
   test('loads external JSON data from src/data', async () => {
     await withProject(async (dir) => {
       await writeFile(join(dir, 'src', 'data', 'services.json'), '{"services":[{"title":"Strategy"}]}')
-      const result = await extractTemplateData('<script type="application/json" data-snz src="services.json"></script>', {
-        file: 'src/pages/services.html',
-        projectRoot: dir,
-      })
+      const result = await extractTemplateData(
+        '<script type="application/json" data-snz src="services.json"></script>',
+        {
+          file: 'src/pages/services.html',
+          projectRoot: dir,
+        },
+      )
 
       expect(result.data.services).toEqual([{ title: 'Strategy' }])
     })
@@ -60,18 +66,22 @@ describe('build-time JSON template data', () => {
     await withProject(async (dir) => {
       await writeFile(join(dir, 'secret.json'), '{"secret":"no"}')
       await symlink(join(dir, 'secret.json'), join(dir, 'src', 'data', 'secret.json'))
-      await expect(extractTemplateData('<script type="application/json" data-snz src="secret.json"></script>', {
-        file: 'src/pages/page.html',
-        projectRoot: dir,
-      })).rejects.toThrow('must stay inside src/data')
+      await expect(
+        extractTemplateData('<script type="application/json" data-snz src="secret.json"></script>', {
+          file: 'src/pages/page.html',
+          projectRoot: dir,
+        }),
+      ).rejects.toThrow('must stay inside src/data')
     })
   })
 
   test('rejects external data outside src/data', async () => {
-    await expect(extractTemplateData('<script type="application/json" data-snz src="../secret.json"></script>', {
-      file: 'src/pages/services.html',
-      projectRoot: process.cwd(),
-    })).rejects.toThrow('SNZ data src must point to a JSON file under src/data/')
+    await expect(
+      extractTemplateData('<script type="application/json" data-snz src="../secret.json"></script>', {
+        file: 'src/pages/services.html',
+        projectRoot: process.cwd(),
+      }),
+    ).rejects.toThrow('SNZ data src must point to a JSON file under src/data/')
   })
 
   test('renders page each blocks with JSON data', async () => {
@@ -83,11 +93,14 @@ describe('build-time JSON template data', () => {
       new Map(),
       () => ({}),
     )
-    const html = await composer.prepareRouteSource('<Card>{#each services as service, i}<h2>{{i}} {{service.title}}</h2>{/each}</Card>', {
-      slug: 'services',
-      fileHint: 'src/pages/services.html',
-      data: { services: [{ title: 'Strategy' }, { title: 'Build' }] },
-    })
+    const html = await composer.prepareRouteSource(
+      '<Card>{#each services as service, i}<h2>{{i}} {{service.title}}</h2>{/each}</Card>',
+      {
+        slug: 'services',
+        fileHint: 'src/pages/services.html',
+        data: { services: [{ title: 'Strategy' }, { title: 'Build' }] },
+      },
+    )
 
     expect(html).toContain('<h2 id="0-strategy">0 Strategy</h2>')
     expect(html).toContain('<h2 id="1-build">1 Build</h2>')
@@ -118,26 +131,36 @@ describe('build-time JSON template data', () => {
     const composer = createComposer(
       new Map([
         ['SEO', '<title>{{title}}</title>'],
-        ['Cases', '<ol>{#each items sort featured desc, date desc as item, i}<li data-i="{{i}}">{{item.title}}</li>{/each}</ol>'],
+        [
+          'Cases',
+          '<ol>{#each items sort featured desc, date desc as item, i}<li data-i="{{i}}">{{item.title}}</li>{/each}</ol>',
+        ],
       ]),
       new Map(),
       () => ({}),
       undefined,
       undefined,
-      new Map([['Cases', {
-        items: [
-          { title: 'Older featured', featured: true, date: '2024-01-01' },
-          { title: 'Newest unfeatured', featured: false, date: '2026-01-01' },
-          { title: 'Newest featured', featured: true, date: '2025-01-01' },
+      new Map([
+        [
+          'Cases',
+          {
+            items: [
+              { title: 'Older featured', featured: true, date: '2024-01-01' },
+              { title: 'Newest unfeatured', featured: false, date: '2026-01-01' },
+              { title: 'Newest featured', featured: true, date: '2025-01-01' },
+            ],
+          },
         ],
-      }]]),
+      ]),
     )
     const html = await composer.prepareRouteSource('<Cases />', {
       slug: 'page',
       fileHint: 'src/pages/page.html',
     })
 
-    expect(html).toContain('<li data-i="0">Newest featured</li><li data-i="1">Older featured</li><li data-i="2">Newest unfeatured</li>')
+    expect(html).toContain(
+      '<li data-i="0">Newest featured</li><li data-i="1">Older featured</li><li data-i="2">Newest unfeatured</li>',
+    )
   })
 
   test('sorts each blocks by dotted paths and leaves missing values last', async () => {
@@ -150,13 +173,18 @@ describe('build-time JSON template data', () => {
       () => ({}),
       undefined,
       undefined,
-      new Map([['Clients', {
-        items: [
-          { name: 'Zulu' },
-          { name: 'Bravo', location: { city: 'Zurich' } },
-          { name: 'Alpha', location: { city: 'Amsterdam' } },
+      new Map([
+        [
+          'Clients',
+          {
+            items: [
+              { name: 'Zulu' },
+              { name: 'Bravo', location: { city: 'Zurich' } },
+              { name: 'Alpha', location: { city: 'Amsterdam' } },
+            ],
+          },
         ],
-      }]]),
+      ]),
     )
     const html = await composer.prepareRouteSource('<Clients />', {
       slug: 'page',
@@ -175,10 +203,13 @@ describe('build-time JSON template data', () => {
       new Map(),
       () => ({}),
     )
-    const html = await composer.prepareRouteSource('<Card name="Brand Strategy" />\n<Card name="Tom &amp; Jerry &quot;live&quot;" />', {
-      slug: 'page',
-      fileHint: 'src/pages/page.html',
-    })
+    const html = await composer.prepareRouteSource(
+      '<Card name="Brand Strategy" />\n<Card name="Tom &amp; Jerry &quot;live&quot;" />',
+      {
+        slug: 'page',
+        fileHint: 'src/pages/page.html',
+      },
+    )
 
     expect(html).toContain('<p>In need of brand strategy?</p>')
     expect(html).toContain('<a href="#brand-strategy">Brand Strategy</a>')

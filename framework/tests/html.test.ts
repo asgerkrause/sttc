@@ -1,9 +1,17 @@
 import { describe, expect, test } from 'bun:test'
-import { decodeEntities, extractHtmlDescription, extractHtmlMetadata, extractHtmlTitle, scanHtmlInternalLinks } from '../build/html'
+import {
+  decodeEntities,
+  extractHtmlDescription,
+  extractHtmlMetadata,
+  extractHtmlTitle,
+  scanHtmlInternalLinks,
+} from '../build/html'
 
 describe('HTML discovery helpers', () => {
   test('extracts route metadata in one parser pass', () => {
-    expect(extractHtmlMetadata('<title>Page</title><meta name="description" content="Summary"><a href="/about/">About</a>')).toEqual({
+    expect(
+      extractHtmlMetadata('<title>Page</title><meta name="description" content="Summary"><a href="/about/">About</a>'),
+    ).toEqual({
       title: 'Page',
       description: 'Summary',
       internalLinks: ['/about/'],
@@ -26,7 +34,9 @@ describe('HTML discovery helpers', () => {
     expect(decodeEntities('&#38;amp; &#x26; &amp;lt;')).toBe('&amp; & &lt;')
     expect(decodeEntities('&bogus; &copy=1 x &amp y')).toBe('&bogus; &copy=1 x & y')
     expect(decodeEntities('Price &#128;10 &#x9F; Caf&#233 Caf&#xE9 x')).toBe('Price €10 Ÿ Café Café x')
-    expect(decodeEntities('&constructor; &toString; &valueOf; &__proto__;')).toBe('&constructor; &toString; &valueOf; &__proto__;')
+    expect(decodeEntities('&constructor; &toString; &valueOf; &__proto__;')).toBe(
+      '&constructor; &toString; &valueOf; &__proto__;',
+    )
   })
 
   test('extracts meta description content', () => {
@@ -47,7 +57,8 @@ describe('HTML discovery helpers', () => {
   })
 
   test('detects visible Schema.org microdata types', () => {
-    const html = '<section itemscope itemtype="https://schema.org/FAQPage"><details itemscope itemtype="https://schema.org/Question"></details></section>'
+    const html =
+      '<section itemscope itemtype="https://schema.org/FAQPage"><details itemscope itemtype="https://schema.org/Question"></details></section>'
 
     expect(extractHtmlMetadata(html).schemas).toEqual(['FAQPage', 'Question'])
   })

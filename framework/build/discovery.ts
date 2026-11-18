@@ -2,7 +2,15 @@
 
 import { mkdir, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { absoluteUrl, buildSchemaGraph, isPublicRoute, matchAuthor, personId, type JsonLdNode, type SiteConfig } from './seo'
+import {
+  absoluteUrl,
+  buildSchemaGraph,
+  isPublicRoute,
+  matchAuthor,
+  personId,
+  type JsonLdNode,
+  type SiteConfig,
+} from './seo'
 import {
   publicMarkdownPathFromSlug,
   publicPathFromSlug,
@@ -64,9 +72,7 @@ function componentSchemaExtras(record: RouteRecord, schemas: Map<string, Compone
 }
 
 function contentDateModified(content: ContentRoute) {
-  return isoDate(content.data.dateModified)
-    ?? isoDate(content.data.modified)
-    ?? isoDate(content.data.updated)
+  return isoDate(content.data.dateModified) ?? isoDate(content.data.modified) ?? isoDate(content.data.updated)
 }
 
 function blogPostingFor(record: RouteRecord, content: ContentRoute, site: SiteConfig): JsonLdNode {
@@ -85,9 +91,7 @@ function blogPostingFor(record: RouteRecord, content: ContentRoute, site: SiteCo
   const authorName = content.data.author?.trim()
   if (!authorName) return node
   const matched = matchAuthor(site, authorName)
-  node.author = matched
-    ? { '@id': personId(site, matched) }
-    : { '@type': 'Person', name: authorName }
+  node.author = matched ? { '@id': personId(site, matched) } : { '@type': 'Person', name: authorName }
   return node
 }
 
@@ -134,30 +138,36 @@ function publicAddress(address: SiteConfig['address']) {
 }
 
 function publicSite(site: SiteConfig) {
-  const organization = site.organization ? {
-    name: site.organization.name,
-    legalName: site.organization.legalName,
-    logo: site.organization.logo,
-    sameAs: site.organization.sameAs,
-    contact: publicContact(site.organization.contact),
-    address: publicAddress(site.organization.address),
-  } : undefined
-  const product = site.product ? {
-    type: site.product.type,
-    name: site.product.name,
-    description: site.product.description,
-    path: site.product.path,
-    category: site.product.category,
-    image: site.product.image,
-    sku: site.product.sku,
-    audience: site.product.audience,
-    offers: site.product.offers ? {
-      price: site.product.offers.price,
-      priceCurrency: site.product.offers.priceCurrency,
-      availability: site.product.offers.availability,
-      url: site.product.offers.url,
-    } : undefined,
-  } : undefined
+  const organization = site.organization
+    ? {
+        name: site.organization.name,
+        legalName: site.organization.legalName,
+        logo: site.organization.logo,
+        sameAs: site.organization.sameAs,
+        contact: publicContact(site.organization.contact),
+        address: publicAddress(site.organization.address),
+      }
+    : undefined
+  const product = site.product
+    ? {
+        type: site.product.type,
+        name: site.product.name,
+        description: site.product.description,
+        path: site.product.path,
+        category: site.product.category,
+        image: site.product.image,
+        sku: site.product.sku,
+        audience: site.product.audience,
+        offers: site.product.offers
+          ? {
+              price: site.product.offers.price,
+              priceCurrency: site.product.offers.priceCurrency,
+              availability: site.product.offers.availability,
+              url: site.product.offers.url,
+            }
+          : undefined,
+      }
+    : undefined
   return {
     name: site.name,
     url: site.url,
@@ -220,7 +230,11 @@ function featuredRoutes<T extends { slug: string }>(site: SiteConfig, routes: T[
 
 function discoveryNoteLines(notes: string | undefined): string[] {
   if (!notes?.trim()) return []
-  const paragraphs = notes.trim().split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean)
+  const paragraphs = notes
+    .trim()
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean)
   return paragraphs.flatMap((paragraph) => [paragraph, ''])
 }
 
@@ -233,7 +247,8 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
   await rm(join(distDir, '.well-known', 'ai-plugin.json'), { force: true })
   const enrichedRoutes = routes.map((record) => ({
     ...record,
-    ...(routeExtrasBySlug?.get(record.slug) ?? routeSchemaExtras(record, componentSchemas, contentByslug.get(record.slug), site)),
+    ...(routeExtrasBySlug?.get(record.slug) ??
+      routeSchemaExtras(record, componentSchemas, contentByslug.get(record.slug), site)),
   }))
   const publicRoutes = enrichedRoutes.filter((route) => isPublicRoute(route) && route.slug !== '404')
   const featured = featuredRoutes(site, publicRoutes)
@@ -254,18 +269,25 @@ export async function writeDiscovery(distDir: string, input: DiscoveryInput) {
     await Promise.all([
       writeFile(markdownPath, markdownFile),
       writeFile(publicMarkdownPath, markdownFile),
-      writeFile(jsonPath, JSON.stringify({
-        schemaVersion: MANIFEST_SCHEMA_VERSION,
-        generator: { name: GENERATOR_NAME, version: GENERATOR_VERSION },
-        ...representation,
-        slug: route.slug,
-        title: route.title,
-        description: route.description,
-        lastModified: route.lastModified,
-        internalLinks: route.internalLinks,
-        schemas: route.schemas,
-        extraJsonLd: route.extraJsonLd,
-      }, null, 2)),
+      writeFile(
+        jsonPath,
+        JSON.stringify(
+          {
+            schemaVersion: MANIFEST_SCHEMA_VERSION,
+            generator: { name: GENERATOR_NAME, version: GENERATOR_VERSION },
+            ...representation,
+            slug: route.slug,
+            title: route.title,
+            description: route.description,
+            lastModified: route.lastModified,
+            internalLinks: route.internalLinks,
+            schemas: route.schemas,
+            extraJsonLd: route.extraJsonLd,
+          },
+          null,
+          2,
+        ),
+      ),
     ])
   })
 
@@ -300,12 +322,22 @@ async function writeLlmsTxt(
   markdownBySlug: Map<string, string>,
   featured: Array<RouteRecord & RouteSchemaExtras> | undefined,
 ) {
-  const lines = [`# ${site.name}`, '', `> ${site.description}`, '', ...discoveryNoteLines(site.discovery?.notes), ...siteFactLines(site)]
+  const lines = [
+    `# ${site.name}`,
+    '',
+    `> ${site.description}`,
+    '',
+    ...discoveryNoteLines(site.discovery?.notes),
+    ...siteFactLines(site),
+  ]
   const primary = featured ?? routes
   const pages = primary.filter((route) => contentByslug.get(route.slug)?.collection !== 'posts')
   const posts = primary.filter((route) => contentByslug.get(route.slug)?.collection === 'posts')
 
-  for (const [heading, items] of [['Pages', pages], ['Posts', posts]] as const) {
+  for (const [heading, items] of [
+    ['Pages', pages],
+    ['Posts', posts],
+  ] as const) {
     if (!items.length) continue
     lines.push(`## ${heading}`, '')
     for (const route of items) lines.push(llmsRouteLink(site, route))
@@ -319,7 +351,9 @@ async function writeLlmsTxt(
       lines.push(llmsRouteLink(site, route))
     }
   }
-  lines.push(`- [Site manifest](${absoluteUrl(site.url, '/site.manifest.json')}): Machine-readable public route inventory.`)
+  lines.push(
+    `- [Site manifest](${absoluteUrl(site.url, '/site.manifest.json')}): Machine-readable public route inventory.`,
+  )
   lines.push(`- [Entity graph](${absoluteUrl(site.url, '/site.jsonld')}): Connected Schema.org site graph.`)
   lines.push('')
   await writeFile(join(distDir, 'llms.txt'), lines.join('\n'))
@@ -336,7 +370,8 @@ async function writeManifest(distDir: string, input: DiscoveryInput) {
   const { site, routes, componentSchemas } = input
   const publicUseCounts = new Map<string, number>()
   for (const route of routes) {
-    for (const instance of route.components) publicUseCounts.set(instance.name, (publicUseCounts.get(instance.name) ?? 0) + 1)
+    for (const instance of route.components)
+      publicUseCounts.set(instance.name, (publicUseCounts.get(instance.name) ?? 0) + 1)
   }
   const manifest = {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
@@ -352,38 +387,47 @@ async function writeManifest(distDir: string, input: DiscoveryInput) {
       internalLinks: route.internalLinks,
       schemas: route.schemas,
     })),
-    components: [...publicUseCounts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([name, uses]) => ({
-      name,
-      uses,
-      schema: componentSchemas.get(name) ?? {},
-    })),
+    components: [...publicUseCounts.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, uses]) => ({
+        name,
+        uses,
+        schema: componentSchemas.get(name) ?? {},
+      })),
   }
   await writeFile(join(distDir, 'site.manifest.json'), JSON.stringify(manifest, null, 2))
 }
 
-async function writeSiteGraph(
-  distDir: string,
-  site: SiteConfig,
-  routes: Array<RouteRecord & RouteSchemaExtras>,
-) {
+async function writeSiteGraph(distDir: string, site: SiteConfig, routes: Array<RouteRecord & RouteSchemaExtras>) {
   const nodes = new Map<string, JsonLdNode>()
   const titlesBySlug = Object.fromEntries(routes.map((route) => [route.slug, route.title]))
   for (const route of routes) {
     const canonical = absoluteUrl(site.url, publicPathFromSlug(route.slug))
-    const graph = buildSchemaGraph(site, {
-      title: route.title,
-      description: route.description,
-      canonical,
-      slug: route.slug,
-      titlesBySlug,
-    }, route.extraJsonLd)
+    const graph = buildSchemaGraph(
+      site,
+      {
+        title: route.title,
+        description: route.description,
+        canonical,
+        slug: route.slug,
+        titlesBySlug,
+      },
+      route.extraJsonLd,
+    )
     for (const node of graph['@graph']) {
       const key = typeof node['@id'] === 'string' ? node['@id'] : JSON.stringify(node)
       nodes.set(key, node)
     }
   }
-  await writeFile(join(distDir, 'site.jsonld'), JSON.stringify({
-    '@context': 'https://schema.org',
-    '@graph': [...nodes.values()],
-  }, null, 2))
+  await writeFile(
+    join(distDir, 'site.jsonld'),
+    JSON.stringify(
+      {
+        '@context': 'https://schema.org',
+        '@graph': [...nodes.values()],
+      },
+      null,
+      2,
+    ),
+  )
 }

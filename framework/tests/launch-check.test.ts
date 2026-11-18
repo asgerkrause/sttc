@@ -18,17 +18,25 @@ async function makeProject(body: string, site: Record<string, unknown> = {}, hea
   await mkdir(join(dir, 'src', 'pages'), { recursive: true })
   await mkdir(join(dir, 'src', 'images'), { recursive: true })
   // The starter ships a 1×1 placeholder; upscale it so launch fixtures have a real-sized OG master.
-  await new Bun.Image(join(starterSrc, 'images', 'og.png')).resize(1200, 630, { fit: 'fill' }).png().write(join(dir, 'src', 'images', 'og.png'))
+  await new Bun.Image(join(starterSrc, 'images', 'og.png'))
+    .resize(1200, 630, { fit: 'fill' })
+    .png()
+    .write(join(dir, 'src', 'images', 'og.png'))
 
-  await writeFile(join(dir, 'src', 'site.json'), JSON.stringify({
-    name: 'Launch Site',
-    url: 'https://launch.example.org',
-    description: 'Launch-ready fixture for semantic quality checks.',
-    locale: 'en',
-    image: '/assets/og.webp',
-    ...site,
-  }))
-  await writeFile(join(dir, 'src', 'shell.html'), `<!doctype html>
+  await writeFile(
+    join(dir, 'src', 'site.json'),
+    JSON.stringify({
+      name: 'Launch Site',
+      url: 'https://launch.example.org',
+      description: 'Launch-ready fixture for semantic quality checks.',
+      locale: 'en',
+      image: '/assets/og.webp',
+      ...site,
+    }),
+  )
+  await writeFile(
+    join(dir, 'src', 'shell.html'),
+    `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -38,14 +46,18 @@ async function makeProject(body: string, site: Record<string, unknown> = {}, hea
 </head>
 <body><main></main></body>
 </html>
-`)
+`,
+  )
   await writeFile(join(dir, 'src', 'styles.css'), 'body{font-family:system-ui}\n')
   await writeFile(join(dir, 'src', 'pages', 'index.html'), body)
-  await writeFile(join(dir, 'src', 'pages', '404.html'), `<head>
+  await writeFile(
+    join(dir, 'src', 'pages', '404.html'),
+    `<head>
   <SEO title="Not found" description="The page you requested does not exist on this launch fixture site." />
 </head>
 <h1>Not found</h1>
-`)
+`,
+  )
   return dir
 }
 
@@ -86,12 +98,15 @@ describe('launch doctor gate', () => {
   })
 
   test('keeps normal check free of launch-only blockers', async () => {
-    const dir = await makeProject(`<head>
+    const dir = await makeProject(
+      `<head>
   <SEO title="Home" description="Short." />
 </head>
 <p><a href="http://localhost:3000/contact/">click here</a></p>
 <img src="/assets/og.webp">
-`, { url: 'http://localhost:3000', image: '' })
+`,
+      { url: 'http://localhost:3000', image: '' },
+    )
 
     const result = await runCli(dir, 'check')
 
@@ -101,12 +116,15 @@ describe('launch doctor gate', () => {
   })
 
   test('fails on missing alt, missing H1, private URL, and placeholder site config', async () => {
-    const dir = await makeProject(`<head>
+    const dir = await makeProject(
+      `<head>
   <SEO title="Home" description="Short." />
 </head>
 <p><a href="http://localhost:3000/contact/">click here</a></p>
 <img src="/assets/og.webp">
-`, { url: 'http://localhost:3000', image: '' })
+`,
+      { url: 'http://localhost:3000', image: '' },
+    )
 
     const result = await runDoctorLaunch(dir)
 
@@ -127,12 +145,15 @@ describe('launch doctor gate', () => {
 <h1>Home</h1>
 <p><a href="/about/" aria-label="About the launch fixture"><svg aria-hidden="true"></svg></a></p>
 `)
-    await writeFile(join(dir, 'src', 'pages', 'about.html'), `<head>
+    await writeFile(
+      join(dir, 'src', 'pages', 'about.html'),
+      `<head>
   <SEO title="Shared" description="Shared route description with enough detail for a launch check." />
 </head>
 <h1>About</h1>
 <p><a href="/"><svg aria-hidden="true"></svg></a></p>
-`)
+`,
+    )
 
     const result = await runDoctorLaunch(dir)
 
@@ -144,7 +165,10 @@ describe('launch doctor gate', () => {
 
   test('fails on placeholder OG master and starter copy', async () => {
     const starterSite = JSON.parse(await readFile(join(starterSrc, 'site.json'), 'utf8'))
-    const dir = await makeProject(await readFile(join(starterSrc, 'pages', 'index.html'), 'utf8'), { name: starterSite.name, description: starterSite.description })
+    const dir = await makeProject(await readFile(join(starterSrc, 'pages', 'index.html'), 'utf8'), {
+      name: starterSite.name,
+      description: starterSite.description,
+    })
     await cp(join(starterSrc, 'components'), join(dir, 'src', 'components'), { recursive: true })
     await cp(join(starterSrc, 'images', 'og.png'), join(dir, 'src', 'images', 'og.png'))
 
@@ -172,14 +196,18 @@ describe('launch doctor gate', () => {
   })
 
   test('head emit contracts pass check and warn under --launch', async () => {
-    const dir = await makeProject(`<head>
+    const dir = await makeProject(
+      `<head>
   <SEO title="Home" description="Launch fixture home page with specific helpful description for visitors." />
 </head>
 <h1>Launch fixture</h1>
-`, {}, `
+`,
+      {},
+      `
   <link rel="stylesheet" href="/assets/files/a.css">
   <link rel="stylesheet" href="/assets/files/b.css">
-  <script src="/assets/files/plain.js"></script>`)
+  <script src="/assets/files/plain.js"></script>`,
+    )
     await mkdir(join(dir, 'src', 'files'))
     for (const file of ['a.css', 'b.css']) await writeFile(join(dir, 'src', 'files', file), '@import "x.css";\n')
     await writeFile(join(dir, 'src', 'files', 'plain.js'), '')

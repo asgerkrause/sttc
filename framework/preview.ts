@@ -74,7 +74,11 @@ async function handleRequest(req: Request) {
   return new Response('Not found', { status: 404 })
 }
 
-if (!(await stat(dist).then((entry) => entry.isDirectory()).catch(() => false))) {
+if (
+  !(await stat(dist)
+    .then((entry) => entry.isDirectory())
+    .catch(() => false))
+) {
   console.error('No dist/. Run bun run build first.')
   process.exit(1)
 }

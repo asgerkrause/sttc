@@ -31,18 +31,10 @@
       "const": "agent-tasks-v1"
     },
     "kind": {
-      "enum": [
-        "grader-validation",
-        "agent-trial",
-        "illustrative"
-      ]
+      "enum": ["grader-validation", "agent-trial", "illustrative"]
     },
     "stack": {
-      "enum": [
-        "sttc",
-        "astro",
-        "plain-html"
-      ]
+      "enum": ["sttc", "astro", "plain-html"]
     },
     "task": {
       "enum": [
@@ -57,10 +49,7 @@
       ]
     },
     "trial": {
-      "type": [
-        "integer",
-        "null"
-      ],
+      "type": ["integer", "null"],
       "minimum": 0
     },
     "recordedAt": {
@@ -68,40 +57,24 @@
       "minLength": 1
     },
     "revision": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": ["string", "null"],
       "minLength": 1
     },
     "versions": {
       "type": "object",
-      "required": [
-        "stack",
-        "bun",
-        "os"
-      ],
+      "required": ["stack", "bun", "os"],
       "additionalProperties": false,
       "properties": {
         "stack": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "bun": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "os": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         }
       }
@@ -124,31 +97,19 @@
       "additionalProperties": false,
       "properties": {
         "model": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "reasoning": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "serviceTier": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "harness": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "tools": {
@@ -166,60 +127,35 @@
           }
         },
         "prompt": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "order": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "budgetSeconds": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "budgetToolCalls": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "spendLimit": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         }
       }
     },
     "outcome": {
-      "enum": [
-        "pass",
-        "fail",
-        "timeout",
-        "infrastructure-invalid",
-        "not-run"
-      ]
+      "enum": ["pass", "fail", "timeout", "infrastructure-invalid", "not-run"]
     },
     "checks": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "name",
-          "status",
-          "evidence"
-        ],
+        "required": ["name", "status", "evidence"],
         "additionalProperties": false,
         "properties": {
           "name": {
@@ -227,17 +163,10 @@
             "minLength": 1
           },
           "status": {
-            "enum": [
-              "pass",
-              "fail",
-              "not-run"
-            ]
+            "enum": ["pass", "fail", "not-run"]
           },
           "evidence": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "minLength": 1
           }
         }
@@ -245,64 +174,36 @@
     },
     "interventions": {
       "type": "object",
-      "required": [
-        "rescues",
-        "humanCorrections",
-        "notes"
-      ],
+      "required": ["rescues", "humanCorrections", "notes"],
       "additionalProperties": false,
       "properties": {
         "rescues": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "humanCorrections": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "notes": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         }
       }
     },
     "humanReview": {
       "type": "object",
-      "required": [
-        "design",
-        "content",
-        "notes"
-      ],
+      "required": ["design", "content", "notes"],
       "additionalProperties": false,
       "properties": {
         "design": {
-          "enum": [
-            "pass",
-            "fail",
-            "not-run"
-          ]
+          "enum": ["pass", "fail", "not-run"]
         },
         "content": {
-          "enum": [
-            "pass",
-            "fail",
-            "not-run"
-          ]
+          "enum": ["pass", "fail", "not-run"]
         },
         "notes": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         }
       }
@@ -323,68 +224,39 @@
       "additionalProperties": false,
       "properties": {
         "agentSeconds": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "toolCalls": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "inputTokens": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "outputTokens": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "cost": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "currency": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "minLength": 1
         },
         "reviewSeconds": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "correctionSeconds": {
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "minimum": 0
         },
         "correctionOutcome": {
-          "enum": [
-            "pass",
-            "fail",
-            "time-capped",
-            "not-run"
-          ]
+          "enum": ["pass", "fail", "time-capped", "not-run"]
         }
       }
     },
@@ -396,10 +268,7 @@
       }
     },
     "notes": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": ["string", "null"],
       "minLength": 1
     }
   }

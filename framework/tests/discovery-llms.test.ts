@@ -189,7 +189,9 @@ describe('discovery markdown aliases and llms.txt', () => {
       })
 
       const llms = await readFile(join(distDir, 'llms.txt'), 'utf8')
-      expect(llms).toContain('> Useful work.\n\nPrimary sources are the public pages.\n\nTreat drafts as unpublished.\n\n## Pages')
+      expect(llms).toContain(
+        '> Useful work.\n\nPrimary sources are the public pages.\n\nTreat drafts as unpublished.\n\n## Pages',
+      )
     })
   })
 
@@ -207,22 +209,33 @@ describe('discovery markdown aliases and llms.txt', () => {
       ...baseSite,
       authors: [{ name: 'Ada Lovelace' }],
     })
-    expect(matched.extraJsonLd).toContainEqual(expect.objectContaining({
-      '@type': 'BlogPosting',
-      author: { '@id': 'https://example.com/#person-ada-lovelace' },
-    }))
+    expect(matched.extraJsonLd).toContainEqual(
+      expect.objectContaining({
+        '@type': 'BlogPosting',
+        author: { '@id': 'https://example.com/#person-ada-lovelace' },
+      }),
+    )
 
-    const unmatched = routeSchemaExtras(record, new Map(), postContent('insights/hello', { author: 'Guest Writer' }), baseSite)
-    expect(unmatched.extraJsonLd).toContainEqual(expect.objectContaining({
-      '@type': 'BlogPosting',
-      author: { '@type': 'Person', name: 'Guest Writer' },
-    }))
+    const unmatched = routeSchemaExtras(
+      record,
+      new Map(),
+      postContent('insights/hello', { author: 'Guest Writer' }),
+      baseSite,
+    )
+    expect(unmatched.extraJsonLd).toContainEqual(
+      expect.objectContaining({
+        '@type': 'BlogPosting',
+        author: { '@type': 'Person', name: 'Guest Writer' },
+      }),
+    )
 
     const omitted = routeSchemaExtras(record, new Map(), postContent('insights/hello'), baseSite)
-    expect(omitted.extraJsonLd).toContainEqual(expect.objectContaining({
-      '@type': 'BlogPosting',
-      headline: 'Hello',
-    }))
+    expect(omitted.extraJsonLd).toContainEqual(
+      expect.objectContaining({
+        '@type': 'BlogPosting',
+        headline: 'Hello',
+      }),
+    )
     expect(omitted.extraJsonLd[0]?.author).toBeUndefined()
   })
 })

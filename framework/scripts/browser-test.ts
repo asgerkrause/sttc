@@ -15,11 +15,22 @@ try {
     try {
       const failures: string[] = []
       for (const [name, run] of cases(browser, preview.url)) {
-        try { await run(); console.log(`PASS ${name}`) }
-        catch (error) { failures.push(name); console.error(`FAIL ${name}`, error) }
+        try {
+          await run()
+          console.log(`PASS ${name}`)
+        } catch (error) {
+          failures.push(name)
+          console.error(`FAIL ${name}`, error)
+        }
       }
       if (process.argv.includes('--seeds')) await checkSeeds(browser, preview.url, fixture.root)
       assert.deepEqual(failures, [], 'browser gate failures')
-    } finally { await browser.close() }
-  } finally { await preview.stop() }
-} finally { await fixture.remove() }
+    } finally {
+      await browser.close()
+    }
+  } finally {
+    await preview.stop()
+  }
+} finally {
+  await fixture.remove()
+}

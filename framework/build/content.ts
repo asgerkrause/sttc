@@ -65,7 +65,12 @@ export function isoDate(value: string | undefined) {
 }
 
 async function exists(p: string) {
-  try { await stat(p); return true } catch { return false }
+  try {
+    await stat(p)
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function markdownFiles(dir: string) {
@@ -100,7 +105,6 @@ export function normalizeContentTags(tags: string[]) {
   return out
 }
 
-
 const CONTENT_MEDIA_REF_RE = /\/(?:src|assets)\/images\/([^\s)"']+)/gi
 const CONTENT_MEDIA_EXT_RE = /\.(jpe?g|png|webp)$/i
 
@@ -120,7 +124,9 @@ function normalizeContentTemplateValue(value: unknown, file: string, source: str
   if (typeof value === 'number' || typeof value === 'boolean' || value == null) return value as TemplateValue
   if (Array.isArray(value)) return value.map((item) => normalizeContentTemplateValue(item, file, source))
   if (typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeContentTemplateValue(item, file, source)])) as TemplateValue
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, normalizeContentTemplateValue(item, file, source)]),
+    ) as TemplateValue
   }
   return String(value)
 }
@@ -210,11 +216,21 @@ function normalizeContentPath(value: unknown, name: string) {
   const rel = value.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/g, '')
   const parts = rel.split('/').filter(Boolean)
   if (!parts.length || rel.startsWith('/') || parts.includes('..') || parts.includes('.')) {
-    configError('Custom collection path must be a safe repo-relative path', 'Use paths like content/projects. Path traversal and absolute paths are not allowed.')
+    configError(
+      'Custom collection path must be a safe repo-relative path',
+      'Use paths like content/projects. Path traversal and absolute paths are not allowed.',
+    )
   }
   const normalized = parts.join('/')
-  if (!normalized.startsWith('content/') || (normalized === 'content/posts' && name !== 'posts') || normalized === 'content/pages') {
-    configError('Custom collection path must be a non-built-in content subfolder', 'Use paths like content/projects. content/pages is reserved; authored pages belong in src/pages.')
+  if (
+    !normalized.startsWith('content/') ||
+    (normalized === 'content/posts' && name !== 'posts') ||
+    normalized === 'content/pages'
+  ) {
+    configError(
+      'Custom collection path must be a non-built-in content subfolder',
+      'Use paths like content/projects. content/pages is reserved; authored pages belong in src/pages.',
+    )
   }
   return normalized
 }
@@ -223,7 +239,10 @@ function normalizeTemplate(value: unknown) {
   if (typeof value !== 'string' || !value.trim()) configError('Custom collection template must be a non-empty string')
   const template = value.trim()
   if (template.includes('/') || template.includes('\\') || template.includes('..') || !template.endsWith('.html')) {
-    configError('Custom collection template must be an .html file in src/templates/', 'Use a filename like project.html, with no path segments.')
+    configError(
+      'Custom collection template must be an .html file in src/templates/',
+      'Use a filename like project.html, with no path segments.',
+    )
   }
   return template
 }
@@ -237,7 +256,10 @@ function normalizeRoutePattern(value: unknown) {
   for (const part of parts) {
     if (part === '{slug}') continue
     if (!/^[a-z0-9][a-z0-9-]*$/.test(part)) {
-      configError('Custom collection route segments must be lowercase URL-safe literals or {slug}', 'Use a route like work/{slug} or locations/{slug}.')
+      configError(
+        'Custom collection route segments must be lowercase URL-safe literals or {slug}',
+        'Use a route like work/{slug} or locations/{slug}.',
+      )
     }
   }
   return route
@@ -247,7 +269,8 @@ function normalizeRequired(value: unknown, fallback = ['title']) {
   if (value == null) return fallback
   if (!Array.isArray(value)) configError('Custom collection required must be an array of front-matter keys')
   const required = value.map((item) => {
-    if (typeof item !== 'string' || !item.trim()) configError('Custom collection required keys must be non-empty strings')
+    if (typeof item !== 'string' || !item.trim())
+      configError('Custom collection required keys must be non-empty strings')
     return item.trim()
   })
   return required.length ? required : fallback
@@ -257,9 +280,11 @@ function normalizeFields(value: unknown): ContentFieldConfig[] | undefined {
   if (value == null) return undefined
   if (!Array.isArray(value)) configError('Custom collection fields must be an array')
   return value.map((field) => {
-    if (!field || typeof field !== 'object' || Array.isArray(field)) configError('Custom collection fields must be objects')
+    if (!field || typeof field !== 'object' || Array.isArray(field))
+      configError('Custom collection fields must be objects')
     const record = field as Record<string, unknown>
-    if (typeof record.name !== 'string' || !record.name.trim()) configError('Custom collection field.name must be a non-empty string')
+    if (typeof record.name !== 'string' || !record.name.trim())
+      configError('Custom collection field.name must be a non-empty string')
     return { ...record, name: record.name.trim() } as ContentFieldConfig
   })
 }
@@ -272,7 +297,10 @@ function validateCustomCollection(raw: unknown): ContentCollectionConfig {
     configError('Custom collection name must be a lowercase id', 'Use [a-z][a-z0-9-]*, e.g. projects or team-members.')
   }
   if (name === 'pages') {
-    configError('Custom collection name "pages" is reserved', 'Authored pages belong in src/pages. Use another collection name.')
+    configError(
+      'Custom collection name "pages" is reserved',
+      'Authored pages belong in src/pages. Use another collection name.',
+    )
   }
 
   const defaults = name === 'posts' ? POSTS_COLLECTION : undefined
@@ -309,7 +337,10 @@ export async function loadCustomContentCollections(projectRoot = root): Promise<
       : undefined
 
   if (!Array.isArray(collections)) {
-    configError('content/collections.json must contain a collections array', 'Use { "collections": [{ "name": "projects", ... }] }.')
+    configError(
+      'content/collections.json must contain a collections array',
+      'Use { "collections": [{ "name": "projects", ... }] }.',
+    )
   }
 
   const seen = new Set<string>()
@@ -328,11 +359,14 @@ export async function loadContentCollections(projectRoot = root): Promise<Conten
 
 function assertSafeSlug(slug: string, sourceRel: string, raw: string, fromFrontMatter: boolean) {
   if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return
-  throw new BuildError(fromFrontMatter ? `Unsafe front-matter slug "${slug}"` : `Unsafe content filename slug "${slug}"`, {
-    file: sourceRel,
-    line: fromFrontMatter ? frontMatterFieldLine(raw, 'slug') : undefined,
-    hint: 'Use lowercase URL-safe slugs like acme-project. Rename the file, or set front-matter slug to override the filename.',
-  })
+  throw new BuildError(
+    fromFrontMatter ? `Unsafe front-matter slug "${slug}"` : `Unsafe content filename slug "${slug}"`,
+    {
+      file: sourceRel,
+      line: fromFrontMatter ? frontMatterFieldLine(raw, 'slug') : undefined,
+      hint: 'Use lowercase URL-safe slugs like acme-project. Rename the file, or set front-matter slug to override the filename.',
+    },
+  )
 }
 
 function routeSlugFor(pattern: string, basename: string) {
@@ -397,7 +431,10 @@ async function compileFile(
     file: sourceRel,
   })
   if (draft && process.env.SNZ_DEV) {
-    composed = composed.replace(/(<article[^>]*>)/, '$1\n<aside class="draft-banner">Draft — not in production build</aside>')
+    composed = composed.replace(
+      /(<article[^>]*>)/,
+      '$1\n<aside class="draft-banner">Draft — not in production build</aside>',
+    )
   }
 
   const routeFile = `${slug}.html`
@@ -419,14 +456,19 @@ function parseTags(raw: string | undefined): string[] {
   if (!raw) return []
   // Supports `tags: [a, b]` or `tags: a, b`
   const inner = raw.replace(/^\[|\]$/g, '')
-  return inner.split(',').map((t) => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+  return inner
+    .split(',')
+    .map((t) => t.trim().replace(/^["']|["']$/g, ''))
+    .filter(Boolean)
 }
 
-export async function compileContentFrom(options: {
-  rootDir?: string
-  srcDir?: string
-  includeDrafts?: boolean
-} = {}): Promise<ContentRoute[]> {
+export async function compileContentFrom(
+  options: {
+    rootDir?: string
+    srcDir?: string
+    includeDrafts?: boolean
+  } = {},
+): Promise<ContentRoute[]> {
   const projectRoot = options.rootDir ?? root
   const sourceRoot = options.srcDir ?? join(projectRoot, 'src')
   const includeDrafts = options.includeDrafts ?? !!process.env.SNZ_DEV
@@ -446,9 +488,9 @@ export async function compileContentFrom(options: {
     const files = await markdownFiles(dir)
     if (files.length === 0) continue
     const template = await loadTemplate(sourceRoot, collection.template)
-    const compiled = await mapConcurrent(files, IO_CONCURRENCY, async (file) => (
-      compileFile(projectRoot, collection, file, template)
-    ))
+    const compiled = await mapConcurrent(files, IO_CONCURRENCY, async (file) =>
+      compileFile(projectRoot, collection, file, template),
+    )
     for (const route of compiled) {
       if (route.draft && !includeDrafts) continue
       const existing = seenSlugs.get(route.slug)

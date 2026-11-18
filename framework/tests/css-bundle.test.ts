@@ -16,7 +16,10 @@ describe('project CSS flatten', () => {
     const dir = await mkdtemp(join(tmpdir(), 'sttc-craft-css-'))
     tempDirs.push(dir)
     const repoRoot = join(import.meta.dir, '..', '..')
-    for (const [name, root] of [['dogfood', repoRoot], ['starter', join(repoRoot, 'templates', 'default')]]) {
+    for (const [name, root] of [
+      ['dogfood', repoRoot],
+      ['starter', join(repoRoot, 'templates', 'default')],
+    ]) {
       const distCss = join(dir, name)
       await mkdir(distCss)
       const stylesDir = join(root, 'src', 'styles')
@@ -41,7 +44,9 @@ describe('project CSS flatten', () => {
         expect(css).toContain('system-ui')
         expect(css).not.toContain('@font-face')
         expect(result.fontPreloads).toEqual([])
-        expect((await readdir(stylesDir, { recursive: true })).filter((file) => /\.(woff2?|ttf|otf)$/i.test(file))).toEqual([])
+        expect(
+          (await readdir(stylesDir, { recursive: true })).filter((file) => /\.(woff2?|ttf|otf)$/i.test(file)),
+        ).toEqual([])
         expect(await readdir(distCss)).toEqual([result.filename])
       }
     }
@@ -58,15 +63,23 @@ describe('project CSS flatten', () => {
     await writeFile(join(stylesDir, 'sans.woff'), 'woff-bytes')
 
     await writeFile(join(dir, 'src', 'styles.css'), '@import "/assets/css/global.css";\n')
-    await writeFile(join(stylesDir, 'global.css'), `@layer base, type;
+    await writeFile(
+      join(stylesDir, 'global.css'),
+      `@layer base, type;
 @import "./layers/base.css";
 @import "./layers/type.css";
-`)
-    await writeFile(join(stylesDir, 'layers', 'base.css'), `@layer base {
+`,
+    )
+    await writeFile(
+      join(stylesDir, 'layers', 'base.css'),
+      `@layer base {
   html { color: canvastext; }
 }
-`)
-    await writeFile(join(stylesDir, 'layers', 'type.css'), `@layer type {
+`,
+    )
+    await writeFile(
+      join(stylesDir, 'layers', 'type.css'),
+      `@layer type {
   @font-face {
     font-family: "SNZ Sans";
     src: url("../sans.woff") format("woff");
@@ -75,7 +88,8 @@ describe('project CSS flatten', () => {
     > .c { display: flex; }
   }
 }
-`)
+`,
+    )
 
     const result = await bundleProjectCss(join(dir, 'src', 'styles.css'), stylesDir, distCss)
     expect(result?.filename).toMatch(/^styles\.[a-f0-9]+\.css$/)
@@ -103,10 +117,13 @@ describe('project CSS flatten', () => {
     await mkdir(stylesDir, { recursive: true })
     await mkdir(distCss, { recursive: true })
     await writeFile(join(dir, 'src', 'styles.css'), '@import "/assets/css/global.css";\n')
-    await writeFile(join(stylesDir, 'global.css'), `@import "./x.css" layer(vendor);
+    await writeFile(
+      join(stylesDir, 'global.css'),
+      `@import "./x.css" layer(vendor);
 @import "./y.css" supports(display: grid) screen;
 @import "./z.css" layer supports((display: grid) or (display: flex)) print and (min-width: 1px);
-`)
+`,
+    )
     await writeFile(join(stylesDir, 'x.css'), 'x { color: red; }\n')
     await writeFile(join(stylesDir, 'y.css'), 'y { color: red; }\n')
     await writeFile(join(stylesDir, 'z.css'), 'z { color: red; }\n')
@@ -128,12 +145,17 @@ describe('project CSS flatten', () => {
     const distCss = join(dir, 'dist', 'assets', 'css')
     await mkdir(stylesDir, { recursive: true })
     await mkdir(distCss, { recursive: true })
-    await writeFile(join(dir, 'src', 'styles.css'), `@font-face {
+    await writeFile(
+      join(dir, 'src', 'styles.css'),
+      `@font-face {
   font-family: "Missing";
   src: url("./styles/ghost.woff") format("woff");
 }
-`)
-    await expect(bundleProjectCss(join(dir, 'src', 'styles.css'), stylesDir, distCss)).rejects.toBeInstanceOf(BuildError)
+`,
+    )
+    await expect(bundleProjectCss(join(dir, 'src', 'styles.css'), stylesDir, distCss)).rejects.toBeInstanceOf(
+      BuildError,
+    )
   })
 
   test('refuses TTF sources', async () => {
@@ -145,6 +167,8 @@ describe('project CSS flatten', () => {
     await mkdir(distCss, { recursive: true })
     await writeFile(join(stylesDir, 'sans.ttf'), 'not-woff')
     await writeFile(join(dir, 'src', 'styles.css'), 'html { color: canvastext; }\n')
-    await expect(bundleProjectCss(join(dir, 'src', 'styles.css'), stylesDir, distCss)).rejects.toBeInstanceOf(BuildError)
+    await expect(bundleProjectCss(join(dir, 'src', 'styles.css'), stylesDir, distCss)).rejects.toBeInstanceOf(
+      BuildError,
+    )
   })
 })

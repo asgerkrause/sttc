@@ -20,12 +20,14 @@ function sortedPosts(posts: ContentRoute[]) {
 
 function postLinkList(posts: ContentRoute[]) {
   return sortedPosts(posts)
-    .map((p) => `
+    .map(
+      (p) => `
   <article class="post-item">
     <h2 class="post-item-title"><a href="/${p.slug}/">${escapeHtml(p.data.title)}</a></h2>
     <p class="post-item-meta"><time datetime="${p.data.date ?? ''}">${p.data.date ?? ''}</time></p>
     <p class="post-item-desc">${escapeHtml(p.data.description ?? '')}</p>
-  </article>`)
+  </article>`,
+    )
     .join('\n')
 }
 
@@ -34,7 +36,12 @@ async function renderGenerated(srcDir: string, name: string, vars: TemplateConte
   const file = `src/templates/${name}`
   const template = await readFile(join(srcDir, 'templates', name), 'utf8').catch(() => undefined)
   if (template === undefined) return fallback
-  return renderTemplate(template, vars, { allowEach: true, placeholders: true, preserveUnknownPlaceholders: true, file })
+  return renderTemplate(template, vars, {
+    allowEach: true,
+    placeholders: true,
+    preserveUnknownPlaceholders: true,
+    file,
+  })
 }
 
 function postItems(posts: ContentRoute[]) {
@@ -58,23 +65,26 @@ export async function autoGenerateIndexes(
   // ponytail: a posts route of "{slug}" has no index prefix; the home page stays authored.
   if (indexSlug) {
     const path = `/${indexSlug}/`
-    const body = await renderGenerated(srcDir, 'posts-index.html', {
-      title: 'Insights',
-      path,
-      items: safeHtml(postLinkList(posts)),
-      posts: postItems(posts),
-    }, `<head>
+    const body = await renderGenerated(
+      srcDir,
+      'posts-index.html',
+      {
+        title: 'Insights',
+        path,
+        items: safeHtml(postLinkList(posts)),
+        posts: postItems(posts),
+      },
+      `<head>
   <SEO title="Insights" description="All posts." path="${path}" />
 </head>
 <Section>
   <h1>Insights</h1>
   ${postLinkList(posts)}
-</Section>`)
-    await routeGraph.compose(
-      { slug: indexSlug, kind: 'generated', source: 'generated:posts-index' },
-      body,
-      { schemas: ['CollectionPage'] },
+</Section>`,
     )
+    await routeGraph.compose({ slug: indexSlug, kind: 'generated', source: 'generated:posts-index' }, body, {
+      schemas: ['CollectionPage'],
+    })
   }
 
   const byTag = new Map<string, { label: string; posts: ContentRoute[] }>()
@@ -92,29 +102,35 @@ export async function autoGenerateIndexes(
     const { label, posts: postsForTag } = group
     const safeLabel = escapeHtml(label)
     const slug = `tags/${tagSlug}`
-    const body = await renderGenerated(srcDir, 'tags.html', {
-      tag: label,
-      path: `/${slug}/`,
-      items: safeHtml(postLinkList(postsForTag)),
-      posts: postItems(postsForTag),
-    }, `<head>
+    const body = await renderGenerated(
+      srcDir,
+      'tags.html',
+      {
+        tag: label,
+        path: `/${slug}/`,
+        items: safeHtml(postLinkList(postsForTag)),
+        posts: postItems(postsForTag),
+      },
+      `<head>
   <SEO title="Tag: ${safeLabel}" description="Posts tagged ${safeLabel}." path="/tags/${tagSlug}/" />
 </head>
 <Section>
   <h1>Tag: <code>${safeLabel}</code></h1>
   ${postLinkList(postsForTag)}
   <p><a href="/tags/">← All tags</a></p>
-</Section>`)
-    await routeGraph.compose(
-      { slug, kind: 'generated', source: `generated:tag:${tagSlug}` },
-      body,
-      { schemas: ['CollectionPage'] },
+</Section>`,
     )
+    await routeGraph.compose({ slug, kind: 'generated', source: `generated:tag:${tagSlug}` }, body, {
+      schemas: ['CollectionPage'],
+    })
   }
 
   const tagLinks = [...byTag.entries()]
     .sort(([, a], [, b]) => a.label.localeCompare(b.label))
-    .map(([slug, group]) => `<li><a href="/tags/${slug}/">${escapeHtml(group.label)}</a> <small>(${group.posts.length})</small></li>`)
+    .map(
+      ([slug, group]) =>
+        `<li><a href="/tags/${slug}/">${escapeHtml(group.label)}</a> <small>(${group.posts.length})</small></li>`,
+    )
     .join('\n  ')
   const body = `<head>
   <SEO title="Tags" description="All tags." path="/tags/" />
@@ -125,9 +141,7 @@ export async function autoGenerateIndexes(
   ${tagLinks}
   </ul>
 </Section>`
-  await routeGraph.compose(
-    { slug: 'tags', kind: 'generated', source: 'generated:tags-index' },
-    body,
-    { schemas: ['CollectionPage'] },
-  )
+  await routeGraph.compose({ slug: 'tags', kind: 'generated', source: 'generated:tags-index' }, body, {
+    schemas: ['CollectionPage'],
+  })
 }
