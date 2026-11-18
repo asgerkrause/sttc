@@ -19,7 +19,7 @@ Deploy settings:
 | Output directory | `dist` |
 | Dev command | `bun run dev` |
 | Install command | `bun install` |
-| Runtime | Bun `>= 1.4.0` |
+| Runtime | Bun `>= 1.4.4` |
 
 `bun run build` runs `check` at the end and fails on a renderer contract violation. `bun run doctor` typechecks and runs the same checks out of band.
 
