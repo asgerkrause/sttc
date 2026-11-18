@@ -69,10 +69,6 @@ export type SiteConfig = {
   /** @deprecated Use image. */
   ogImage?: string
   scroll?: 'lenis' | 'native'
-  vercel?: {
-    analytics?: boolean
-    speedInsights?: boolean
-  }
   organization?: SiteOrganization
   brand?: SiteBrand
   product?: SiteProduct

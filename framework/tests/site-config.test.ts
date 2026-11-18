@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { BuildError } from '../build/errors'
+import type { JsonObject } from '../build/json'
 import { parseSiteConfig } from '../build/site-config'
 
 describe('site configuration', () => {
@@ -165,5 +166,64 @@ describe('site configuration', () => {
       expect((error as BuildError).message).toContain('discovery.notes')
       expect((error as BuildError).hint).toContain('llms.txt v2')
     }
+  })
+
+  const site = (extra: JsonObject) =>
+    JSON.stringify({ name: 'Example', url: 'https://example.com', description: 'Useful site.', ...extra }, null, 2)
+
+  test('rejects unknown and misspelled keys at the line of the key', () => {
+    expect(() => parseSiteConfig(site({ descripton: 'Typo.' }))).toThrow(
+      'site.json "descripton" is not a known setting',
+    )
+    expect(() => parseSiteConfig(site({ vercel: { analytics: true } }))).toThrow('"vercel" is not a known setting')
+    expect(() => parseSiteConfig(site({ organization: { name: 'O', phone: '1' } }))).toThrow(
+      '"organization.phone" is not a known setting',
+    )
+    expect(() => parseSiteConfig(site({ address: { street: 's' } }))).toThrow('"address.street" is not a known setting')
+    try {
+      parseSiteConfig(site({ descripton: 'Typo.' }))
+    } catch (error) {
+      if (!(error instanceof BuildError)) throw error
+      expect(error.line).toBe(5)
+      expect(error.hint).toContain('Known keys: name, url, description')
+    }
+  })
+
+  test('validates organization, brand, contact, address, sameAs, and topics', () => {
+    expect(() => parseSiteConfig(site({ organization: 'O' }))).toThrow('site.json "organization" must be an object')
+    expect(() => parseSiteConfig(site({ organization: { sameAs: ['nope'] } }))).toThrow(
+      'site.json "organization.sameAs" must be HTTP(S) URLs',
+    )
+    expect(() => parseSiteConfig(site({ organization: { contact: { email: 1 } } }))).toThrow(
+      'site.json "organization.contact.email" must be a string',
+    )
+    expect(() => parseSiteConfig(site({ brand: { slogan: [] } }))).toThrow('site.json "brand.slogan" must be a string')
+    expect(() => parseSiteConfig(site({ sameAs: 'https://x.com' }))).toThrow(
+      'site.json "site.sameAs" must be HTTP(S) URLs',
+    )
+    expect(() => parseSiteConfig(site({ topics: ['design', 2] }))).toThrow(
+      'site.json "topics" must be an array of strings',
+    )
+    expect(() =>
+      parseSiteConfig(site({ product: { name: 'P', description: 'd', path: '/p/', offers: { availability: 1 } } })),
+    ).toThrow('site.json "product.offers.availability" must be a string')
+  })
+
+  test('returns only declared settings', () => {
+    const decoded = parseSiteConfig(
+      site({
+        organization: { name: 'O', address: { addressCountry: 'DK' } },
+        topics: ['design'],
+        robots: {},
+      }),
+    )
+    expect(decoded).toEqual({
+      name: 'Example',
+      url: 'https://example.com',
+      description: 'Useful site.',
+      organization: { name: 'O', address: { addressCountry: 'DK' } },
+      topics: ['design'],
+      robots: {},
+    })
   })
 })

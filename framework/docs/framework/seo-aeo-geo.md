@@ -13,6 +13,8 @@ Every route receives deterministic metadata from `src/site.json`, its filename, 
 
 The renderer handles `<SEO />` itself; it is accepted only in the route's leading `<head>` wrapper. `title`, `description`, and optional `image` are the normal page-specific inputs. Canonical URLs derive from route filenames. `ogImage` remains a compatibility alias for `image`.
 
+`src/site.json` accepts only the settings STTC declares: `name`, `url`, `description`, `locale`, `twitter`, `image`, `ogImage`, `scroll`, `organization`, `brand`, `product`, `author`, `authors`, `sameAs`, `contact`, `address`, `topics`, `discovery`, and `robots`. Nested objects accept only their declared fields. An unknown or misspelled key fails the build, naming the key, its line, and the known keys. Keep project-specific values in route or component data, not in `site.json`.
+
 Use `<SEO ... unlisted />` only for a directly reachable route that should be omitted from public discovery. It receives `noindex,nofollow`. Unlisted is not authentication or access control.
 
 Declare canonical organization, brand, and product facts once in `site.json`. Product structured data appears only on its configured `path`. The visible route should use the same `site.product.*` values so published facts do not drift:
